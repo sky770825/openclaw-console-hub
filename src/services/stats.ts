@@ -1,0 +1,83 @@
+import { loadRuns, loadTasks } from './seed';
+import { optionalDelay } from './config';
+
+const DAY_LABELS = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const today = new Date();
+  return (
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate()
+  );
+}
+
+function dateKey(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+export async function getDashboardStats() {
+  await optionalDelay();
+
+  const runs = loadRuns();
+  const tasks = loadTasks();
+
+  // Today Runs = runs filtered by startedAt is today
+  const todayRuns = runs.filter((r) => isToday(r.startedAt)).length;
+
+  // Success / Failed counts（只算已結束的）
+  const success = runs.filter((r) => r.status === 'success').length;
+  const failed = runs.filter((r) => r.status === 'failed').length;
+  const completed = success + failed;
+
+  // Success Rate = success / (success + failed)，無完成數時為 0
+  const successRate = completed > 0 ? Math.round((success / completed) * 1000) / 10 : 0;
+
+  // Failed Runs = failed count
+  const failedRuns = failed;
+
+  // Avg Duration = avg(durationMs)（只算有 durationMs 的）
+  const withDuration = runs.filter((r) => r.durationMs != null && r.durationMs > 0);
+  const avgDuration =
+    withDuration.length > 0
+      ? Math.round(
+          withDuration.reduce((sum, r) => sum + (r.durationMs ?? 0), 0) / withDuration.length
+        )
+      : 0;
+
+  // Queue Depth = 佇列中的 run 數
+  const queueDepth = runs.filter((r) => r.status === 'queued').length;
+
+  // Active Tasks = status === 'running' 的任務數
+  const activeTasks = tasks.filter((t) => t.status === 'running').length;
+
+  // Weekly Trend = 過去 7 天，每天的成功/失敗數
+  const weeklyTrend = (() => {
+    const result: { day: string; success: number; failed: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const dayRuns = runs.filter((r) => dateKey(r.startedAt) === key);
+      const s = dayRuns.filter((r) => r.status === 'success').length;
+      const f = dayRuns.filter((r) => r.status === 'failed').length;
+      result.push({
+        day: DAY_LABELS[d.getDay()],
+        success: s,
+        failed: f,
+      });
+    }
+    return result;
+  })();
+
+  return {
+    todayRuns,
+    successRate,
+    failedRuns,
+    avgDuration,
+    queueDepth,
+    activeTasks,
+    weeklyTrend,
+  };
+}
