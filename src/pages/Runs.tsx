@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageContainer, SectionHeader } from '@/components/layout/PageContainer';
 import { SearchInput, FilterBar, type FilterConfig, EmptyState } from '@/components/common';
@@ -25,6 +25,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,10 +44,11 @@ import {
   Play,
   XCircle
 } from 'lucide-react';
-import { getRuns, getRun, triggerRun } from '@/services/api';
+import { getRuns, getRun, api } from '@/services/api';
 import type { Run, RunStep } from '@/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { pollRunStatus } from '@/lib/pollRunStatus';
 
 const filterConfigs: FilterConfig[] = [
   {
@@ -271,6 +273,9 @@ function RunDetail({ run, onRerun, onClose }: RunDetailProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>自訂輸入執行</DialogTitle>
+            <DialogDescription className="sr-only">
+              輸入自訂 JSON 參數後可觸發任務執行
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <label className="text-sm font-medium">輸入 JSON（自訂參數）</label>
@@ -308,9 +313,17 @@ export default function Runs() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
+  const pollCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     getRuns().then(setRuns);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      pollCleanupRef.current?.();
+      pollCleanupRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -359,9 +372,20 @@ export default function Runs() {
 
   const handleRerun = async () => {
     if (!selectedRun) return;
-    await triggerRun(selectedRun.taskId);
-    toast({ description: '任務已重新觸發' });
-    getRuns().then(setRuns);
+    try {
+      const run = await api.rerun(selectedRun.id);
+      setRuns((prev) => [run, ...prev]);
+      setSelectedRun(run);
+      toast({ description: '已加入執行佇列，正在執行…' });
+      const refresh = () => {
+        getRuns().then(setRuns);
+        getRun(run.id).then((r) => r && setSelectedRun((s) => (s?.id === run.id ? r : s)));
+      };
+      pollCleanupRef.current?.();
+      pollCleanupRef.current = pollRunStatus(run.id, refresh);
+    } catch (err) {
+      toast({ variant: 'destructive', description: err instanceof Error ? err.message : '重跑失敗' });
+    }
   };
 
   const handleDrawerClose = () => {
@@ -373,7 +397,8 @@ export default function Runs() {
     <PageContainer>
       <SectionHeader
         title="執行紀錄"
-        description="所有任務的執行歷史"
+        icon="▶"
+        description="所有任務的執行歷史 · 與 OpenClaw evolution_log 對應"
       />
 
       {/* Filters */}

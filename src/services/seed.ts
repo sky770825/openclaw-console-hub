@@ -8,10 +8,20 @@ const ALERTS_KEY = 'openclaw:alerts';
 const SEEDED_KEY = 'openclaw:seeded:v2';
 
 /**
+ * 清除所有 openclaw 資料並重新載入頁面，讓 seed 重新執行。
+ * 用於「載入範例任務」等情境。
+ */
+export function resetSeedAndReload() {
+  if (typeof window === 'undefined') return;
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('openclaw:'))
+    .forEach((k) => localStorage.removeItem(k));
+  window.location.reload();
+}
+
+/**
  * 初始化資料，只執行一次。
- * 想重灌：刪掉 localStorage 的 SEEDED_KEY（或整個 openclaw:*）。
- *
- * 快速重灌（測 seed 常用）：在瀏覽器 console 執行：
+ * 想重灌：呼叫 resetSeedAndReload() 或在瀏覽器 console 執行：
  * Object.keys(localStorage).filter(k=>k.startsWith("openclaw:")).forEach(k=>localStorage.removeItem(k));
  * location.reload();
  */

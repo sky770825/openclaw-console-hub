@@ -66,7 +66,8 @@ export default function Settings() {
     <PageContainer>
       <SectionHeader
         title="設定"
-        description="配置您的 Openclaw 任務面板"
+        description="配置您的 OpenClaw 任務面板"
+        icon="⚙️"
       />
 
       <Tabs defaultValue="general" className="space-y-6">

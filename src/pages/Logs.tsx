@@ -106,7 +106,8 @@ export default function Logs() {
     <PageContainer>
       <SectionHeader
         title="日誌"
-        description="瀏覽系統和任務執行日誌"
+        description="瀏覽系統和任務執行日誌 · 與 OpenClaw evolution_log 對應"
+        icon="📄"
         action={
           <div className="flex items-center gap-2">
             <Button

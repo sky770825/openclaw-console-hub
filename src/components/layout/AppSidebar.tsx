@@ -1,5 +1,5 @@
 import { useState, createContext, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Kanban, 
@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  Cog
+  Cog,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -34,6 +35,7 @@ export function useSidebarContext() {
 
 const navItems = [
   { path: '/', label: '儀表板', icon: LayoutDashboard },
+  { path: '/cursor', label: 'OpenClaw Agent 板', icon: Bot },
   { path: '/tasks', label: '任務看板', icon: Kanban },
   { path: '/tasks/list', label: '任務列表', icon: List },
   { path: '/runs', label: '執行紀錄', icon: Play },
@@ -56,13 +58,30 @@ function NavItem({
   onClick?: () => void;
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = location.pathname === path || 
     (path !== '/' && location.pathname.startsWith(path));
+
+  const handleClick = (e: React.MouseEvent) => {
+    onClick?.();
+    navigate(path);
+    e.preventDefault();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick?.();
+      navigate(path);
+    }
+  };
 
   return (
     <Link
       to={path}
-      onClick={onClick}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      data-nav-path={path}
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
         'hover:bg-sidebar-accent',

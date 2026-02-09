@@ -91,7 +91,8 @@ export default function Alerts() {
     <PageContainer>
       <SectionHeader
         title="警報"
-        description="監控系統警告和重大問題"
+        description="監控系統警告和重大問題 · 與 OpenClaw reviews 對應"
+        icon="🔔"
         action={
           openCount > 0 && (
             <Badge variant="destructive" className="h-6">

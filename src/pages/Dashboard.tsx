@@ -41,7 +41,7 @@ function formatRelativeTime(date: string): string {
 }
 
 function WeeklyChart({ data }: { data: { day: string; success: number; failed: number }[] }) {
-  const maxValue = Math.max(...data.map(d => d.success + d.failed));
+  const maxValue = Math.max(1, ...data.map(d => d.success + d.failed));
   
   return (
     <div className="flex items-end justify-between h-32 gap-2 px-2">
@@ -53,17 +53,17 @@ function WeeklyChart({ data }: { data: { day: string; success: number; failed: n
           <div key={item.day} className="flex flex-col items-center gap-1 flex-1">
             <div className="flex flex-col-reverse w-full gap-0.5" style={{ height: '100px' }}>
               <div 
-                className="w-full bg-success rounded-t transition-all" 
-                style={{ height: `${successHeight}%` }}
+                className="w-full rounded-t transition-all" 
+                style={{ height: `${successHeight}%`, background: 'var(--oc-green)' }}
               />
               {item.failed > 0 && (
                 <div 
-                  className="w-full bg-destructive rounded-t transition-all" 
-                  style={{ height: `${failedHeight}%` }}
+                  className="w-full rounded-t transition-all" 
+                  style={{ height: `${failedHeight}%`, background: 'var(--oc-red)' }}
                 />
               )}
             </div>
-            <span className="text-xs text-muted-foreground">{item.day}</span>
+            <span className="text-xs" style={{ color: 'var(--oc-t3)' }}>{item.day}</span>
           </div>
         );
       })}
@@ -113,11 +113,12 @@ export default function Dashboard() {
     <PageContainer>
       <SectionHeader 
         title="儀表板" 
-        description="任務自動化系統總覽"
+        description="任務自動化系統總覽 · 與 OpenClaw Agent 板同步"
+        icon="📊"
       />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
+      {/* KPI Cards — OpenClaw Stats 風格 */}
+      <div className="oc-stats-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <StatCard
           title="今日執行"
           value={stats.todayRuns}
@@ -167,12 +168,12 @@ export default function Dashboard() {
               <WeeklyChart data={stats.weeklyTrend} />
               <div className="flex items-center justify-center gap-6 mt-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-success" />
-                  <span className="text-muted-foreground">成功</span>
+                  <div className="w-3 h-3 rounded" style={{ background: 'var(--oc-green)' }} />
+                  <span style={{ color: 'var(--oc-t3)' }}>成功</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-destructive" />
-                  <span className="text-muted-foreground">失敗</span>
+                  <div className="w-3 h-3 rounded" style={{ background: 'var(--oc-red)' }} />
+                  <span style={{ color: 'var(--oc-t3)' }}>失敗</span>
                 </div>
               </div>
             </CardContent>
@@ -191,14 +192,14 @@ export default function Dashboard() {
               {recentFailedRuns.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <CheckCircle className="h-8 w-8 text-success mb-2" />
-                  <p className="text-sm text-muted-foreground">沒有失敗的執行！太棒了！🎉</p>
+                  <p className="text-sm" style={{ color: 'var(--oc-t3)' }}>沒有失敗的執行！太棒了！🎉</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {recentFailedRuns.map((run) => (
                     <div
                       key={run.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer border border-[var(--oc-border)] hover:bg-[var(--oc-s3)]"
                       onClick={() => navigate(`/runs/${run.id}`)}
                     >
                       <div className="flex-1 min-w-0">
@@ -211,7 +212,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs" style={{ color: 'var(--oc-t3)' }}>
                           {formatRelativeTime(run.startedAt)}
                         </span>
                         <Button 
@@ -249,23 +250,22 @@ export default function Dashboard() {
               {alerts.length === 0 ? (
                 <div className="flex flex-col items-center py-6 text-center">
                   <CheckCircle className="h-6 w-6 text-success mb-2" />
-                  <p className="text-sm text-muted-foreground">沒有未處理的警報</p>
+                  <p className="text-sm" style={{ color: 'var(--oc-t3)' }}>沒有未處理的警報</p>
                 </div>
               ) : (
                 <ScrollArea className="h-48">
                   <div className="space-y-2">
                     {alerts.map((alert) => (
-                      <div
-                        key={alert.id}
-                        className={cn(
-                          'p-3 rounded-lg border-l-4',
-                          alert.severity === 'critical' && 'border-l-destructive bg-destructive/5',
-                          alert.severity === 'warning' && 'border-l-warning bg-warning/5',
-                          alert.severity === 'info' && 'border-l-info bg-info/5'
-                        )}
-                      >
+                <div
+                      key={alert.id}
+                      className="p-3 rounded-lg border-l-4"
+                      style={{
+                        borderLeftColor: alert.severity === 'critical' ? 'var(--oc-red)' : alert.severity === 'warning' ? 'var(--oc-amber)' : 'var(--oc-indigo)',
+                        background: alert.severity === 'critical' ? 'var(--oc-red-g)' : alert.severity === 'warning' ? 'var(--oc-amber-g)' : 'var(--oc-indigo-g)',
+                      }}
+                    >
                         <p className="text-sm font-medium line-clamp-2">{alert.message}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs mt-1" style={{ color: 'var(--oc-t3)' }}>
                           {formatRelativeTime(alert.createdAt)}
                         </p>
                       </div>
@@ -286,21 +286,21 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {auditLogs.map((log) => (
                     <div key={log.id} className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--oc-s3)' }}>
                         <span className="text-xs font-medium">{log.user.charAt(0)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm">
                           <span className="font-medium">{log.user}</span>
                           {' '}
-                          <span className="text-muted-foreground">{log.action}</span>
+                          <span style={{ color: 'var(--oc-t3)' }}>{log.action}</span>
                           {' '}
                           <span className="font-medium">{log.target}</span>
                         </p>
                         {log.details && (
-                          <p className="text-xs text-muted-foreground truncate">{log.details}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--oc-t3)' }}>{log.details}</p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--oc-t3)' }}>
                           {formatRelativeTime(log.timestamp)}
                         </p>
                       </div>
