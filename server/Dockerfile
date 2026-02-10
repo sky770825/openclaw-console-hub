@@ -5,8 +5,8 @@ WORKDIR /app
 # 複製 package.json
 COPY package*.json ./
 
-# 安裝依賴
-RUN npm ci --only=production
+# 安裝所有依賴（包含 devDependencies 才能編譯）
+RUN npm ci
 
 # 複製原始碼
 COPY . .
