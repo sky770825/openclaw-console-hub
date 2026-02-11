@@ -12,7 +12,8 @@ import {
   X,
   ChevronLeft,
   Cog,
-  Bot
+  Bot,
+  FolderKanban
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -36,6 +37,7 @@ export function useSidebarContext() {
 const navItems = [
   { path: '/', label: '儀表板', icon: LayoutDashboard },
   { path: '/cursor', label: 'OpenClaw Agent 板', icon: Bot },
+  { path: '/projects', label: '專案製作', icon: FolderKanban },
   { path: '/tasks', label: '任務看板', icon: Kanban },
   { path: '/tasks/list', label: '任務列表', icon: List },
   { path: '/runs', label: '執行紀錄', icon: Play },

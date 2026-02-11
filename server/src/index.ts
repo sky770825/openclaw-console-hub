@@ -3,14 +3,13 @@
  * 實作 docs/API-INTEGRATION.md 規格，供中控台接上後「立即執行」打此服務
  * OpenClaw v4 板：/api/openclaw/* 寫入 Supabase
  */
-import dotenv from 'dotenv';
+import './preload-dotenv.js';
 import path from 'path';
 import { spawn, execSync } from 'child_process';
-// .env 在專案根目錄（從 server/ 執行用 ../.env，從根目錄用 .env）
-dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { tasks, runs, alerts } from './store.js';
 import { runSeed } from './seed.js';
 import type { Task, Run, Alert } from './types.js';
@@ -24,8 +23,16 @@ import {
   upsertOpenClawAutomation,
   fetchOpenClawEvolutionLog,
   insertOpenClawEvolutionLog,
+  fetchOpenClawRuns,
+  fetchOpenClawRunById,
+  insertOpenClawRun,
+  updateOpenClawRun,
   fetchOpenClawAuditLogs,
   fetchOpenClawUIActions,
+  fetchOpenClawProjects,
+  upsertOpenClawProject,
+  deleteOpenClawProject,
+  type OpenClawProject,
 } from './openclawSupabase.js';
 import { hasSupabase, supabase } from './supabase.js';
 import {
@@ -34,6 +41,7 @@ import {
   openClawReviewToAlert,
   evolutionLogToRun,
   evolutionLogToLogEntry,
+  openClawRunToRun,
 } from './openclawMapper.js';
 import {
   hasN8n,
@@ -42,11 +50,370 @@ import {
   healthCheck as n8nHealthCheck,
 } from './n8nClient.js';
 
+// === 新增：Agent 選擇器和執行器 ===
+import {
+  AgentSelector,
+  AgentExecutor,
+  agentSelector,
+  agentExecutor,
+  type AgentExecutionResult,
+} from './executor-agents.js';
+
+// === 新增：工作流程引擎 ===
+import {
+  WorkflowEngine,
+  BatchWorkflowExecutor,
+  createWorkflowEngine,
+  createBatchExecutor,
+  type WorkflowGraph,
+} from './workflow-engine.js';
+
+// === 新增：防卡關機制 ===
+import {
+  AntiStuckManager,
+  antiStuckManager,
+  withRetry,
+  withTimeout,
+  DEFAULT_CONFIG,
+} from './anti-stuck.js';
+
+// === 新增：Telegram 通知 ===
+import {
+  sendTelegramMessage,
+  isTelegramConfigured,
+  notifyTaskTimeout,
+  notifyTaskRetry,
+  notifyModelFallback,
+  notifyTaskFailure,
+  notifyTaskSuccess,
+  notifyWorkflowStart,
+  notifyWorkflowComplete,
+} from './utils/telegram.js';
+
+// === 新增：WebSocket 即時推播 ===
+import { wsManager } from './websocket.js';
+import http from 'http';
+
 runSeed();
 
 const app = express();
-app.use(cors({ origin: true }));
-app.use(express.json());
+
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+type JsonObject = { [key: string]: JsonValue };
+type AgentCapability = 'read' | 'write' | 'execute' | 'interrupt';
+type AgentDecision = 'approve' | 'reject' | 'modify';
+
+interface SharedMessage {
+  id: string;
+  role: 'user' | 'supervisor' | 'cursor' | 'codex' | 'openclaw' | 'system';
+  agent?: string;
+  content: string;
+  timestamp: string;
+  metadata?: {
+    command?: JsonObject;
+    artifacts?: string[];
+  };
+}
+
+interface SharedState {
+  sessionId: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: SharedMessage[];
+  context: {
+    workingDir: string;
+    files: string[];
+    variables: Record<string, JsonValue>;
+  };
+  execution: {
+    currentAgent: string | null;
+    status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+    taskStack: string[];
+    completedTasks: string[];
+  };
+  pendingHuman?: {
+    interruptId: string;
+    reason: string;
+    options: string[];
+    deadline: string;
+    details?: JsonObject;
+  };
+}
+
+const agentCapabilities: Record<string, AgentCapability[]> = {
+  cursor_agent: ['read', 'write', 'execute', 'interrupt'],
+  codex_agent: ['read', 'write', 'execute', 'interrupt'],
+  openclaw: ['read', 'write', 'execute', 'interrupt'],
+  supervisor: ['read', 'write', 'execute', 'interrupt'],
+  human: ['read', 'write', 'execute', 'interrupt'],
+};
+
+const memorySessions = new Map<string, SharedState>();
+const memoryInterrupts = new Map<string, { sessionId: string; fromAgent: string; reason: string; details?: JsonObject; options: string[]; timeoutMinutes: number; decision?: AgentDecision; feedback?: string; resolvedAt?: string }>();
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function makeId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function ensureAgentAllowed(agentId: string, capability: AgentCapability): boolean {
+  const caps = agentCapabilities[agentId] ?? [];
+  return caps.includes(capability);
+}
+
+function safeJsonObject(v: unknown): JsonObject {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return {};
+  return v as JsonObject;
+}
+
+function createDefaultSharedState(sessionId: string): SharedState {
+  const now = nowIso();
+  return {
+    sessionId,
+    createdAt: now,
+    updatedAt: now,
+    messages: [],
+    context: {
+      workingDir: process.cwd(),
+      files: [],
+      variables: {},
+    },
+    execution: {
+      currentAgent: null,
+      status: 'idle',
+      taskStack: [],
+      completedTasks: [],
+    },
+  };
+}
+
+async function getSharedState(sessionId: string): Promise<SharedState> {
+  if (hasSupabase() && supabase) {
+    const { data } = await supabase
+      .from('openclaw_sessions')
+      .select('shared_state')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (data?.shared_state) {
+      return data.shared_state as SharedState;
+    }
+  }
+  const existing = memorySessions.get(sessionId);
+  if (existing) return existing;
+  const created = createDefaultSharedState(sessionId);
+  memorySessions.set(sessionId, created);
+  return created;
+}
+
+async function saveSharedState(session: SharedState, status: 'active' | 'paused' | 'completed' | 'failed' = 'active'): Promise<void> {
+  if (hasSupabase() && supabase) {
+    await supabase.from('openclaw_sessions').upsert({
+      id: session.sessionId,
+      shared_state: session as unknown as JsonObject,
+      status,
+      updated_at: nowIso(),
+    });
+    return;
+  }
+  memorySessions.set(session.sessionId, session);
+}
+
+async function appendCommandLog(sessionId: string, fromAgent: string, command: JsonObject): Promise<void> {
+  if (hasSupabase() && supabase) {
+    await supabase.from('openclaw_commands').insert({
+      session_id: sessionId,
+      from_agent: fromAgent,
+      command,
+    });
+  }
+}
+
+const WRITE_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim();
+const OPENCLAW_ENFORCE_WRITE_AUTH =
+  process.env.OPENCLAW_ENFORCE_WRITE_AUTH !== 'false';
+const OPENCLAW_ENFORCE_READ_AUTH =
+  process.env.OPENCLAW_ENFORCE_READ_AUTH === 'true';
+const OPENCLAW_READ_KEY = process.env.OPENCLAW_READ_KEY?.trim();
+const OPENCLAW_WRITE_KEY = process.env.OPENCLAW_WRITE_KEY?.trim();
+const OPENCLAW_ADMIN_KEY = process.env.OPENCLAW_ADMIN_KEY?.trim();
+
+const n8nAllowlist = new Set<string>();
+const allowlistEnv = process.env.N8N_WEBHOOK_ALLOWLIST;
+if (allowlistEnv) {
+  for (const host of allowlistEnv.split(',')) {
+    const h = host.trim().toLowerCase();
+    if (h) n8nAllowlist.add(h);
+  }
+}
+for (const source of [process.env.N8N_API_URL, process.env.N8N_WEBHOOK_RUN_NEXT]) {
+  if (!source) continue;
+  try {
+    const u = new URL(source);
+    if (u.hostname) n8nAllowlist.add(u.hostname.toLowerCase());
+  } catch {
+    // ignore invalid configured URL
+  }
+}
+
+function readApiKeyFromRequest(req: express.Request): string | null {
+  const headerKey = req.header('x-api-key')?.trim();
+  if (headerKey) return headerKey;
+  const auth = req.header('authorization')?.trim();
+  if (!auth) return null;
+  const match = auth.match(/^bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
+type AccessLevel = 'read' | 'write' | 'admin' | 'none';
+
+const readKeySet = new Set<string>();
+const writeKeySet = new Set<string>();
+const adminKeySet = new Set<string>();
+
+for (const key of [OPENCLAW_API_KEY, OPENCLAW_READ_KEY]) {
+  if (key) readKeySet.add(key);
+}
+for (const key of [OPENCLAW_API_KEY, OPENCLAW_WRITE_KEY]) {
+  if (key) {
+    writeKeySet.add(key);
+    readKeySet.add(key);
+  }
+}
+for (const key of [OPENCLAW_API_KEY, OPENCLAW_ADMIN_KEY]) {
+  if (key) {
+    adminKeySet.add(key);
+    writeKeySet.add(key);
+    readKeySet.add(key);
+  }
+}
+
+function requiredAccessLevel(req: express.Request): AccessLevel {
+  const path = req.path;
+  const method = req.method.toUpperCase();
+  if (
+    path === '/openclaw/restart-gateway' ||
+    path === '/n8n/trigger-webhook'
+  ) {
+    return 'admin';
+  }
+  if (OPENCLAW_ENFORCE_WRITE_AUTH && WRITE_METHODS.has(method)) {
+    return 'write';
+  }
+  if (OPENCLAW_ENFORCE_READ_AUTH) {
+    return 'read';
+  }
+  return 'none';
+}
+
+function hasConfiguredKeys(level: Exclude<AccessLevel, 'none'>): boolean {
+  if (level === 'read') return readKeySet.size > 0;
+  if (level === 'write') return writeKeySet.size > 0;
+  return adminKeySet.size > 0;
+}
+
+function isAuthorized(level: Exclude<AccessLevel, 'none'>, provided: string): boolean {
+  if (level === 'read') return readKeySet.has(provided);
+  if (level === 'write') return writeKeySet.has(provided);
+  return adminKeySet.has(provided);
+}
+
+function isPrivateIPv4(host: string): boolean {
+  const parts = host.split('.').map((p) => Number(p));
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) {
+    return false;
+  }
+  if (parts[0] === 10) return true;
+  if (parts[0] === 127) return true;
+  if (parts[0] === 169 && parts[1] === 254) return true;
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+  if (parts[0] === 192 && parts[1] === 168) return true;
+  return false;
+}
+
+function isBlockedWebhookHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase();
+  if (!normalized) return true;
+  if (n8nAllowlist.has(normalized)) return false;
+  if (normalized === 'localhost' || normalized.endsWith('.local')) return true;
+  if (normalized === '::1') return true;
+  if (isPrivateIPv4(normalized)) return true;
+  return false;
+}
+
+function validateWebhookUrl(rawUrl: unknown): { ok: true; value: string } | { ok: false; message: string } {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    return { ok: false, message: 'webhookUrl 格式錯誤' };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return { ok: false, message: 'webhookUrl 不是合法 URL' };
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return { ok: false, message: 'webhookUrl 只支援 http/https' };
+  }
+  if (isBlockedWebhookHost(parsed.hostname)) {
+    return {
+      ok: false,
+      message: 'webhookUrl 主機未在允許清單，請設定 N8N_WEBHOOK_ALLOWLIST',
+    };
+  }
+  return { ok: true, value: parsed.toString() };
+}
+
+// CORS 設定：必須在 helmet / rateLimit 之前，確保 preflight 與 429 回應都帶 CORS header
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3009',
+  'http://localhost:3011',
+  'http://localhost:5173', // Vite 預設開發端口
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3009',
+  'http://127.0.0.1:3011',
+  'http://127.0.0.1:5173',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // 允許無 origin 的請求（如 curl、Postman）
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('不允許的來源'));
+  },
+  credentials: true,
+}));
+
+// 安全中介層
+app.use(helmet());
+
+// 限流設定：開發環境放寬，每個 IP 15 分鐘內最多 1000 個請求
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  message: { message: '請求過於頻繁，請稍後再試' },
+});
+app.use(limiter);
+
+app.use(express.json({ limit: '200kb' }));
+
+app.use('/api', (req, res, next) => {
+  const level = requiredAccessLevel(req);
+  if (level === 'none') return next();
+  if (!hasConfiguredKeys(level)) {
+    return res.status(503).json({
+      message: `Server misconfigured: missing API key for ${level} access`,
+    });
+  }
+  const provided = readApiKeyFromRequest(req);
+  if (!provided || !isAuthorized(level, provided)) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  next();
+});
 
 const PORT = Number(process.env.PORT) || 3001;
 
@@ -73,20 +440,74 @@ app.get('/api/tasks/:id', async (req, res) => {
 });
 
 app.patch('/api/tasks/:id', async (req, res) => {
+  const taskId = req.params.id;
+  const body = req.body as Partial<
+    Pick<
+      Task,
+      | 'name'
+      | 'description'
+      | 'status'
+      | 'priority'
+      | 'owner'
+      | 'tags'
+      | 'scheduleType'
+      | 'scheduleExpr'
+    >
+  >;
+  // 驗證：名稱不能為空
+  if (body.name !== undefined && !body.name.trim()) {
+    return res.status(400).json({ message: '任務名稱不能為空' });
+  }
+  const now = new Date().toISOString();
+
   if (hasSupabase()) {
     const ocTasks = await fetchOpenClawTasks();
-    const oc = ocTasks.find((x) => x.id === req.params.id);
+    const oc = ocTasks.find((x) => x.id === taskId);
     if (!oc) return res.status(404).json({ message: 'Task not found' });
-    const merged = { ...oc, ...taskToOpenClawTask({ ...req.body, id: req.params.id }) };
-    const updated = await upsertOpenClawTask(merged);
-    if (!updated) return res.status(500).json({ message: 'Failed to update task' });
-    return res.json(openClawTaskToTask(updated));
+
+    // 先從 Supabase 任務轉成主應用 Task，再套用本次更新欄位
+    const currentTask = openClawTaskToTask(oc);
+    const updatedTask: Task = {
+      ...currentTask,
+      ...body,
+      updatedAt: now,
+    };
+
+    // 將更新後的 Task 轉回 OpenClawTask，並寫回 Supabase
+    const ocPayload = taskToOpenClawTask({
+      id: taskId,
+      name: updatedTask.name,
+      description: updatedTask.description,
+      status: updatedTask.status,
+      tags: updatedTask.tags,
+    });
+    const merged = { ...oc, ...ocPayload };
+    const saved = await upsertOpenClawTask(merged);
+    if (!saved) {
+      return res.status(500).json({ message: 'Failed to update task' });
+    }
+
+    // 同步更新本地 in-memory tasks
+    const localIdx = tasks.findIndex((t) => t.id === taskId);
+    if (localIdx === -1) {
+      tasks.push(updatedTask);
+    } else {
+      tasks[localIdx] = { ...tasks[localIdx], ...updatedTask };
+    }
+
+    return res.json(updatedTask);
   }
-  const idx = tasks.findIndex((x) => x.id === req.params.id);
+
+  const idx = tasks.findIndex((x) => x.id === taskId);
   if (idx === -1) return res.status(404).json({ message: 'Task not found' });
-  const now = new Date().toISOString();
-  tasks[idx] = { ...tasks[idx], ...req.body, updatedAt: now };
-  res.json(tasks[idx]);
+
+  const updatedLocal: Task = {
+    ...tasks[idx],
+    ...body,
+    updatedAt: now,
+  };
+  tasks[idx] = updatedLocal;
+  res.json(updatedLocal);
 });
 
 app.post('/api/tasks', async (req, res) => {
@@ -95,8 +516,8 @@ app.post('/api/tasks', async (req, res) => {
     const id = body.id ?? `t${Date.now()}`;
     const oc = {
       id,
-      title: body.name ?? '新任務',
-      thought: body.description ?? '',
+      title: body.name?.trim() || '新任務',
+      thought: body.description?.trim() ?? '',
       status: 'queued',
       cat: (body.tags?.[0] as string) ?? 'feature',
       progress: 0,
@@ -110,8 +531,8 @@ app.post('/api/tasks', async (req, res) => {
   const newTask: Task = {
     ...body,
     id: body.id ?? `task-${Date.now()}`,
-    name: body.name ?? '新任務',
-    description: body.description ?? '',
+    name: body.name?.trim() || '新任務',
+    description: body.description?.trim() ?? '',
     status: body.status ?? 'draft',
     tags: body.tags ?? [],
     owner: body.owner ?? '',
@@ -129,7 +550,8 @@ app.delete('/api/tasks/:id', async (req, res) => {
     const ocTasks = await fetchOpenClawTasks();
     const oc = ocTasks.find((x) => x.id === req.params.id);
     if (!oc) return res.status(404).json({ message: 'Task not found' });
-    await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
+    const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ message: 'Failed to delete task' });
     return res.status(204).send();
   }
   const idx = tasks.findIndex((x) => x.id === req.params.id);
@@ -141,9 +563,14 @@ app.delete('/api/tasks/:id', async (req, res) => {
 // ---- Runs ----
 app.get('/api/runs', async (req, res) => {
   if (hasSupabase()) {
+    const taskId = (req.query.taskId as string) || undefined;
+    const dbRuns = await fetchOpenClawRuns(100, taskId);
+    if (dbRuns.length > 0) {
+      return res.json(dbRuns.map(openClawRunToRun));
+    }
+    /* openclaw_runs 為空或表尚未建立時，fallback 到 evolution_log */
     const evLog = await fetchOpenClawEvolutionLog();
     const mapped = evLog.map((row, i) => evolutionLogToRun(row, i));
-    const taskId = req.query.taskId as string | undefined;
     const list = taskId ? mapped.filter((r) => r.taskId === taskId) : mapped;
     return res.json(list);
   }
@@ -156,6 +583,8 @@ app.get('/api/runs', async (req, res) => {
 
 app.get('/api/runs/:id', async (req, res) => {
   if (hasSupabase()) {
+    const dbRun = await fetchOpenClawRunById(req.params.id);
+    if (dbRun) return res.json(openClawRunToRun(dbRun));
     const evLog = await fetchOpenClawEvolutionLog();
     const row = evLog.find((r) => String(r.id) === req.params.id);
     if (!row) return res.status(404).json({ message: 'Run not found' });
@@ -169,6 +598,12 @@ app.get('/api/runs/:id', async (req, res) => {
 
 function createRun(task: Task): Run {
   const now = new Date().toISOString();
+  const timeoutMinutes = task.timeoutConfig?.timeoutMinutes || DEFAULT_CONFIG.timeoutMinutes;
+  const timeoutAt = new Date(Date.now() + timeoutMinutes * 60 * 1000).toISOString();
+  
+  // 選擇 Agent
+  const agentType = AgentSelector.selectAgent(task);
+  
   const run: Run = {
     id: `R-${Date.now()}`,
     taskId: task.id,
@@ -177,23 +612,268 @@ function createRun(task: Task): Run {
     startedAt: now,
     endedAt: null,
     durationMs: null,
-    inputSummary: JSON.stringify({ source: 'api', taskId: task.id }),
+    inputSummary: JSON.stringify({ 
+      source: 'api', 
+      taskId: task.id,
+      agentType,
+      timeoutMinutes,
+    }),
     outputSummary: '',
     steps: [
-      { name: 'queued', status: 'success', startedAt: now, endedAt: now },
+      { 
+        name: 'queued', 
+        status: 'success', 
+        startedAt: now, 
+        endedAt: now,
+        agentType,
+      },
       {
         name: 'started',
         status: 'running',
         startedAt: now,
-        message: '後端已接收，模擬執行中…',
+        message: `後端已接收，使用 ${agentType} Agent 執行中…`,
+        agentType,
       },
     ],
+    retryCount: 0,
+    maxRetries: task.timeoutConfig?.maxRetries || DEFAULT_CONFIG.maxRetries,
+    agentType,
+    fallbackHistory: [],
+    timeoutAt,
   };
   return run;
 }
 
-/** 模擬執行：先 queued，延遲後改 running 再 success */
+/** 模擬執行：整合防卡關機制、Agent 選擇和 Telegram 通知 */
+async function executeTaskWithAntiStuck(runId: string, task: Task): Promise<void> {
+  const run = runs.find((r) => r.id === runId);
+  if (!run) return;
+  
+  // 開始防卡關機制監控
+  antiStuckManager.startMonitoring(run, task);
+  
+  const now = new Date().toISOString();
+  run.status = 'running';
+  run.steps[1] = {
+    ...run.steps[1],
+    status: 'running',
+    message: `使用 ${run.agentType} Agent 執行中…`,
+  };
+  
+  // WebSocket: 推送任務開始
+  wsManager.broadcastProgress(runId, {
+    status: 'running',
+    step: 1,
+    totalSteps: 3,
+    message: `開始使用 ${run.agentType} Agent 執行任務`,
+    detail: `任務: ${task.name}`,
+  });
+  wsManager.broadcastLog(runId, {
+    level: 'info',
+    message: `🚀 任務執行開始 - ${task.name}`,
+  });
+  
+  if (hasSupabase()) {
+    updateOpenClawRun(runId, { 
+      status: 'running', 
+      steps: run.steps,
+    }).catch(() => {});
+  }
+  
+  try {
+    // 使用重試機制執行
+    const executeWithRetry = withRetry(
+      async () => {
+        // 實際執行 Agent
+        const result = await AgentExecutor.execute(task, run.agentType || 'openclaw');
+        return result;
+      },
+      {
+        maxRetries: run.maxRetries || DEFAULT_CONFIG.maxRetries,
+        onRetry: async (attempt, error) => {
+          console.log(`[Execute] Retry ${attempt} for run ${runId}: ${error.message}`);
+          run.retryCount = attempt;
+          run.status = 'retrying';
+          
+          // WebSocket: 推送重試訊息
+          wsManager.broadcastProgress(runId, {
+            status: 'retrying',
+            step: 1,
+            totalSteps: 3,
+            message: `第 ${attempt} 次重試...`,
+            detail: error.message,
+          });
+          wsManager.broadcastLog(runId, {
+            level: 'warn',
+            message: `⚠️ 執行失敗，進行第 ${attempt} 次重試: ${error.message}`,
+          });
+          
+          // 發送重試通知
+          await notifyTaskRetry(
+            task.name,
+            task.id,
+            runId,
+            attempt,
+            run.maxRetries || DEFAULT_CONFIG.maxRetries,
+            error.message
+          );
+          
+          // 最後一次重試嘗試模型降級
+          if (attempt === (run.maxRetries || DEFAULT_CONFIG.maxRetries)) {
+            const fallbackStrategy = task.timeoutConfig?.fallbackStrategy || DEFAULT_CONFIG.fallbackStrategy;
+            if (fallbackStrategy !== 'none') {
+              await notifyModelFallback(task.name, task.id, runId, 'Claude', 'Gemini Flash');
+              // WebSocket: 推送模型降級
+              wsManager.broadcastLog(runId, {
+                level: 'warn',
+                message: `🔄 嘗試模型降級: Claude → Gemini Flash`,
+              });
+            }
+          }
+        },
+      }
+    );
+    
+    // 使用超時機制
+    const timeoutMs = (task.timeoutConfig?.timeoutMinutes || DEFAULT_CONFIG.timeoutMinutes) * 60 * 1000;
+    const executeWithTimeout = withTimeout(executeWithRetry, timeoutMs);
+    
+    const result = await executeWithTimeout();
+    
+    // 執行成功
+    const end = new Date().toISOString();
+    run.status = 'success';
+    run.endedAt = end;
+    run.durationMs = Math.round(
+      new Date(end).getTime() - new Date(run.startedAt).getTime()
+    );
+    run.steps[1] = {
+      ...run.steps[1],
+      status: 'success',
+      endedAt: end,
+      message: result.output || '執行完成',
+    };
+    run.steps.push({
+      name: 'done',
+      status: 'success',
+      startedAt: end,
+      endedAt: end,
+      message: `使用 ${run.agentType} Agent 執行成功`,
+      agentType: run.agentType,
+    });
+    
+    // WebSocket: 推送執行成功
+    wsManager.broadcastProgress(runId, {
+      status: 'success',
+      step: 3,
+      totalSteps: 3,
+      message: '✅ 任務執行成功',
+      detail: `耗時 ${(run.durationMs / 1000).toFixed(1)} 秒`,
+    });
+    wsManager.broadcastLog(runId, {
+      level: 'success',
+      message: `✅ 任務完成 - ${task.name} (${(run.durationMs / 1000).toFixed(1)}s)`,
+    });
+    wsManager.broadcastRunUpdate(runId, {
+      status: 'success',
+      endedAt: end,
+      durationMs: run.durationMs,
+      steps: run.steps,
+    });
+    
+    // 停止監控
+    antiStuckManager.stopMonitoring(runId);
+    
+    // 發送成功通知
+    await notifyTaskSuccess(task.name, task.id, runId, run.durationMs);
+    
+    if (hasSupabase()) {
+      await updateOpenClawRun(runId, {
+        status: 'success',
+        ended_at: end,
+        duration_ms: run.durationMs,
+        output_summary: result.output || '執行完成',
+        steps: run.steps,
+      });
+    }
+  } catch (error) {
+    // 執行失敗
+    const end = new Date().toISOString();
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    run.status = 'failed';
+    run.endedAt = end;
+    run.durationMs = Math.round(
+      new Date(end).getTime() - new Date(run.startedAt).getTime()
+    );
+    run.error = {
+      code: 'EXECUTION_FAILED',
+      message: errorMessage,
+      retryable: run.retryCount !== undefined && run.retryCount < (run.maxRetries || 0),
+    };
+    run.steps[1] = {
+      ...run.steps[1],
+      status: 'failed',
+      endedAt: end,
+      message: errorMessage,
+    };
+    
+    // WebSocket: 推送執行失敗
+    wsManager.broadcastProgress(runId, {
+      status: 'failed',
+      step: 2,
+      totalSteps: 3,
+      message: '❌ 任務執行失敗',
+      detail: errorMessage,
+    });
+    wsManager.broadcastLog(runId, {
+      level: 'error',
+      message: `❌ 任務失敗 - ${task.name}: ${errorMessage}`,
+    });
+    wsManager.broadcastRunUpdate(runId, {
+      status: 'failed',
+      endedAt: end,
+      durationMs: run.durationMs,
+      error: run.error,
+      steps: run.steps,
+    });
+    
+    // 停止監控
+    antiStuckManager.stopMonitoring(runId);
+    
+    // 發送失敗通知
+    await notifyTaskFailure(task.name, task.id, runId, errorMessage, run.retryCount || 0);
+    
+    if (hasSupabase()) {
+      await updateOpenClawRun(runId, {
+        status: 'failed',
+        ended_at: end,
+        duration_ms: run.durationMs,
+        output_summary: errorMessage,
+        steps: run.steps,
+      });
+    }
+  }
+}
+
+/** 向後相容：模擬執行函數 */
 function simulateExecution(runId: string) {
+  const run = runs.find((r) => r.id === runId);
+  if (!run) return;
+  
+  const task = tasks.find((t) => t.id === run.taskId);
+  if (!task) {
+    // 回退到舊的模擬執行
+    legacySimulateExecution(runId);
+    return;
+  }
+  
+  // 使用新的防卡關機制執行
+  executeTaskWithAntiStuck(runId, task).catch(console.error);
+}
+
+/** 舊版模擬執行（向後相容） */
+function legacySimulateExecution(runId: string) {
   const run = runs.find((r) => r.id === runId);
   if (!run) return;
   const now = new Date().toISOString();
@@ -203,6 +883,20 @@ function simulateExecution(runId: string) {
     status: 'running',
     message: '後端模擬執行中…',
   };
+  
+  // WebSocket: 推送模擬執行開始
+  wsManager.broadcastProgress(runId, {
+    status: 'running',
+    step: 1,
+    totalSteps: 2,
+    message: '後端模擬執行中…',
+  });
+  wsManager.broadcastLog(runId, {
+    level: 'info',
+    message: '🚀 模擬執行開始',
+  });
+  
+  if (hasSupabase()) updateOpenClawRun(runId, { status: 'running', steps: run.steps }).catch(() => {});
   setTimeout(() => {
     const end = new Date().toISOString();
     run.status = 'success';
@@ -223,6 +917,35 @@ function simulateExecution(runId: string) {
       endedAt: end,
       message: 'OpenClaw 後端模擬執行成功',
     });
+    
+    // WebSocket: 推送模擬執行完成
+    wsManager.broadcastProgress(runId, {
+      status: 'success',
+      step: 2,
+      totalSteps: 2,
+      message: '✅ 模擬執行完成',
+      detail: `耗時 ${(run.durationMs / 1000).toFixed(1)} 秒`,
+    });
+    wsManager.broadcastLog(runId, {
+      level: 'success',
+      message: `✅ 模擬執行完成 (${(run.durationMs / 1000).toFixed(1)}s)`,
+    });
+    wsManager.broadcastRunUpdate(runId, {
+      status: 'success',
+      endedAt: end,
+      durationMs: run.durationMs,
+      steps: run.steps,
+    });
+    
+    if (hasSupabase()) {
+      updateOpenClawRun(runId, {
+        status: 'success',
+        ended_at: end,
+        duration_ms: run.durationMs,
+        output_summary: '模擬完成',
+        steps: run.steps,
+      }).catch(() => {});
+    }
   }, 1500);
 }
 
@@ -298,8 +1021,69 @@ async function getTaskForRun(taskId: string): Promise<Task | null> {
   return tasks.find((t) => t.id === taskId) ?? null;
 }
 
+function formatRunTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString('zh-TW', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  } catch {
+    return iso;
+  }
+}
+
+async function executeNextQueuedTask(): Promise<
+  | { ok: true; run: Run; taskId: string }
+  | { ok: false; status: number; message: string }
+> {
+  let list: { id: string; status: string }[] = [];
+  const ocTasks = await fetchOpenClawTasks().catch(() => []);
+  if (ocTasks.length > 0) {
+    list = ocTasks;
+  } else if (tasks.length > 0) {
+    list = tasks.map((t) => ({
+      id: t.id,
+      status: t.status === 'running' ? 'in_progress' : t.status === 'done' ? 'done' : 'queued',
+    }));
+  }
+  const next = list.find((t) => t.status === 'queued' || t.status === 'ready');
+  if (!next) {
+    return { ok: false, status: 409, message: 'No queued task to run' };
+  }
+  const task = await getTaskForRun(next.id);
+  if (!task) return { ok: false, status: 404, message: 'Task not found' };
+
+  let run = createRun(task);
+  if (hasSupabase()) {
+    const inserted = await insertOpenClawRun({
+      task_id: task.id,
+      task_name: task.name,
+      status: 'queued',
+      started_at: run.startedAt,
+      input_summary: typeof run.inputSummary === 'string' ? run.inputSummary : JSON.stringify(run.inputSummary ?? {}),
+      steps: run.steps,
+    });
+    if (inserted) run = { ...run, id: inserted.id };
+  }
+  runs.unshift(run);
+  const now = run.startedAt;
+  const idx = tasks.findIndex((t) => t.id === task.id);
+  if (idx !== -1) {
+    tasks[idx].lastRunStatus = 'queued';
+    tasks[idx].lastRunAt = now;
+    tasks[idx].updatedAt = now;
+  }
+  simulateExecution(run.id);
+  return { ok: true, run, taskId: task.id };
+}
+
 app.get('/api/openclaw/tasks', async (_req, res) => {
   try {
+    if (!hasSupabase()) {
+      console.error('[OpenClaw] GET /api/openclaw/tasks: Supabase not connected');
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
     let data = await fetchOpenClawTasks();
     // 若 Supabase 空，fallback 到 in-memory 任務（讓 OpenClaw 可讀取主應用任務）
     if ((!data || data.length === 0) && tasks.length > 0) {
@@ -315,54 +1099,143 @@ app.get('/api/openclaw/tasks', async (_req, res) => {
         thought: t.description,
       }));
     }
-    res.json(data ?? []);
+    // 回傳給中控板：含 Task 欄位 + 看板用 title/subs/progress/cat（供多任務板同步）
+    const mapped = (data ?? []).map((oc) => ({
+      ...openClawTaskToTask(oc),
+      title: oc.title,
+      subs: oc.subs ?? [],
+      progress: oc.progress,
+      cat: oc.cat,
+      thought: oc.thought,
+      from_review_id: oc.fromR ?? null,
+    }));
+    res.json(mapped);
   } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to fetch tasks' });
   }
 });
 
 app.post('/api/openclaw/tasks', async (req, res) => {
   try {
-    const task = await upsertOpenClawTask(req.body);
-    if (!task) return res.status(500).json({ message: 'Failed to save task' });
-    res.status(201).json(task);
+    if (!hasSupabase()) {
+      console.error('[OpenClaw] POST /api/openclaw/tasks: Supabase not connected');
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    // 前端送來 Task 格式，可帶 subs/title（看板用）
+    const body = req.body as Partial<Task> & { id?: string; subs?: { t: string; d: boolean }[]; title?: string };
+    const id = body.id ?? `t${Date.now()}`;
+    const ocPayload = {
+      ...taskToOpenClawTask({
+        id,
+        name: body.name ?? body.title ?? '新任務',
+        description: body.description ?? '',
+        status: body.status ?? 'draft',
+        tags: body.tags ?? ['feature'],
+      }),
+      title: body.title ?? body.name ?? '新任務',
+      subs: Array.isArray(body.subs) ? body.subs : [],
+    };
+    const task = await upsertOpenClawTask(ocPayload);
+    if (!task) {
+      console.error('[OpenClaw] POST /api/openclaw/tasks: upsert failed');
+      return res.status(500).json({ message: 'Failed to save task' });
+    }
+    res.status(201).json({
+      ...openClawTaskToTask(task),
+      title: task.title,
+      subs: task.subs ?? [],
+      progress: task.progress,
+      cat: task.cat,
+      thought: task.thought,
+      from_review_id: task.fromR ?? null,
+    });
   } catch (e) {
+    console.error('[OpenClaw] POST /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to save task' });
   }
 });
 
 app.patch('/api/openclaw/tasks/:id', async (req, res) => {
   try {
-    const task = await upsertOpenClawTask({ ...req.body, id: req.params.id });
-    if (!task) return res.status(500).json({ message: 'Failed to update task' });
-    res.json(task);
+    if (!hasSupabase()) {
+      console.error('[OpenClaw] PATCH /api/openclaw/tasks: Supabase not connected');
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    // 先取得現有任務
+    const ocTasks = await fetchOpenClawTasks();
+    const existing = ocTasks.find((x) => x.id === req.params.id);
+    if (!existing) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    const body = req.body as Partial<Task> & { subs?: { t: string; d: boolean }[]; title?: string };
+    const currentTask = openClawTaskToTask(existing);
+    const updatedTask: Task = {
+      ...currentTask,
+      ...body,
+      id: req.params.id,
+    };
+    const ocPayload = {
+      ...taskToOpenClawTask(updatedTask),
+      title: body.title ?? existing.title,
+      subs: Array.isArray(body.subs) ? body.subs : existing.subs,
+    };
+    const task = await upsertOpenClawTask(ocPayload);
+    if (!task) {
+      console.error('[OpenClaw] PATCH /api/openclaw/tasks: upsert failed');
+      return res.status(500).json({ message: 'Failed to update task' });
+    }
+    res.json({
+      ...openClawTaskToTask(task),
+      title: task.title,
+      subs: task.subs ?? [],
+      progress: task.progress,
+      cat: task.cat,
+      thought: task.thought,
+      from_review_id: task.fromR ?? null,
+    });
   } catch (e) {
+    console.error('[OpenClaw] PATCH /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to update task' });
   }
 });
 
+// 刪除任務：永久刪除 DB 列，無法回復（no restore）
 app.delete('/api/openclaw/tasks/:id', async (req, res) => {
   try {
-    if (hasSupabase() && supabase) {
-      const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
-      if (error) return res.status(500).json({ message: 'Failed to delete task' });
-      return res.status(204).send();
+    if (!hasSupabase() || !supabase) {
+      console.error('[OpenClaw] DELETE /api/openclaw/tasks: Supabase not connected');
+      return res.status(503).json({ message: 'Supabase not connected' });
     }
-    const idx = tasks.findIndex((t) => t.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ message: 'Task not found' });
-    tasks.splice(idx, 1);
-    res.status(204).send();
+    const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
+    if (error) {
+      console.error('[OpenClaw] DELETE /api/openclaw/tasks error:', error.message);
+      return res.status(500).json({ message: 'Failed to delete task' });
+    }
+    return res.status(204).send();
   } catch (e) {
+    console.error('[OpenClaw] DELETE /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to delete task' });
   }
 });
 
-// OpenClaw 執行任務（與 /api/tasks/:id/run 相同邏輯）
+// OpenClaw 執行任務（與 /api/tasks/:id/run 相同邏輯；有 Supabase 時寫入 openclaw_runs）
 app.post('/api/openclaw/tasks/:id/run', async (req, res) => {
   const task = await getTaskForRun(req.params.id);
   if (!task)
     return res.status(404).json({ message: 'Task not found' });
-  const run = createRun(task);
+  let run = createRun(task);
+  if (hasSupabase()) {
+    const inserted = await insertOpenClawRun({
+      task_id: task.id,
+      task_name: task.name,
+      status: 'queued',
+      started_at: run.startedAt,
+      input_summary: typeof run.inputSummary === 'string' ? run.inputSummary : JSON.stringify(run.inputSummary ?? {}),
+      steps: run.steps,
+    });
+    if (inserted) run = { ...run, id: inserted.id };
+  }
   runs.unshift(run);
   const now = run.startedAt;
   const idx = tasks.findIndex((t) => t.id === task.id);
@@ -377,33 +1250,9 @@ app.post('/api/openclaw/tasks/:id/run', async (req, res) => {
 
 // 自動化：執行第一個 queued 任務（供 cron / n8n 呼叫）
 app.post('/api/openclaw/run-next', async (_req, res) => {
-  let list: { id: string; status: string }[] = [];
-  const ocTasks = await fetchOpenClawTasks().catch(() => []);
-  if (ocTasks.length > 0) {
-    list = ocTasks;
-  } else if (tasks.length > 0) {
-    list = tasks.map((t) => ({
-      id: t.id,
-      status: t.status === 'running' ? 'in_progress' : t.status === 'done' ? 'done' : 'queued',
-    }));
-  }
-  const next = list.find((t) => t.status === 'queued' || t.status === 'ready');
-  if (!next) {
-    return res.json({ ok: false, message: 'No queued task to run' });
-  }
-  const task = await getTaskForRun(next.id);
-  if (!task) return res.status(404).json({ message: 'Task not found' });
-  const run = createRun(task);
-  runs.unshift(run);
-  const now = run.startedAt;
-  const idx = tasks.findIndex((t) => t.id === task.id);
-  if (idx !== -1) {
-    tasks[idx].lastRunStatus = 'queued';
-    tasks[idx].lastRunAt = now;
-    tasks[idx].updatedAt = now;
-  }
-  simulateExecution(run.id);
-  res.status(201).json({ run, taskId: task.id });
+  const result = await executeNextQueuedTask();
+  if (!result.ok) return res.status(result.status).json({ ok: false, message: result.message });
+  res.status(201).json({ run: result.run, taskId: result.taskId });
 });
 
 app.get('/api/openclaw/reviews', async (_req, res) => {
@@ -472,6 +1321,147 @@ app.patch('/api/openclaw/automations/:id', async (req, res) => {
   }
 });
 
+app.post('/api/openclaw/automations/:id/run', async (req, res) => {
+  try {
+    const list = await fetchOpenClawAutomations();
+    const automation = list.find((a) => a.id === req.params.id);
+    if (!automation) return res.status(404).json({ ok: false, message: 'Automation not found' });
+
+    const nowIso = new Date().toISOString();
+    const runLabel = formatRunTime(nowIso);
+    const nextRuns = (automation.runs ?? 0) + 1;
+    let nextHealth = Math.min(100, (automation.health ?? 100) + 1);
+    let mode: 'webhook' | 'run-next' = 'run-next';
+    let resultPayload: unknown = null;
+    let runInfo: Run | null = null;
+    let taskId: string | null = null;
+    let createdRunId: string | null = null;
+
+    const candidateUrl = req.body?.webhookUrl || process.env.N8N_WEBHOOK_RUN_NEXT;
+    if (candidateUrl) {
+      const checked = validateWebhookUrl(candidateUrl);
+      if (!checked.ok) return res.status(400).json({ ok: false, message: checked.message });
+      mode = 'webhook';
+      try {
+        resultPayload = await triggerWebhook(checked.value, {
+          source: 'openclaw-automation',
+          automationId: automation.id,
+          automationName: automation.name,
+          chain: automation.chain,
+          data: req.body?.data ?? null,
+        });
+        // webhook 模式成功時，也寫入一筆 run trace（以 automation 為 task）
+        if (hasSupabase()) {
+          try {
+            const row = await insertOpenClawRun({
+              task_id: automation.id,
+              task_name: automation.name,
+              status: 'success',
+              started_at: nowIso,
+              input_summary: JSON.stringify({
+                mode,
+                automationId: automation.id,
+                data: req.body?.data ?? null,
+              }).slice(0, 4000),
+              steps: [
+                {
+                  name: 'webhook',
+                  status: 'success',
+                  startedAt: nowIso,
+                  endedAt: nowIso,
+                  message: 'Webhook 呼叫成功',
+                },
+              ],
+            });
+            if (row) createdRunId = row.id;
+          } catch (e) {
+            console.warn('[OpenClaw] insert automation run trace failed:', e);
+          }
+        }
+      } catch (e) {
+        // 基於錯誤訊息做最小分類：4xx / 5xx / network / unknown
+        const msg = String(e);
+        let errorType: '4xx' | '5xx' | 'network' | 'unknown' = 'unknown';
+        const m = msg.match(/Webhook 觸發失敗\\s+(\\d{3})/);
+        if (m) {
+          const code = Number(m[1]);
+          if (code >= 400 && code < 500) errorType = '4xx';
+          else if (code >= 500 && code < 600) errorType = '5xx';
+        } else if (/fetch failed|ECONN|ENOTFOUND|ETIMEDOUT/i.test(msg)) {
+          errorType = 'network';
+        }
+
+        nextHealth = Math.max(0, (automation.health ?? 100) - 5);
+        const failedAutomation = await upsertOpenClawAutomation({
+          ...automation,
+          runs: nextRuns,
+          health: nextHealth,
+          lastRun: runLabel,
+        });
+        // 失敗也寫一筆 run trace，標記為 failed
+        if (hasSupabase()) {
+          try {
+            await insertOpenClawRun({
+              task_id: automation.id,
+              task_name: automation.name,
+              status: 'failed',
+              started_at: nowIso,
+              input_summary: JSON.stringify({
+                mode,
+                automationId: automation.id,
+                data: req.body?.data ?? null,
+              }).slice(0, 4000),
+              steps: [
+                {
+                  name: 'webhook',
+                  status: 'failed',
+                  startedAt: nowIso,
+                  endedAt: nowIso,
+                  message: msg,
+                },
+              ],
+            });
+          } catch (err) {
+            console.warn('[OpenClaw] insert failed automation run trace failed:', err);
+          }
+        }
+        return res.status(502).json({
+          ok: false,
+          mode,
+          message: msg,
+          errorType,
+          automation: failedAutomation ?? { ...automation, runs: nextRuns, health: nextHealth, lastRun: runLabel },
+        });
+      }
+    } else {
+      const nextResult = await executeNextQueuedTask();
+      if (!nextResult.ok) {
+        return res.status(nextResult.status).json({ ok: false, mode, message: nextResult.message });
+      }
+      runInfo = nextResult.run;
+      taskId = nextResult.taskId;
+    }
+
+    const updatedAutomation = await upsertOpenClawAutomation({
+      ...automation,
+      runs: nextRuns,
+      health: nextHealth,
+      lastRun: runLabel,
+    });
+
+    res.status(201).json({
+      ok: true,
+      mode,
+      automation: updatedAutomation ?? { ...automation, runs: nextRuns, health: nextHealth, lastRun: runLabel },
+      run: runInfo ?? (createdRunId ? { id: createdRunId } : undefined),
+      taskId,
+      result: resultPayload,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: 'Failed to run automation' });
+  }
+});
+
 app.get('/api/openclaw/evolution-log', async (_req, res) => {
   try {
     const data = await fetchOpenClawEvolutionLog();
@@ -497,6 +1487,533 @@ app.get('/api/openclaw/ui-actions', async (_req, res) => {
     res.json(data);
   } catch (e) {
     res.status(500).json({ message: 'Failed to fetch ui actions' });
+  }
+});
+
+app.post('/api/openclaw/command', async (req, res) => {
+  try {
+    const body = req.body as {
+      sessionId?: string;
+      from?: string;
+      command?: {
+        update?: {
+          messages?: Array<{ role?: string; agent?: string; content?: string; metadata?: JsonObject }>;
+          artifacts?: {
+            files?: string[];
+            data?: JsonObject;
+          };
+          taskResult?: {
+            status?: 'success' | 'failed' | 'needs_review';
+            output?: string;
+            error?: string | null;
+          };
+        };
+        goto?: string;
+      };
+    };
+    const sessionId = body.sessionId?.trim();
+    const from = body.from?.trim();
+    const command = body.command;
+    if (!sessionId || !from || !command) {
+      return res.status(400).json({ ok: false, message: 'sessionId/from/command 必填' });
+    }
+    if (!ensureAgentAllowed(from, 'write')) {
+      return res.status(403).json({ ok: false, message: `Agent ${from} 沒有 write 權限` });
+    }
+
+    const session = await getSharedState(sessionId);
+    const now = nowIso();
+    const update = command.update ?? {};
+    const messages = Array.isArray(update.messages) ? update.messages : [];
+    const artifacts = update.artifacts ?? {};
+    const taskResult = update.taskResult ?? {};
+
+    const normalizedMessages: SharedMessage[] =
+      messages.length > 0
+        ? messages.map((m) => ({
+            id: makeId('msg'),
+            role: (m.role as SharedMessage['role']) || 'system',
+            agent: m.agent,
+            content: m.content ?? '',
+            timestamp: now,
+            metadata: m.metadata
+              ? { command: safeJsonObject(m.metadata) }
+              : undefined,
+          }))
+        : [{
+            id: makeId('msg'),
+            role: 'system',
+            agent: from,
+            content: 'Agent command received',
+            timestamp: now,
+            metadata: {
+              command: safeJsonObject(command as unknown),
+              artifacts: Array.isArray(artifacts.files) ? artifacts.files : [],
+            },
+          }];
+
+    const nextFiles = new Set([...(session.context.files ?? []), ...((Array.isArray(artifacts.files) ? artifacts.files : []).filter(Boolean))]);
+    const nextVariables = {
+      ...(session.context.variables ?? {}),
+      ...(safeJsonObject(artifacts.data)),
+      lastTaskResult: safeJsonObject(taskResult),
+      lastGoto: command.goto ?? 'supervisor',
+    };
+
+    const executionStatus: SharedState['execution']['status'] =
+      taskResult.status === 'failed'
+        ? 'failed'
+        : taskResult.status === 'success'
+          ? 'completed'
+          : session.execution.status === 'paused'
+            ? 'paused'
+            : 'running';
+
+    const updated: SharedState = {
+      ...session,
+      updatedAt: now,
+      messages: [...session.messages, ...normalizedMessages],
+      context: {
+        ...session.context,
+        files: [...nextFiles],
+        variables: nextVariables,
+      },
+      execution: {
+        ...session.execution,
+        currentAgent: from,
+        status: executionStatus,
+      },
+    };
+
+    const goto = command.goto || 'supervisor';
+    const next =
+      goto === 'supervisor'
+        ? {
+            agent: 'supervisor',
+            task: '等待 supervisor 派工',
+            context: {
+              previousAgent: from,
+              artifacts: {
+                files: Array.isArray(artifacts.files) ? artifacts.files : [],
+                data: safeJsonObject(artifacts.data),
+              },
+            },
+          }
+        : {
+            agent: goto,
+            task: '依照 supervisor 指示繼續執行',
+            context: {
+              previousAgent: from,
+              artifacts: {
+                files: Array.isArray(artifacts.files) ? artifacts.files : [],
+                data: safeJsonObject(artifacts.data),
+              },
+            },
+          };
+
+    await saveSharedState(updated, executionStatus === 'failed' ? 'failed' : executionStatus === 'paused' ? 'paused' : executionStatus === 'completed' ? 'completed' : 'active');
+    await appendCommandLog(sessionId, from, safeJsonObject(command as unknown));
+
+    res.json({ ok: true, next });
+  } catch (e) {
+    console.error('[OpenClaw] POST /api/openclaw/command error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to process command' });
+  }
+});
+
+app.post('/api/openclaw/interrupt', async (req, res) => {
+  try {
+    const body = req.body as {
+      sessionId?: string;
+      from?: string;
+      reason?: string;
+      details?: JsonObject;
+      options?: string[];
+      timeoutMinutes?: number;
+    };
+    const sessionId = body.sessionId?.trim();
+    const from = body.from?.trim();
+    const reason = body.reason?.trim();
+    const options = Array.isArray(body.options) && body.options.length > 0 ? body.options : ['approve', 'reject', 'modify'];
+    const timeoutMinutes = Number.isFinite(body.timeoutMinutes) ? Math.max(1, Number(body.timeoutMinutes)) : 30;
+    if (!sessionId || !from || !reason) {
+      return res.status(400).json({ ok: false, message: 'sessionId/from/reason 必填' });
+    }
+    if (!ensureAgentAllowed(from, 'interrupt')) {
+      return res.status(403).json({ ok: false, message: `Agent ${from} 沒有 interrupt 權限` });
+    }
+
+    const interruptId = makeId('int');
+    const session = await getSharedState(sessionId);
+    const now = nowIso();
+    const deadline = new Date(Date.now() + timeoutMinutes * 60_000).toISOString();
+    const updated: SharedState = {
+      ...session,
+      updatedAt: now,
+      execution: {
+        ...session.execution,
+        status: 'paused',
+      },
+      pendingHuman: {
+        interruptId,
+        reason,
+        options,
+        deadline,
+        details: safeJsonObject(body.details),
+      },
+      messages: [
+        ...session.messages,
+        {
+          id: makeId('msg'),
+          role: 'system',
+          agent: from,
+          content: `Interrupt requested: ${reason}`,
+          timestamp: now,
+          metadata: {
+            artifacts: session.context.files,
+          },
+        },
+      ],
+    };
+
+    await saveSharedState(updated, 'paused');
+    await appendCommandLog(sessionId, from, {
+      type: 'interrupt_request',
+      interruptId,
+      reason,
+      options,
+      timeoutMinutes,
+    });
+
+    if (hasSupabase() && supabase) {
+      await supabase.from('openclaw_interrupts').insert({
+        id: interruptId,
+        session_id: sessionId,
+        from_agent: from,
+        reason,
+        decision: null,
+      });
+    } else {
+      memoryInterrupts.set(interruptId, {
+        sessionId,
+        fromAgent: from,
+        reason,
+        details: safeJsonObject(body.details),
+        options,
+        timeoutMinutes,
+      });
+    }
+
+    res.status(201).json({ ok: true, interruptId, deadline, options });
+  } catch (e) {
+    console.error('[OpenClaw] POST /api/openclaw/interrupt error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to create interrupt' });
+  }
+});
+
+app.post('/api/openclaw/resume', async (req, res) => {
+  try {
+    const body = req.body as {
+      sessionId?: string;
+      interruptId?: string;
+      decision?: AgentDecision;
+      feedback?: string;
+    };
+    const sessionId = body.sessionId?.trim();
+    const interruptId = body.interruptId?.trim();
+    const decision = body.decision;
+    const feedback = body.feedback?.trim();
+    if (!sessionId || !interruptId || !decision) {
+      return res.status(400).json({ ok: false, message: 'sessionId/interruptId/decision 必填' });
+    }
+    if (!['approve', 'reject', 'modify'].includes(decision)) {
+      return res.status(400).json({ ok: false, message: 'decision 僅允許 approve/reject/modify' });
+    }
+
+    const session = await getSharedState(sessionId);
+    if (!session.pendingHuman || session.pendingHuman.interruptId !== interruptId) {
+      return res.status(404).json({ ok: false, message: 'Interrupt not found in session' });
+    }
+
+    const now = nowIso();
+    const status: SharedState['execution']['status'] = decision === 'reject' ? 'failed' : 'running';
+    const updated: SharedState = {
+      ...session,
+      updatedAt: now,
+      pendingHuman: undefined,
+      execution: {
+        ...session.execution,
+        status,
+      },
+      messages: [
+        ...session.messages,
+        {
+          id: makeId('msg'),
+          role: 'system',
+          agent: 'human',
+          content: `Interrupt resolved: ${decision}${feedback ? ` (${feedback})` : ''}`,
+          timestamp: now,
+        },
+      ],
+    };
+
+    await saveSharedState(updated, status === 'failed' ? 'failed' : 'active');
+    await appendCommandLog(sessionId, 'human', {
+      type: 'interrupt_resolved',
+      interruptId,
+      decision,
+      feedback: feedback ?? null,
+    });
+
+    if (hasSupabase() && supabase) {
+      await supabase
+        .from('openclaw_interrupts')
+        .update({
+          decision,
+          decided_by: 'human',
+          resolved_at: now,
+        })
+        .eq('id', interruptId)
+        .eq('session_id', sessionId);
+    } else {
+      const row = memoryInterrupts.get(interruptId);
+      if (row) {
+        row.decision = decision;
+        row.feedback = feedback;
+        row.resolvedAt = now;
+      }
+    }
+
+    res.json({
+      ok: true,
+      next: {
+        agent: 'supervisor',
+        task: decision === 'approve' ? '繼續執行原任務' : decision === 'modify' ? '依 feedback 調整後再執行' : '任務終止，等待重新派工',
+        context: {
+          interruptId,
+          decision,
+          feedback: feedback ?? null,
+        },
+      },
+    });
+  } catch (e) {
+    console.error('[OpenClaw] POST /api/openclaw/resume error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to resume session' });
+  }
+});
+
+// ---- Agent Protocol 查詢端點 ----
+
+// 取得單一 Session（SharedState + DB 狀態）
+app.get('/api/openclaw/sessions/:id', async (req, res) => {
+  try {
+    const sessionId = req.params.id;
+    // SharedState（記憶體 or Supabase shared_state）
+    const state = await getSharedState(sessionId);
+
+    // DB metadata（若有 Supabase）
+    let meta: { status?: string; createdAt?: string; updatedAt?: string } | null = null;
+    if (hasSupabase() && supabase) {
+      const { data } = await supabase
+        .from('openclaw_sessions')
+        .select('status, created_at, updated_at')
+        .eq('id', sessionId)
+        .maybeSingle();
+      if (data) {
+        meta = {
+          status: (data as any).status ?? undefined,
+          createdAt: (data as any).created_at ?? undefined,
+          updatedAt: (data as any).updated_at ?? undefined,
+        };
+      }
+    }
+
+    res.json({
+      id: state.sessionId,
+      status: meta?.status ?? 'active',
+      sharedState: state,
+      meta,
+    });
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/sessions/:id error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch session' });
+  }
+});
+
+// 取得 Session 的 Command 日誌
+app.get('/api/openclaw/sessions/:id/commands', async (req, res) => {
+  try {
+    const sessionId = req.params.id;
+    if (hasSupabase() && supabase) {
+      const { data, error } = await supabase
+        .from('openclaw_commands')
+        .select('id, session_id, from_agent, command, created_at')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) {
+        console.error('[OpenClaw] fetch openclaw_commands error:', error.message);
+        return res.status(500).json({ ok: false, message: 'Failed to fetch commands' });
+      }
+      return res.json(
+        (data ?? []).map((row: any) => ({
+          id: row.id,
+          sessionId: row.session_id,
+          from: row.from_agent,
+          command: row.command,
+          createdAt: row.created_at,
+        }))
+      );
+    }
+    // 無 Supabase 時僅回空陣列（Command 僅寫入 DB）
+    return res.json([]);
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/sessions/:id/commands error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch commands' });
+  }
+});
+
+// 取得 Session 的 Interrupt 記錄
+app.get('/api/openclaw/sessions/:id/interrupts', async (req, res) => {
+  try {
+    const sessionId = req.params.id;
+    if (hasSupabase() && supabase) {
+      const { data, error } = await supabase
+        .from('openclaw_interrupts')
+        .select('id, session_id, from_agent, reason, decision, decided_by, created_at, resolved_at')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) {
+        console.error('[OpenClaw] fetch openclaw_interrupts error:', error.message);
+        return res.status(500).json({ ok: false, message: 'Failed to fetch interrupts' });
+      }
+      return res.json(
+        (data ?? []).map((row: any) => ({
+          id: row.id,
+          sessionId: row.session_id,
+          from: row.from_agent,
+          reason: row.reason,
+          decision: row.decision,
+          decidedBy: row.decided_by,
+          createdAt: row.created_at,
+          resolvedAt: row.resolved_at,
+        }))
+      );
+    }
+    // fallback：使用記憶體中的中斷狀態
+    const rows: Array<{
+      id: string;
+      sessionId: string;
+      from: string;
+      reason: string;
+      decision?: AgentDecision;
+      feedback?: string;
+      createdAt: string;
+      resolvedAt?: string;
+    }> = [];
+    for (const [id, row] of memoryInterrupts.entries()) {
+      if (row.sessionId !== sessionId) continue;
+      rows.push({
+        id,
+        sessionId: row.sessionId,
+        from: row.fromAgent,
+        reason: row.reason,
+        decision: row.decision,
+        feedback: row.feedback,
+        createdAt: '', // 僅記憶體，不追蹤時間
+        resolvedAt: row.resolvedAt,
+      });
+    }
+    return res.json(rows);
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/sessions/:id/interrupts error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch interrupts' });
+  }
+});
+
+// ---- Board Config（中控板單一資料源，供多任務板同步）----
+const BOARD_CONFIG = {
+  apiEndpoints: [
+    { name: '任務列表', method: 'GET', path: '/api/tasks', auth: 'user+', authDesc: '登入用戶或以上（JWT）', desc: '取得任務列表', rateLimit: '100/min', status: 'live', storage: 'Supabase · tasks' },
+    { name: '建立任務', method: 'POST', path: '/api/tasks', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '建立新任務', rateLimit: '30/min', status: 'live', storage: 'Supabase · tasks' },
+    { name: '更新任務進度', method: 'PATCH', path: '/api/tasks/:id/progress', auth: 'agent', authDesc: 'OpenClaw Agent 專用（Bearer Token）', desc: 'Agent 回報任務進度、子任務完成狀態', rateLimit: '60/min', status: 'live', storage: 'Supabase · tasks' },
+    { name: '審核列表', method: 'GET', path: '/api/reviews', auth: 'user+', authDesc: '登入用戶或以上（JWT）', desc: '取得待審核/已批准項目', rateLimit: '100/min', status: 'live', storage: 'Supabase · reviews' },
+    { name: '批准審核', method: 'POST', path: '/api/reviews/:id/approve', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '批准審核項目，寫入 reviews.status=approved', rateLimit: '20/min', status: 'live', storage: 'Supabase · reviews' },
+    { name: '駁回審核', method: 'POST', path: '/api/reviews/:id/reject', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '駁回審核項目，寫入 reviews.status=rejected', rateLimit: '20/min', status: 'live', storage: 'Supabase · reviews' },
+    { name: 'OpenClaw Webhook', method: 'POST', path: '/api/webhook/openclaw', auth: 'api_key', authDesc: '請求需帶 X-API-Key 或 Authorization Bearer', desc: 'n8n 接收 Agent 結果後呼叫，寫入 tasks/reviews', rateLimit: '200/min', status: 'live', storage: 'Supabase · tasks, reviews' },
+    { name: 'Telegram Webhook', method: 'POST', path: '/api/webhook/telegram', auth: 'tg_secret', authDesc: 'Header 驗證 Telegram Bot Webhook Secret（HMAC）', desc: '接收 Telegram 指令（/approve /reject 等）', rateLimit: '300/min', status: 'live', storage: 'Supabase · reviews（更新狀態）' },
+    { name: '自動化列表', method: 'GET', path: '/api/automations', auth: 'user+', authDesc: '登入用戶或以上（JWT）', desc: '取得排程自動化清單（含 cron、啟用狀態）', rateLimit: '60/min', status: 'live', storage: 'Supabase · automations' },
+    { name: '註冊 Plugin', method: 'POST', path: '/api/plugins/register', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '註冊新 Plugin，寫入 plugins 表', rateLimit: '10/min', status: 'beta', storage: 'Supabase · plugins' },
+  ] as const,
+  securityLayers: [
+    { id: 's1', name: 'Supabase Auth + JWT', status: 'active', detail: 'Email / Magic Link / OAuth 登入，JWT 自動附帶 role claim', icon: '🔐' },
+    { id: 's2', name: 'RLS 資料庫層防護', status: 'active', detail: '每張表啟用 Row Level Security，依 user_role + auth.uid() 過濾', icon: '🛡️' },
+    { id: 's3', name: 'RBAC 角色權限', status: 'active', detail: 'admin / user / agent 三層角色，透過 Custom Access Token Hook 注入 JWT', icon: '👤' },
+    { id: 's4', name: 'API Rate Limiting', status: 'active', detail: 'Upstash Redis 速率限制，IP + User 雙維度，防止暴力攻擊', icon: '⏱️' },
+    { id: 's5', name: 'Webhook 簽名驗證', status: 'active', detail: 'n8n / Telegram Webhook 使用 HMAC-SHA256 簽名驗證', icon: '✍️' },
+    { id: 's6', name: 'CSP + CORS 防護', status: 'active', detail: '嚴格 Content-Security-Policy，僅允許白名單 Origin', icon: '🌐' },
+    { id: 's7', name: 'Audit Log 稽核', status: 'active', detail: '所有管理操作寫入 audit_logs 表，含 IP / UA / 變更 diff', icon: '📝' },
+    { id: 's8', name: '環境變數加密', status: 'active', detail: 'Vercel Encrypted Env + Supabase Vault 管理 secrets', icon: '🔒' },
+  ] as const,
+  rbacMatrix: [
+    { resource: 'tasks', admin: 'CRUD', user: 'R', agent: 'RU' },
+    { resource: 'reviews', admin: 'CRUD', user: 'R', agent: 'CR' },
+    { resource: 'automations', admin: 'CRUD', user: 'R', agent: 'R' },
+    { resource: 'evolution_log', admin: 'CRUD', user: 'R', agent: 'C' },
+    { resource: 'plugins', admin: 'CRUD', user: 'R', agent: '—' },
+    { resource: 'audit_logs', admin: 'R', user: '—', agent: '—' },
+    { resource: 'user_settings', admin: 'CRUD', user: 'RU (own)', agent: '—' },
+  ] as const,
+  plugins: [
+    { id: 'p1', name: 'GitHub Scanner', status: 'active', desc: '掃描 Repo issue / PR / CVE', icon: '🐙', calls: 1247 },
+    { id: 'p2', name: 'Telegram Bridge', status: 'active', desc: '雙向指令 + 通知推送', icon: '✈️', calls: 892 },
+    { id: 'p3', name: 'Sentry Monitor', status: 'active', desc: '錯誤追蹤 + 自動建立 review', icon: '🔴', calls: 156 },
+    { id: 'p4', name: 'Notion Sync', status: 'inactive', desc: '同步任務到 Notion 看板', icon: '📓', calls: 0 },
+    { id: 'p5', name: 'Slack Notifier', status: 'inactive', desc: '推送到 Slack Channel', icon: '💬', calls: 0 },
+    { id: 'p6', name: 'Custom Tool (可擴充)', status: 'template', desc: '你的下一個 Plugin...', icon: '🧩', calls: 0 },
+  ] as const,
+  n8nFlowsFallback: [
+    { id: 'n1', name: 'OpenClaw Agent → Supabase Sync', status: 'active', trigger: 'Webhook', nodes: 8, execs: 1247, lastExec: '2 min ago', desc: '接收 OpenClaw 任務結果，寫入 Supabase tasks/reviews 表，觸發 Telegram 通知' },
+    { id: 'n2', name: 'Telegram → 審核指令路由', status: 'active', trigger: 'Telegram Trigger', nodes: 12, execs: 89, lastExec: '15 min ago', desc: '解析 /approve /reject /status 指令，更新 Supabase 審核狀態，回傳結果' },
+    { id: 'n3', name: '排程自動化執行器', status: 'active', trigger: 'Cron', nodes: 6, execs: 432, lastExec: '08:00', desc: '依據 automations 表的 cron 設定，觸發對應的掃描/測試流程' },
+    { id: 'n4', name: '告警推送 Pipeline', status: 'active', trigger: 'Supabase Realtime', nodes: 5, execs: 34, lastExec: '09:15', desc: '監聽 critical 等級審核項目，即時推送 Telegram + Email 告警' },
+    { id: 'n5', name: 'API Rate Limiter', status: 'draft', trigger: 'Webhook', nodes: 4, execs: 0, lastExec: '—', desc: '對外部 API 呼叫進行速率限制，防止 token 超支' },
+  ] as const,
+};
+
+app.get('/api/openclaw/board-config', async (_req, res) => {
+  try {
+    let n8nFlows: Array<{ id: string; name: string; status: string; trigger: string; nodes: number; execs: number; lastExec: string; desc: string }>;
+    if (hasN8n()) {
+      try {
+        const workflows = await listWorkflows(false);
+        n8nFlows = workflows.map((w, i) => ({
+          id: w.id,
+          name: w.name,
+          status: w.active ? 'active' : 'draft',
+          trigger: 'Webhook',
+          nodes: 0,
+          execs: 0,
+          lastExec: w.updatedAt ? new Date(w.updatedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) : '—',
+          desc: '',
+        }));
+      } catch {
+        n8nFlows = [...BOARD_CONFIG.n8nFlowsFallback];
+      }
+    } else {
+      n8nFlows = [...BOARD_CONFIG.n8nFlowsFallback];
+    }
+    res.json({
+      n8nFlows,
+      apiEndpoints: BOARD_CONFIG.apiEndpoints,
+      securityLayers: BOARD_CONFIG.securityLayers,
+      rbacMatrix: BOARD_CONFIG.rbacMatrix,
+      plugins: BOARD_CONFIG.plugins,
+    });
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/board-config error:', e);
+    res.status(500).json({ message: 'Failed to fetch board config' });
   }
 });
 
@@ -639,16 +2156,20 @@ app.get('/api/n8n/workflows', async (req, res) => {
 /** 觸發 n8n Webhook，body 需帶 webhookUrl 或使用 N8N_WEBHOOK_RUN_NEXT 預設 */
 app.post('/api/n8n/trigger-webhook', async (req, res) => {
   try {
-    const webhookUrl =
+    const candidateUrl =
       req.body.webhookUrl ||
       process.env.N8N_WEBHOOK_RUN_NEXT;
-    if (!webhookUrl) {
+    if (!candidateUrl) {
       return res.status(400).json({
         ok: false,
         message: '請提供 webhookUrl 或設定 N8N_WEBHOOK_RUN_NEXT',
       });
     }
-    const result = await triggerWebhook(webhookUrl, req.body.data);
+    const checked = validateWebhookUrl(candidateUrl);
+    if (!checked.ok) {
+      return res.status(400).json({ ok: false, message: checked.message });
+    }
+    const result = await triggerWebhook(checked.value, req.body.data);
     res.json({ ok: true, result });
   } catch (e) {
     res.status(500).json({ ok: false, message: String(e) });
@@ -684,15 +2205,427 @@ app.post('/api/openclaw/restart-gateway', (_req, res) => {
   }
 });
 
+// ==================== Projects 專案製作 API ====================
+app.get('/api/openclaw/projects', async (_req, res) => {
+  try {
+    if (!hasSupabase()) {
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    const projects = await fetchOpenClawProjects();
+    res.json(projects);
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/projects error:', e);
+    res.status(500).json({ message: 'Failed to fetch projects' });
+  }
+});
+
+app.post('/api/openclaw/projects', async (req, res) => {
+  try {
+    if (!hasSupabase()) {
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    const body = req.body as Partial<OpenClawProject>;
+    const id = body.id || `proj-${Date.now()}`;
+    const project = await upsertOpenClawProject({ ...body, id });
+    if (!project) {
+      return res.status(500).json({ message: 'Failed to create project' });
+    }
+    res.status(201).json(project);
+  } catch (e) {
+    console.error('[OpenClaw] POST /api/openclaw/projects error:', e);
+    res.status(500).json({ message: 'Failed to create project' });
+  }
+});
+
+app.patch('/api/openclaw/projects/:id', async (req, res) => {
+  try {
+    if (!hasSupabase()) {
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    const body = req.body as Partial<OpenClawProject>;
+    const project = await upsertOpenClawProject({ ...body, id: req.params.id });
+    if (!project) {
+      return res.status(500).json({ message: 'Failed to update project' });
+    }
+    res.json(project);
+  } catch (e) {
+    console.error('[OpenClaw] PATCH /api/openclaw/projects error:', e);
+    res.status(500).json({ message: 'Failed to update project' });
+  }
+});
+
+app.delete('/api/openclaw/projects/:id', async (req, res) => {
+  try {
+    if (!hasSupabase()) {
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    const ok = await deleteOpenClawProject(req.params.id);
+    if (!ok) {
+      return res.status(500).json({ message: 'Failed to delete project' });
+    }
+    res.status(204).send();
+  } catch (e) {
+    console.error('[OpenClaw] DELETE /api/openclaw/projects error:', e);
+    res.status(500).json({ message: 'Failed to delete project' });
+  }
+});
+
+// ==================== AutoExecutor 自動執行器 API ====================
+
+interface AutoExecutorState {
+  isRunning: boolean;
+  pollIntervalMs: number;
+  lastPollAt: string | null;
+  lastExecutedTaskId: string | null;
+  lastExecutedAt: string | null;
+  totalExecutedToday: number;
+  nextPollAt: string | null;
+}
+
+// 記憶體中的自動執行器狀態
+let autoExecutorState: AutoExecutorState = {
+  isRunning: false,
+  pollIntervalMs: 10000,
+  lastPollAt: null,
+  lastExecutedTaskId: null,
+  lastExecutedAt: null,
+  totalExecutedToday: 0,
+  nextPollAt: null,
+};
+
+let autoExecutorInterval: NodeJS.Timeout | null = null;
+
+/** 執行下一個待執行任務 */
+async function executeNextPendingTask(): Promise<void> {
+  try {
+    if (!hasSupabase() || !supabase) {
+      console.warn('[AutoExecutor] Supabase 未連線，無法執行任務');
+      return;
+    }
+
+    // 使用 fetchOpenClawTasks 取得所有任務，然後篩選 Ready 狀態的
+    const ocTasks = await fetchOpenClawTasks();
+    
+    // 轉換為 Task 類型並篩選 ready 狀態的任務
+    const pendingTasks = ocTasks
+      .map(openClawTaskToTask)
+      .filter(t => t.status === 'ready')
+      .sort((a, b) => (a.priority || 3) - (b.priority || 3));
+
+    if (pendingTasks.length === 0) {
+      console.log('[AutoExecutor] 沒有待執行的任務');
+      return;
+    }
+
+    const task = pendingTasks[0];
+    console.log(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
+
+    // 選擇 Agent 類型
+    const agentType = AgentSelector.selectAgent(task);
+
+    // 更新任務狀態為 running
+    await upsertOpenClawTask({
+      id: task.id,
+      status: 'in_progress',
+    });
+
+    // 建立 run 記錄
+    const { data: run } = await supabase
+      .from('openclaw_runs')
+      .insert({
+        task_id: task.id,
+        task_name: task.name,
+        status: 'running',
+        started_at: new Date().toISOString(),
+        steps: [{ name: 'started', status: 'running', startedAt: new Date().toISOString() }],
+      })
+      .select()
+      .single();
+
+    if (!run) {
+      console.error('[AutoExecutor] 無法建立 run 記錄');
+      return;
+    }
+
+    const runId: string = run.id;
+
+    // 執行任務
+    try {
+      const result = await AgentExecutor.execute(task, agentType);
+      
+      // 更新 run 為成功
+      await supabase
+        .from('openclaw_runs')
+        .update({
+          status: 'success',
+          ended_at: new Date().toISOString(),
+          duration_ms: result.durationMs,
+          output_summary: result.output || '',
+          steps: [
+            { name: 'started', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString() },
+            { name: 'execute', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString(), message: result.output },
+          ],
+        })
+        .eq('id', runId);
+
+      // 更新任務狀態為 done
+      await upsertOpenClawTask({
+        id: task.id,
+        status: 'done',
+        progress: 100,
+      });
+
+      autoExecutorState.totalExecutedToday++;
+      autoExecutorState.lastExecutedTaskId = task.id;
+      autoExecutorState.lastExecutedAt = new Date().toISOString();
+      
+      // 發送成功通知
+      await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
+      
+      console.log(`[AutoExecutor] 任務完成: ${task.name}`);
+    } catch (execError) {
+      // 更新 run 為失敗
+      await supabase
+        .from('openclaw_runs')
+        .update({
+          status: 'failed',
+          ended_at: new Date().toISOString(),
+          error: { message: String(execError), code: 'EXECUTION_FAILED' },
+        })
+        .eq('id', runId);
+
+      // 更新任務狀態為 ready（可重試）
+      await upsertOpenClawTask({
+        id: task.id,
+        status: 'queued',
+        progress: 0,
+      });
+
+      await notifyTaskFailure(task.name, task.id, runId, String(execError), 0);
+      console.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
+    }
+  } catch (e) {
+    console.error('[AutoExecutor] 執行任務時發生錯誤:', e);
+  }
+}
+
+/** 啟動自動執行器 */
+function startAutoExecutor(pollIntervalMs: number = 10000): void {
+  if (autoExecutorInterval) {
+    clearInterval(autoExecutorInterval);
+  }
+
+  autoExecutorState.isRunning = true;
+  autoExecutorState.pollIntervalMs = pollIntervalMs;
+  autoExecutorState.nextPollAt = new Date(Date.now() + pollIntervalMs).toISOString();
+
+  // 立即執行一次
+  executeNextPendingTask();
+
+  // 定時輪詢
+  autoExecutorInterval = setInterval(async () => {
+    autoExecutorState.lastPollAt = new Date().toISOString();
+    autoExecutorState.nextPollAt = new Date(Date.now() + pollIntervalMs).toISOString();
+    await executeNextPendingTask();
+  }, pollIntervalMs);
+
+  console.log(`[AutoExecutor] 已啟動，輪詢間隔: ${pollIntervalMs}ms`);
+}
+
+/** 停止自動執行器 */
+function stopAutoExecutor(): void {
+  if (autoExecutorInterval) {
+    clearInterval(autoExecutorInterval);
+    autoExecutorInterval = null;
+  }
+  autoExecutorState.isRunning = false;
+  autoExecutorState.nextPollAt = null;
+  console.log('[AutoExecutor] 已停止');
+}
+
+// AutoExecutor API 路由
+app.get('/api/openclaw/auto-executor/status', (_req, res) => {
+  res.json({
+    ok: true,
+    ...autoExecutorState,
+  });
+});
+
+app.post('/api/openclaw/auto-executor/start', (req, res) => {
+  const { pollIntervalMs } = req.body || {};
+  const interval = pollIntervalMs || 10000;
+  
+  if (interval < 5000) {
+    return res.status(400).json({ ok: false, message: '輪詢間隔不能小於 5000ms' });
+  }
+
+  startAutoExecutor(interval);
+  res.json({
+    ok: true,
+    message: 'AutoExecutor 已啟動',
+    ...autoExecutorState,
+  });
+});
+
+app.post('/api/openclaw/auto-executor/stop', (_req, res) => {
+  stopAutoExecutor();
+  res.json({
+    ok: true,
+    message: 'AutoExecutor 已停止',
+    ...autoExecutorState,
+  });
+});
+
+// ==================== System Schedules（系統排程）====================
+// 讀取 OpenClaw 的 cron job 列表，唯讀顯示於任務板
+
+interface SystemSchedule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  scheduleKind: 'cron' | 'interval' | 'every';
+  scheduleExpr?: string;
+  everyMs?: number;
+  timezone?: string;
+  nextRunAt: string | null;
+  lastRunAt?: string | null;
+  lastStatus?: 'ok' | 'failed' | 'running' | null;
+  description?: string;
+  agentId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 取得 OpenClaw Cron Jobs 並轉換為系統排程格式 */
+async function fetchOpenClawCronJobs(): Promise<SystemSchedule[]> {
+  try {
+    const result = execSync('openclaw cron list --json', {
+      encoding: 'utf-8',
+      timeout: 30000,
+      env: { ...process.env, PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin' },
+    });
+    const parsed = JSON.parse(result);
+    const jobs = parsed.jobs || [];
+
+    return jobs.map((job: any): SystemSchedule => {
+      const schedule = job.schedule || {};
+      let scheduleKind: 'cron' | 'interval' | 'every' = 'cron';
+      let scheduleExpr: string | undefined;
+      let everyMs: number | undefined;
+
+      if (schedule.kind === 'every') {
+        scheduleKind = 'every';
+        everyMs = schedule.everyMs;
+        scheduleExpr = everyMs ? `每 ${Math.round(everyMs / 1000 / 60)} 分鐘` : undefined;
+      } else if (schedule.kind === 'cron' || schedule.expr) {
+        scheduleKind = 'cron';
+        scheduleExpr = schedule.expr;
+      }
+
+      // 從 payload 提取描述
+      let description: string | undefined;
+      if (job.payload) {
+        if (job.payload.message) {
+          description = job.payload.message;
+        } else if (job.payload.text) {
+          description = job.payload.text;
+        } else if (job.payload.kind) {
+          description = `類型: ${job.payload.kind}`;
+        }
+      }
+
+      return {
+        id: job.id,
+        name: job.name,
+        enabled: job.enabled ?? true,
+        scheduleKind,
+        scheduleExpr,
+        everyMs,
+        timezone: schedule.tz,
+        nextRunAt: job.state?.nextRunAtMs ? new Date(job.state.nextRunAtMs).toISOString() : null,
+        lastRunAt: job.state?.lastRunAtMs ? new Date(job.state.lastRunAtMs).toISOString() : null,
+        lastStatus: job.state?.lastStatus || null,
+        description,
+        agentId: job.agentId || 'main',
+        createdAt: job.createdAtMs ? new Date(job.createdAtMs).toISOString() : new Date().toISOString(),
+        updatedAt: job.updatedAtMs ? new Date(job.updatedAtMs).toISOString() : new Date().toISOString(),
+      };
+    });
+  } catch (error) {
+    console.error('[SystemSchedules] 讀取 OpenClaw cron jobs 失敗:', error);
+    // 如果無法執行 openclaw 命令，返回空陣列
+    return [];
+  }
+}
+
+app.get('/api/system-schedules', async (_req, res) => {
+  try {
+    const schedules = await fetchOpenClawCronJobs();
+    res.json({
+      ok: true,
+      count: schedules.length,
+      data: schedules,
+    });
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/system-schedules error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch system schedules' });
+  }
+});
+
+// Telegram 測試（發送一則測試訊息，用於確認 Bot Token / Chat ID 是否正確）
+app.post('/api/telegram/test', async (_req, res) => {
+  if (!isTelegramConfigured()) {
+    return res.status(503).json({ ok: false, message: 'Telegram 未設定。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。' });
+  }
+  try {
+    await sendTelegramMessage('🔔 <b>OpenClaw 測試訊息</b>\n\n若你收到這則，代表後端 Telegram 通知已正常。', { parseMode: 'HTML' });
+    res.json({ ok: true, message: '已發送測試訊息至 Telegram，請檢查對話。' });
+  } catch (e) {
+    console.error('[Telegram] test send error:', e);
+    res.status(500).json({ ok: false, message: String(e) });
+  }
+});
+
 // Health
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'openclaw-server' });
 });
 
-app.listen(PORT, () => {
+// WebSocket 狀態
+app.get('/api/websocket/status', (_req, res) => {
+  const stats = wsManager.getStats();
+  res.json({
+    ok: true,
+    ...stats,
+  });
+});
+
+// 建立 HTTP server 並整合 WebSocket
+const server = http.createServer(app);
+
+// 初始化 WebSocket
+wsManager.initialize(server);
+
+server.listen(PORT, () => {
   console.log(`OpenClaw API http://localhost:${PORT}`);
+  console.log(`  WebSocket ws://localhost:${PORT}/ws`);
   console.log(`  GET  /api/tasks, /api/tasks/:id, PATCH /api/tasks/:id`);
   console.log(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
   console.log(`  GET  /api/alerts, PATCH /api/alerts/:id`);
+  console.log(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
   console.log(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
+  if (hasSupabase()) {
+    console.log(`  [Supabase] 已連線 (openclaw_tasks / projects 等將正常運作)`);
+  } else {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    console.warn(`  [Supabase] 未連線 → /api/openclaw/* 會回 503。請在專案根目錄 .env 設定 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY 後重啟。`);
+    if (!url) console.warn(`    - SUPABASE_URL 未設定`);
+    if (!key) console.warn(`    - SUPABASE_SERVICE_ROLE_KEY 未設定`);
+  }
+  if (isTelegramConfigured()) {
+    console.log(`  [Telegram] 已設定，任務開始/完成/失敗/超時通知將發送至 TG`);
+  } else {
+    console.warn(`  [Telegram] 未設定 → 不會發送通知。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。`);
+  }
 });

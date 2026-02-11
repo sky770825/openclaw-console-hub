@@ -71,6 +71,51 @@ export async function getDashboardStats() {
     return result;
   })();
 
+  // Agent Usage Stats = 依 owner 統計執行數
+  const agentStats = (() => {
+    const stats: Record<string, { runs: number; success: number; failed: number }> = {};
+    
+    // 初始化所有可能的 agent
+    const agents = ['小蔡', 'OpenClaw', 'Cursor', 'CoDEX', '老蔡'];
+    agents.forEach(agent => {
+      stats[agent] = { runs: 0, success: 0, failed: 0 };
+    });
+    
+    // 從任務中統計
+    tasks.forEach(task => {
+      const owner = task.owner || 'Unknown';
+      if (!stats[owner]) {
+        stats[owner] = { runs: 0, success: 0, failed: 0 };
+      }
+    });
+    
+    // 從執行記錄中統計
+    runs.forEach(run => {
+      const task = tasks.find(t => t.id === run.taskId);
+      const owner = task?.owner || 'Unknown';
+      
+      if (!stats[owner]) {
+        stats[owner] = { runs: 0, success: 0, failed: 0 };
+      }
+      
+      stats[owner].runs++;
+      if (run.status === 'success') {
+        stats[owner].success++;
+      } else if (run.status === 'failed') {
+        stats[owner].failed++;
+      }
+    });
+    
+    return Object.entries(stats)
+      .filter(([_, data]) => data.runs > 0)
+      .map(([name, data]) => ({
+        name,
+        ...data,
+        successRate: data.runs > 0 ? Math.round((data.success / data.runs) * 100) : 0,
+      }))
+      .sort((a, b) => b.runs - a.runs);
+  })();
+
   return {
     todayRuns,
     successRate,
@@ -79,5 +124,6 @@ export async function getDashboardStats() {
     queueDepth,
     activeTasks,
     weeklyTrend,
+    agentStats,
   };
 }

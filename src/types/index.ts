@@ -45,3 +45,26 @@ export interface User {
   avatar?: string;
   role: 'admin' | 'operator' | 'viewer';
 }
+
+export type {
+  OpenClawSubTask,
+  OpenClawTaskStatus,
+  OpenClawTask,
+  OpenClawReviewStatus,
+  OpenClawReviewPriority,
+  OpenClawReview,
+  OpenClawAutomation,
+  OpenClawEvoLog,
+  OpenClawN8nFlow,
+  OpenClawApiEndpoint,
+  OpenClawSecurityLayer,
+  OpenClawRbacRow,
+  OpenClawPlugin,
+  OpenClawBoardConfig,
+  OpenClawApiResult,
+} from './openclaw';
+
+export type { Project, ProjectStatus, ProjectPhase } from './project';
+export { PROJECT_STATUS_LABELS } from './project';
+
+export type { SystemSchedule } from './systemSchedule';

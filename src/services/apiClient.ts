@@ -7,6 +7,11 @@ import { dataConfig } from './config';
 import type { Task, Run, Alert } from '@/types';
 
 const base = dataConfig.apiBaseUrl.replace(/\/$/, '');
+const apiKey =
+  typeof import.meta !== 'undefined' &&
+  typeof import.meta.env?.VITE_OPENCLAW_API_KEY === 'string'
+    ? import.meta.env.VITE_OPENCLAW_API_KEY.trim()
+    : '';
 const REQUEST_TIMEOUT_MS = 30000;
 const RETRY_COUNT = 2;
 const RETRY_DELAY_MS = 1000;
@@ -45,6 +50,7 @@ async function request<T>(
           method,
           headers: {
             'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {}),
             ...(rest.headers as Record<string, string>),
           },
           body: body ? JSON.stringify(body) : rest.body,
@@ -61,6 +67,16 @@ async function request<T>(
           else if (j?.error) msg = j.error;
         } catch {
           // use text as message
+        }
+        if (res.status === 401) {
+          throw new Error(
+            '後端需要 API Key。請在專案 .env 設定 VITE_OPENCLAW_API_KEY，並與後端 OPENCLAW_API_KEY 一致。'
+          );
+        }
+        if (res.status === 503) {
+          throw new Error(
+            '後端尚未設定 API Key。請在後端 .env 設定 OPENCLAW_API_KEY，或將 OPENCLAW_ENFORCE_WRITE_AUTH 設為 false。'
+          );
         }
         throw new Error(msg || `HTTP ${res.status}`);
       }
@@ -85,7 +101,17 @@ async function request<T>(
       await delay(RETRY_DELAY_MS * (attempt + 1));
     }
   }
-  throw (lastErr ?? new Error('Request failed'));
+  const err = lastErr ?? new Error('Request failed');
+  if (
+    err.message.includes('fetch') ||
+    err.message.includes('network') ||
+    err.name === 'AbortError'
+  ) {
+    throw new Error(
+      '無法連線後端。請確認後端已啟動（cd server && node dist/index.js），且 Vite proxy 指向後端 port（預設 3001）。'
+    );
+  }
+  throw err;
 }
 
 export const apiClient = {
@@ -103,25 +129,17 @@ export const apiClient = {
   },
 
   async updateTask(taskId: string, patch: Partial<Task>): Promise<Task | null> {
-    try {
-      return await request<Task>(`/api/tasks/${encodeURIComponent(taskId)}`, {
-        method: 'PATCH',
-        body: patch,
-      });
-    } catch {
-      return null;
-    }
+    return await request<Task>(`/api/tasks/${encodeURIComponent(taskId)}`, {
+      method: 'PATCH',
+      body: patch,
+    });
   },
 
   async deleteTask(taskId: string): Promise<boolean> {
-    try {
-      await request<void>(`/api/tasks/${encodeURIComponent(taskId)}`, {
-        method: 'DELETE',
-      });
-      return true;
-    } catch {
-      return false;
-    }
+    await request<void>(`/api/tasks/${encodeURIComponent(taskId)}`, {
+      method: 'DELETE',
+    });
+    return true;
   },
 
   async createTask(
@@ -199,5 +217,61 @@ export const apiClient = {
     weeklyTrend: { day: string; success: number; failed: number }[];
   }> {
     return request('/api/stats');
+  },
+
+  // ---- AutoExecutor ----
+  async getAutoExecutorStatus(): Promise<{
+    ok: boolean;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    lastPollAt: string | null;
+    lastExecutedTaskId: string | null;
+    lastExecutedAt: string | null;
+    totalExecutedToday: number;
+    nextPollAt: string | null;
+  }> {
+    return request('/api/openclaw/auto-executor/status');
+  },
+
+  async startAutoExecutor(pollIntervalMs?: number): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    lastPollAt: string | null;
+    lastExecutedTaskId: string | null;
+    lastExecutedAt: string | null;
+    totalExecutedToday: number;
+    nextPollAt: string | null;
+  }> {
+    return request('/api/openclaw/auto-executor/start', {
+      method: 'POST',
+      body: { pollIntervalMs },
+    });
+  },
+
+  async stopAutoExecutor(): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    lastPollAt: string | null;
+    lastExecutedTaskId: string | null;
+    lastExecutedAt: string | null;
+    totalExecutedToday: number;
+    nextPollAt: string | null;
+  }> {
+    return request('/api/openclaw/auto-executor/stop', {
+      method: 'POST',
+    });
+  },
+
+  // ---- System Schedules（系統排程）----
+  async getSystemSchedules(): Promise<{
+    ok: boolean;
+    count: number;
+    data: import('@/types').SystemSchedule[];
+  }> {
+    return request('/api/system-schedules');
   },
 };

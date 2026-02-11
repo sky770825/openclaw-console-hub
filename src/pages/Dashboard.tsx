@@ -8,17 +8,24 @@ import {
   Layers,
   Zap,
   RefreshCw,
-  ArrowRight
+  ArrowRight,
+  Play,
+  Square,
+  Bot,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { PageContainer, SectionHeader, Section } from '@/components/layout/PageContainer';
 import { StatCard } from '@/components/common/StatCard';
 import { StatusBadge } from '@/components/common/Badges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getDashboardStats, getRuns, getAlerts, getAuditLogs } from '@/services/api';
+import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor } from '@/services/api';
 import type { Run, Alert, AuditLog } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms} 毫秒`;
@@ -71,28 +78,78 @@ function WeeklyChart({ data }: { data: { day: string; success: number; failed: n
   );
 }
 
+interface AutoExecutorStatus {
+  ok: boolean;
+  isRunning: boolean;
+  pollIntervalMs: number;
+  lastPollAt: string | null;
+  lastExecutedTaskId: string | null;
+  lastExecutedAt: string | null;
+  totalExecutedToday: number;
+  nextPollAt: string | null;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getDashboardStats>> | null>(null);
   const [recentFailedRuns, setRecentFailedRuns] = useState<Run[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [autoExecutor, setAutoExecutor] = useState<AutoExecutorStatus | null>(null);
+  const [isLoadingAutoExecutor, setIsLoadingAutoExecutor] = useState(false);
+  const ws = useWebSocket();
 
   useEffect(() => {
     async function loadData() {
-      const [statsData, runsData, alertsData, auditData] = await Promise.all([
+      const [statsData, runsData, alertsData, auditData, autoExecStatus] = await Promise.all([
         getDashboardStats(),
         getRuns(),
         getAlerts(),
         getAuditLogs(),
+        getAutoExecutorStatus(),
       ]);
       setStats(statsData);
       setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
       setAlerts(alertsData.filter(a => a.status === 'open').slice(0, 5));
       setAuditLogs(auditData.slice(0, 5));
+      setAutoExecutor(autoExecStatus);
     }
     loadData();
+
+    // 每 10 秒更新一次 AutoExecutor 狀態
+    const interval = setInterval(async () => {
+      const status = await getAutoExecutorStatus();
+      setAutoExecutor(status);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const handleStartAutoExecutor = async () => {
+    setIsLoadingAutoExecutor(true);
+    try {
+      const result = await startAutoExecutor(30000); // 30 秒輪詢
+      setAutoExecutor(result);
+      toast.success('AutoExecutor 已啟動');
+    } catch (e) {
+      toast.error('啟動失敗: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsLoadingAutoExecutor(false);
+    }
+  };
+
+  const handleStopAutoExecutor = async () => {
+    setIsLoadingAutoExecutor(true);
+    try {
+      const result = await stopAutoExecutor();
+      setAutoExecutor(result);
+      toast.success('AutoExecutor 已停止');
+    } catch (e) {
+      toast.error('停止失敗: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsLoadingAutoExecutor(false);
+    }
+  };
 
   if (!stats) {
     return (
@@ -179,6 +236,57 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Agent Usage Stats */}
+          {stats.agentStats && stats.agentStats.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">Agent 使用統計</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {stats.agentStats.map((agent) => (
+                    <div
+                      key={agent.name}
+                      className="p-4 rounded-lg border border-[var(--oc-border)] hover:bg-[var(--oc-s3)] transition-colors"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-primary">
+                            {agent.name.charAt(0)}
+                          </span>
+                        </div>
+                        <span className="font-medium text-sm">{agent.name}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span style={{ color: 'var(--oc-t3)' }}>執行</span>
+                          <span className="font-semibold">{agent.runs}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span style={{ color: 'var(--oc-t3)' }}>成功率</span>
+                          <span className={agent.successRate >= 80 ? 'text-success' : agent.successRate >= 50 ? 'text-warning' : 'text-destructive'}>
+                            {agent.successRate}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span style={{ color: 'var(--oc-t3)' }}>失敗</span>
+                          <span className="text-destructive">{agent.failed}</span>
+                        </div>
+                      </div>
+                      {/* 成功率進度條 */}
+                      <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-success transition-all"
+                          style={{ width: `${agent.successRate}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Recent Failed Runs */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -237,6 +345,125 @@ export default function Dashboard() {
 
         {/* Right Column - Alerts + Audit */}
         <div className="space-y-6">
+          {/* WebSocket Status */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                {ws.isConnected ? (
+                  <Wifi className="h-4 w-4 text-green-500" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-muted-foreground" />
+                )}
+                WebSocket 即時連線
+                {ws.isConnected && (
+                  <span className="inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>狀態</span>
+                <span className={`text-sm font-medium ${ws.isConnected ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {ws.isConnected ? '已連接' : '未連接'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>即時進度</span>
+                <span className="text-sm font-medium">
+                  {ws.progress ? ws.progress.message : '等待任務...'}
+                </span>
+              </div>
+              {ws.logs.length > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-xs text-muted-foreground mb-2">最新日誌</p>
+                  <div className="text-xs space-y-1">
+                    {ws.logs.slice(-3).map((log) => (
+                      <div key={log.id} className="truncate">
+                        <span className={
+                          log.level === 'error' ? 'text-red-500' :
+                          log.level === 'success' ? 'text-green-500' :
+                          log.level === 'warn' ? 'text-yellow-500' :
+                          'text-blue-500'
+                        }>
+                          {log.level === 'error' ? '❌' : log.level === 'success' ? '✅' : log.level === 'warn' ? '⚠️' : 'ℹ️'}
+                        </span>
+                        {' '}{log.message}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* AutoExecutor Control */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                自動執行器
+                {autoExecutor?.isRunning && (
+                  <span className="inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {autoExecutor ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>狀態</span>
+                    <span className={`text-sm font-medium ${autoExecutor.isRunning ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {autoExecutor.isRunning ? '運行中' : '已停止'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>輪詢間隔</span>
+                    <span className="text-sm font-medium">{autoExecutor.pollIntervalMs / 1000} 秒</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>今日執行</span>
+                    <span className="text-sm font-medium">{autoExecutor.totalExecutedToday} 個</span>
+                  </div>
+                  {autoExecutor.lastExecutedAt && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>上次執行</span>
+                      <span className="text-sm font-medium">{formatRelativeTime(autoExecutor.lastExecutedAt)}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-2">
+                    {autoExecutor.isRunning ? (
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={handleStopAutoExecutor}
+                        disabled={isLoadingAutoExecutor}
+                      >
+                        <Square className="h-4 w-4 mr-1" />
+                        停止
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={handleStartAutoExecutor}
+                        disabled={isLoadingAutoExecutor}
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        啟動
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-4">
+                  <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Open Alerts */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">

@@ -5,3 +5,5 @@ export * from './LoadingSkeleton';
 export * from './EmptyState';
 export * from './SearchInput';
 export * from './FilterBar';
+export * from './ErrorBoundary';
+export * from './ThemeToggle';

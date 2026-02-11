@@ -20,6 +20,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search...', classN
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="pl-9 pr-8"
+        data-search-input
       />
       {value && (
         <Button

@@ -228,6 +228,125 @@ export async function insertOpenClawEvolutionLog(e: OpenClawEvolutionLog): Promi
   return true;
 }
 
+/** 執行紀錄：openclaw_runs 表 */
+export interface OpenClawRunRow {
+  id: string;
+  task_id: string;
+  task_name: string;
+  status: string;
+  started_at: string;
+  ended_at?: string | null;
+  duration_ms?: number | null;
+  input_summary?: string | null;
+  output_summary?: string | null;
+  steps?: unknown;
+  created_at?: string;
+}
+
+export async function insertOpenClawRun(payload: {
+  task_id: string;
+  task_name: string;
+  status?: string;
+  started_at?: string;
+  input_summary?: string | null;
+  steps?: unknown;
+}): Promise<OpenClawRunRow | null> {
+  if (!hasSupabase() || !supabase) return null;
+  const started = payload.started_at ?? new Date().toISOString();
+  const { data, error } = await supabase
+    .from('openclaw_runs')
+    .insert({
+      task_id: payload.task_id,
+      task_name: payload.task_name,
+      status: payload.status ?? 'queued',
+      started_at: started,
+      input_summary: payload.input_summary ?? null,
+      steps: Array.isArray(payload.steps) ? payload.steps : [],
+    })
+    .select('id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at')
+    .single();
+  if (error) {
+    console.error('[OpenClaw] insert openclaw_runs error:', error.message);
+    return null;
+  }
+  const row = data as Record<string, unknown>;
+  return {
+    id: String(row.id),
+    task_id: String(row.task_id),
+    task_name: String(row.task_name),
+    status: String(row.status),
+    started_at: String(row.started_at),
+    ended_at: row.ended_at ? String(row.ended_at) : null,
+    duration_ms: row.duration_ms != null ? Number(row.duration_ms) : null,
+    input_summary: row.input_summary ? String(row.input_summary) : null,
+    output_summary: row.output_summary ? String(row.output_summary) : null,
+    steps: row.steps,
+    created_at: row.created_at ? String(row.created_at) : undefined,
+  };
+}
+
+export async function updateOpenClawRun(
+  runId: string,
+  updates: { status?: string; ended_at?: string; duration_ms?: number; output_summary?: string; steps?: unknown }
+): Promise<boolean> {
+  if (!hasSupabase() || !supabase) return false;
+  const body: Record<string, unknown> = {};
+  if (updates.status != null) body.status = updates.status;
+  if (updates.ended_at != null) body.ended_at = updates.ended_at;
+  if (updates.duration_ms != null) body.duration_ms = updates.duration_ms;
+  if (updates.output_summary != null) body.output_summary = updates.output_summary;
+  if (updates.steps != null) body.steps = updates.steps;
+  const { error } = await supabase.from('openclaw_runs').update(body).eq('id', runId);
+  if (error) {
+    console.error('[OpenClaw] update openclaw_runs error:', error.message);
+    return false;
+  }
+  return true;
+}
+
+export async function fetchOpenClawRuns(limit = 100, taskId?: string): Promise<OpenClawRunRow[]> {
+  if (!hasSupabase() || !supabase) return [];
+  let q = supabase
+    .from('openclaw_runs')
+    .select('id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at')
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  if (taskId) q = q.eq('task_id', taskId);
+  const { data, error } = await q;
+  if (error) {
+    console.error('[OpenClaw] fetch openclaw_runs error:', error.message);
+    return [];
+  }
+  return (data ?? []).map((row: Record<string, unknown>) => mapOpenClawRunRow(row));
+}
+
+function mapOpenClawRunRow(row: Record<string, unknown>): OpenClawRunRow {
+  return {
+    id: String(row.id),
+    task_id: String(row.task_id),
+    task_name: String(row.task_name),
+    status: String(row.status),
+    started_at: String(row.started_at),
+    ended_at: row.ended_at ? String(row.ended_at) : null,
+    duration_ms: row.duration_ms != null ? Number(row.duration_ms) : null,
+    input_summary: row.input_summary ? String(row.input_summary) : null,
+    output_summary: row.output_summary ? String(row.output_summary) : null,
+    steps: row.steps,
+    created_at: row.created_at ? String(row.created_at) : undefined,
+  };
+}
+
+export async function fetchOpenClawRunById(runId: string): Promise<OpenClawRunRow | null> {
+  if (!hasSupabase() || !supabase) return null;
+  const { data, error } = await supabase
+    .from('openclaw_runs')
+    .select('id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at')
+    .eq('id', runId)
+    .single();
+  if (error || !data) return null;
+  return mapOpenClawRunRow(data as Record<string, unknown>);
+}
+
 export interface OpenClawUIAction {
   id: string;
   action_code: string;
@@ -296,4 +415,115 @@ export async function fetchOpenClawUIActions(): Promise<OpenClawUIAction[]> {
     api_path: row.api_path ? String(row.api_path) : undefined,
     n8n_webhook_url: row.n8n_webhook_url ? String(row.n8n_webhook_url) : undefined,
   }));
+}
+
+// ==================== Projects 專案製作 ====================
+
+export interface OpenClawProjectPhase {
+  id: string;
+  name: string;
+  done: boolean;
+}
+
+export interface OpenClawProject {
+  id: string;
+  title: string;
+  description: string;
+  status: 'planning' | 'in_progress' | 'done' | 'paused';
+  progress: number;
+  phases: OpenClawProjectPhase[];
+  notes: string;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export async function fetchOpenClawProjects(): Promise<OpenClawProject[]> {
+  if (!hasSupabase() || !supabase) return [];
+  const { data: projects, error } = await supabase
+    .from('openclaw_projects')
+    .select('*')
+    .order('updated_at', { ascending: false });
+  if (error) {
+    console.error('[OpenClaw] fetch projects error:', error.message);
+    return [];
+  }
+  // 同時讀取 phases
+  const { data: phases, error: phasesError } = await supabase
+    .from('openclaw_project_phases')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (phasesError) {
+    console.error('[OpenClaw] fetch phases error:', phasesError.message);
+  }
+  const phasesByProject = new Map<string, OpenClawProjectPhase[]>();
+  for (const ph of (phases ?? [])) {
+    const pid = String(ph.project_id);
+    if (!phasesByProject.has(pid)) phasesByProject.set(pid, []);
+    phasesByProject.get(pid)!.push({
+      id: String(ph.id),
+      name: String(ph.name ?? ''),
+      done: Boolean(ph.done),
+    });
+  }
+  return (projects ?? []).map((row: Record<string, unknown>) => ({
+    id: String(row.id),
+    title: String(row.title ?? ''),
+    description: String(row.description ?? ''),
+    status: String(row.status ?? 'planning') as OpenClawProject['status'],
+    progress: Number(row.progress ?? 0),
+    phases: phasesByProject.get(String(row.id)) ?? [],
+    notes: String(row.notes ?? ''),
+    updatedAt: String(row.updated_at ?? row.created_at ?? new Date().toISOString()),
+    createdAt: String(row.created_at ?? new Date().toISOString()),
+  }));
+}
+
+export async function upsertOpenClawProject(project: Partial<OpenClawProject> & { id: string }): Promise<OpenClawProject | null> {
+  if (!hasSupabase() || !supabase) return null;
+  const now = new Date().toISOString();
+  const payload = {
+    id: project.id,
+    title: project.title ?? '',
+    description: project.description ?? '',
+    status: project.status ?? 'planning',
+    progress: project.progress ?? 0,
+    notes: project.notes ?? '',
+    updated_at: now,
+    created_at: project.createdAt ?? now,
+  };
+  const { data, error } = await supabase.from('openclaw_projects').upsert(payload).select().single();
+  if (error) {
+    console.error('[OpenClaw] upsert project error:', error.message);
+    return null;
+  }
+  // 處理 phases
+  if (project.phases && project.phases.length > 0) {
+    // 先刪除舊 phases
+    await supabase.from('openclaw_project_phases').delete().eq('project_id', project.id);
+    // 插入新 phases
+    const phaseRows = project.phases.map((ph, idx) => ({
+      id: ph.id || `ph-${Date.now()}-${idx}`,
+      project_id: project.id,
+      name: ph.name,
+      done: ph.done,
+      sort_order: idx,
+      updated_at: now,
+      created_at: now,
+    }));
+    const { error: phError } = await supabase.from('openclaw_project_phases').insert(phaseRows);
+    if (phError) {
+      console.error('[OpenClaw] insert phases error:', phError.message);
+    }
+  }
+  return fetchOpenClawProjects().then(list => list.find(p => p.id === project.id) ?? null);
+}
+
+export async function deleteOpenClawProject(id: string): Promise<boolean> {
+  if (!hasSupabase() || !supabase) return false;
+  const { error } = await supabase.from('openclaw_projects').delete().eq('id', id);
+  if (error) {
+    console.error('[OpenClaw] delete project error:', error.message);
+    return false;
+  }
+  return true;
 }

@@ -11,10 +11,10 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
-    // 開發時將 /api 轉發至後端，OpenClaw 與主應用可連線後端
+    // 開發時將 /api 轉發至後端（須與 server 的 PORT 一致，預設 3001）
     proxy: {
       "/api": {
-        target: "http://localhost:3003",
+        target: "http://localhost:3001",
         changeOrigin: true,
       },
     },

@@ -42,7 +42,9 @@ import {
   Circle,
   Loader2,
   Play,
-  XCircle
+  XCircle,
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 import { getRuns, getRun, api } from '@/services/api';
 import type { Run, RunStep } from '@/types';
@@ -313,6 +315,9 @@ export default function Runs() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
+  const [selectedFailedRuns, setSelectedFailedRuns] = useState<Set<string>>(new Set());
+  const [batchRerunLoading, setBatchRerunLoading] = useState(false);
+  const [showBatchRerunConfirm, setShowBatchRerunConfirm] = useState(false);
   const pollCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -353,6 +358,72 @@ export default function Runs() {
       return true;
     });
   }, [runs, searchQuery, activeFilters]);
+
+  // 獲取失敗的任務列表
+  const failedRuns = useMemo(() => {
+    return runs.filter(run => run.status === 'failed');
+  }, [runs]);
+
+  // 切換選擇失敗任務
+  const toggleFailedRunSelection = (runId: string) => {
+    setSelectedFailedRuns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(runId)) {
+        newSet.delete(runId);
+      } else {
+        newSet.add(runId);
+      }
+      return newSet;
+    });
+  };
+
+  // 全選/取消全選失敗任務
+  const toggleSelectAllFailed = () => {
+    if (selectedFailedRuns.size === failedRuns.length) {
+      setSelectedFailedRuns(new Set());
+    } else {
+      setSelectedFailedRuns(new Set(failedRuns.map(r => r.id)));
+    }
+  };
+
+  // 批量重跑失敗任務
+  const handleBatchRerun = async () => {
+    if (selectedFailedRuns.size === 0) return;
+    
+    setBatchRerunLoading(true);
+    const runIds = Array.from(selectedFailedRuns);
+    const results = { success: 0, failed: 0 };
+    
+    try {
+      // 串行執行避免壓垮後端
+      for (const id of runIds) {
+        try {
+          await api.rerun(id);
+          results.success++;
+        } catch {
+          results.failed++;
+        }
+      }
+      
+      // 刷新列表
+      await getRuns().then(setRuns);
+      
+      toast({
+        description: `批量重跑完成：${results.success} 成功, ${results.failed} 失敗`,
+      });
+      
+      // 清空選擇
+      setSelectedFailedRuns(new Set());
+      setShowBatchRerunConfirm(false);
+    } catch (err) {
+      toast({ 
+        variant: 'destructive', 
+        description: err instanceof Error ? err.message : '批量重跑失敗' 
+      });
+    } finally {
+      setBatchRerunLoading(false);
+    }
+  };
 
   const handleFilterChange = (key: string, value: string | string[] | null) => {
     setActiveFilters(prev => {
@@ -401,6 +472,52 @@ export default function Runs() {
         description="所有任務的執行歷史 · 與 OpenClaw evolution_log 對應"
       />
 
+      {/* 批量重跑失敗任務提示 */}
+      {failedRuns.length > 0 && (
+        <Card className="mb-4 border-warning/50 bg-warning/5">
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+                <div>
+                  <p className="text-sm font-medium">
+                    有 {failedRuns.length} 個失敗的執行
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    選擇任務後可一鍵重跑
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedFailedRuns.size > 0 && (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      已選 {selectedFailedRuns.size} 個
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowBatchRerunConfirm(true)}
+                      disabled={batchRerunLoading}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      一鍵重跑
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedFailedRuns(new Set())}
+                    >
+                      清除選擇
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <SearchInput
@@ -422,6 +539,16 @@ export default function Runs() {
         <Table>
           <TableHeader>
             <TableRow>
+              {failedRuns.length > 0 && (
+                <TableHead className="w-12">
+                  <input
+                    type="checkbox"
+                    checked={selectedFailedRuns.size === failedRuns.length && failedRuns.length > 0}
+                    onChange={toggleSelectAllFailed}
+                    className="rounded border-gray-300"
+                  />
+                </TableHead>
+              )}
               <TableHead>執行 ID</TableHead>
               <TableHead>任務</TableHead>
               <TableHead>狀態</TableHead>
@@ -437,6 +564,18 @@ export default function Runs() {
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleRunClick(run)}
               >
+                {failedRuns.length > 0 && (
+                  <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
+                    {run.status === 'failed' && (
+                      <input
+                        type="checkbox"
+                        checked={selectedFailedRuns.has(run.id)}
+                        onChange={() => toggleFailedRunSelection(run.id)}
+                        className="rounded border-gray-300"
+                      />
+                    )}
+                  </TableCell>
+                )}
                 <TableCell className="font-mono text-sm">{run.id}</TableCell>
                 <TableCell className="font-medium">{run.taskName}</TableCell>
                 <TableCell><StatusBadge status={run.status} /></TableCell>
@@ -518,6 +657,47 @@ export default function Runs() {
           />
         )}
       </Sheet>
+
+      {/* 批量重跑確認對話框 */}
+      <Dialog open={showBatchRerunConfirm} onOpenChange={setShowBatchRerunConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              確認批量重跑
+            </DialogTitle>
+            <DialogDescription>
+              即將重跑 {selectedFailedRuns.size} 個失敗的執行。此操作無法撤銷。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              選擇的執行將按順序重新執行，請確保後端有足夠資源處理。
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchRerunConfirm(false)}>
+              取消
+            </Button>
+            <Button 
+              onClick={handleBatchRerun}
+              disabled={batchRerunLoading}
+            >
+              {batchRerunLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  執行中...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  確認重跑
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

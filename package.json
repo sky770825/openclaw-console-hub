@@ -3,18 +3,25 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit": "npm audit --production",
+    "audit:fix": "npm audit fix",
+    "preview": "vite preview",
     "deploy": "npm run build && npx vercel --prod",
     "deploy:preview": "npm run build && npx vercel",
     "deploy:ci": "npm run build && npx vercel --prod --yes",
-    "deploy:ci:preview": "npm run build && npx vercel --yes"
+    "deploy:ci:preview": "npm run build && npx vercel --yes",
+    "ci": "npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -69,9 +76,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@rollup/rollup-darwin-arm64": "^4.57.1",
+    "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
-    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

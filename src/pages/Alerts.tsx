@@ -30,12 +30,14 @@ import type { Alert, AlertType } from '@/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-const alertTypeConfig: Record<AlertType, { label: string; icon: typeof Webhook }> = {
+const alertTypeConfig: Record<string, { label: string; icon: typeof Webhook }> = {
   webhook_fail: { label: 'Webhook 失敗', icon: Webhook },
   queue_backlog: { label: '佇列積壓', icon: Clock },
   auth_issue: { label: '驗證問題', icon: Key },
   rate_limit: { label: '速率限制', icon: Zap },
   db_connection: { label: '資料庫連線', icon: Database },
+  task_run_failed: { label: '任務/審核', icon: AlertTriangle },
+  runner_streaming: { label: '執行串流', icon: Zap },
 };
 
 function formatRelativeTime(date: string): string {
@@ -131,7 +133,7 @@ export default function Alerts() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredAlerts.map((alert) => {
-            const config = alertTypeConfig[alert.type];
+            const config = alertTypeConfig[alert.type] ?? alertTypeConfig.task_run_failed;
             const Icon = config.icon;
 
             return (
