@@ -26,6 +26,7 @@ export default function OpenClawV4() {
     togA,
     okR,
     noR,
+    okRAndCreateTask,
     handleDrawerSave,
     progT,
     runT,
@@ -46,6 +47,7 @@ export default function OpenClawV4() {
       @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
       *{box-sizing:border-box}
       @media (max-width:900px){.oc-grid-all{grid-template-columns:1fr!important}}
+      @media (max-width:600px){.oc-task-cols{grid-template-columns:1fr!important}}
       *{scrollbar-width:thin;scrollbar-color:#1a1a24 transparent}
       ::placeholder{color:${C.t3}}
     `}</style>
@@ -82,11 +84,11 @@ export default function OpenClawV4() {
       {TAB_ITEMS.map((t) => <button key={t.key} data-oc-action={`TAB_${t.key.toUpperCase()}`} onClick={() => setTab(t.key)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: tab === t.key ? "rgba(255,255,255,0.06)" : "transparent", color: tab === t.key ? C.t1 : C.t3, fontSize: 12, fontWeight: tab === t.key ? 600 : 500, cursor: "pointer", transition: "all .15s", whiteSpace: "nowrap", fontFamily: "inherit" }}>{t.label}</button>)}
     </div>
 
-    <div style={{ padding: "16px 20px", maxWidth: 1440, width: "100%", margin: "0 auto", animation: "oc-su .2s ease" }} key={tab}>
+    <div style={{ padding: "16px 20px", maxWidth: 1440, width: "100%", margin: "0 auto", animation: "oc-su .2s ease", overflowX: "hidden", minWidth: 0 }} key={tab}>
       {renderTabContent(
         tab,
         { autos, reviews, tasks, boardConfig, evo },
-        { setDrawer, togA, runA, okR, noR, progT, runT, delT, moveT, addQuiz }
+        { setDrawer, togA, runA, okR, noR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz }
       )}
     </div>
 
