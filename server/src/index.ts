@@ -905,6 +905,7 @@ app.post('/api/tasks', validateBody(createTaskSchema), async (req, res) => {
 });
 
 app.delete('/api/tasks/:id', async (req, res) => {
+  // ID 参数已在路由中提供,无需额外验证
   if (hasSupabase() && supabase) {
     const ocTasks = await fetchOpenClawTasks();
     const oc = ocTasks.find((x) => x.id === req.params.id);
@@ -1321,7 +1322,7 @@ function legacySimulateExecution(runId: string) {
   }, 1500);
 }
 
-app.post('/api/tasks/:taskId/run', async (req, res) => {
+app.post('/api/tasks/:taskId/run', validateBody(runTaskSchema), async (req, res) => {
   const task = await getTaskForRun(req.params.taskId);
   if (!task)
     return res.status(404).json({ message: 'Task not found' });
@@ -1391,7 +1392,7 @@ app.get('/api/alerts', async (_req, res) => {
   res.json(alerts);
 });
 
-app.patch('/api/alerts/:id', async (req, res) => {
+app.patch('/api/alerts/:id', validateBody(updateAlertSchema), async (req, res) => {
   if (hasSupabase()) {
     const reviews = await fetchOpenClawReviews();
     const r = reviews.find((a) => a.id === req.params.id);
