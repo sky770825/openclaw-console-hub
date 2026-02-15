@@ -1,0 +1,482 @@
+{
+  "name": "My workflow (No LLM)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "memory-curator",
+        "options": {
+          "responseCode": {
+            "values": {}
+          }
+        }
+      },
+      "id": "df0aee5c-5566-4d93-86bc-c79d1b4c3994",
+      "name": "Receive Task Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        256,
+        304
+      ],
+      "webhookId": "43eddb85-b62e-4bb6-ac44-95b8447b0a62"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Configuration').item.json.taskboardBase + '/api/tasks' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.OPENCLAW_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json }}",
+        "options": {
+          "timeout": 30000,
+          "fullResponse": true
+        },
+        "ignoreResponseCode": true
+      },
+      "id": "5391296c-f5f9-4c04-8e0b-08ba6c5b0da6",
+      "name": "Create Memory Sync Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1056,
+        304
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "taskboardBase",
+              "value": "={{ $env.TASKBOARD_BASE_URL || $env.TASKBOARD_BASE || 'http://host.docker.internal:3011' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "taskName",
+              "value": "={{ $json.body.taskName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "runId",
+              "value": "={{ $json.body.runId }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "runPath",
+              "value": "={{ $json.body.runPath }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "summary",
+              "value": "={{ $json.body.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "nextSteps",
+              "value": "={{ $json.body.nextSteps || [] }}",
+              "type": "array"
+            },
+            {
+              "id": "id-8",
+              "name": "evidenceLinks",
+              "value": "={{ $json.body.evidenceLinks || [] }}",
+              "type": "array"
+            },
+            {
+              "id": "id-9",
+              "name": "resultText",
+              "value": "={{ $json.body.resultText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ecfc7dac-089c-40f3-92a8-79a39b7afc84",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check for duplicate runId using workflow static data (single output)\nconst body = $input.item.json.body || {};\nconst runId = body.runId;\n\nif (!runId) {\n  return [{ json: { ...$input.item.json, isDuplicate: false } }];\n}\n\nconst staticData = this.getWorkflowStaticData('global');\nif (!staticData.processedRunIds) staticData.processedRunIds = [];\n\nconst isDuplicate = staticData.processedRunIds.includes(runId);\n\nreturn [{\n  json: {\n    ...$input.item.json,\n    runId,\n    isDuplicate,\n  }\n}];\n"
+      },
+      "id": "8efb5ebc-eb44-45f5-9421-2d1dead20549",
+      "name": "Check Duplicate RunId",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "name",
+              "value": "={{ 'Memory Sync: ' + ($('Receive Task Data').item.json.body.taskName || $json.taskName || 'unknown') + ' (' + ($('Receive Task Data').item.json.body.runId || $json.runId || 'unknown') + ')' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "description",
+              "value": "={{ 'Webhook Body:\\n' + JSON.stringify($json.body || {}, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "status",
+              "value": "ready",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "tags",
+              "value": "[\"memory\", \"curation\", \"n8n\"]",
+              "type": "array"
+            },
+            {
+              "id": "id-5",
+              "name": "agent",
+              "value": "{ \"type\": \"codex\" }",
+              "type": "object"
+            },
+            {
+              "id": "id-6",
+              "name": "priority",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "id-7",
+              "name": "riskLevel",
+              "value": "low",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "projectPath",
+              "value": "projects/openclaw/modules/memory-curator/",
+              "type": "string"
+            },
+            {
+              "id": "id-9",
+              "name": "rollbackPlan",
+              "value": "If this card is incorrect, delete the task card. No other system state should change.",
+              "type": "string"
+            },
+            {
+              "id": "id-10",
+              "name": "acceptanceCriteria",
+              "value": "[\"Task card created with MemoryItems JSON in description\",\"No secrets are included in the card\",\"RunId is recorded to prevent duplicates\"]",
+              "type": "array"
+            },
+            {
+              "id": "id-11",
+              "name": "deliverables",
+              "value": "[\"Curated memory items (JSON)\",\"Follow-up plan (if needed)\"]",
+              "type": "array"
+            },
+            {
+              "id": "id-12",
+              "name": "runCommands",
+              "value": "[\"Review the MemoryItems JSON in the task description\",\"Apply to the memory store / documentation\",\"Mark the card done when curated\"]",
+              "type": "array"
+            },
+            {
+              "id": "id-13",
+              "name": "modelPolicy",
+              "value": "subscription+ollama-only",
+              "type": "string"
+            },
+            {
+              "id": "id-14",
+              "name": "executionProvider",
+              "value": "subscription/codex-native",
+              "type": "string"
+            },
+            {
+              "id": "id-15",
+              "name": "allowPaid",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "31f99fc3-56f1-42e2-af48-fd41f5c650c4",
+      "name": "Prepare Task Body",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mark the runId as processed in workflow static data\nconst runId = $('Receive Task Data').item.json.body.runId;\n\nif (runId) {\n  // Get current processed runIds from static data\n  const staticData = this.getWorkflowStaticData('global');\n  \n  if (!staticData.processedRunIds) {\n    staticData.processedRunIds = [];\n  }\n  \n  // Add the runId to the processed list\n  if (!staticData.processedRunIds.includes(runId)) {\n    staticData.processedRunIds.push(runId);\n    \n    // Keep only the last 1000 runIds to prevent unbounded growth\n    if (staticData.processedRunIds.length > 1000) {\n      staticData.processedRunIds = staticData.processedRunIds.slice(-1000);\n    }\n  }\n  \n  console.log(`Marked runId ${runId} as processed. Total processed: ${staticData.processedRunIds.length}`);\n}\n\n// Pass through the input data\nreturn $input.all();"
+      },
+      "id": "f4229907-4e60-4748-ae1f-6c365768f9a5",
+      "name": "Mark RunId as Processed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "2a69abd9-088d-41af-856a-c1240220732a",
+      "name": "Duplicate - Skip",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Log error without exposing secrets\nconst runId = $input.item.json.body?.runId || $input.item.json.runId || 'unknown';\nconst errorMessage = $input.item.json.error?.message || $input.item.json.message || JSON.stringify($input.item.json);\n\nconsole.error('Memory Curator Error:', {\n  runId: runId,\n  error: errorMessage,\n  timestamp: new Date().toISOString()\n});\n\n// Return the item for further processing if needed\nreturn $input.item;"
+      },
+      "id": "46502acb-5927-483b-a2b3-5c24343df6c5",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-dup",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "is-duplicate-if",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1788,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-http-ok",
+              "leftValue": "={{ ($json.statusCode || 0) >= 200 && ($json.statusCode || 0) < 300 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "http-success-if",
+      "name": "HTTP Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1276,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Truncate incoming payload to avoid burning tokens on huge logs.\nfunction clampStr(v, max) {\n  if (v === undefined || v === null) return \"\";\n  const s = String(v);\n  if (!s) return \"\";\n  return s.length <= max ? s : (s.slice(0, max) + \"...\");\n}\n\nfunction clampArr(v, maxItems, maxItemLen) {\n  if (!Array.isArray(v)) return [];\n  return v.slice(0, maxItems).map((x) => clampStr(x, maxItemLen));\n}\n\nconst maxSummary = Number($env.MEMORY_CURATOR_MAX_SUMMARY_CHARS || 1200);\nconst maxResult = Number($env.MEMORY_CURATOR_MAX_RESULT_CHARS || 2000);\nconst maxSteps = Number($env.MEMORY_CURATOR_MAX_STEPS || 10);\nconst maxLinks = Number($env.MEMORY_CURATOR_MAX_LINKS || 10);\n\nconst item = $input.item.json || {};\nconst body = (item && typeof item.body === \"object\" && item.body) ? { ...item.body } : {};\n\nbody.taskId = clampStr(body.taskId, 120);\nbody.taskName = clampStr(body.taskName, 200);\nbody.runId = clampStr(body.runId, 160);\nbody.runPath = clampStr(body.runPath, 400);\nbody.summary = clampStr(body.summary, maxSummary);\nbody.resultText = clampStr(body.resultText, maxResult);\nbody.nextSteps = clampArr(body.nextSteps, maxSteps, 240);\nbody.evidenceLinks = clampArr(body.evidenceLinks, maxLinks, 600);\n\nitem.body = body;\nreturn [{ json: item }];\n"
+      },
+      "id": "d5ab4f56-9fe7-4e97-948e-cbf5cd887b11",
+      "name": "Clamp Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Task Data": {
+      "main": [
+        [
+          {
+            "node": "Clamp Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clamp Payload": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate RunId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate RunId": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Duplicate - Skip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Task Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Task Body": {
+      "main": [
+        [
+          {
+            "node": "Create Memory Sync Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Memory Sync Task": {
+      "main": [
+        [
+          {
+            "node": "HTTP Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Success?": {
+      "main": [
+        [
+          {
+            "node": "Mark RunId as Processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4d7f82f0-683f-454d-9ab2-34810b5a2c17",
+  "meta": {
+    "instanceId": "f6d6b525a44e3a5703980b9b31537e23de4fcc1889814707f57e546ccc3c475d"
+  },
+  "id": "ZXjoc5cU5FsZn8vS",
+  "tags": []
+}

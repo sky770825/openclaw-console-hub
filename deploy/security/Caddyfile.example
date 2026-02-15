@@ -1,0 +1,31 @@
+# Example Caddyfile to protect the OpenClaw dashboard behind HTTPS + Basic Auth.
+#
+# Replace `taskboard.example.com` with your real domain.
+# Put credentials via env vars (recommended) or inline for local testing only.
+#
+# Key idea:
+# - Expose only Caddy to the internet (443).
+# - Keep the taskboard server on an internal network / localhost.
+
+taskboard.example.com {
+  encode gzip
+
+  # Dashboard/Web UI protection
+  basicauth /* {
+    {$OPENCLAW_DASHBOARD_BASIC_USER} {$OPENCLAW_DASHBOARD_BASIC_PASS_HASH}
+  }
+
+  # Forward to internal taskboard server
+  reverse_proxy 127.0.0.1:3011
+}
+
+# Optional: protect n8n editor behind HTTPS + Basic Auth.
+n8n.example.com {
+  encode gzip
+
+  basicauth /* {
+    {$N8N_BASIC_USER} {$N8N_BASIC_PASS_HASH}
+  }
+
+  reverse_proxy 127.0.0.1:5678
+}

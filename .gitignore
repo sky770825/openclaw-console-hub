@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 .env
+# 含 Telegram / Ollama 金鑰，勿提交
+ollama_bot2.env
+ollama_monitor_bot.env
+
+# Local backups / checkpoints (may include secrets in diffs/logs)
+backups/
+runtime-checkpoints/
+server/runtime-checkpoints/
+server/projects/
 
 # Editor directories and files
 .vscode/*
@@ -26,3 +35,6 @@ dist-ssr
 
 # 大型拷貝目錄
 ollama-main*/
+
+# Local Netlify folder
+.netlify

@@ -11,12 +11,12 @@ npm i
 npm run dev
 ```
 
-瀏覽器開啟 http://localhost:8080/ 即可使用。
+瀏覽器開啟 http://localhost:3009/ 即可使用。
 
 **接本機後端（可真的「立即執行」）**
 
-1. 另開終端：`cd server && npm i && npm run dev`（API 跑在 http://localhost:3001）
-2. 專案根目錄建 `.env`，填：`VITE_API_BASE_URL=http://localhost:3001`
+1. 另開終端：`cd server && npm i && npm run dev`（API 預設跑在 http://localhost:3011，可用 `PORT=` 覆蓋）
+2. 專案根目錄建 `.env`，填：`VITE_API_BASE_URL=http://localhost:3011`
 3. 再跑一次中控台 `npm run dev`，點「立即執行」會打後端，Run 會模擬完成。
 
 ---
@@ -25,6 +25,7 @@ npm run dev
 
 | 目錄／檔案 | 說明 |
 |------------|------|
+| `docs/WHERE-TO-LOOK.md` | 快速索引（安全規範 / 子代理 guardrails / n8n / 常用腳本入口） |
 | `docs/OPENCLAW-CONCEPT.md` | 名詞定義（Task / Run / Log / Alert）、任務卡標準模板、最短路徑 |
 | `docs/TASK-TEMPLATE.md` | 任務卡 6 欄空白模板（Goal / Inputs / Outputs / Acceptance / Owner / Priority） |
 | `docs/ROADMAP.md` | 整體規劃與補強清單（已完成／建議補強／選做） |
