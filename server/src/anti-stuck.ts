@@ -2,7 +2,7 @@
  * 防卡關機制（超時/重試/降級）
  * - 5 分鐘超時自動取消任務
  * - 失敗重試 2 次機制
- * - 模型降級策略（Claude → Gemini Flash）
+ * - 模型降級策略：與 OpenClaw 一致（主力 Gemini → 備援 Claude/Kimi/Ollama）
  * - Telegram 通知
  */
 
@@ -14,12 +14,13 @@ import {
   notifyTaskSuccess,
 } from './utils/telegram.js';
 import type { Run, Task, RunStatus, TimeoutMonitor, TelegramNotification, ModelFallbackStrategy } from './types.js';
+import { updateOpenClawRun } from './openclawSupabase.js';
 
 /** 預設配置 */
 const DEFAULT_CONFIG = {
   timeoutMinutes: 5,
   maxRetries: 2,
-  fallbackStrategy: 'claude-to-gemini' as ModelFallbackStrategy,
+  fallbackStrategy: 'primary-to-next' as ModelFallbackStrategy,
   notifyOnTimeout: true,
 };
 
@@ -164,8 +165,12 @@ export class AntiStuckManager {
     let fallbackInfo: { from: string; to: string };
 
     switch (strategy) {
+      case 'primary-to-next':
+        // 與 OpenClaw 一致：主力 → 下一備援（Gemini Flash → Claude Haiku → Kimi → Ollama）
+        fallbackInfo = { from: 'Gemini Flash', to: 'Claude Haiku / Kimi / Ollama' };
+        break;
       case 'claude-to-gemini':
-        fallbackInfo = { from: 'claude', to: 'gemini-flash' };
+        fallbackInfo = { from: 'Claude', to: 'Gemini Flash' };
         break;
       default:
         console.log(`[AntiStuck] Unknown fallback strategy: ${strategy}`);
@@ -183,12 +188,16 @@ export class AntiStuckManager {
    * 標記 Run 狀態
    */
   private async markRunStatus(runId: string, status: RunStatus, message: string): Promise<void> {
-    // 這裡應該更新資料庫中的 run 狀態
-    // 暫時只記錄日誌
     console.log(`[AntiStuck] Marking run ${runId} as ${status}: ${message}`);
-    
-    // TODO: 實作資料庫更新
-    // await updateRunInDatabase(runId, { status, error: { code: status, message } });
+
+    // Persist to Supabase (when available). If Supabase is not configured, this is a no-op.
+    const terminal = status === 'success' || status === 'failed' || status === 'cancelled' || status === 'timeout';
+    const now = new Date().toISOString();
+    await updateOpenClawRun(runId, {
+      status,
+      // For terminal states, close the run so reconcile logic can release the task.
+      ...(terminal ? { ended_at: now, output_summary: message } : { output_summary: message }),
+    }).catch(() => {});
   }
 
   /**
@@ -335,17 +344,17 @@ export class AntiStuckManager {
 }
 
 /** 重試裝飾器 */
-export function withRetry<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
+export function withRetry<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => Promise<TResult>,
   options: {
     maxRetries?: number;
     onRetry?: (attempt: number, error: Error) => void | Promise<void>;
     shouldRetry?: (error: Error) => boolean;
   } = {}
-): T {
+): (...args: TArgs) => Promise<TResult> {
   const { maxRetries = 2, onRetry, shouldRetry } = options;
 
-  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+  return async (...args: TArgs): Promise<TResult> => {
     let lastError: Error;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -373,16 +382,16 @@ export function withRetry<T extends (...args: any[]) => Promise<any>>(
     }
 
     throw lastError!;
-  }) as T;
+  };
 }
 
 /** 超時包裝器 */
-export function withTimeout<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
+export function withTimeout<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => Promise<TResult>,
   timeoutMs: number
-): T {
-  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-    return new Promise((resolve, reject) => {
+): (...args: TArgs) => Promise<TResult> {
+  return async (...args: TArgs): Promise<TResult> => {
+    return new Promise<TResult>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error(`Operation timed out after ${timeoutMs}ms`));
       }, timeoutMs);
@@ -397,7 +406,7 @@ export function withTimeout<T extends (...args: any[]) => Promise<any>>(
           reject(error);
         });
     });
-  }) as T;
+  };
 }
 
 /** 導出單例 */

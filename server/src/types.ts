@@ -9,6 +9,10 @@ export type TaskStatus =
   | 'blocked';
 export type ScheduleType = 'cron' | 'interval' | 'webhook' | 'manual';
 export type Priority = 1 | 2 | 3 | 4 | 5;
+export type TaskComplexity = 'S' | 'M' | 'L' | 'XL';
+export type TaskRiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type TaskType = 'research' | 'development' | 'ops' | 'review' | 'other';
+export type TaskModelProvider = 'openrouter' | 'ollama' | 'default';
 export type RunStatus =
   | 'queued'
   | 'running'
@@ -25,8 +29,23 @@ export type AgentType = 'cursor' | 'codex' | 'openclaw' | 'auto';
 /** 執行模式 */
 export type ExecutionMode = 'parallel' | 'sequential';
 
-/** 模型降級策略 */
-export type ModelFallbackStrategy = 'claude-to-gemini' | 'none';
+/**
+ * 與 OpenClaw openclaw.json 一致的模型順序（主力 → 備援）
+ * 用於 Telegram 通知與防卡關降級
+ */
+export const OPENCLAW_MODEL_ORDER = [
+  'google/gemini-2.5-flash',      // 主力
+  'anthropic/claude-haiku-4-5-20251001',
+  'kimi/kimi-k2.5',
+  'kimi/kimi-k2-turbo-preview',
+  'ollama/qwen3:8b',
+  'ollama/deepseek-r1:8b',
+  'ollama/llama3.2:latest',
+  'ollama/qwen2.5:14b',
+] as const;
+
+/** 模型降級策略：失敗時改用下一個備援（與 OPENCLAW_MODEL_ORDER 一致） */
+export type ModelFallbackStrategy = 'primary-to-next' | 'claude-to-gemini' | 'none';
 
 export interface Task {
   id: string;
@@ -41,9 +60,43 @@ export interface Task {
   lastRunStatus?: LastRunStatus;
   lastRunAt?: string | null;
   nextRunAt?: string | null;
+  /** 最近一次執行 runPath（索引級；完整內容在 RESULT.md + ARTIFACTS/） */
+  runPath?: string;
+  /** 冪等 key（建議：${task_id}:${run_id}） */
+  idempotencyKey?: string;
   inputs?: string[];
   outputs?: string[];
   acceptance?: string[];
+  taskType?: TaskType;
+  complexity?: TaskComplexity;
+  riskLevel?: TaskRiskLevel;
+  deadline?: string | null;
+  reviewer?: string;
+  rollbackPlan?: string;
+  acceptanceCriteria?: string[];
+  evidenceLinks?: string[];
+  /** 索引級摘要（避免把全量貼進 Telegram/對話） */
+  summary?: string;
+  /** 下一步（人類可讀/可執行） */
+  nextSteps?: string[];
+  reporterTarget?: string;
+  /** 固定專案工作區路徑（讓 Codex/Cursor 真的落地寫檔） */
+  projectPath?: string;
+  /** 交付物（檔案/模組）清單 */
+  deliverables?: string[];
+  /** 可直接複製執行的指令（安裝/啟動/驗收） */
+  runCommands?: string[];
+  /** 模型政策（文字規範；後端另有強制策略） */
+  modelPolicy?: string;
+  /** 是否允許使用按量付費模型（預設 false） */
+  allowPaid?: boolean;
+  /** 執行提供者（subscription/codex-native、subscription/cursor-auto、ollama/* 等） */
+  executionProvider?: string;
+  modelConfig?: {
+    provider: TaskModelProvider;
+    primary: string;
+    fallbacks?: string[];
+  };
   updatedAt: string;
   createdAt: string;
   
@@ -67,6 +120,9 @@ export interface Task {
     fallbackStrategy: ModelFallbackStrategy;
     notifyOnTimeout: boolean;
   };
+
+  /** OpenClaw review linkage (for ReviewCenter -> Task creation flows) */
+  fromReviewId?: string;
 }
 
 export interface RunStep {
@@ -107,6 +163,19 @@ export interface Run {
   durationMs?: number | null;
   inputSummary?: Record<string, unknown> | string;
   outputSummary?: Record<string, unknown> | string;
+  /** 專案落地路徑（索引級） */
+  projectPath?: string;
+  /** 本次執行 runPath（RESULT.md + ARTIFACTS/） */
+  runPath?: string;
+  /** 冪等 key（建議：${task_id}:${run_id}） */
+  idempotencyKey?: string;
+  tokenUsage?: {
+    input: number;
+    output: number;
+    total: number;
+    estimated: boolean;
+  };
+  costUsd?: number | null;
   steps: RunStep[];
   error?: RunError;
   

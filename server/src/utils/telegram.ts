@@ -56,6 +56,45 @@ export async function sendTelegramMessage(
   }
 }
 
+/**
+ * 發送 Telegram 訊息到指定 chat（控制 bot / inline keyboard 用）
+ * - token: 預設會使用 TELEGRAM_CONTROL_BOT_TOKEN，其次 TELEGRAM_BOT_TOKEN
+ * - replyMarkup: Telegram reply_markup (e.g. inline_keyboard)
+ */
+export async function sendTelegramMessageToChat(
+  chatId: number | string,
+  text: string,
+  options: {
+    token?: string;
+    silent?: boolean;
+    parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
+    replyMarkup?: unknown;
+  } = {}
+): Promise<void> {
+  const token = options.token?.trim() || process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() || TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+  try {
+    const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        disable_notification: options.silent ?? false,
+        ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
+        ...(options.replyMarkup ? { reply_markup: options.replyMarkup } : {}),
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('[TelegramControl] send failed:', res.status, detail.slice(0, 400));
+    }
+  } catch (error) {
+    console.error('[TelegramControl] Failed to send message:', error);
+  }
+}
+
 export async function notifyTaskTimeout(
   taskName: string,
   taskId: string,
