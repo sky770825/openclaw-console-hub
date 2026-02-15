@@ -27,7 +27,7 @@ cp docs/openclaw-taskboard-skill/SKILL.md ~/.openclaw/workspace/skills/openclaw-
       "openclaw-taskboard": {
         "enabled": true,
         "env": {
-          "OPENCLAW_TASKBOARD_URL": "http://localhost:3001"
+          "OPENCLAW_TASKBOARD_URL": "http://localhost:3011"
         }
       }
     }
@@ -35,7 +35,7 @@ cp docs/openclaw-taskboard-skill/SKILL.md ~/.openclaw/workspace/skills/openclaw-
 }
 ```
 
-- **本機開發**：`http://localhost:3001`（任務板後端 port）
+- **本機開發**：`http://localhost:3011`（任務板後端 port）
 - **正式環境**：`https://你的-api-網址`（不含尾端 `/api`）
 
 ### 1.3 加入 AGENTS 提示
@@ -73,5 +73,8 @@ openclaw gateway --port 18789
 - 「建立任務：修復登入 bug」
 - 「任務列表」
 - 「執行下一個任務」
+- **「/stop」或「停止」** → 緊急終止所有執行中的任務（需已加入 SKILL 與 AGENTS 提示）
 
 OpenClaw 應會呼叫 API 並回覆結果。
+
+若你已安裝過此 Skill，請重新複製 `SKILL.md` 以取得 /stop 緊急終止支援。

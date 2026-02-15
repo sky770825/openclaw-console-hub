@@ -16,7 +16,7 @@
 
 **MESSAGE 檢查（解碼後檢查）：**
 
-- 含 `sk-` / `pk-` / `Bearer` / `token=` / `api_key` / `cookie=` / `session=` → **停止**
+- 含 `sk-` / `pk-` / `Bearer` / `token=REDACTED / `api_key` / `cookie=` / `session=` → **停止**
 - 含 **16 位純數字** → **停止**
 - 含 `password` / `pwd` / `secret` 後接 `=` / `:` → **停止**
 - 含編碼字元（`%` / `\u` / `atob` / `eval`）→ **停止**

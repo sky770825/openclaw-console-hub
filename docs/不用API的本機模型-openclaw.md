@@ -33,7 +33,7 @@
 ```json
 "lmstudio": {
   "baseUrl": "http://127.0.0.1:1234/v1",
-  "apiKey": "lmstudio",
+  "apiKey": "REDACTED",
   "api": "openai-completions",
   "models": [
     {

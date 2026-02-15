@@ -27,7 +27,7 @@ Agent 執行完任務後，**必須**呼叫 Command API，不能只改 task stat
 ```http
 POST /api/openclaw/command
 Content-Type: application/json
-X-API-Key: {OPENCLAW_API_KEY}
+X-API-Key:REDACTED
 
 {
   "sessionId": "sess-{timestamp}",      // 協作會話 ID

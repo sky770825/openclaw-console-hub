@@ -6,7 +6,7 @@
 
 | 變數 | 說明 | 範例 |
 |------|------|------|
-| `TASKBOARD_API` | 任務板後端 API 根網址 | `http://localhost:3001` 或 `https://your-api.zeabur.app` |
+| `TASKBOARD_API` | 任務板後端 API 根網址 | `http://localhost:3011` 或 `https://your-api.zeabur.app` |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token（選填） | 從 @BotFather 取得 |
 
 ---
@@ -135,7 +135,7 @@ return [{ json: { action: match[1], id: match[2] } }];
 
 | 變數名 | 值 |
 |--------|-----|
-| `TASKBOARD_API` | `http://localhost:3001`（本機）或部署後的 API URL |
+| `TASKBOARD_API` | `http://localhost:3011`（本機）或部署後的 API URL |
 | `TELEGRAM_BOT_TOKEN` | 從 @BotFather 取得（若有 Telegram 流程） |
 
 ---

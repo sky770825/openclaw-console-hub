@@ -43,7 +43,7 @@ Ollama 在 OpenClaw 裡是當成 **openai-completions** 相容，所以要用 `"
       "ollama": {
         "baseUrl": "http://127.0.0.1:11434/v1",
         "api": "openai-completions",
-        "apiKey": "OLLAMA_API_KEY",
+        "apiKey": "REDACTED",
         "models": [
           {
             "id": "llama3.2:latest",

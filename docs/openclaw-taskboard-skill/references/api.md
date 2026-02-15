@@ -1,6 +1,6 @@
 # OpenClaw 任務板 API 規格
 
-Base URL 來自 `OPENCLAW_TASKBOARD_URL`（例：`http://localhost:3001`）。寫入需 `x-api-key`（若後端啟用）。
+Base URL 來自 `OPENCLAW_TASKBOARD_URL`（例：`http://localhost:3011`）。寫入需 `x-api-key`（若後端啟用）。
 
 ## 模組與端點對照
 

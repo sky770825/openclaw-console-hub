@@ -31,7 +31,7 @@
   "port": 18789,
   "auth": {
     "mode": "token",
-    "token": "dev-local"
+    "token": "REDACTED"
   },
   "tailscale": { "mode": "off", "resetOnExit": false }
 }

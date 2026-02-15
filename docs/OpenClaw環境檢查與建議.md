@@ -85,7 +85,7 @@
 
 ### 5. Gateway 對外與認證（依需求）
 
-**現狀：** `gateway.mode: "local"`、`bind: "lan"`、`auth.mode: "token"`、`auth.token: "dev-local"`。
+**現狀：** `gateway.mode: "local"`、`bind: "lan"`、`auth.mode: "token"`、`auth.token:REDACTED`。
 
 **建議：**
 

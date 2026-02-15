@@ -7,7 +7,7 @@
    cd server
    npm run dev
    ```
-   後端預設在 `http://localhost:3001`
+   後端預設在 `http://localhost:3011`（可用 `PORT=` 覆蓋）
 
 2. **啟動前端**：
    ```bash
@@ -16,7 +16,7 @@
    前端在 `http://localhost:3009`（或 vite.config 設定的 port）
 
 3. **API 連線方式**：
-   - Vite 開發伺服器會將 `/api/*` 自動 **proxy 轉發** 至 `http://localhost:3001`
+   - Vite 開發伺服器會將 `/api/*` 自動 **proxy 轉發** 至 `http://localhost:3011`
    - 因此 OpenClaw Agent 板、儀表板、任務看板等都會打到後端
    - 無須額外設定 `VITE_API_BASE_URL`（本機開發時）
 
@@ -44,5 +44,5 @@
 ## 若出現「API 路徑不對」
 
 1. 確認 **後端已啟動**：`cd server && npm run dev`
-2. 確認 **埠號**：後端預設 3001，若修改需同步調整 `vite.config.ts` 的 proxy target
+2. 確認 **埠號**：後端預設 3011，若修改需同步調整 `vite.config.ts` 的 proxy target
 3. 正式環境：設定 `VITE_API_BASE_URL` 為實際 API 網址

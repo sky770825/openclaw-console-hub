@@ -1,6 +1,6 @@
 # Telegram 任務橋接 Express 範例啟動說明
 
-範例檔：
+範例檔（僅供參考，不會被任何服務自動執行）：
 
 - `scripts/telegram-task-bridge-example.js`
 
@@ -14,7 +14,7 @@ npm install express
 
 ```bash
 export PORT=3100
-export TASK_API_BASE=http://localhost:3001
+export TASK_API_BASE=http://localhost:3011
 export WEBHOOK_SECRET='replace-with-strong-secret'
 export TELEGRAM_BOT_TOKEN='123456:your_bot_token'
 ```

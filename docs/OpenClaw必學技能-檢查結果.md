@@ -11,7 +11,7 @@
 |---|------|------|------|
 | 1 | **環境與版本** | ✅ 通過 | Node v22.22.0（≥22）；`openclaw` 在 PATH（`~/.nvm/.../openclaw`）。 |
 | 2 | **設定檔位置與格式** | ✅ 通過 | Config 在 `~/.openclaw/openclaw.json`，格式正確；含 gateway、agents、tools、channels、plugins。 |
-| 3 | **Gateway 基本概念** | ✅ 通過 | `gateway.mode: local`、`gateway.bind: lan`、`gateway.auth.token: dev-local` 已設；非 loopback 有 auth。 |
+| 3 | **Gateway 基本概念** | ✅ 通過 | `gateway.mode: local`、`gateway.bind: lan`、`gateway.auth.token:REDACTED 已設；非 loopback 有 auth。 |
 | 4 | **診斷指令順序** | ✅ 已跑 | 已執行：`openclaw status`、`openclaw gateway status`、`openclaw doctor`、`openclaw channels status --probe`。Gateway 現為 **Runtime: running**、**RPC probe: ok**。 |
 | 5 | **配對與權限** | ✅ 通過 | WhatsApp：`dmPolicy: pairing`、`groupPolicy: allowlist`；知道「沒回覆」先查 pairing/mention。 |
 | 6 | **模型與認證** | ✅ 通過 | `agents.defaults.model.primary: google/gemini-2.5-flash`、fallbacks 含 ollama；auth 有 google-antigravity OAuth；Ollama 已設。 |

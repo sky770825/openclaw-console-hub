@@ -48,7 +48,7 @@ OpenClaw 的 `gateway.bind` **不能**填寫 `"0.0.0.0"` 這個字串。
        "bind": "lan",
        "auth": {
          "mode": "token",
-         "token": "你自訂的一組密碼或 token"
+         "token": "REDACTED"
        }
      }
      ```
@@ -69,7 +69,7 @@ OpenClaw 的 `gateway.bind` **不能**填寫 `"0.0.0.0"` 這個字串。
     "bind": "lan",
     "auth": {
       "mode": "token",
-      "token": "my-secret-token"
+      "token": "REDACTED"
     }
   },
   "agents": { ... }

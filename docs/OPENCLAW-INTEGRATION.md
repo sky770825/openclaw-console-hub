@@ -11,7 +11,7 @@ OpenClaw 板（`/cursor`）從後端載入任務，優先使用 Supabase，若�
 | `POST /api/openclaw/tasks` | 建立任務（寫入 Supabase） |
 | `PATCH /api/openclaw/tasks/:id` | 更新任務 |
 
-**前置**：`.env` 設定 `VITE_API_BASE_URL=http://localhost:3001`，前端會呼叫後端 API。
+**前置**：`.env` 設定 `VITE_API_BASE_URL=http://localhost:3011`，前端會呼叫後端 API。
 
 ---
 
@@ -21,12 +21,12 @@ OpenClaw 板（`/cursor`）從後端載入任務，優先使用 Supabase，若�
 
 ```bash
 # 主應用格式（in-memory）
-curl -X POST http://localhost:3001/api/tasks \
+curl -X POST http://localhost:3011/api/tasks \
   -H "Content-Type: application/json" \
   -d '{"name":"OpenClaw 測試任務","description":"給 OpenClaw 執行","status":"ready"}'
 
 # OpenClaw 格式（需 Supabase migration）
-curl -X POST http://localhost:3001/api/openclaw/tasks \
+curl -X POST http://localhost:3011/api/openclaw/tasks \
   -H "Content-Type: application/json" \
   -d '{"id":"oc-test-1","title":"OpenClaw 測試","cat":"feature","status":"queued","progress":0,"auto":false,"subs":[]}'
 ```
@@ -35,18 +35,18 @@ curl -X POST http://localhost:3001/api/openclaw/tasks \
 
 ```bash
 # 執行指定任務
-curl -X POST http://localhost:3001/api/openclaw/tasks/{taskId}/run
+curl -X POST http://localhost:3011/api/openclaw/tasks/{taskId}/run
 # 或
-curl -X POST http://localhost:3001/api/tasks/{taskId}/run
+curl -X POST http://localhost:3011/api/tasks/{taskId}/run
 ```
 
 回傳新建立的 Run，含 `id`、`status`、`startedAt` 等。
 
 ### 2.3 驗證
 
-1. 開啟 http://localhost:3012/cursor 應能看到任務
-2. 透過主應用 http://localhost:3012/tasks 執行任務
-3. 查詢 Run：`curl http://localhost:3001/api/runs`
+1. 開啟 http://localhost:3009/cursor 應能看到任務
+2. 透過主應用 http://localhost:3009/tasks 執行任務
+3. 查詢 Run：`curl http://localhost:3011/api/runs`
 
 ---
 
@@ -55,7 +55,7 @@ curl -X POST http://localhost:3001/api/tasks/{taskId}/run
 ### 3.1 自動執行下一個 queued 任務
 
 ```bash
-curl -X POST http://localhost:3001/api/openclaw/run-next
+curl -X POST http://localhost:3011/api/openclaw/run-next
 ```
 
 會挑選第一個 `status=queued` 的任務並執行，回傳 `{ run, taskId }`。若無可執行任務則回傳 `{ ok: false, message: "No queued task to run" }`。
@@ -75,7 +75,7 @@ pm2 startup
 
 - **cron**：每分鐘呼叫 `POST /api/openclaw/run-next`
   ```bash
-  * * * * * curl -s -X POST http://localhost:3001/api/openclaw/run-next
+  * * * * * curl -s -X POST http://localhost:3011/api/openclaw/run-next
   ```
 - **n8n**：建立 Cron 節點 → HTTP Request 呼叫 `POST /api/openclaw/run-next`
 
@@ -83,11 +83,11 @@ pm2 startup
 
 | 按鈕 | API | 範例 |
 |------|-----|------|
-| 批准審核 | `PATCH /api/openclaw/reviews/:id` | `curl -X PATCH http://localhost:3001/api/openclaw/reviews/r1 -H "Content-Type: application/json" -d '{"status":"approved"}'` |
-| 駁回審核 | `PATCH /api/openclaw/reviews/:id` | `curl -X PATCH http://localhost:3001/api/openclaw/reviews/r1 -H "Content-Type: application/json" -d '{"status":"rejected"}'` |
-| 啟用/停用自動化 | `PATCH /api/openclaw/automations/:id` | `curl -X PATCH http://localhost:3001/api/openclaw/automations/a1 -H "Content-Type: application/json" -d '{"active":true}'` |
-| 刪除任務 | `DELETE /api/openclaw/tasks/:id` | `curl -X DELETE http://localhost:3001/api/openclaw/tasks/t1` |
-| 重啟 Gateway | `POST /api/openclaw/restart-gateway` | `curl -X POST http://localhost:3001/api/openclaw/restart-gateway` |
+| 批准審核 | `PATCH /api/openclaw/reviews/:id` | `curl -X PATCH http://localhost:3011/api/openclaw/reviews/r1 -H "Content-Type: application/json" -d '{"status":"approved"}'` |
+| 駁回審核 | `PATCH /api/openclaw/reviews/:id` | `curl -X PATCH http://localhost:3011/api/openclaw/reviews/r1 -H "Content-Type: application/json" -d '{"status":"rejected"}'` |
+| 啟用/停用自動化 | `PATCH /api/openclaw/automations/:id` | `curl -X PATCH http://localhost:3011/api/openclaw/automations/a1 -H "Content-Type: application/json" -d '{"active":true}'` |
+| 刪除任務 | `DELETE /api/openclaw/tasks/:id` | `curl -X DELETE http://localhost:3011/api/openclaw/tasks/t1` |
+| 重啟 Gateway | `POST /api/openclaw/restart-gateway` | `curl -X POST http://localhost:3011/api/openclaw/restart-gateway` |
 
 ### 3.5 OpenClaw Agent 自動啟動
 

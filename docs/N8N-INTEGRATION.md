@@ -37,12 +37,12 @@ N8N_API_KEY=your-n8n-api-key
 
 ```bash
 # 檢查 n8n 連線
-curl http://localhost:3001/api/n8n/health
+curl http://localhost:3011/api/n8n/health
 
 # 取得工作流列表
-curl -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/api/v1/workflows"
+curl -H "X-N8N-API-KEY:REDACTED" "$N8N_API_URL/api/v1/workflows"
 # 或透過我們後端轉發：
-curl http://localhost:3001/api/n8n/workflows
+curl http://localhost:3011/api/n8n/workflows
 ```
 
 ---

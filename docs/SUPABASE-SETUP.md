@@ -53,7 +53,7 @@ Server 啟動後提供以下 API，會寫入 Supabase：
 ## 四、連線流程
 
 1. **後端**：`cd server && npm run dev`（需有 .env 的 SUPABASE_*）
-2. **前端**：`VITE_API_BASE_URL=http://localhost:3001` 指向後端
+2. **前端**：`VITE_API_BASE_URL=http://localhost:3011` 指向後端
 3. **OpenClaw v4 板**（`/cursor`）：需改為呼叫上述 API 以載入／儲存 Supabase 資料
 
 ## 五、前端接 Supabase（選用）

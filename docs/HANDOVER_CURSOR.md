@@ -87,7 +87,7 @@ ALTER TABLE public.openclaw_interrupts ENABLE ROW LEVEL SECURITY;
 ```bash
 curl -X POST http://localhost:3011/api/openclaw/command \
   -H "Content-Type: application/json" \
-  -H "x-api-key: $OPENCLAW_API_KEY" \
+  -H "x-api-key:REDACTED" \
   -d '{
     "sessionId": "test-001",
     "from": "supervisor",
@@ -105,7 +105,7 @@ curl -X POST http://localhost:3011/api/openclaw/command \
 ```bash
 curl -X POST http://localhost:3011/api/openclaw/interrupt \
   -H "Content-Type: application/json" \
-  -H "x-api-key: $OPENCLAW_API_KEY" \
+  -H "x-api-key:REDACTED" \
   -d '{
     "sessionId": "test-001",
     "from": "cursor_agent",
@@ -122,7 +122,7 @@ curl -X POST http://localhost:3011/api/openclaw/interrupt \
 ```bash
 curl -X POST http://localhost:3011/api/openclaw/resume \
   -H "Content-Type: application/json" \
-  -H "x-api-key: $OPENCLAW_API_KEY" \
+  -H "x-api-key:REDACTED" \
   -d '{
     "sessionId": "test-001",
     "interruptId": "int-xxx",

@@ -29,7 +29,7 @@
 
 實作方式建議：
 
-- **方式 A（推薦）**：在 Agent 的 workspace 放一支**小腳本**（例如 `scripts/task-board-api.sh` 或 `task-board-api.js`），用 `curl` 或 `fetch` 打任務板後端（如 `http://localhost:3001`）。Agent 用 **exec** 呼叫該腳本（例如 `list-tasks`、`run-task <taskId>`），即可控制任務板。腳本需支援 base URL 可設（環境變數或參數）。
+- **方式 A（推薦）**：在 Agent 的 workspace 放一支**小腳本**（例如 `scripts/task-board-api.sh` 或 `task-board-api.js`），用 `curl` 或 `fetch` 打任務板後端（如 `http://localhost:3011`）。Agent 用 **exec** 呼叫該腳本（例如 `list-tasks`、`run-task <taskId>`），即可控制任務板。腳本需支援 base URL 可設（環境變數或參數）。
 - **方式 B**：做一個 **OpenClaw Skill**，把上述 API 包成 named tools（如 `task_board_list_tasks`、`task_board_run_task`），Agent 直接呼叫 tool。適合長期、多處使用。
 - **方式 C**：若 OpenClaw 內建 **web_fetch** 或可發 HTTP 的 tool，可在 TOOLS.md 寫明任務板 API 的 base URL 與端點，讓 Agent 用該 tool 直接打 API。
 
@@ -71,8 +71,8 @@
 
 ## 三、實作檢查清單
 
-- [ ] **任務板後端**：確認 openclaw-console-hub 的 server 已啟動（如 `http://localhost:3001`），且 CORS 允許 Agent 或腳本呼叫。
-- [ ] **Agent 呼叫方式**：在 workspace 提供腳本或 Skill，讓 Agent 能執行「列出任務、觸發執行、查 Run」；base URL 可配置（如環境變數 `TASK_BOARD_API_BASE=http://localhost:3001`）。
+- [ ] **任務板後端**：確認 openclaw-console-hub 的 server 已啟動（如 `http://localhost:3011`），且 CORS 允許 Agent 或腳本呼叫。
+- [ ] **Agent 呼叫方式**：在 workspace 提供腳本或 Skill，讓 Agent 能執行「列出任務、觸發執行、查 Run」；base URL 可配置（如環境變數 `TASK_BOARD_API_BASE=http://localhost:3011`）。
 - [ ] **TOOLS.md**：寫明任務板 API base URL、可用指令（或端點），以及「用瀏覽器開 Claude / ChatGPT 省 Token」的時機與注意事項。
 - [ ] **AGENTS.md（可選）**：一句提醒——需要觸發任務板執行時用腳本/Skill；需要省 Token 且問題適合時，可改用瀏覽器開 Claude / ChatGPT。
 
@@ -96,7 +96,7 @@
    npm install   # 若還沒裝
    npm run dev  # 或 npm run build && npm start
    ```
-   看到 `OpenClaw API http://localhost:3001` 即表示 API 已啟動。
+   看到 `OpenClaw API http://localhost:3011`（或你的 `PORT`）即表示 API 已啟動。
 
 2. **（可選）啟動任務板前端**  
    若要從瀏覽器看任務看板、執行紀錄：
@@ -104,7 +104,7 @@
    cd /path/to/openclaw-console-hub-main
    npm install && npm run dev
    ```
-   前端需設定 `VITE_API_BASE_URL=http://localhost:3001` 才會接到上述 API（見專案 `.env` 或 API-INTEGRATION.md）。
+   前端需設定 `VITE_API_BASE_URL=http://localhost:3011` 才會接到上述 API（見專案 `.env` 或 API-INTEGRATION.md）。
 
 3. **讓 Agent 控制任務板**  
    - 在 OpenClaw 對話中對小蔡說：「列出任務板上的任務」或「幫我觸發任務 XXX 執行」。  
