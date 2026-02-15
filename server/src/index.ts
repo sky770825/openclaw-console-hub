@@ -4,7 +4,9 @@
  * OpenClaw v4 板：/api/openclaw/* 寫入 Supabase
  */
 import './preload-dotenv.js';
+import { startTelegramStopPoll } from './telegram-stop-poll.js';
 import path from 'path';
+import fs from 'fs';
 import { spawn, execSync } from 'child_process';
 import express from 'express';
 import cors from 'cors';
@@ -15,9 +17,11 @@ import { runSeed } from './seed.js';
 import type { Task, Run, Alert } from './types.js';
 import {
   fetchOpenClawTasks,
+  fetchOpenClawTasksByFromReviewId,
   upsertOpenClawTask,
   fetchOpenClawReviews,
   upsertOpenClawReview,
+  deleteOpenClawReview,
   seedOpenClawReviewsIfEmpty,
   fetchOpenClawAutomations,
   upsertOpenClawAutomation,
@@ -93,10 +97,32 @@ import {
 // === 新增：WebSocket 即時推播 ===
 import { wsManager } from './websocket.js';
 import http from 'http';
+import {
+  validateTaskForGate,
+  ensureProjectSkeleton,
+  ensureRunWorkspace,
+  buildRunPath,
+  normalizeProjectPath,
+} from './taskCompliance.js';
+import { fileURLToPath } from 'url';
+import { DOMAINS, applyDomainTagging } from './domains.js';
+import { loadFeatures, patchFeatures, saveFeatures, type FeatureFlags } from './features.js';
+import {
+  getState as getAutoTaskGeneratorState,
+  patchState as patchAutoTaskGeneratorState,
+  runOneCycle as runAutoTaskGeneratorCycle,
+} from './auto-task-generator.js';
 
 runSeed();
 
 const app = express();
+
+// If you deploy behind a reverse proxy (Caddy/Nginx/Cloudflare), set OPENCLAW_TRUST_PROXY=true
+// so req.ip + rate limiting use the real client IP.
+if (process.env.OPENCLAW_TRUST_PROXY === 'true') {
+  // Express accepts boolean/number; 1 means trust first proxy hop.
+  app.set('trust proxy', 1);
+}
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 type JsonObject = { [key: string]: JsonValue };
@@ -294,9 +320,13 @@ for (const key of [OPENCLAW_API_KEY, OPENCLAW_ADMIN_KEY]) {
 function requiredAccessLevel(req: express.Request): AccessLevel {
   const path = req.path;
   const method = req.method.toUpperCase();
+  // PATCH /api/features 需 admin；GET 允許 read（或 none，依 OPENCLAW_ENFORCE_READ_AUTH）
+  if (path === '/features' && method === 'PATCH') return 'admin';
   if (
     path === '/openclaw/restart-gateway' ||
-    path === '/n8n/trigger-webhook'
+    path === '/n8n/trigger-webhook' ||
+    path === '/emergency/stop-all' ||
+    path === '/telegram/force-test'
   ) {
     return 'admin';
   }
@@ -367,7 +397,23 @@ function validateWebhookUrl(rawUrl: unknown): { ok: true; value: string } | { ok
 }
 
 // CORS 設定：必須在 helmet / rateLimit 之前，確保 preflight 與 429 回應都帶 CORS header
-const allowedOrigins = [
+function readAllowedOriginsEnv(): string[] {
+  const raw = process.env.ALLOWED_ORIGINS?.trim();
+  if (!raw) return [];
+  const out: string[] = [];
+  for (const part of raw.split(',')) {
+    const s = part.trim();
+    if (!s) continue;
+    try {
+      out.push(new URL(s).origin);
+    } catch {
+      // Ignore invalid origins (common mistake: pasting full URL paths).
+    }
+  }
+  return out;
+}
+
+const allowedOrigins = Array.from(new Set([
   'http://localhost:3000',
   'http://localhost:3009',
   'http://localhost:3011',
@@ -376,13 +422,13 @@ const allowedOrigins = [
   'http://127.0.0.1:3009',
   'http://127.0.0.1:3011',
   'http://127.0.0.1:5173',
-];
+  ...readAllowedOriginsEnv(),
+]));
 app.use(cors({
   origin: (origin, callback) => {
     // 允許無 origin 的請求（如 curl、Postman）
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('不允許的來源'));
+    return callback(null, allowedOrigins.includes(origin));
   },
   credentials: true,
 }));
@@ -415,7 +461,8 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-const PORT = Number(process.env.PORT) || 3001;
+// Canonical local port for the taskboard API/server. Override via PORT env var.
+const PORT = Number(process.env.PORT) || 3011;
 
 // ---- Tasks ----
 app.get('/api/tasks', async (_req, res) => {
@@ -425,6 +472,58 @@ app.get('/api/tasks', async (_req, res) => {
     return res.json(mapped);
   }
   res.json(tasks);
+});
+
+// ---- Domains (Task Tagging Spec) ----
+// Frontend can use this to render consistent filters/badges.
+app.get('/api/domains', (_req, res) => {
+  res.json({ ok: true, domains: DOMAINS });
+});
+
+// ---- Feature Flags (UI governance) ----
+let featureFlags: FeatureFlags = loadFeatures();
+
+app.get('/api/features', (_req, res) => {
+  res.json({ ok: true, features: featureFlags });
+});
+
+app.patch('/api/features', (req, res) => {
+  // Admin-gated by requiredAccessLevel(): path '/features' is treated as admin.
+  const body = (req.body ?? {}) as Partial<FeatureFlags>;
+  featureFlags = patchFeatures(featureFlags, body);
+  saveFeatures(featureFlags);
+  res.json({ ok: true, features: featureFlags });
+});
+
+// 任務合規檢查（Batch A）：幫小蔡快速看哪些卡缺欄位，避免一直「看起來 ready 但其實不能跑」
+app.get('/api/tasks/compliance', async (_req, res) => {
+  const list = hasSupabase()
+    ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
+    : [...tasks];
+
+  let ready = 0;
+  let compliantReady = 0;
+  const sample: { id: string; name: string; missing: string[] }[] = [];
+
+  for (const t of list) {
+    if (t.status !== 'ready') continue;
+    ready++;
+    const gate = validateTaskForGate(t, 'ready');
+    if (gate.ok) {
+      compliantReady++;
+    } else if (sample.length < 10) {
+      sample.push({ id: t.id, name: t.name, missing: gate.missing });
+    }
+  }
+
+  res.json({
+    ok: true,
+    total: list.length,
+    ready,
+    compliantReady,
+    noncompliantReady: ready - compliantReady,
+    sample,
+  });
 });
 
 app.get('/api/tasks/:id', async (req, res) => {
@@ -452,6 +551,22 @@ app.patch('/api/tasks/:id', async (req, res) => {
       | 'tags'
       | 'scheduleType'
       | 'scheduleExpr'
+      | 'riskLevel'
+      | 'rollbackPlan'
+      | 'acceptanceCriteria'
+      | 'evidenceLinks'
+      | 'summary'
+      | 'nextSteps'
+      | 'projectPath'
+      | 'runPath'
+      | 'idempotencyKey'
+      | 'deliverables'
+      | 'runCommands'
+      | 'modelPolicy'
+      | 'allowPaid'
+      | 'executionProvider'
+      | 'agent'
+      | 'modelConfig'
     >
   >;
   // 驗證：名稱不能為空
@@ -467,20 +582,39 @@ app.patch('/api/tasks/:id', async (req, res) => {
 
     // 先從 Supabase 任務轉成主應用 Task，再套用本次更新欄位
     const currentTask = openClawTaskToTask(oc);
-    const updatedTask: Task = {
+    let updatedTask: Task = {
       ...currentTask,
       ...body,
+      ...(body.projectPath ? { projectPath: normalizeProjectPath(body.projectPath) } : {}),
+      ...(body.runPath ? { runPath: normalizeProjectPath(body.runPath) } : {}),
       updatedAt: now,
     };
 
-    // 將更新後的 Task 轉回 OpenClawTask，並寫回 Supabase
-    const ocPayload = taskToOpenClawTask({
-      id: taskId,
+    // Domain tag governance: keep a single domain:* and infer one if missing.
+    // (Non-blocking, but prevents tag drift + helps filtering.)
+    const domainApplied = applyDomainTagging({
       name: updatedTask.name,
       description: updatedTask.description,
-      status: updatedTask.status,
       tags: updatedTask.tags,
     });
+    updatedTask = { ...updatedTask, tags: domainApplied.tags };
+
+    // Gate: transition to ready 時做欄位強制，並預先建立 projects 骨架
+    if (body.status === 'ready') {
+      const gate = validateTaskForGate(updatedTask, 'ready');
+      if (!gate.ok) {
+        return res.status(400).json({
+          message: `Task cannot transition to ready; missing: ${gate.missing.join(', ')}`,
+        });
+      }
+      const ensured = ensureProjectSkeleton(updatedTask);
+      if (!ensured.ok) {
+        return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+      }
+    }
+
+    // 將更新後的 Task 轉回 OpenClawTask，並寫回 Supabase
+    const ocPayload = taskToOpenClawTask(updatedTask);
     const merged = { ...oc, ...ocPayload };
     const saved = await upsertOpenClawTask(merged);
     if (!saved) {
@@ -506,20 +640,187 @@ app.patch('/api/tasks/:id', async (req, res) => {
     ...body,
     updatedAt: now,
   };
+  {
+    const domainApplied = applyDomainTagging({
+      name: updatedLocal.name,
+      description: updatedLocal.description,
+      tags: updatedLocal.tags,
+    });
+    updatedLocal.tags = domainApplied.tags;
+  }
   tasks[idx] = updatedLocal;
   res.json(updatedLocal);
 });
 
+// ---- Task Writeback (Batch A) ----
+// 讓 Codex/Cursor/Ollama 寫回索引級欄位（summary/nextSteps/runPath 等），避免只堆「新任務」空卡
+app.patch('/api/tasks/:id/progress', async (req, res) => {
+  const taskId = req.params.id;
+  const body = req.body as Partial<Pick<
+    Task,
+    'summary' | 'nextSteps' | 'evidenceLinks' | 'runPath' | 'idempotencyKey' | 'status'
+  >> & {
+    runId?: string;
+    appendToDescription?: boolean;
+  };
+
+  const ocTasks = hasSupabase() ? await fetchOpenClawTasks().catch(() => []) : [];
+  const oc = hasSupabase() ? ocTasks.find((x) => x.id === taskId) : undefined;
+  const current = oc ? openClawTaskToTask(oc) : tasks.find((t) => t.id === taskId);
+  if (!current) return res.status(404).json({ message: 'Task not found' });
+
+  // Keep writebacks index-level only (avoid context blow-ups / huge cards).
+  const clampText = (v: unknown, max: number): string | undefined => {
+    if (typeof v !== 'string') return undefined;
+    const s = v.trim();
+    if (!s) return undefined;
+    if (s.length <= max) return s;
+    return s.slice(0, max).trimEnd() + '…';
+  };
+  const clampStringArray = (v: unknown, maxItems: number, maxLen: number): string[] | undefined => {
+    if (!Array.isArray(v)) return undefined;
+    const cleaned = v
+      .map((x) => (typeof x === 'string' ? x.trim() : ''))
+      .filter(Boolean)
+      .slice(0, maxItems)
+      .map((s) => (s.length <= maxLen ? s : s.slice(0, maxLen).trimEnd() + '…'));
+    return cleaned.length > 0 ? cleaned : undefined;
+  };
+
+  const now = new Date().toISOString();
+  const runId = body.runId?.trim();
+
+  let runPath = body.runPath ? normalizeProjectPath(body.runPath) : current.runPath;
+  let idempotencyKey = body.idempotencyKey ?? current.idempotencyKey;
+  if (runId && current.projectPath) {
+    const date = now.slice(0, 10);
+    runPath = buildRunPath(current.projectPath, date, runId);
+    idempotencyKey = `${current.id}:${runId}`;
+  }
+  if (runPath) ensureRunWorkspace(runPath);
+
+  const summary = clampText(body.summary, 800) ?? current.summary;
+  const nextSteps = clampStringArray(body.nextSteps, 12, 180) ?? current.nextSteps;
+  const evidenceLinks = clampStringArray(body.evidenceLinks, 12, 500) ?? current.evidenceLinks;
+  const safeStatus = clampText(body.status, 40) as Task['status'] | undefined;
+
+  const updated: Task = {
+    ...current,
+    ...body,
+    ...(summary !== undefined ? { summary } : {}),
+    ...(nextSteps !== undefined ? { nextSteps } : {}),
+    ...(evidenceLinks !== undefined ? { evidenceLinks } : {}),
+    ...(safeStatus !== undefined ? { status: safeStatus } : {}),
+    runPath,
+    idempotencyKey,
+    updatedAt: now,
+  };
+
+  // description 僅存索引級（避免 context 爆炸）
+  if (body.appendToDescription) {
+    const lines: string[] = [];
+    if (updated.summary) lines.push(`summary: ${updated.summary}`);
+    if (updated.nextSteps && updated.nextSteps.length > 0) {
+      lines.push('nextSteps:');
+      for (const s of updated.nextSteps) lines.push(`- ${s}`);
+    }
+    if (updated.runPath) lines.push(`runPath: ${updated.runPath}`);
+    if (updated.idempotencyKey) lines.push(`idempotencyKey: ${updated.idempotencyKey}`);
+    if (lines.length > 0) {
+      updated.description = `${(updated.description ?? '').trim()}\n\n${lines.join('\n')}\n`.trim();
+    }
+  }
+
+  if (hasSupabase() && oc) {
+    const ocPayload = taskToOpenClawTask(updated);
+    const merged = { ...oc, ...ocPayload };
+    const saved = await upsertOpenClawTask(merged);
+    if (!saved) return res.status(500).json({ message: 'Failed to writeback task' });
+    return res.json(openClawTaskToTask(saved));
+  }
+
+  const idx = tasks.findIndex((t) => t.id === taskId);
+  if (idx >= 0) tasks[idx] = updated;
+  else tasks.unshift(updated);
+  res.json(updated);
+});
+
 app.post('/api/tasks', async (req, res) => {
   const body = req.body as Partial<Task> & { id?: string };
+  const allowStub =
+    (typeof req.query.allowStub === 'string' && req.query.allowStub === '1') ||
+    (Array.isArray(req.query.allowStub) && req.query.allowStub[0] === '1');
+  const nameTrimmed = typeof body.name === 'string' ? body.name.trim() : '';
+  // Stop generating empty "新任務" cards by default.
+  if (!nameTrimmed) {
+    if (allowStub) {
+      // Caller explicitly wants a stub; keep backward compatibility (but still non-blocking).
+      return res.status(201).json({
+        id: body.id ?? `t${Date.now()}`,
+        name: '新任務',
+        status: body.status ?? 'draft',
+        message: 'stub task created (allowStub=1)',
+      });
+    }
+    return res.status(204).send();
+  }
   if (hasSupabase()) {
     const id = body.id ?? `t${Date.now()}`;
-    const oc = {
+    const now = new Date().toISOString();
+    const t: Task = {
       id,
-      title: body.name?.trim() || '新任務',
-      thought: body.description?.trim() ?? '',
-      status: 'queued',
-      cat: (body.tags?.[0] as string) ?? 'feature',
+      name: nameTrimmed,
+      description: body.description?.trim() ?? '',
+      status: body.status ?? 'draft',
+      tags: body.tags ?? [],
+      owner: body.owner ?? 'OpenClaw',
+      priority: (body.priority as Task['priority']) ?? 3,
+      scheduleType: body.scheduleType ?? 'manual',
+      scheduleExpr: body.scheduleExpr,
+      riskLevel: body.riskLevel,
+      rollbackPlan: body.rollbackPlan,
+      acceptanceCriteria: body.acceptanceCriteria,
+      evidenceLinks: body.evidenceLinks,
+      summary: body.summary,
+      nextSteps: body.nextSteps,
+      projectPath: body.projectPath ? normalizeProjectPath(body.projectPath) : undefined,
+      runPath: body.runPath ? normalizeProjectPath(body.runPath) : undefined,
+      idempotencyKey: body.idempotencyKey,
+      deliverables: body.deliverables,
+      runCommands: body.runCommands,
+      modelPolicy: body.modelPolicy,
+      modelConfig: body.modelConfig,
+      agent: body.agent,
+      allowPaid: body.allowPaid,
+      executionProvider: body.executionProvider,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    {
+      const domainApplied = applyDomainTagging({
+        name: t.name,
+        description: t.description,
+        tags: t.tags,
+      });
+      t.tags = domainApplied.tags;
+    }
+
+    if (t.status === 'ready') {
+      const gate = validateTaskForGate(t, 'ready');
+      if (!gate.ok) {
+        return res.status(400).json({
+          message: `Task cannot be created as ready; missing: ${gate.missing.join(', ')}`,
+        });
+      }
+      const ensured = ensureProjectSkeleton(t);
+      if (!ensured.ok) {
+        return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+      }
+    }
+
+    const oc = {
+      ...taskToOpenClawTask(t),
       progress: 0,
       subs: [],
     };
@@ -531,7 +832,7 @@ app.post('/api/tasks', async (req, res) => {
   const newTask: Task = {
     ...body,
     id: body.id ?? `task-${Date.now()}`,
-    name: body.name?.trim() || '新任務',
+    name: nameTrimmed,
     description: body.description?.trim() ?? '',
     status: body.status ?? 'draft',
     tags: body.tags ?? [],
@@ -541,6 +842,14 @@ app.post('/api/tasks', async (req, res) => {
     createdAt: now,
     updatedAt: now,
   };
+  {
+    const domainApplied = applyDomainTagging({
+      name: newTask.name,
+      description: newTask.description,
+      tags: newTask.tags,
+    });
+    newTask.tags = domainApplied.tags;
+  }
   tasks.unshift(newTask);
   res.status(201).json(newTask);
 });
@@ -641,6 +950,19 @@ function createRun(task: Task): Run {
     fallbackHistory: [],
     timeoutAt,
   };
+
+  // Batch A: run_path/RESULT.md/ARTIFACTS 自動落地（索引級），避免只堆聊天紀錄
+  if (task.projectPath) {
+    const ensured = ensureProjectSkeleton(task);
+    if (ensured.ok) {
+      const date = now.slice(0, 10);
+      const runPath = buildRunPath(task.projectPath, date, run.id);
+      run.projectPath = task.projectPath;
+      run.runPath = runPath;
+      run.idempotencyKey = `${task.id}:${run.id}`;
+      ensureRunWorkspace(runPath);
+    }
+  }
   return run;
 }
 
@@ -953,6 +1275,13 @@ app.post('/api/tasks/:taskId/run', async (req, res) => {
   const task = await getTaskForRun(req.params.taskId);
   if (!task)
     return res.status(404).json({ message: 'Task not found' });
+
+  const gate = validateTaskForGate(task, 'ready');
+  if (!gate.ok) {
+    return res.status(400).json({
+      message: `Task not runnable; missing: ${gate.missing.join(', ')}`,
+    });
+  }
   const run = createRun(task);
   runs.unshift(run);
   const now = run.startedAt;
@@ -962,6 +1291,24 @@ app.post('/api/tasks/:taskId/run', async (req, res) => {
     tasks[idx].lastRunAt = now;
     tasks[idx].updatedAt = now;
   }
+  // 寫回本次 run 的索引級欄位（runPath/idempotencyKey），讓任務卡能對應到落地檔案
+  if (hasSupabase()) {
+    const ocTasks = await fetchOpenClawTasks().catch(() => []);
+    const oc = ocTasks.find((x) => x.id === task.id);
+    if (oc) {
+      const current = openClawTaskToTask(oc);
+      const updated: Task = {
+        ...current,
+        status: 'running',
+        runPath: run.runPath,
+        idempotencyKey: run.idempotencyKey,
+        updatedAt: now,
+      };
+      const ocPayload = taskToOpenClawTask(updated);
+      await upsertOpenClawTask({ ...oc, ...ocPayload }).catch(() => {});
+    }
+  }
+
   simulateExecution(run.id);
   res.status(201).json(run);
 });
@@ -1047,12 +1394,24 @@ async function executeNextQueuedTask(): Promise<
       status: t.status === 'running' ? 'in_progress' : t.status === 'done' ? 'done' : 'queued',
     }));
   }
-  const next = list.find((t) => t.status === 'queued' || t.status === 'ready');
-  if (!next) {
-    return { ok: false, status: 409, message: 'No queued task to run' };
+  const candidates = list.filter((t) => t.status === 'queued' || t.status === 'ready');
+  if (candidates.length === 0) {
+    return { ok: false, status: 409, message: '沒有可執行的排隊任務' };
   }
-  const task = await getTaskForRun(next.id);
-  if (!task) return { ok: false, status: 404, message: 'Task not found' };
+
+  // 跳過不符合閉環規範的任務（避免跑到空卡 / 無落地）
+  let task: Task | null = null;
+  for (const c of candidates) {
+    const fetched = await getTaskForRun(c.id);
+    if (!fetched) continue;
+    const gate = validateTaskForGate(fetched, 'ready');
+    if (!gate.ok) continue;
+    task = fetched;
+    break;
+  }
+  if (!task) {
+    return { ok: false, status: 409, message: '沒有符合規範的排隊任務可執行（可檢查任務卡是否缺少 projectPath、acceptanceCriteria 等欄位）' };
+  }
 
   let run = createRun(task);
   if (hasSupabase()) {
@@ -1074,6 +1433,25 @@ async function executeNextQueuedTask(): Promise<
     tasks[idx].lastRunAt = now;
     tasks[idx].updatedAt = now;
   }
+
+  // 寫回 run 索引（runPath/idempotencyKey），讓任務卡可追到 RESULT.md
+  if (hasSupabase()) {
+    const ocTasks2 = await fetchOpenClawTasks().catch(() => []);
+    const oc = ocTasks2.find((x) => x.id === task.id);
+    if (oc) {
+      const current = openClawTaskToTask(oc);
+      const updated: Task = {
+        ...current,
+        status: 'running',
+        runPath: run.runPath,
+        idempotencyKey: run.idempotencyKey,
+        updatedAt: now,
+      };
+      const ocPayload = taskToOpenClawTask(updated);
+      await upsertOpenClawTask({ ...oc, ...ocPayload }).catch(() => {});
+    }
+  }
+
   simulateExecution(run.id);
   return { ok: true, run, taskId: task.id };
 }
@@ -1123,8 +1501,54 @@ app.post('/api/openclaw/tasks', async (req, res) => {
       return res.status(503).json({ message: 'Supabase not connected' });
     }
     // 前端送來 Task 格式，可帶 subs/title（看板用）
-    const body = req.body as Partial<Task> & { id?: string; subs?: { t: string; d: boolean }[]; title?: string };
+    const body = req.body as Partial<Task> & {
+      id?: string;
+      subs?: { t: string; d: boolean }[];
+      title?: string;
+      // OpenClaw taskboard specific: link to a review item
+      fromR?: string;
+      from_review_id?: string;
+    };
+
+    // Stop "empty/stub" cards from being created repeatedly.
+    // - Many OpenClaw-side callers may send only {title/name/desc/status/tags/subs}.
+    // - Those cards are non-actionable in our taskboard (missing required meta), and they
+    //   also create noisy "新任務" placeholders.
+    // If someone *really* wants to create stub cards, they can pass `?allowStub=1`.
+    const q = (req.query ?? {}) as Record<string, unknown>;
+    const allowStub = String(q.allowStub ?? '') === '1';
+    const maybeTitle = String(body.name ?? body.title ?? '').trim();
+    const maybeDesc = String(body.description ?? '').trim();
+    const hasAnyComplianceField =
+      typeof body.projectPath === 'string' ||
+      typeof body.rollbackPlan === 'string' ||
+      Array.isArray(body.acceptanceCriteria) ||
+      Array.isArray(body.deliverables) ||
+      Array.isArray(body.runCommands) ||
+      typeof body.modelPolicy === 'string' ||
+      typeof body.executionProvider === 'string' ||
+      typeof body.allowPaid === 'boolean' ||
+      typeof body.riskLevel === 'string' ||
+      body.agent?.type != null;
+    const looksLikeStub = !hasAnyComplianceField;
+    const looksLikeEmptyCard =
+      (maybeTitle.length === 0 || maybeTitle === '新任務') &&
+      maybeDesc.length === 0 &&
+      (!Array.isArray(body.subs) || body.subs.length === 0);
+
+    if (!allowStub && looksLikeStub) {
+      if (looksLikeEmptyCard) {
+        // Ignore silently: this prevents "空卡一直再生" when some client retries.
+        return res.status(204).send();
+      }
+      return res.status(400).json({
+        message:
+          'Stub task creation is disabled. Please create tasks via /api/tasks with full metadata (projectPath/agent/risk/rollback/acceptance/deliverables/runCommands/modelPolicy/executionProvider/allowPaid), or call this endpoint with ?allowStub=1.',
+      });
+    }
+
     const id = body.id ?? `t${Date.now()}`;
+    const fromR = body.fromR ?? body.from_review_id ?? null;
     const ocPayload = {
       ...taskToOpenClawTask({
         id,
@@ -1135,6 +1559,7 @@ app.post('/api/openclaw/tasks', async (req, res) => {
       }),
       title: body.title ?? body.name ?? '新任務',
       subs: Array.isArray(body.subs) ? body.subs : [],
+      ...(fromR != null && { fromR }),
     };
     const task = await upsertOpenClawTask(ocPayload);
     if (!task) {
@@ -1255,6 +1680,22 @@ app.post('/api/openclaw/run-next', async (_req, res) => {
   res.status(201).json({ run: result.run, taskId: result.taskId });
 });
 
+/** 將 openclaw_reviews 轉成發想審核頁面使用的 Review 格式 */
+function openClawReviewToReview(r: import('./openclawSupabase.js').OpenClawReview, index: number) {
+  return {
+    id: r.id,
+    number: index + 1,
+    title: r.title,
+    summary: r.desc ?? '',
+    filePath: r.src ?? '',
+    status: r.status as 'pending' | 'approved' | 'rejected',
+    createdAt: r.created_at ?? new Date().toISOString(),
+    reviewedAt: r.status !== 'pending' ? r.created_at : undefined,
+    reviewNote: r.reasoning ?? undefined,
+    tags: [r.type, r.pri].filter(Boolean),
+  };
+}
+
 app.get('/api/openclaw/reviews', async (_req, res) => {
   try {
     let data = await fetchOpenClawReviews();
@@ -1266,7 +1707,7 @@ app.get('/api/openclaw/reviews', async (_req, res) => {
         /* seed 失敗仍回傳 []，不中斷請求 */
       }
     }
-    res.json(data);
+    res.json(data.map((r, i) => openClawReviewToReview(r, i)));
   } catch (e) {
     res.status(500).json({ message: 'Failed to fetch reviews' });
   }
@@ -1284,11 +1725,45 @@ app.post('/api/openclaw/reviews', async (req, res) => {
 
 app.patch('/api/openclaw/reviews/:id', async (req, res) => {
   try {
-    const review = await upsertOpenClawReview({ ...req.body, id: req.params.id });
+    const body = req.body as { status?: string; reviewNote?: string; reviewedAt?: string };
+    const existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
+    if (!existing) return res.status(404).json({ message: 'Review not found' });
+    const payload = {
+      ...existing,
+      id: req.params.id,
+      status: body.status ?? existing.status,
+      reasoning: body.reviewNote !== undefined ? body.reviewNote : existing.reasoning,
+    };
+    const review = await upsertOpenClawReview(payload);
     if (!review) return res.status(500).json({ message: 'Failed to update review' });
-    res.json(review);
+    const list = await fetchOpenClawReviews();
+    const idx = list.findIndex((r) => r.id === review.id);
+    res.json(openClawReviewToReview(review, idx >= 0 ? idx : 0));
   } catch (e) {
     res.status(500).json({ message: 'Failed to update review' });
+  }
+});
+
+app.delete('/api/openclaw/reviews/:id', async (req, res) => {
+  try {
+    const existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
+    if (!existing) return res.status(404).json({ message: 'Review not found' });
+    const ok = await deleteOpenClawReview(req.params.id);
+    if (!ok) return res.status(500).json({ message: 'Failed to delete review' });
+    return res.status(204).send();
+  } catch (e) {
+    res.status(500).json({ message: 'Failed to delete review' });
+  }
+});
+
+/** 取得此發想審核轉出的任務列表 */
+app.get('/api/openclaw/reviews/:id/tasks', async (req, res) => {
+  try {
+    const ocTasks = await fetchOpenClawTasksByFromReviewId(req.params.id);
+    const mapped = ocTasks.map(openClawTaskToTask);
+    return res.json(mapped);
+  } catch (e) {
+    res.status(500).json({ message: 'Failed to fetch tasks for review' });
   }
 });
 
@@ -1820,10 +2295,11 @@ app.get('/api/openclaw/sessions/:id', async (req, res) => {
         .eq('id', sessionId)
         .maybeSingle();
       if (data) {
+        const row = data as unknown as Record<string, unknown>;
         meta = {
-          status: (data as any).status ?? undefined,
-          createdAt: (data as any).created_at ?? undefined,
-          updatedAt: (data as any).updated_at ?? undefined,
+          status: typeof row.status === 'string' ? row.status : undefined,
+          createdAt: typeof row.created_at === 'string' ? row.created_at : undefined,
+          updatedAt: typeof row.updated_at === 'string' ? row.updated_at : undefined,
         };
       }
     }
@@ -1856,13 +2332,16 @@ app.get('/api/openclaw/sessions/:id/commands', async (req, res) => {
         return res.status(500).json({ ok: false, message: 'Failed to fetch commands' });
       }
       return res.json(
-        (data ?? []).map((row: any) => ({
-          id: row.id,
-          sessionId: row.session_id,
-          from: row.from_agent,
-          command: row.command,
-          createdAt: row.created_at,
-        }))
+        (data ?? []).map((row: unknown) => {
+          const r = row && typeof row === 'object' ? (row as Record<string, unknown>) : {};
+          return {
+            id: String(r.id ?? ''),
+            sessionId: String(r.session_id ?? ''),
+            from: String(r.from_agent ?? ''),
+            command: (r.command ?? {}) as JsonObject,
+            createdAt: String(r.created_at ?? ''),
+          };
+        })
       );
     }
     // 無 Supabase 時僅回空陣列（Command 僅寫入 DB）
@@ -1889,16 +2368,19 @@ app.get('/api/openclaw/sessions/:id/interrupts', async (req, res) => {
         return res.status(500).json({ ok: false, message: 'Failed to fetch interrupts' });
       }
       return res.json(
-        (data ?? []).map((row: any) => ({
-          id: row.id,
-          sessionId: row.session_id,
-          from: row.from_agent,
-          reason: row.reason,
-          decision: row.decision,
-          decidedBy: row.decided_by,
-          createdAt: row.created_at,
-          resolvedAt: row.resolved_at,
-        }))
+        (data ?? []).map((row: unknown) => {
+          const r = row && typeof row === 'object' ? (row as Record<string, unknown>) : {};
+          return {
+            id: String(r.id ?? ''),
+            sessionId: String(r.session_id ?? ''),
+            from: String(r.from_agent ?? ''),
+            reason: String(r.reason ?? ''),
+            decision: r.decision == null ? null : String(r.decision),
+            decidedBy: r.decided_by == null ? null : String(r.decided_by),
+            createdAt: String(r.created_at ?? ''),
+            resolvedAt: r.resolved_at == null ? null : String(r.resolved_at),
+          };
+        })
       );
     }
     // fallback：使用記憶體中的中斷狀態
@@ -2014,6 +2496,325 @@ app.get('/api/openclaw/board-config', async (_req, res) => {
   } catch (e) {
     console.error('[OpenClaw] GET /api/openclaw/board-config error:', e);
     res.status(500).json({ message: 'Failed to fetch board config' });
+  }
+});
+
+app.get('/api/openclaw/board-health', async (_req, res) => {
+  try {
+    const timestamp = new Date().toISOString();
+    const supabaseConnected = hasSupabase();
+    const n8nConfigured = hasN8n();
+
+    // Keep this endpoint fast + robust; avoid throwing if a downstream call fails.
+    const safeLen = async <T>(fn: () => Promise<T[]>, fallback: number): Promise<number> => {
+      try {
+        const r = await fn();
+        return Array.isArray(r) ? r.length : fallback;
+      } catch {
+        return fallback;
+      }
+    };
+
+    const [taskCount, reviewCount, automationCount, runCount] = await Promise.all([
+      supabaseConnected ? safeLen(() => fetchOpenClawTasks(), tasks.length) : Promise.resolve(tasks.length),
+      supabaseConnected ? safeLen(() => fetchOpenClawReviews(), 0) : Promise.resolve(0),
+      supabaseConnected ? safeLen(() => fetchOpenClawAutomations(), 0) : Promise.resolve(0),
+      supabaseConnected ? safeLen(() => fetchOpenClawRuns(2000), runs.length) : Promise.resolve(runs.length),
+    ]);
+
+    const notes: string[] = [];
+    if (!supabaseConnected) notes.push('Supabase 未啟用：目前使用本地 in-memory store（重啟會遺失）');
+    if (!isTelegramConfigured()) notes.push('Telegram 未設定或不可用');
+
+    res.json({
+      ok: true,
+      service: 'openclaw-server',
+      timestamp,
+      backend: {
+        supabaseConnected,
+        n8nConfigured,
+      },
+      counts: {
+        tasks: taskCount,
+        reviews: reviewCount,
+        automations: automationCount,
+        runs: runCount,
+        alerts: alerts.length,
+      },
+      notes,
+    });
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/board-health error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch board health' });
+  }
+});
+
+// ---- Task Indexer (Index-of-Index) ----
+type TaskIndexRecord = {
+  taskId: string;
+  name: string;
+  status: string;
+  tags?: string[];
+  updatedAt?: string;
+  runPath?: string;
+  summary?: string;
+  nextSteps?: string[];
+  evidenceLinks?: string[];
+};
+
+function resolveTaskIndexPaths(): { dir: string; jsonlPath: string; mdPath: string } {
+  const dir =
+    process.env.OPENCLAW_TASK_INDEX_DIR?.trim() ||
+    path.resolve(repoRootPath(), 'runtime-checkpoints', 'task-index');
+  const jsonlPath =
+    process.env.OPENCLAW_TASK_INDEX_JSONL?.trim() ||
+    path.resolve(dir, 'task-index.jsonl');
+  const mdPath =
+    process.env.OPENCLAW_TASK_INDEX_MD?.trim() ||
+    path.resolve(dir, 'TASK-INDEX.md');
+  return { dir, jsonlPath, mdPath };
+}
+
+function readJsonlRecords(filePath: string, limit: number): { total: number; records: TaskIndexRecord[] } {
+  try {
+    if (!fs.existsSync(filePath)) return { total: 0, records: [] };
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const total = lines.length;
+    const picked = lines.slice(Math.max(0, total - limit));
+    const records: TaskIndexRecord[] = [];
+    for (const line of picked) {
+      try {
+        const j = JSON.parse(line) as unknown;
+        if (!j || typeof j !== 'object') continue;
+        const o = j as Record<string, unknown>;
+        const taskId = String(o.taskId ?? '');
+        if (!taskId) continue;
+        records.push({
+          taskId,
+          name: String(o.name ?? ''),
+          status: String(o.status ?? ''),
+          tags: Array.isArray(o.tags) ? (o.tags as unknown[]).map((x) => String(x)).filter(Boolean) : undefined,
+          updatedAt: typeof o.updatedAt === 'string' ? o.updatedAt : undefined,
+          runPath: typeof o.runPath === 'string' ? o.runPath : undefined,
+          summary: typeof o.summary === 'string' ? o.summary : undefined,
+          nextSteps: Array.isArray(o.nextSteps) ? (o.nextSteps as unknown[]).map((x) => String(x)).filter(Boolean) : undefined,
+          evidenceLinks: Array.isArray(o.evidenceLinks) ? (o.evidenceLinks as unknown[]).map((x) => String(x)).filter(Boolean) : undefined,
+        });
+      } catch {
+        // ignore malformed line
+      }
+    }
+    return { total, records };
+  } catch {
+    return { total: 0, records: [] };
+  }
+}
+
+function buildTaskIndexMarkdown(records: TaskIndexRecord[]): string {
+  const now = new Date().toISOString();
+  const lines: string[] = [];
+  lines.push(`# TASK INDEX`);
+  lines.push('');
+  lines.push(`generatedAt: ${now}`);
+  lines.push(`count: ${records.length}`);
+  lines.push('');
+  lines.push('> This file is an index. Full details live in the taskboard DB and each run folder (RESULT.md + ARTIFACTS/).');
+  lines.push('');
+  for (const r of records) {
+    const tags = (r.tags ?? []).slice(0, 6).join(', ');
+    const status = r.status || '(unknown)';
+    const name = r.name || '(no name)';
+    lines.push(`- [${status}] ${r.taskId} ${name}${tags ? `  (tags: ${tags})` : ''}`);
+    if (r.runPath) lines.push(`  - runPath: ${r.runPath}`);
+    if (r.summary) lines.push(`  - summary: ${r.summary.replace(/\s+/g, ' ').slice(0, 200)}`);
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
+app.get('/api/openclaw/indexer/status', (_req, res) => {
+  const { dir, jsonlPath, mdPath } = resolveTaskIndexPaths();
+  res.json({
+    ok: true,
+    dir,
+    jsonlPath,
+    mdPath,
+    jsonlExists: fs.existsSync(jsonlPath),
+    mdExists: fs.existsSync(mdPath),
+  });
+});
+
+app.get('/api/openclaw/indexer/records', (req, res) => {
+  const limit = Math.max(1, Math.min(500, Number(req.query.limit) || 20));
+  const { jsonlPath } = resolveTaskIndexPaths();
+  const { total, records } = readJsonlRecords(jsonlPath, limit);
+  res.json({ ok: true, total, records });
+});
+
+app.post('/api/openclaw/indexer/rebuild-md', async (_req, res) => {
+  try {
+    const { dir, jsonlPath, mdPath } = resolveTaskIndexPaths();
+    fs.mkdirSync(dir, { recursive: true });
+
+    const list = hasSupabase() ? (await fetchOpenClawTasks()).map(openClawTaskToTask) : tasks;
+    const records: TaskIndexRecord[] = list.map((t) => ({
+      taskId: t.id,
+      name: t.name,
+      status: t.status,
+      tags: t.tags,
+      updatedAt: t.updatedAt,
+      runPath: t.runPath,
+      summary: t.summary,
+      nextSteps: t.nextSteps,
+      evidenceLinks: t.evidenceLinks,
+    }));
+
+    // JSONL as a stable, append-friendly store.
+    fs.writeFileSync(jsonlPath, records.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf8');
+
+    // Markdown as a human-readable overview.
+    fs.writeFileSync(mdPath, buildTaskIndexMarkdown(records), 'utf8');
+
+    res.json({
+      ok: true,
+      count: records.length,
+      mdPath,
+      jsonlPath,
+    });
+  } catch (e) {
+    console.error('[Indexer] rebuild-md error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to rebuild task index markdown' });
+  }
+});
+
+// ---- Autopilot (UI-facing; lightweight loop) ----
+type AutopilotLogLevel = 'info' | 'warn' | 'error';
+type AutopilotLogItem = { timestamp: string; level: AutopilotLogLevel; message: string };
+const autopilotState: {
+  isRunning: boolean;
+  intervalMinutes: number;
+  cycleCount: number;
+  lastCycleAt: string | null;
+  nextCycleAt: string | null;
+  stats: { tasksCompleted: number; tasksFailed: number };
+  logs: AutopilotLogItem[];
+  timer: NodeJS.Timeout | null;
+} = {
+  isRunning: false,
+  intervalMinutes: 5,
+  cycleCount: 0,
+  lastCycleAt: null,
+  nextCycleAt: null,
+  stats: { tasksCompleted: 0, tasksFailed: 0 },
+  logs: [],
+  timer: null,
+};
+
+function autopilotLog(level: AutopilotLogLevel, message: string) {
+  autopilotState.logs.push({ timestamp: new Date().toISOString(), level, message });
+  if (autopilotState.logs.length > 200) autopilotState.logs.splice(0, autopilotState.logs.length - 200);
+}
+
+function stopAutopilotLoop() {
+  if (autopilotState.timer) clearTimeout(autopilotState.timer);
+  autopilotState.timer = null;
+  autopilotState.isRunning = false;
+  autopilotState.nextCycleAt = null;
+}
+
+async function runAutopilotCycle() {
+  if (!autopilotState.isRunning) return;
+  autopilotState.cycleCount += 1;
+  autopilotState.lastCycleAt = new Date().toISOString();
+  autopilotLog('info', `cycle #${autopilotState.cycleCount} tick`);
+
+  // NOTE: This is intentionally minimal. Real execution is handled by AutoExecutor/cron scripts.
+  // We keep this for UI visibility + future wiring.
+
+  const next = new Date(Date.now() + autopilotState.intervalMinutes * 60_000).toISOString();
+  autopilotState.nextCycleAt = next;
+  autopilotState.timer = setTimeout(() => {
+    runAutopilotCycle().catch((e) => autopilotLog('error', `cycle error: ${String(e)}`));
+  }, autopilotState.intervalMinutes * 60_000);
+}
+
+app.get('/api/openclaw/autopilot/status', (_req, res) => {
+  res.json({ ok: true, ...autopilotState });
+});
+
+app.get('/api/openclaw/autopilot/log', (_req, res) => {
+  res.json({ ok: true, logs: autopilotState.logs });
+});
+
+app.post('/api/openclaw/autopilot/start', (req, res) => {
+  const intervalMinutesRaw = (req.body as { intervalMinutes?: unknown } | undefined)?.intervalMinutes;
+  const intervalMinutes =
+    typeof intervalMinutesRaw === 'number' && Number.isFinite(intervalMinutesRaw)
+      ? Math.max(1, Math.round(intervalMinutesRaw))
+      : autopilotState.intervalMinutes;
+  autopilotState.intervalMinutes = intervalMinutes;
+  if (!autopilotState.isRunning) {
+    autopilotState.isRunning = true;
+    autopilotLog('info', `autopilot started (interval=${intervalMinutes}m)`);
+    autopilotState.nextCycleAt = new Date(Date.now() + intervalMinutes * 60_000).toISOString();
+    autopilotState.timer = setTimeout(() => {
+      runAutopilotCycle().catch((e) => autopilotLog('error', `cycle error: ${String(e)}`));
+    }, intervalMinutes * 60_000);
+  } else {
+    autopilotLog('info', `autopilot interval updated (interval=${intervalMinutes}m)`);
+    stopAutopilotLoop();
+    autopilotState.isRunning = true;
+    autopilotState.nextCycleAt = new Date(Date.now() + intervalMinutes * 60_000).toISOString();
+    autopilotState.timer = setTimeout(() => {
+      runAutopilotCycle().catch((e) => autopilotLog('error', `cycle error: ${String(e)}`));
+    }, intervalMinutes * 60_000);
+  }
+  res.json({
+    ok: true,
+    message: 'autopilot started',
+    isRunning: autopilotState.isRunning,
+    intervalMinutes: autopilotState.intervalMinutes,
+  });
+});
+
+app.post('/api/openclaw/autopilot/stop', (_req, res) => {
+  stopAutopilotLoop();
+  autopilotLog('info', 'autopilot stopped');
+  res.json({ ok: true, message: 'autopilot stopped', isRunning: autopilotState.isRunning });
+});
+
+// ---- Emergency Stop (ops) ----
+// Dashboard button calls this to stop any autonomous loops immediately.
+app.post('/api/emergency/stop-all', (_req, res) => {
+  try {
+    // Stop UI autopilot loop.
+    stopAutopilotLoop();
+
+    // Stop Auto Task Generator loop.
+    stopAutoTaskGeneratorLoop();
+
+    // Stop AutoExecutor loop.
+    autoExecutorState.isRunning = false;
+    autoExecutorState.nextPollAt = null;
+    if (autoExecutorInterval) {
+      clearInterval(autoExecutorInterval);
+      autoExecutorInterval = null;
+    }
+    saveAutoExecutorDiskState({ enabled: false });
+
+    res.json({
+      ok: true,
+      message: 'stopped',
+      stopped: {
+        autopilot: true,
+        autoTaskGenerator: true,
+        autoExecutor: true,
+      },
+    });
+  } catch (e) {
+    console.error('[Emergency] stop-all failed:', e);
+    res.status(500).json({ ok: false, message: 'stop-all failed' });
   }
 });
 
@@ -2275,6 +3076,7 @@ app.delete('/api/openclaw/projects/:id', async (req, res) => {
 interface AutoExecutorState {
   isRunning: boolean;
   pollIntervalMs: number;
+  maxTasksPerMinute: number;
   lastPollAt: string | null;
   lastExecutedTaskId: string | null;
   lastExecutedAt: string | null;
@@ -2283,9 +3085,10 @@ interface AutoExecutorState {
 }
 
 // 記憶體中的自動執行器狀態
-let autoExecutorState: AutoExecutorState = {
+const autoExecutorState: AutoExecutorState = {
   isRunning: false,
   pollIntervalMs: 10000,
+  maxTasksPerMinute: 1,
   lastPollAt: null,
   lastExecutedTaskId: null,
   lastExecutedAt: null,
@@ -2294,6 +3097,72 @@ let autoExecutorState: AutoExecutorState = {
 };
 
 let autoExecutorInterval: NodeJS.Timeout | null = null;
+const autoExecutorExecHistoryMs: number[] = [];
+
+type AutoExecutorDiskState = {
+  enabled: boolean;
+  pollIntervalMs: number;
+  maxTasksPerMinute: number;
+  updatedAt: string;
+};
+
+function repoRootPath(): string {
+  // Works both in src and dist:
+  // <repo>/server/src/index.ts OR <repo>/server/dist/index.js
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  return path.resolve(here, '..', '..');
+}
+
+function autoExecutorStatePath(): string {
+  return path.resolve(repoRootPath(), 'auto-executor-state.json');
+}
+
+function loadAutoExecutorDiskState(): AutoExecutorDiskState {
+  const p = autoExecutorStatePath();
+  const fallback: AutoExecutorDiskState = {
+    enabled: false,
+    pollIntervalMs: 10000,
+    maxTasksPerMinute: 1,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    if (!fs.existsSync(p)) return fallback;
+    const raw = fs.readFileSync(p, 'utf8');
+    const j = JSON.parse(raw) as Partial<AutoExecutorDiskState>;
+    return {
+      enabled: Boolean(j.enabled),
+      pollIntervalMs: typeof j.pollIntervalMs === 'number' && j.pollIntervalMs >= 5000 ? j.pollIntervalMs : fallback.pollIntervalMs,
+      maxTasksPerMinute: typeof j.maxTasksPerMinute === 'number' && j.maxTasksPerMinute >= 1 ? j.maxTasksPerMinute : fallback.maxTasksPerMinute,
+      updatedAt: typeof j.updatedAt === 'string' && j.updatedAt ? j.updatedAt : fallback.updatedAt,
+    };
+  } catch (e) {
+    console.warn('[AutoExecutor] Failed to load disk state:', e);
+    return fallback;
+  }
+}
+
+function saveAutoExecutorDiskState(patch: Partial<AutoExecutorDiskState>): void {
+  const p = autoExecutorStatePath();
+  const cur = loadAutoExecutorDiskState();
+  const next: AutoExecutorDiskState = {
+    ...cur,
+    ...patch,
+    pollIntervalMs:
+      typeof patch.pollIntervalMs === 'number' && patch.pollIntervalMs >= 5000
+        ? patch.pollIntervalMs
+        : cur.pollIntervalMs,
+    maxTasksPerMinute:
+      typeof patch.maxTasksPerMinute === 'number' && patch.maxTasksPerMinute >= 1
+        ? patch.maxTasksPerMinute
+        : cur.maxTasksPerMinute,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    fs.writeFileSync(p, JSON.stringify(next, null, 2) + '\n', 'utf8');
+  } catch (e) {
+    console.warn('[AutoExecutor] Failed to save disk state:', e);
+  }
+}
 
 /** 執行下一個待執行任務 */
 async function executeNextPendingTask(): Promise<void> {
@@ -2303,13 +3172,28 @@ async function executeNextPendingTask(): Promise<void> {
       return;
     }
 
+    // Rate-limit (tasks/min) to avoid resource contention / duplicate work storms.
+    {
+      const now = Date.now();
+      const windowStart = now - 60_000;
+      while (autoExecutorExecHistoryMs.length > 0 && autoExecutorExecHistoryMs[0] < windowStart) {
+        autoExecutorExecHistoryMs.shift();
+      }
+      if (autoExecutorExecHistoryMs.length >= autoExecutorState.maxTasksPerMinute) {
+        console.log(
+          `[AutoExecutor] Rate limited: ${autoExecutorExecHistoryMs.length}/${autoExecutorState.maxTasksPerMinute} tasks in last 60s`
+        );
+        return;
+      }
+    }
+
     // 使用 fetchOpenClawTasks 取得所有任務，然後篩選 Ready 狀態的
     const ocTasks = await fetchOpenClawTasks();
     
     // 轉換為 Task 類型並篩選 ready 狀態的任務
     const pendingTasks = ocTasks
       .map(openClawTaskToTask)
-      .filter(t => t.status === 'ready')
+      .filter((t) => t.status === 'ready' && validateTaskForGate(t, 'ready').ok)
       .sort((a, b) => (a.priority || 3) - (b.priority || 3));
 
     if (pendingTasks.length === 0) {
@@ -2375,6 +3259,7 @@ async function executeNextPendingTask(): Promise<void> {
         progress: 100,
       });
 
+      autoExecutorExecHistoryMs.push(Date.now());
       autoExecutorState.totalExecutedToday++;
       autoExecutorState.lastExecutedTaskId = task.id;
       autoExecutorState.lastExecutedAt = new Date().toISOString();
@@ -2403,6 +3288,7 @@ async function executeNextPendingTask(): Promise<void> {
 
       await notifyTaskFailure(task.name, task.id, runId, String(execError), 0);
       console.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
+      autoExecutorExecHistoryMs.push(Date.now());
     }
   } catch (e) {
     console.error('[AutoExecutor] 執行任務時發生錯誤:', e);
@@ -2410,13 +3296,14 @@ async function executeNextPendingTask(): Promise<void> {
 }
 
 /** 啟動自動執行器 */
-function startAutoExecutor(pollIntervalMs: number = 10000): void {
+function startAutoExecutor(pollIntervalMs: number = 10000, maxTasksPerMinute: number = 1): void {
   if (autoExecutorInterval) {
     clearInterval(autoExecutorInterval);
   }
 
   autoExecutorState.isRunning = true;
   autoExecutorState.pollIntervalMs = pollIntervalMs;
+  autoExecutorState.maxTasksPerMinute = Math.max(1, Math.floor(maxTasksPerMinute || 1));
   autoExecutorState.nextPollAt = new Date(Date.now() + pollIntervalMs).toISOString();
 
   // 立即執行一次
@@ -2429,7 +3316,9 @@ function startAutoExecutor(pollIntervalMs: number = 10000): void {
     await executeNextPendingTask();
   }, pollIntervalMs);
 
-  console.log(`[AutoExecutor] 已啟動，輪詢間隔: ${pollIntervalMs}ms`);
+  console.log(
+    `[AutoExecutor] 已啟動，輪詢間隔: ${pollIntervalMs}ms, maxTasksPerMinute: ${autoExecutorState.maxTasksPerMinute}`
+  );
 }
 
 /** 停止自動執行器 */
@@ -2452,14 +3341,16 @@ app.get('/api/openclaw/auto-executor/status', (_req, res) => {
 });
 
 app.post('/api/openclaw/auto-executor/start', (req, res) => {
-  const { pollIntervalMs } = req.body || {};
+  const { pollIntervalMs, maxTasksPerMinute } = req.body || {};
   const interval = pollIntervalMs || 10000;
+  const maxTpm = maxTasksPerMinute || autoExecutorState.maxTasksPerMinute || 1;
   
   if (interval < 5000) {
     return res.status(400).json({ ok: false, message: '輪詢間隔不能小於 5000ms' });
   }
 
-  startAutoExecutor(interval);
+  startAutoExecutor(interval, maxTpm);
+  saveAutoExecutorDiskState({ enabled: true, pollIntervalMs: interval, maxTasksPerMinute: maxTpm });
   res.json({
     ok: true,
     message: 'AutoExecutor 已啟動',
@@ -2469,11 +3360,145 @@ app.post('/api/openclaw/auto-executor/start', (req, res) => {
 
 app.post('/api/openclaw/auto-executor/stop', (_req, res) => {
   stopAutoExecutor();
+  saveAutoExecutorDiskState({ enabled: false });
   res.json({
     ok: true,
     message: 'AutoExecutor 已停止',
     ...autoExecutorState,
   });
+});
+
+// ==================== Auto Task Generator（自動補全任務排程）====================
+let autoTaskGeneratorTimer: NodeJS.Timeout | null = null;
+
+function stopAutoTaskGeneratorLoop() {
+  if (autoTaskGeneratorTimer) clearTimeout(autoTaskGeneratorTimer);
+  autoTaskGeneratorTimer = null;
+  patchAutoTaskGeneratorState({ isRunning: false, nextCycleAt: null });
+}
+
+async function scheduleNextAutoTaskGeneratorCycle() {
+  const st = getAutoTaskGeneratorState();
+  if (!st.isRunning) return;
+  const nextMs = st.pollIntervalMs;
+  const nextAt = new Date(Date.now() + nextMs).toISOString();
+  patchAutoTaskGeneratorState({ nextCycleAt: nextAt });
+  autoTaskGeneratorTimer = setTimeout(async () => {
+    try {
+      await runAutoTaskGeneratorCycle();
+    } catch (e) {
+      console.error('[AutoTaskGenerator] cycle error:', e);
+    }
+    scheduleNextAutoTaskGeneratorCycle();
+  }, nextMs);
+}
+
+app.get('/api/openclaw/auto-task-generator/status', (_req, res) => {
+  const st = getAutoTaskGeneratorState();
+  res.json({ ok: true, ...st });
+});
+
+app.post('/api/openclaw/auto-task-generator/start', (req, res) => {
+  const body = (req.body || {}) as {
+    pollIntervalMs?: number;
+    maxTasksPerCycle?: number;
+    backlogTarget?: number;
+    sourceWeights?: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    qualityGate?: {
+      minAcceptanceCriteria?: number;
+      requireRollbackPlan?: boolean;
+      minRollbackLength?: number;
+      requireEvidenceLinks?: boolean;
+    };
+    qualityGateEnabled?: boolean;
+  };
+  const pollIntervalMs = typeof body.pollIntervalMs === 'number' && body.pollIntervalMs >= 60_000
+    ? body.pollIntervalMs
+    : 15 * 60 * 1000;
+  const maxTasksPerCycle = typeof body.maxTasksPerCycle === 'number' && body.maxTasksPerCycle >= 1
+    ? Math.min(body.maxTasksPerCycle, 10)
+    : 3;
+  const backlogTarget = typeof body.backlogTarget === 'number' && body.backlogTarget >= 0
+    ? body.backlogTarget
+    : 20;
+  const sourceWeights = body.sourceWeights && typeof body.sourceWeights === 'object'
+    ? {
+        'internal-ops': Math.max(0, Number(body.sourceWeights['internal-ops']) || 35),
+        'business-model': Math.max(0, Number(body.sourceWeights['business-model']) || 50),
+        'external-radar': Math.max(0, Number(body.sourceWeights['external-radar']) || 15),
+      }
+    : undefined;
+	  const qualityGate = body.qualityGate && typeof body.qualityGate === 'object'
+	    ? {
+	        minAcceptanceCriteria: (() => {
+	          const n = Number(body.qualityGate.minAcceptanceCriteria);
+	          return Math.max(1, Number.isFinite(n) ? n : 3);
+	        })(),
+	        requireRollbackPlan:
+	          typeof body.qualityGate.requireRollbackPlan === 'boolean'
+	            ? body.qualityGate.requireRollbackPlan
+	            : true,
+	        minRollbackLength: (() => {
+	          const n = Number(body.qualityGate.minRollbackLength);
+	          return Math.max(0, Number.isFinite(n) ? n : 20);
+	        })(),
+	        requireEvidenceLinks:
+	          typeof body.qualityGate.requireEvidenceLinks === 'boolean'
+	            ? body.qualityGate.requireEvidenceLinks
+	            : true,
+	      }
+	    : undefined;
+  const qualityGateEnabled = body.qualityGateEnabled ?? true;
+
+  const patch: Parameters<typeof patchAutoTaskGeneratorState>[0] = {
+    isRunning: true,
+    pollIntervalMs,
+    maxTasksPerCycle,
+    backlogTarget,
+    qualityGateEnabled,
+  };
+  if (sourceWeights) patch.sourceWeights = sourceWeights;
+  if (qualityGate) patch.qualityGate = qualityGate;
+
+  patchAutoTaskGeneratorState(patch);
+  stopAutoTaskGeneratorLoop();
+  scheduleNextAutoTaskGeneratorCycle();
+  const st = getAutoTaskGeneratorState();
+  res.json({
+    ok: true,
+    message: '自動補任務排程已啟動',
+    ...st,
+  });
+});
+
+app.post('/api/openclaw/auto-task-generator/stop', (_req, res) => {
+  stopAutoTaskGeneratorLoop();
+  const st = getAutoTaskGeneratorState();
+  res.json({
+    ok: true,
+    message: '自動補任務排程已停止',
+    ...st,
+  });
+});
+
+app.post('/api/openclaw/auto-task-generator/run-now', async (_req, res) => {
+  try {
+    const result = await runAutoTaskGeneratorCycle();
+    const st = getAutoTaskGeneratorState();
+    res.json({
+      ok: true,
+      message: `立即補任務完成：建立 ${result.created} 筆，略過 ${result.skipped} 筆`,
+      ...st,
+      cycle: result,
+    });
+  } catch (e) {
+    console.error('[AutoTaskGenerator] run-now error:', e);
+    res.status(500).json({
+      ok: false,
+      message: String(e),
+      ...getAutoTaskGeneratorState(),
+    });
+  }
 });
 
 // ==================== System Schedules（系統排程）====================
@@ -2504,51 +3529,62 @@ async function fetchOpenClawCronJobs(): Promise<SystemSchedule[]> {
       timeout: 30000,
       env: { ...process.env, PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin' },
     });
-    const parsed = JSON.parse(result);
-    const jobs = parsed.jobs || [];
+    const parsed: unknown = JSON.parse(result);
+    const asObj = (v: unknown): Record<string, unknown> =>
+      v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
+    const jobs: unknown[] = Array.isArray(asObj(parsed).jobs) ? (asObj(parsed).jobs as unknown[]) : [];
 
-    return jobs.map((job: any): SystemSchedule => {
-      const schedule = job.schedule || {};
+    return jobs.map((job: unknown): SystemSchedule => {
+      const j = asObj(job);
+      const schedule = asObj(j.schedule);
       let scheduleKind: 'cron' | 'interval' | 'every' = 'cron';
       let scheduleExpr: string | undefined;
       let everyMs: number | undefined;
 
       if (schedule.kind === 'every') {
         scheduleKind = 'every';
-        everyMs = schedule.everyMs;
+        everyMs = typeof schedule.everyMs === 'number' ? schedule.everyMs : undefined;
         scheduleExpr = everyMs ? `每 ${Math.round(everyMs / 1000 / 60)} 分鐘` : undefined;
       } else if (schedule.kind === 'cron' || schedule.expr) {
         scheduleKind = 'cron';
-        scheduleExpr = schedule.expr;
+        scheduleExpr = typeof schedule.expr === 'string' ? schedule.expr : undefined;
       }
 
       // 從 payload 提取描述
       let description: string | undefined;
-      if (job.payload) {
-        if (job.payload.message) {
-          description = job.payload.message;
-        } else if (job.payload.text) {
-          description = job.payload.text;
-        } else if (job.payload.kind) {
-          description = `類型: ${job.payload.kind}`;
+      const payload = asObj(j.payload);
+      if (Object.keys(payload).length > 0) {
+        if (payload.message) {
+          description = String(payload.message);
+        } else if (payload.text) {
+          description = String(payload.text);
+        } else if (payload.kind) {
+          description = `類型: ${String(payload.kind)}`;
         }
       }
 
+      const state = asObj(j.state);
+      const nextRunAtMs = typeof state.nextRunAtMs === 'number' ? state.nextRunAtMs : null;
+      const lastRunAtMs = typeof state.lastRunAtMs === 'number' ? state.lastRunAtMs : null;
+      const lastStatusRaw = typeof state.lastStatus === 'string' ? state.lastStatus : null;
+      const lastStatus: SystemSchedule['lastStatus'] =
+        lastStatusRaw === 'ok' || lastStatusRaw === 'failed' || lastStatusRaw === 'running' ? lastStatusRaw : null;
+
       return {
-        id: job.id,
-        name: job.name,
-        enabled: job.enabled ?? true,
+        id: String(j.id ?? ''),
+        name: String(j.name ?? ''),
+        enabled: j.enabled == null ? true : Boolean(j.enabled),
         scheduleKind,
         scheduleExpr,
         everyMs,
-        timezone: schedule.tz,
-        nextRunAt: job.state?.nextRunAtMs ? new Date(job.state.nextRunAtMs).toISOString() : null,
-        lastRunAt: job.state?.lastRunAtMs ? new Date(job.state.lastRunAtMs).toISOString() : null,
-        lastStatus: job.state?.lastStatus || null,
+        timezone: typeof schedule.tz === 'string' ? schedule.tz : undefined,
+        nextRunAt: nextRunAtMs ? new Date(nextRunAtMs).toISOString() : null,
+        lastRunAt: lastRunAtMs ? new Date(lastRunAtMs).toISOString() : null,
+        lastStatus,
         description,
-        agentId: job.agentId || 'main',
-        createdAt: job.createdAtMs ? new Date(job.createdAtMs).toISOString() : new Date().toISOString(),
-        updatedAt: job.updatedAtMs ? new Date(job.updatedAtMs).toISOString() : new Date().toISOString(),
+        agentId: typeof j.agentId === 'string' && j.agentId ? j.agentId : 'main',
+        createdAt: typeof j.createdAtMs === 'number' ? new Date(j.createdAtMs).toISOString() : new Date().toISOString(),
+        updatedAt: typeof j.updatedAtMs === 'number' ? new Date(j.updatedAtMs).toISOString() : new Date().toISOString(),
       };
     });
   } catch (error) {
@@ -2586,9 +3622,137 @@ app.post('/api/telegram/test', async (_req, res) => {
   }
 });
 
+// Telegram 強制測試（帶時間戳/隨機碼 + 回傳 message_id，方便你在 Telegram 端搜尋/對照）
+// - 只走通知 bot（TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID）
+// - 若你「看不到訊息」，但這邊回 ok=true 且有 message_id，代表訊息已送達 Telegram，只是你端沒看到該 chat/thread
+// NOTE: This endpoint is admin-gated via requiredAccessLevel() to prevent abuse.
+app.post('/api/telegram/force-test', async (_req, res) => {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+  if (!token || !chatId) {
+    return res.status(503).json({ ok: false, message: 'Telegram 未設定。請設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。' });
+  }
+
+  const now = new Date();
+  const ts =
+    `${now.getFullYear()}-` +
+    `${String(now.getMonth() + 1).padStart(2, '0')}-` +
+    `${String(now.getDate()).padStart(2, '0')} ` +
+    `${String(now.getHours()).padStart(2, '0')}:` +
+    `${String(now.getMinutes()).padStart(2, '0')}:` +
+    `${String(now.getSeconds()).padStart(2, '0')}`;
+  const nonce = Math.random().toString(16).slice(2, 10);
+
+  const text =
+    `🧪 <b>OpenClaw FORCE TEST</b>\n\n` +
+    `<b>time:</b> <code>${ts}</code>\n` +
+    `<b>nonce:</b> <code>${nonce}</code>\n\n` +
+    `若你看不到這則，但 API 回 ok=true，通常是 Telegram 客戶端/帳號/封存/ thread 視角問題。`;
+
+  try {
+    const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        // 強制提醒（不要靜音），避免你「有送但沒注意到」
+        disable_notification: false,
+      }),
+    });
+    const payload: unknown = await resp.json().catch(() => null);
+    const pobj = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null;
+    const ok = !!pobj && pobj.ok === true;
+    if (!resp.ok || !ok) {
+      return res.status(502).json({
+        ok: false,
+        message: 'Telegram sendMessage failed',
+        status: resp.status,
+        description: pobj?.description ?? null,
+        error_code: pobj?.error_code ?? null,
+      });
+    }
+    const result = pobj?.result && typeof pobj.result === 'object' ? (pobj.result as Record<string, unknown>) : null;
+    const chat = result?.chat && typeof result.chat === 'object' ? (result.chat as Record<string, unknown>) : null;
+    return res.json({
+      ok: true,
+      chat_id: chat?.id ?? null,
+      message_id: result?.message_id ?? null,
+      time: ts,
+      nonce,
+    });
+  } catch (e) {
+    console.error('[Telegram] force-test send error:', e);
+    return res.status(500).json({ ok: false, message: String(e) });
+  }
+});
+
 // Health
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'openclaw-server' });
+// Back-compat: some scripts (and older docs) probe /health.
+app.get('/health', async (_req, res) => {
+  // Back-compat: keep it lightweight but still informative.
+  const ws = wsManager.getStats();
+  res.json({
+    ok: true,
+    service: 'openclaw-server',
+    supabase: hasSupabase(),
+    telegram: isTelegramConfigured(),
+    websocket: ws,
+    autoExecutor: {
+      isRunning: autoExecutorState.isRunning,
+      pollIntervalMs: autoExecutorState.pollIntervalMs,
+      maxTasksPerMinute: autoExecutorState.maxTasksPerMinute,
+      lastPollAt: autoExecutorState.lastPollAt,
+      lastExecutedAt: autoExecutorState.lastExecutedAt,
+    },
+  });
+});
+app.get('/api/health', async (_req, res) => {
+  const ws = wsManager.getStats();
+  res.json({
+    ok: true,
+    service: 'openclaw-server',
+    supabase: hasSupabase(),
+    telegram: isTelegramConfigured(),
+    websocket: ws,
+    autoExecutor: {
+      isRunning: autoExecutorState.isRunning,
+      pollIntervalMs: autoExecutorState.pollIntervalMs,
+      maxTasksPerMinute: autoExecutorState.maxTasksPerMinute,
+      lastPollAt: autoExecutorState.lastPollAt,
+      lastExecutedAt: autoExecutorState.lastExecutedAt,
+    },
+  });
+});
+
+// Safe to expose (no secrets): shows whether key security toggles are enabled.
+app.get('/api/security/status', (_req, res) => {
+  res.json({
+    ok: true,
+    auth: {
+      enforceRead: OPENCLAW_ENFORCE_READ_AUTH,
+      enforceWrite: OPENCLAW_ENFORCE_WRITE_AUTH,
+      hasReadKeys: readKeySet.size > 0,
+      hasWriteKeys: writeKeySet.size > 0,
+      hasAdminKeys: adminKeySet.size > 0,
+      dashboardBasicAuthEnabled: Boolean(
+        process.env.OPENCLAW_DASHBOARD_BASIC_USER?.trim() &&
+        process.env.OPENCLAW_DASHBOARD_BASIC_PASS?.trim()
+      ),
+    },
+    network: {
+      trustProxy: process.env.OPENCLAW_TRUST_PROXY === 'true',
+    },
+    rateLimit: {
+      windowMs: 15 * 60 * 1000,
+      max: 1000,
+    },
+    cors: {
+      allowedOriginsCount: allowedOrigins.length,
+    },
+  });
 });
 
 // WebSocket 狀態
@@ -2598,6 +3762,52 @@ app.get('/api/websocket/status', (_req, res) => {
     ok: true,
     ...stats,
   });
+});
+
+// ---- Dashboard Auth (Static UI) ----
+// The API layer already supports key-based auth under /api.
+// This basic-auth gate is for the static dashboard (/) when you expose the UI publicly.
+const OPENCLAW_DASHBOARD_BASIC_USER = process.env.OPENCLAW_DASHBOARD_BASIC_USER?.trim();
+const OPENCLAW_DASHBOARD_BASIC_PASS = process.env.OPENCLAW_DASHBOARD_BASIC_PASS?.trim();
+function requireDashboardBasicAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  // Only protect the dashboard/static assets. Keep API auth behavior unchanged.
+  if (req.path.startsWith('/api')) return next();
+  if (!OPENCLAW_DASHBOARD_BASIC_USER || !OPENCLAW_DASHBOARD_BASIC_PASS) return next();
+
+  const auth = req.header('authorization') || '';
+  const match = auth.match(/^basic\s+(.+)$/i);
+  if (!match) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="OpenClaw Dashboard"');
+    return res.status(401).send('Unauthorized');
+  }
+
+  let user = '';
+  let pass = '';
+  try {
+    const decoded = Buffer.from(match[1], 'base64').toString('utf8');
+    const idx = decoded.indexOf(':');
+    user = idx >= 0 ? decoded.slice(0, idx) : decoded;
+    pass = idx >= 0 ? decoded.slice(idx + 1) : '';
+  } catch {
+    res.setHeader('WWW-Authenticate', 'Basic realm="OpenClaw Dashboard"');
+    return res.status(401).send('Unauthorized');
+  }
+
+  if (user !== OPENCLAW_DASHBOARD_BASIC_USER || pass !== OPENCLAW_DASHBOARD_BASIC_PASS) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="OpenClaw Dashboard"');
+    return res.status(401).send('Unauthorized');
+  }
+  next();
+}
+
+// 靜態前端檔案 (production build)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.resolve(__dirname, '../../dist');
+app.use(requireDashboardBasicAuth);
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // 建立 HTTP server 並整合 WebSocket
@@ -2613,6 +3823,7 @@ server.listen(PORT, () => {
   console.log(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
   console.log(`  GET  /api/alerts, PATCH /api/alerts/:id`);
   console.log(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
+  console.log(`  AutoTaskGenerator: GET/POST /api/openclaw/auto-task-generator/status|start|stop|run-now`);
   console.log(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
   if (hasSupabase()) {
     console.log(`  [Supabase] 已連線 (openclaw_tasks / projects 等將正常運作)`);
@@ -2628,4 +3839,25 @@ server.listen(PORT, () => {
   } else {
     console.warn(`  [Telegram] 未設定 → 不會發送通知。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。`);
   }
+
+  // AutoExecutor bootstrap/self-heal (disk state is the source of truth).
+  const disk = loadAutoExecutorDiskState();
+  if (disk.enabled) {
+    startAutoExecutor(disk.pollIntervalMs, disk.maxTasksPerMinute);
+  }
+  // Auto Task Generator bootstrap (restore loop if was running).
+  const genSt = getAutoTaskGeneratorState();
+  if (genSt.isRunning) {
+    scheduleNextAutoTaskGeneratorCycle();
+  }
+  setInterval(() => {
+    const st = loadAutoExecutorDiskState();
+    if (st.enabled && !autoExecutorState.isRunning) {
+      console.warn('[AutoExecutor] detected stopped while enabled; restarting...');
+      startAutoExecutor(st.pollIntervalMs, st.maxTasksPerMinute);
+    }
+  }, 15000);
+
+  // Control bot via getUpdates polling (no webhook; works on localhost).
+  startTelegramStopPoll();
 });
