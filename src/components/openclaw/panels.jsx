@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   C,
   Pulse,
@@ -72,11 +73,30 @@ export function AutoPanel({autos,onTog,onRun,onView}){
   </Sec>;
 }
 
-export function ReviewPanel({reviews,onOk,onNo,onView}){
+export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask}){
   const pending=reviews.filter(r=>r.status==="pending"), approved=reviews.filter(r=>r.status==="approved");
   const priCfg={critical:{l:"嚴重",c:C.red,bg:C.redG},high:{l:"高",c:C.amber,bg:C.amberG},medium:{l:"中",c:C.green,bg:C.greenG}};
   const typI={tool:"⚙️",skill:"🧠",issue:"🔧",learn:"📚"};
-  return <Sec icon="🔍" title="審核中心" count={pending.length+" 待審"}>
+  
+  // 全部通過處理函數
+  const handleApproveAll = () => {
+    if (!confirm(`確定要一次通過全部 ${pending.length} 個發想嗎？`)) return;
+    pending.forEach(r => onOk?.(r.id));
+  };
+  
+  const approveAllBtn = pending.length > 0 ? (
+    <Btn v="ok" sm onClick={handleApproveAll} oc="REVIEW_APPROVE_ALL">
+      ✅ 全部通過 ({pending.length})
+    </Btn>
+  ) : null;
+  const rightEl = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {approveAllBtn}
+      <Link to="/review" style={{ fontSize: 11, color: C.indigo, textDecoration: "underline", fontWeight: 500 }}>前往完整審核中心 →</Link>
+    </div>
+  );
+  
+  return <Sec icon="🔍" title="審核中心" count={pending.length+" 待審"} right={rightEl}>
     {pending.length===0&&<div style={{textAlign:"center",padding:24,color:C.t3,fontSize:12}}>✓ 全部審核完畢</div>}
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
       {pending.map(r=>{const pc=priCfg[r.pri]||priCfg.medium;
@@ -89,14 +109,18 @@ export function ReviewPanel({reviews,onOk,onNo,onView}){
             <Badge c={pc.c} bg={pc.bg}>{pc.l}</Badge>
           </div>
           <p style={{fontSize:12,color:C.t2,margin:"0 0 6px",lineHeight:1.4}}>{r.desc}</p>
-          <div data-oc-action={`REVIEW_VIEW_${r.id}`} onClick={()=>onView(r)} style={{background:C.indigoG,borderRadius:7,padding:"6px 10px",marginBottom:8,cursor:"pointer",fontSize:11,color:C.t3,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-            💭 {r.reasoning}
+          <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
+            <div data-oc-action={`REVIEW_VIEW_${r.id}`} onClick={()=>onView(r)} style={{flex:1,minWidth:80,background:C.indigoG,borderRadius:7,padding:"6px 10px",cursor:"pointer",fontSize:11,color:C.t3,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              💭 {r.reasoning}
+            </div>
+            <Btn oc={`REVIEW_QUICK_REJECT_${r.id}`} sm v="no" onClick={()=>onNo(r.id)} style={{whiteSpace:"nowrap"}}>✕ 未通過</Btn>
+            <Btn oc={`REVIEW_QUICK_APPROVE_${r.id}`} sm v="ok" onClick={()=>onOk(r.id)} style={{whiteSpace:"nowrap"}}>✓ 通過</Btn>
+            {onOkAndCreateTask && <Btn oc={`REVIEW_APPROVE_AND_TASK_${r.id}`} sm v="pri" onClick={()=>onOkAndCreateTask(r)} style={{whiteSpace:"nowrap"}}>📋 通過+轉任務</Btn>}
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <span style={{fontSize:10,color:C.t3}}>{r.src} · {r.date}</span>
             <div style={{display:"flex",gap:5}}>
-              <Btn oc={`REVIEW_REJECT_${r.id}`} sm v="no" onClick={()=>onNo(r.id)}>✕</Btn>
-              <Btn oc={`REVIEW_APPROVE_${r.id}`} sm v="ok" onClick={()=>onOk(r.id)}>✓ 批准</Btn>
+              <span style={{fontSize:10,color:C.t3,cursor:"pointer",textDecoration:"underline"}} onClick={()=>onView(r)}>查看詳情 →</span>
             </div>
           </div>
         </Card>;})}
@@ -110,9 +134,13 @@ export function ReviewPanel({reviews,onOk,onNo,onView}){
   </Sec>;
 }
 
+const DONE_COL_MAX_HEIGHT = 320; // 完成欄最大高度，避免版面被拉長
+
 export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz}){
   const [dragOverCol, setDragOverCol] = useState(null);
+  const [hideDone, setHideDone] = useState(true); // 預設隱藏已完成，避免版面過長
   const cols=[{k:"queued",l:"排隊中",i:"📋",c:C.t3},{k:"in_progress",l:"進行中",i:"🔄",c:C.indigo},{k:"done",l:"完成",i:"✅",c:C.green}];
+  const displayCols = hideDone ? cols.filter((c) => c.k !== "done") : cols;
   const catC={bugfix:{l:"修復",c:C.red},learn:{l:"學習",c:C.purple},feature:{l:"功能",c:C.indigo},improve:{l:"改進",c:C.green}};
   const resolveCat = (cat) => catC[cat] ?? { l: cat || "其他", c: C.t3 };
 
@@ -134,10 +162,20 @@ export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz})
     if (id && onMove) onMove(id, colKey);
   };
 
-  return <Sec icon="📊" title="任務看板" count={tasks.length} right={onAddQuiz&&<Btn sm v="pri" onClick={onAddQuiz} style={{fontSize:11}}>➕ 測驗單</Btn>}>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(180px,1fr))",gap:8}}>
-      {cols.map(col=>{const ct=tasks.filter(t=>t.status===col.k);
+  const doneCount = tasks.filter((t) => t.status === "done").length;
+  const rightEl = <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:8}}>
+    {onAddQuiz && <Btn sm v="pri" onClick={onAddQuiz} style={{fontSize:11}}>➕ 測驗單</Btn>}
+    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:11,color:C.t3}}>
+      <input type="checkbox" checked={hideDone} onChange={(e)=>setHideDone(e.target.checked)} style={{accentColor:C.green}} />
+      隱藏已完成{doneCount > 0 && ` (${doneCount})`}
+    </label>
+  </div>;
+
+  return <Sec icon="📊" title="任務看板" count={tasks.length} right={rightEl}>
+    <div className="oc-task-cols" style={{display:"grid",gridTemplateColumns:`repeat(${displayCols.length},minmax(100px,1fr))`,gap:8}}>
+      {displayCols.map(col=>{const ct=tasks.filter(t=>t.status===col.k);
         const isDropTarget = dragOverCol === col.k;
+        const isDoneCol = col.k === "done";
         return <div key={col.k}
           onDragOver={(e)=>handleDragOver(e,col.k)}
           onDragLeave={handleDragLeave}
@@ -149,7 +187,7 @@ export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz})
             <span style={{fontSize:12,fontWeight:600,color:col.c}}>{col.l}</span>
             <span style={{marginLeft:"auto",fontSize:10,color:C.t3}}>{ct.length}</span>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,minHeight:70}}>
+          <div style={{display:"flex",flexDirection:"column",gap:6,minHeight:70,...(isDoneCol ? {maxHeight:DONE_COL_MAX_HEIGHT,overflowY:"auto",overflowX:"hidden"} : {})}}>
             {ct.map(t=>{const cc=resolveCat(t.cat);
               return <Card
                 key={t.id}

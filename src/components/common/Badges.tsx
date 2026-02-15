@@ -1,5 +1,49 @@
+/* eslint-disable react-refresh/only-export-components */
 import { cn } from '@/lib/utils';
 import type { TaskStatus, RunStatus, LastRunStatus, Priority, AlertSeverity, LogLevel } from '@/types';
+
+// Agent 類型
+export type AgentType = 'Cursor' | 'CoDEX' | 'Kimi' | 'OR-Free' | 'Ollama';
+
+// 解析任務名稱中的 Agent 標籤
+export function parseAgentTag(name: string): { agent: AgentType | null; cleanName: string } {
+  const match = name.match(/^\[(\w+)\]\s*(.+)$/);
+  if (match) {
+    const agent = match[1] as AgentType;
+    const validAgents: AgentType[] = ['Cursor', 'CoDEX', 'Kimi', 'OR-Free', 'Ollama'];
+    if (validAgents.includes(agent)) {
+      return { agent, cleanName: match[2] };
+    }
+  }
+  return { agent: null, cleanName: name };
+}
+
+// Agent 顏色配置
+const agentConfig: Record<AgentType, { label: string; className: string }> = {
+  Cursor: { label: 'Cursor', className: 'bg-blue-100 text-blue-800 border-blue-200' },
+  CoDEX: { label: 'CoDEX', className: 'bg-purple-100 text-purple-800 border-purple-200' },
+  Kimi: { label: 'Kimi', className: 'bg-green-100 text-green-800 border-green-200' },
+  'OR-Free': { label: 'OR-Free', className: 'bg-gray-100 text-gray-800 border-gray-200' },
+  Ollama: { label: 'Ollama', className: 'bg-orange-100 text-orange-800 border-orange-200' },
+};
+
+interface AgentBadgeProps {
+  agent: AgentType;
+  className?: string;
+}
+
+export function AgentBadge({ agent, className }: AgentBadgeProps) {
+  const config = agentConfig[agent];
+  return (
+    <span className={cn(
+      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
+      config.className,
+      className
+    )}>
+      {config.label}
+    </span>
+  );
+}
 
 interface StatusBadgeProps {
   status: TaskStatus | RunStatus | LastRunStatus;
@@ -7,13 +51,13 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<TaskStatus | RunStatus | LastRunStatus, { label: string; className: string }> = {
-  // Kanban 任務狀態
-  draft: { label: 'Draft', className: 'bg-secondary text-secondary-foreground' },
-  ready: { label: 'Ready', className: 'bg-info/10 text-info border-info/30' },
-  running: { label: 'Running', className: 'bg-accent/10 text-accent border-accent/30 animate-pulse' },
-  review: { label: 'Review', className: 'bg-warning/10 text-warning border-warning/30' },
-  done: { label: 'Done', className: 'bg-success/10 text-success border-success/30' },
-  blocked: { label: 'Blocked', className: 'bg-destructive/10 text-destructive border-destructive/30' },
+  // Kanban 任務狀態（繁體中文）
+  draft: { label: '草稿', className: 'bg-secondary text-secondary-foreground' },
+  ready: { label: '待執行', className: 'bg-info/10 text-info border-info/30' },
+  running: { label: '執行中', className: 'bg-accent/10 text-accent border-accent/30 animate-pulse' },
+  review: { label: '審核中', className: 'bg-warning/10 text-warning border-warning/30' },
+  done: { label: '完成', className: 'bg-success/10 text-success border-success/30' },
+  blocked: { label: '阻塞', className: 'bg-destructive/10 text-destructive border-destructive/30' },
   // 執行狀態（Run）/ 上次執行
   queued: { label: '佇列中', className: 'bg-secondary text-secondary-foreground' },
   success: { label: '成功', className: 'bg-success/10 text-success border-success/30' },

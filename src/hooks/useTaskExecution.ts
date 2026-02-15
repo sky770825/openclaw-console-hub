@@ -28,6 +28,7 @@ export function useTaskExecution(): UseTaskExecutionReturn {
   });
 
   const ws = useWebSocket();
+  const { subscribe, unsubscribe, clearLogs } = ws;
 
   const executeTask = useCallback(async (taskId: string, taskName: string) => {
     setState({
@@ -54,7 +55,7 @@ export function useTaskExecution(): UseTaskExecutionReturn {
         }));
         
         // 訂閱該 run 的更新
-        ws.subscribe(runId);
+        subscribe(runId);
       }
     } catch (error) {
       console.error('[TaskExecution] 執行失敗:', error);
@@ -64,20 +65,20 @@ export function useTaskExecution(): UseTaskExecutionReturn {
       }));
       throw error;
     }
-  }, [ws]);
+  }, [subscribe]);
 
   const reset = useCallback(() => {
     if (state.currentRunId) {
-      ws.unsubscribe(state.currentRunId);
+      unsubscribe(state.currentRunId);
     }
-    ws.clearLogs();
+    clearLogs();
     setState({
       isExecuting: false,
       currentRunId: null,
       currentTaskId: null,
       taskName: '',
     });
-  }, [state.currentRunId, ws]);
+  }, [state.currentRunId, unsubscribe, clearLogs]);
 
   return {
     ...state,

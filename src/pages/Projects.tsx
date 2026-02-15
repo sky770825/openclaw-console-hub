@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FolderKanban, Plus, Pencil, Trash2, Check, GripVertical } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { FolderKanban, Plus, Pencil, Trash2, Check, GripVertical, User, ListTodo, Calendar, Flag, Tag, Package } from 'lucide-react';
 import { PageContainer, SectionHeader, Section } from '@/components/layout/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,9 +24,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Project, ProjectStatus, ProjectPhase } from '@/types/project';
+
+const ASSIGNEE_OPTIONS = [
+  { value: '', label: '未指派' },
+  { value: 'openclaw', label: 'OpenClaw' },
+  { value: 'cursor', label: 'Cursor' },
+  { value: 'codex', label: 'Codex' },
+];
 import { PROJECT_STATUS_LABELS } from '@/types/project';
 import { cn } from '@/lib/utils';
-import { fetchProjects, createProject, updateProject, deleteProject } from '@/services/openclawBoardApi';
+import { fetchProjects, createProject, updateProject, deleteProject, getApiDisplayLabel } from '@/services/openclawBoardApi';
 
 const STORAGE_KEY = 'openclaw_projects';
 
@@ -48,6 +56,8 @@ function newPhase(name = ''): ProjectPhase {
   return { id: `ph-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, name, done: false };
 }
 
+const PRIORITY_LABELS: Record<number, string> = { 1: 'P1 最高', 2: 'P2 高', 3: 'P3 中', 4: 'P4 低', 5: 'P5 最低' };
+
 function newProject(overrides?: Partial<Project>): Project {
   const now = new Date().toISOString();
   return {
@@ -58,6 +68,9 @@ function newProject(overrides?: Partial<Project>): Project {
     progress: 0,
     phases: [],
     notes: '',
+    priority: 3,
+    tags: [],
+    linkedTaskIds: [],
     updatedAt: now,
     createdAt: now,
     ...overrides,
@@ -80,10 +93,12 @@ function formatDate(iso: string): string {
 }
 
 export default function Projects() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Project>(() => newProject());
+  const [lastSaveSource, setLastSaveSource] = useState<'supabase' | 'local' | null>(null);
 
   const refresh = useCallback(async () => {
     const data = await fetchProjects();
@@ -97,29 +112,35 @@ export default function Projects() {
   const openCreate = () => {
     setForm(newProject());
     setEditingId(null);
+    setLastSaveSource(null);
     setSheetOpen(true);
   };
 
   const openEdit = (p: Project) => {
     setForm({ ...p });
     setEditingId(p.id);
+    setLastSaveSource(null);
     setSheetOpen(true);
   };
 
   const save = async () => {
     const now = new Date().toISOString();
     const toSave = { ...form, updatedAt: now };
+    let usedApi = false;
     if (editingId) {
-      const updated = await updateProject(editingId, toSave);
-      if (updated) {
-        setProjects((prev) => prev.map((q) => (q.id === editingId ? updated : q)));
+      const result = await updateProject(editingId, toSave);
+      if (result?.project) {
+        setProjects((prev) => prev.map((q) => (q.id === editingId ? result.project! : q)));
+        usedApi = result.savedTo === 'supabase';
       }
     } else {
-      const created = await createProject(toSave);
-      if (created) {
-        setProjects((prev) => [created, ...prev]);
+      const result = await createProject(toSave);
+      if (result?.project) {
+        setProjects((prev) => [result.project!, ...prev]);
+        usedApi = result.savedTo === 'supabase';
       }
     }
+    setLastSaveSource(usedApi ? 'supabase' : 'local');
     setSheetOpen(false);
   };
 
@@ -145,6 +166,10 @@ export default function Projects() {
       ...f,
       phases: f.phases.map((ph) => (ph.id === phaseId ? { ...ph, ...patch } : ph)),
     }));
+  };
+
+  const openTaskListForProject = (projectId: string, title: string) => {
+    navigate('/tasks/list', { state: { projectId, projectTitle: title } });
   };
 
   const removePhase = (phaseId: string) => {
@@ -173,6 +198,11 @@ export default function Projects() {
         }
       />
 
+      {lastSaveSource && (
+        <p className="text-xs text-muted-foreground mb-2">
+          {lastSaveSource === 'supabase' ? '✓ 已寫入 Supabase（' + getApiDisplayLabel() + '）' : '✓ 已儲存至本地（後端未連線）'}
+        </p>
+      )}
       <Section>
         {projects.length === 0 ? (
           <Card className="border-dashed">
@@ -196,12 +226,52 @@ export default function Projects() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-sm font-semibold line-clamp-2">{p.title || '未命名專案'}</CardTitle>
-                    <Badge className={cn('shrink-0 text-[10px]', statusColor[p.status])}>
-                      {PROJECT_STATUS_LABELS[p.status]}
-                    </Badge>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {p.priority != null && (
+                        <Badge variant="outline" className="text-[10px]">
+                          <Flag className="h-2.5 w-2.5 mr-0.5" />
+                          {PRIORITY_LABELS[p.priority] ?? `P${p.priority}`}
+                        </Badge>
+                      )}
+                      <Badge className={cn('text-[10px]', statusColor[p.status])}>
+                        {PROJECT_STATUS_LABELS[p.status]}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {p.description && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-2">{p.description}</p>
+                  )}
+                  {(p.assigneeAgent || p.assigneeLabel) && (
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {p.assigneeLabel || ASSIGNEE_OPTIONS.find((o) => o.value === p.assigneeAgent)?.label || p.assigneeAgent}
+                    </p>
+                  )}
+                  {p.deadline && (
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      截止：{p.deadline}
+                    </p>
+                  )}
+                  {(p.tags?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {(p.tags ?? []).slice(0, 4).map((t) => (
+                        <Badge key={t} variant="secondary" className="text-[10px] font-normal">
+                          <Tag className="h-2.5 w-2.5 mr-0.5" />
+                          {t}
+                        </Badge>
+                      ))}
+                      {(p.tags?.length ?? 0) > 4 && <span className="text-[10px] text-muted-foreground">+{(p.tags?.length ?? 0) - 4}</span>}
+                    </div>
+                  )}
+                  {p.deliverablesSummary && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-1 flex items-center gap-1">
+                      <Package className="h-3 w-3 shrink-0" />
+                      {p.deliverablesSummary}
+                    </p>
+                  )}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-muted-foreground">
                       <span>進度</span>
@@ -214,6 +284,39 @@ export default function Projects() {
                       階段 {p.phases.filter((ph) => ph.done).length}/{p.phases.length}
                     </p>
                   )}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openTaskListForProject(p.id, p.title);
+                      }}
+                    >
+                      <ListTodo className="h-3 w-3" />
+                      任務列表
+                    </Button>
+                    {(p.linkedTaskIds?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1 items-center">
+                        <span className="text-[10px] text-muted-foreground shrink-0">關聯：</span>
+                        {(p.linkedTaskIds ?? []).slice(0, 5).map((taskId) => (
+                          <Link
+                            key={taskId}
+                            to={`/tasks/${taskId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[10px] text-primary hover:underline px-1.5 py-0.5 rounded bg-primary/10"
+                          >
+                            {taskId}
+                          </Link>
+                        ))}
+                        {(p.linkedTaskIds?.length ?? 0) > 5 && (
+                          <span className="text-[10px] text-muted-foreground">+{(p.linkedTaskIds?.length ?? 0) - 5}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[11px] text-muted-foreground">更新：{formatDate(p.updatedAt)}</p>
                 </CardContent>
               </Card>
@@ -247,6 +350,109 @@ export default function Projects() {
                 onChange={(e) => updateForm({ description: e.target.value })}
                 rows={4}
                 className="bg-background resize-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>指派執行對象</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={form.assigneeAgent ?? '_none'}
+                  onValueChange={(v) => updateForm({ assigneeAgent: v === '_none' ? undefined : v })}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="選擇 Agent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSIGNEE_OPTIONS.map((o) => (
+                      <SelectItem key={o.value || 'none'} value={o.value === '' ? '_none' : o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="顯示名稱（可選）"
+                  value={form.assigneeLabel ?? ''}
+                  onChange={(e) => updateForm({ assigneeLabel: e.target.value.trim() || undefined })}
+                  className="bg-background"
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">內容編排後可指定由 OpenClaw / Cursor / Codex 執行</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>截止日</Label>
+                <Input
+                  type="date"
+                  value={form.deadline ?? ''}
+                  onChange={(e) => updateForm({ deadline: e.target.value || undefined })}
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>優先級</Label>
+                <Select
+                  value={String(form.priority ?? 3)}
+                  onValueChange={(v) => updateForm({ priority: Number(v) })}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {PRIORITY_LABELS[n]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>標籤（逗號分隔）</Label>
+              <Input
+                placeholder="例如：官網, 改版, 後台"
+                value={(form.tags ?? []).join(', ')}
+                onChange={(e) =>
+                  updateForm({
+                    tags: e.target.value
+                      .split(/[,，]/)
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+                className="bg-background"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>交付物摘要</Label>
+              <Textarea
+                placeholder="預期交付內容、產出物說明"
+                value={form.deliverablesSummary ?? ''}
+                onChange={(e) => updateForm({ deliverablesSummary: e.target.value.trim() || undefined })}
+                rows={2}
+                className="bg-background resize-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>關聯任務 ID（逗號分隔，可選）</Label>
+              <Input
+                placeholder="例如：task-1, task-2"
+                value={(form.linkedTaskIds ?? []).join(', ')}
+                onChange={(e) =>
+                  updateForm({
+                    linkedTaskIds: e.target.value
+                      .split(/[,，]/)
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+                className="bg-background"
               />
             </div>
 

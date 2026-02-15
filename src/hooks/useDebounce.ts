@@ -137,16 +137,15 @@ export function useDebouncedDedupe<T extends (...args: unknown[]) => Promise<unk
 ) {
   const { debouncedFn } = useDebounce(fn, { delay: options.debounceMs ?? 300 });
   const { dedupeRequest } = useRequestDedupe();
+  const { dedupeKey } = options;
 
   const execute = useCallback(
     (...args: Parameters<T>): ReturnType<T> => {
-      const key = typeof options.dedupeKey === 'function' 
-        ? options.dedupeKey(...args) 
-        : options.dedupeKey;
+      const key = typeof dedupeKey === 'function' ? dedupeKey(...args) : dedupeKey;
       
       return dedupeRequest(key, () => debouncedFn(...args)) as ReturnType<T>;
     },
-    [debouncedFn, dedupeRequest, options.dedupeKey]
+    [debouncedFn, dedupeRequest, dedupeKey]
   );
 
   return execute;

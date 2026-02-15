@@ -15,7 +15,9 @@ import Logs from "./pages/Logs";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import Projects from "./pages/Projects";
+import ReviewCenter from "./pages/ReviewCenter";
 import NotFound from "./pages/NotFound";
+import Domains from "./pages/Domains";
 import OpenClawV4 from "../openclaw-cursor.jsx";
 
 const queryClient = new QueryClient({
@@ -44,13 +46,13 @@ function PerformanceMonitor() {
 
 const App = () => (
   <ErrorBoundary>
-    <KeyboardShortcuts />
     <PerformanceMonitor />
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <KeyboardShortcuts />
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
@@ -63,6 +65,8 @@ const App = () => (
               <Route path="/logs" element={<Logs />} />
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/projects" element={<Projects />} />
+              <Route path="/domains" element={<Domains />} />
+              <Route path="/review" element={<ReviewCenter />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

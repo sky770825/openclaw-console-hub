@@ -83,7 +83,7 @@ async function request<T>(
       if (res.status === 204) return undefined as T;
       if (!contentType.includes('application/json')) {
         throw new Error(
-          'API 回傳非 JSON。請確認 VITE_API_BASE_URL 指向後端 API（如 http://localhost:3001），而非前端網址。'
+          'API 回傳非 JSON。請確認 VITE_API_BASE_URL 指向後端 API（如 http://localhost:3011），而非前端網址。'
         );
       }
       try {
@@ -108,7 +108,7 @@ async function request<T>(
     err.name === 'AbortError'
   ) {
     throw new Error(
-      '無法連線後端。請確認後端已啟動（cd server && node dist/index.js），且 Vite proxy 指向後端 port（預設 3001）。'
+      '無法連線後端。請確認後端已啟動（cd server && npm run dev），且 Vite proxy 指向後端 port（預設 3011）。'
     );
   }
   throw err;
@@ -215,8 +215,47 @@ export const apiClient = {
     queueDepth: number;
     activeTasks: number;
     weeklyTrend: { day: string; success: number; failed: number }[];
+    agentStats?: { name: string; runs: number; success: number; failed: number; successRate: number }[];
   }> {
     return request('/api/stats');
+  },
+
+  // ---- Feature Flags ----
+  async getFeatures(): Promise<{ ok: boolean; features: Record<string, boolean> }> {
+    return request('/api/features');
+  },
+
+  async patchFeatures(patch: Record<string, boolean>): Promise<{ ok: boolean; features: Record<string, boolean> }> {
+    return request('/api/features', { method: 'PATCH', body: patch });
+  },
+
+  // ---- Board / Taxonomy ----
+  async getDomains(): Promise<{ ok: boolean; domains: Array<{ slug: string; label: string; keywords: string[] }> }> {
+    return request('/api/domains');
+  },
+
+  async getTaskCompliance(): Promise<{
+    ok: boolean;
+    total: number;
+    ready: number;
+    compliantReady: number;
+    noncompliantReady: number;
+    sample: { id: string; name: string; missing: string[] }[];
+  }> {
+    return request('/api/tasks/compliance');
+  },
+
+  // ---- Telegram (Ops) ----
+  async telegramForceTest(): Promise<{
+    ok: boolean;
+    chat_id?: number | null;
+    message_id?: number | null;
+    time?: string;
+    nonce?: string;
+    description?: string | null;
+    error_code?: number | null;
+  }> {
+    return request('/api/telegram/force-test');
   },
 
   // ---- AutoExecutor ----
@@ -224,6 +263,7 @@ export const apiClient = {
     ok: boolean;
     isRunning: boolean;
     pollIntervalMs: number;
+    maxTasksPerMinute?: number;
     lastPollAt: string | null;
     lastExecutedTaskId: string | null;
     lastExecutedAt: string | null;
@@ -233,11 +273,15 @@ export const apiClient = {
     return request('/api/openclaw/auto-executor/status');
   },
 
-  async startAutoExecutor(pollIntervalMs?: number): Promise<{
+  async startAutoExecutor(
+    pollIntervalMs?: number,
+    maxTasksPerMinute?: number
+  ): Promise<{
     ok: boolean;
     message: string;
     isRunning: boolean;
     pollIntervalMs: number;
+    maxTasksPerMinute: number;
     lastPollAt: string | null;
     lastExecutedTaskId: string | null;
     lastExecutedAt: string | null;
@@ -246,7 +290,7 @@ export const apiClient = {
   }> {
     return request('/api/openclaw/auto-executor/start', {
       method: 'POST',
-      body: { pollIntervalMs },
+      body: { pollIntervalMs, maxTasksPerMinute },
     });
   },
 
@@ -255,6 +299,7 @@ export const apiClient = {
     message: string;
     isRunning: boolean;
     pollIntervalMs: number;
+    maxTasksPerMinute: number;
     lastPollAt: string | null;
     lastExecutedTaskId: string | null;
     lastExecutedAt: string | null;
@@ -266,6 +311,203 @@ export const apiClient = {
     });
   },
 
+  // ---- Maintenance ----
+  async reconcileMaintenance(): Promise<{
+    ok: boolean;
+    scanned: number;
+    fixedToReady: number;
+    fixedToDone: number;
+    fixedToRunning: number;
+    details: Array<{ taskId: string; from: string; to: string; reason: string }>;
+  }> {
+    return request('/api/openclaw/maintenance/reconcile', {
+      method: 'POST',
+    });
+  },
+
+  // ---- Task Indexer ----
+  async getTaskIndexerStatus(): Promise<{
+    ok: boolean;
+    dir: string;
+    jsonlPath: string;
+    mdPath: string;
+    jsonlExists: boolean;
+    mdExists: boolean;
+  }> {
+    return request('/api/openclaw/indexer/status');
+  },
+
+  async rebuildTaskIndexMarkdown(): Promise<{
+    ok: boolean;
+    count: number;
+    mdPath: string;
+    jsonlPath: string;
+    message: string;
+  }> {
+    return request('/api/openclaw/indexer/rebuild-md', {
+      method: 'POST',
+    });
+  },
+
+  async getTaskIndexRecords(limit: number = 20): Promise<{
+    ok: boolean;
+    total: number;
+    records: Array<{
+      timestamp: string;
+      taskId: string;
+      taskName: string;
+      taskStatus: string;
+      runId: string;
+      runStatus: string;
+      startedAt: string | null;
+      endedAt: string | null;
+      durationMs: number | null;
+      riskLevel: string;
+      agentType: string | null;
+      modelUsed: string | null;
+      checkpointId: string | null;
+      rollbackStatus: string | null;
+      healthCheckStatus: string | null;
+      tags: string[];
+      outputSummary: string | null;
+    }>;
+    message?: string;
+  }> {
+    return request(`/api/openclaw/indexer/records?limit=${encodeURIComponent(String(limit))}`);
+  },
+
+  // ---- Handoff ----
+  async generateDeterministicHandoff(): Promise<{
+    ok: boolean;
+    path: string;
+    message: string;
+  }> {
+    return request('/api/openclaw/handoff/generate', {
+      method: 'POST',
+    });
+  },
+
+  // ---- Auto Task Generator ----
+  async getAutoTaskGeneratorStatus(): Promise<{
+    ok: boolean;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    maxTasksPerCycle: number;
+    backlogTarget: number;
+    lastCycleAt: string | null;
+    nextCycleAt: string | null;
+    lastSummary: string | null;
+    generatedToday: number;
+    totalGenerated: number;
+    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    qualityGateEnabled: boolean;
+    qualityGate: {
+      minAcceptanceCriteria: number;
+      requireRollbackPlan: boolean;
+      minRollbackLength: number;
+      requireEvidenceLinks: boolean;
+    };
+  }> {
+    return request('/api/openclaw/auto-task-generator/status');
+  },
+
+  async startAutoTaskGenerator(
+    pollIntervalMs?: number,
+    maxTasksPerCycle?: number,
+    backlogTarget?: number,
+    sourceWeights?: Record<'internal-ops' | 'business-model' | 'external-radar', number>,
+    qualityGate?: {
+      minAcceptanceCriteria: number;
+      requireRollbackPlan: boolean;
+      minRollbackLength: number;
+      requireEvidenceLinks: boolean;
+    },
+    qualityGateEnabled?: boolean
+  ): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    maxTasksPerCycle: number;
+    backlogTarget: number;
+    lastCycleAt: string | null;
+    nextCycleAt: string | null;
+    lastSummary: string | null;
+    generatedToday: number;
+    totalGenerated: number;
+    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    qualityGateEnabled: boolean;
+    qualityGate: {
+      minAcceptanceCriteria: number;
+      requireRollbackPlan: boolean;
+      minRollbackLength: number;
+      requireEvidenceLinks: boolean;
+    };
+    cycle?: { created: number; skipped: number };
+  }> {
+    return request('/api/openclaw/auto-task-generator/start', {
+      method: 'POST',
+      body: { pollIntervalMs, maxTasksPerCycle, backlogTarget, sourceWeights, qualityGate, qualityGateEnabled },
+    });
+  },
+
+  async stopAutoTaskGenerator(): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    maxTasksPerCycle: number;
+    backlogTarget: number;
+    lastCycleAt: string | null;
+    nextCycleAt: string | null;
+    lastSummary: string | null;
+    generatedToday: number;
+    totalGenerated: number;
+    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    qualityGateEnabled: boolean;
+    qualityGate: {
+      minAcceptanceCriteria: number;
+      requireRollbackPlan: boolean;
+      minRollbackLength: number;
+      requireEvidenceLinks: boolean;
+    };
+  }> {
+    return request('/api/openclaw/auto-task-generator/stop', {
+      method: 'POST',
+    });
+  },
+
+  async runAutoTaskGeneratorNow(): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+    pollIntervalMs: number;
+    maxTasksPerCycle: number;
+    backlogTarget: number;
+    lastCycleAt: string | null;
+    nextCycleAt: string | null;
+    lastSummary: string | null;
+    generatedToday: number;
+    totalGenerated: number;
+    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
+    qualityGateEnabled: boolean;
+    qualityGate: {
+      minAcceptanceCriteria: number;
+      requireRollbackPlan: boolean;
+      minRollbackLength: number;
+      requireEvidenceLinks: boolean;
+    };
+    cycle?: { created: number; skipped: number };
+  }> {
+    return request('/api/openclaw/auto-task-generator/run-now', {
+      method: 'POST',
+    });
+  },
+
   // ---- System Schedules（系統排程）----
   async getSystemSchedules(): Promise<{
     ok: boolean;
@@ -273,5 +515,75 @@ export const apiClient = {
     data: import('@/types').SystemSchedule[];
   }> {
     return request('/api/system-schedules');
+  },
+
+  // ---- Reviews（小蔡發想審核）----
+  async listReviews(): Promise<import('@/types').Review[]> {
+    return request('/api/openclaw/reviews');
+  },
+
+  async updateReview(
+    reviewId: string,
+    patch: Partial<import('@/types').Review>
+  ): Promise<import('@/types').Review | null> {
+    return request(`/api/openclaw/reviews/${encodeURIComponent(reviewId)}`, {
+      method: 'PATCH',
+      body: patch,
+    });
+  },
+
+  async deleteReview(reviewId: string): Promise<void> {
+    await request(`/api/openclaw/reviews/${encodeURIComponent(reviewId)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getTasksByReviewId(reviewId: string): Promise<import('@/types').Task[]> {
+    return request(`/api/openclaw/reviews/${encodeURIComponent(reviewId)}/tasks`);
+  },
+
+  // ---- Autopilot（自主循環模式）----
+  async getAutopilotStatus(): Promise<{
+    ok: boolean;
+    isRunning: boolean;
+    cycleCount: number;
+    intervalMinutes: number;
+    lastCycleAt: string | null;
+    nextCycleAt: string | null;
+    stats: {
+      tasksCompleted: number;
+      tasksFailed: number;
+    };
+  }> {
+    return request('/api/openclaw/autopilot/status');
+  },
+
+  async startAutopilot(intervalMinutes?: number): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+    intervalMinutes: number;
+  }> {
+    return request('/api/openclaw/autopilot/start', {
+      method: 'POST',
+      body: { intervalMinutes },
+    });
+  },
+
+  async stopAutopilot(): Promise<{
+    ok: boolean;
+    message: string;
+    isRunning: boolean;
+  }> {
+    return request('/api/openclaw/autopilot/stop', {
+      method: 'POST',
+    });
+  },
+
+  async getAutopilotLog(): Promise<{
+    ok: boolean;
+    logs: { timestamp: string; message: string; level: 'info' | 'warn' | 'error' }[];
+  }> {
+    return request('/api/openclaw/autopilot/log');
   },
 };

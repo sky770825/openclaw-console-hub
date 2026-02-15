@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Activity, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  Activity,
+  CheckCircle,
+  XCircle,
+  Clock,
   Layers,
   Zap,
   RefreshCw,
@@ -14,6 +14,10 @@ import {
   Bot,
   Wifi,
   WifiOff,
+  Compass,
+  Lightbulb,
+  AlertTriangle,
+  DollarSign,
 } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { PageContainer, SectionHeader, Section } from '@/components/layout/PageContainer';
@@ -22,7 +26,16 @@ import { StatusBadge } from '@/components/common/Badges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor } from '@/services/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor, getAutopilotStatus, startAutopilot, stopAutopilot, getAutopilotLog, telegramForceTest, getTaskCompliance } from '@/services/api';
 import type { Run, Alert, AuditLog } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -82,11 +95,86 @@ interface AutoExecutorStatus {
   ok: boolean;
   isRunning: boolean;
   pollIntervalMs: number;
+  maxTasksPerMinute?: number;
   lastPollAt: string | null;
   lastExecutedTaskId: string | null;
   lastExecutedAt: string | null;
   totalExecutedToday: number;
   nextPollAt: string | null;
+}
+
+interface AutopilotStatus {
+  ok: boolean;
+  isRunning: boolean;
+  cycleCount: number;
+  intervalMinutes: number;
+  lastCycleAt: string | null;
+  nextCycleAt: string | null;
+  stats: {
+    tasksCompleted: number;
+    tasksFailed: number;
+  };
+}
+
+interface AutopilotLogEntry {
+  timestamp: string;
+  message: string;
+  level: 'info' | 'warn' | 'error';
+}
+
+type TaskCompliance = {
+  ok: boolean;
+  total: number;
+  ready: number;
+  compliantReady: number;
+  noncompliantReady: number;
+  sample: { id: string; name: string; missing: string[] }[];
+};
+
+function isSameAutoExecutor(a: AutoExecutorStatus | null, b: AutoExecutorStatus | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.ok === b.ok &&
+    a.isRunning === b.isRunning &&
+    a.pollIntervalMs === b.pollIntervalMs &&
+    (a.maxTasksPerMinute ?? null) === (b.maxTasksPerMinute ?? null) &&
+    a.lastPollAt === b.lastPollAt &&
+    a.lastExecutedTaskId === b.lastExecutedTaskId &&
+    a.lastExecutedAt === b.lastExecutedAt &&
+    a.totalExecutedToday === b.totalExecutedToday &&
+    a.nextPollAt === b.nextPollAt
+  );
+}
+
+function isSameAutopilot(a: AutopilotStatus | null, b: AutopilotStatus | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.ok === b.ok &&
+    a.isRunning === b.isRunning &&
+    a.cycleCount === b.cycleCount &&
+    a.intervalMinutes === b.intervalMinutes &&
+    a.lastCycleAt === b.lastCycleAt &&
+    a.nextCycleAt === b.nextCycleAt &&
+    a.stats.tasksCompleted === b.stats.tasksCompleted &&
+    a.stats.tasksFailed === b.stats.tasksFailed
+  );
+}
+
+function isSameAutopilotLogs(a: AutopilotLogEntry[], b: AutopilotLogEntry[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (
+      a[i].timestamp !== b[i].timestamp ||
+      a[i].level !== b[i].level ||
+      a[i].message !== b[i].message
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export default function Dashboard() {
@@ -97,29 +185,56 @@ export default function Dashboard() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [autoExecutor, setAutoExecutor] = useState<AutoExecutorStatus | null>(null);
   const [isLoadingAutoExecutor, setIsLoadingAutoExecutor] = useState(false);
+  const [autopilot, setAutopilot] = useState<AutopilotStatus | null>(null);
+  const [autopilotLogs, setAutopilotLogs] = useState<AutopilotLogEntry[]>([]);
+  const [isLoadingAutopilot, setIsLoadingAutopilot] = useState(false);
+  const [taskCompliance, setTaskCompliance] = useState<TaskCompliance | null>(null);
+  const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const [isForcingTelegramTest, setIsForcingTelegramTest] = useState(false);
   const ws = useWebSocket();
+
+  // 每日預算（靜態版本，之後接 API）
+  const dailyBudget = { spent: 0, limit: 5.0 }; // $0.00 / $5.00
+  const budgetProgress = (dailyBudget.spent / dailyBudget.limit) * 100;
 
   useEffect(() => {
     async function loadData() {
-      const [statsData, runsData, alertsData, auditData, autoExecStatus] = await Promise.all([
+      const [statsData, runsData, alertsData, auditData, autoExecStatus, autopilotStatus, autopilotLogData, complianceData] = await Promise.all([
         getDashboardStats(),
         getRuns(),
         getAlerts(),
         getAuditLogs(),
         getAutoExecutorStatus(),
+        getAutopilotStatus(),
+        getAutopilotLog(),
+        getTaskCompliance(),
       ]);
       setStats(statsData);
       setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
       setAlerts(alertsData.filter(a => a.status === 'open').slice(0, 5));
       setAuditLogs(auditData.slice(0, 5));
-      setAutoExecutor(autoExecStatus);
+      setAutoExecutor((prev) => (isSameAutoExecutor(prev, autoExecStatus) ? prev : autoExecStatus));
+      setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
+      const latestLogs = autopilotLogData.logs?.slice(-5) || [];
+      setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
+      setTaskCompliance(complianceData);
     }
     loadData();
 
-    // 每 10 秒更新一次 AutoExecutor 狀態
+    // 每 10 秒更新一次 AutoExecutor 和 Autopilot 狀態
     const interval = setInterval(async () => {
-      const status = await getAutoExecutorStatus();
-      setAutoExecutor(status);
+      const [status, autopilotStatus, autopilotLogData, complianceData] = await Promise.all([
+        getAutoExecutorStatus(),
+        getAutopilotStatus(),
+        getAutopilotLog(),
+        getTaskCompliance(),
+      ]);
+      setAutoExecutor((prev) => (isSameAutoExecutor(prev, status) ? prev : status));
+      setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
+      const latestLogs = autopilotLogData.logs?.slice(-5) || [];
+      setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
+      setTaskCompliance(complianceData);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -151,6 +266,61 @@ export default function Dashboard() {
     }
   };
 
+  const handleStartAutopilot = async () => {
+    setIsLoadingAutopilot(true);
+    try {
+      const result = await startAutopilot(10); // 10 分鐘間隔
+      if (result.ok) {
+        setAutopilot(prev => prev ? { ...prev, isRunning: true, intervalMinutes: result.intervalMinutes } : null);
+        toast.success('Autopilot 已啟動');
+      } else {
+        toast.error(result.message || '啟動失敗');
+      }
+    } catch (e) {
+      toast.error('啟動失敗: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsLoadingAutopilot(false);
+    }
+  };
+
+  const handleStopAutopilot = async () => {
+    setIsLoadingAutopilot(true);
+    try {
+      const result = await stopAutopilot();
+      if (result.ok) {
+        setAutopilot(prev => prev ? { ...prev, isRunning: false } : null);
+        toast.success('Autopilot 已停止');
+      } else {
+        toast.error(result.message || '停止失敗');
+      }
+    } catch (e) {
+      toast.error('停止失敗: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsLoadingAutopilot(false);
+    }
+  };
+
+  // 緊急停止所有任務
+  const handleEmergencyStop = async () => {
+    setIsStopping(true);
+    try {
+      // Use existing, well-defined endpoints (more reliable than a single "stop-all" route).
+      await Promise.allSettled([stopAutoExecutor(), stopAutopilot()]);
+      toast.success('🚨 已緊急停止（AutoExecutor + Autopilot）');
+      const [status, autopilotStatus] = await Promise.all([
+        getAutoExecutorStatus(),
+        getAutopilotStatus(),
+      ]);
+      setAutoExecutor(status);
+      setAutopilot(autopilotStatus);
+    } catch (e) {
+      toast.error('緊急停止失敗: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsStopping(false);
+      setEmergencyDialogOpen(false);
+    }
+  };
+
   if (!stats) {
     return (
       <PageContainer>
@@ -168,10 +338,60 @@ export default function Dashboard() {
 
   return (
     <PageContainer>
-      <SectionHeader 
-        title="儀表板" 
+      <SectionHeader
+        title="儀表板"
         description="任務自動化系統總覽 · 與 OpenClaw Agent 板同步"
         icon="📊"
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/review" className="gap-1">
+                <Lightbulb className="h-4 w-4" />
+                發想審核
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/cursor" className="gap-1">
+                <Bot className="h-4 w-4" />
+                OpenClaw 任務板
+              </Link>
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              disabled={isForcingTelegramTest}
+              onClick={async () => {
+                try {
+                  setIsForcingTelegramTest(true);
+                  const res = await telegramForceTest();
+                  if (!res?.ok) {
+                    toast.error('Telegram 強制測試失敗');
+                    return;
+                  }
+                  toast.success(`Telegram 已送出 (nonce=${res.nonce ?? '-'})`);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Telegram 強制測試失敗');
+                } finally {
+                  setIsForcingTelegramTest(false);
+                }
+              }}
+            >
+              <RefreshCw className={cn('h-4 w-4', isForcingTelegramTest && 'animate-spin')} />
+              🧪 強制測試
+            </Button>
+
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-2"
+              onClick={() => setEmergencyDialogOpen(true)}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              🚨 緊急停止
+            </Button>
+          </div>
+        }
       />
 
       {/* KPI Cards — OpenClaw Stats 風格 */}
@@ -396,6 +616,50 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Ready Compliance */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Ready 合規
+                {taskCompliance && (
+                  <Badge variant={taskCompliance.noncompliantReady > 0 ? 'destructive' : 'secondary'}>
+                    {taskCompliance.compliantReady}/{taskCompliance.ready}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Ready 需具備 projectPath、agent、riskLevel、rollbackPlan、acceptanceCriteria、deliverables、runCommands、modelPolicy、executionProvider、allowPaid。
+              </p>
+              {taskCompliance && taskCompliance.sample?.length > 0 && (
+                <div className="rounded-md border p-3 text-xs space-y-2">
+                  <div className="font-medium">不合規樣本（前 3 筆）</div>
+                  {taskCompliance.sample.slice(0, 3).map((s) => (
+                    <div key={s.id} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate">{s.name}</div>
+                        <div className="text-muted-foreground truncate">缺少：{s.missing.join(', ')}</div>
+                      </div>
+                      <Button size="sm" variant="outline" className="h-7" onClick={() => navigate(`/tasks/${s.id}`)}>
+                        打開
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" className="flex-1" onClick={() => navigate('/tasks?status=ready')}>
+                  查看 Ready
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate('/tasks?tag=needs-meta')}>
+                  needs-meta
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* AutoExecutor Control */}
           <Card>
             <CardHeader className="pb-2">
@@ -461,6 +725,135 @@ export default function Dashboard() {
                   <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Autopilot Control */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Compass className="h-4 w-4" />
+                自主循環模式 (Autopilot)
+                {autopilot?.isRunning && (
+                  <span className="inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {autopilot ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>狀態</span>
+                    <span className={`text-sm font-medium ${autopilot.isRunning ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {autopilot.isRunning ? '運行中' : '已停止'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>循環次數</span>
+                    <span className="text-sm font-medium">{autopilot.cycleCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>已完成任務</span>
+                    <span className="text-sm font-medium">{autopilot.stats.tasksCompleted}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>間隔</span>
+                    <span className="text-sm font-medium">{autopilot.intervalMinutes} 分鐘</span>
+                  </div>
+                  {autopilot.lastCycleAt && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>上次循環</span>
+                      <span className="text-sm font-medium">{formatRelativeTime(autopilot.lastCycleAt)}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-2">
+                    {autopilot.isRunning ? (
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={handleStopAutopilot}
+                        disabled={isLoadingAutopilot}
+                      >
+                        <Square className="h-4 w-4 mr-1" />
+                        停止
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={handleStartAutopilot}
+                        disabled={isLoadingAutopilot}
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        啟動
+                      </Button>
+                    )}
+                  </div>
+                  {autopilotLogs.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-xs text-muted-foreground mb-2">最近日誌</p>
+                      <div className="text-xs space-y-1">
+                        {autopilotLogs.map((log, idx) => (
+                          <div key={idx} className="truncate">
+                            <span className={
+                              log.level === 'error' ? 'text-red-500' :
+                              log.level === 'warn' ? 'text-yellow-500' :
+                              'text-blue-500'
+                            }>
+                              {log.level === 'error' ? '❌' : log.level === 'warn' ? '⚠️' : 'ℹ️'}
+                            </span>
+                            {' '}{log.message}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-4">
+                  <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 每日預算卡片 */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                💰 今日預算
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">已花費</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    ${dailyBudget.spent.toFixed(2)}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">預算上限</span>
+                    <span className="font-medium">${dailyBudget.limit.toFixed(2)}</span>
+                  </div>
+                  <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full transition-all duration-500 rounded-full',
+                        budgetProgress > 80 ? 'bg-red-500' : budgetProgress > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                      )}
+                      style={{ width: `${Math.min(budgetProgress, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    剩餘 ${(dailyBudget.limit - dailyBudget.spent).toFixed(2)}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -539,6 +932,48 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* 緊急停止確認對話框 */}
+      <Dialog open={emergencyDialogOpen} onOpenChange={setEmergencyDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <DialogTitle className="text-base font-semibold">確認緊急停止？</DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm">
+                  此操作將立即停止所有正在執行的任務，包括 AutoExecutor 和 Autopilot。
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+            ⚠️ 警告：此操作無法撤銷，進行中的任務將被強制終止。
+          </div>
+          <DialogFooter className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setEmergencyDialogOpen(false)}
+              disabled={isStopping}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={handleEmergencyStop}
+              disabled={isStopping}
+            >
+              {isStopping ? '停止中…' : '確認緊急停止'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

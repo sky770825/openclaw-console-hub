@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { PageContainer, SectionHeader } from '@/components/layout/PageContainer';
 import { SeverityBadge } from '@/components/common/Badges';
 import { EmptyState } from '@/components/common';
@@ -23,12 +23,15 @@ import {
   Zap,
   Database,
   Key,
-  Webhook
+  Webhook,
+  Lightbulb,
+  Bot
 } from 'lucide-react';
 import { getAlerts, updateAlertStatus } from '@/services/api';
 import type { Alert, AlertType } from '@/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useFeatures } from '@/hooks/useFeatures';
 
 const alertTypeConfig: Record<string, { label: string; icon: typeof Webhook }> = {
   webhook_fail: { label: 'Webhook 失敗', icon: Webhook },
@@ -57,6 +60,7 @@ function formatRelativeTime(date: string): string {
 export default function Alerts() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { features } = useFeatures();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [filter, setFilter] = useState<'all' | 'open' | 'acked' | 'snoozed'>('all');
 
@@ -96,11 +100,25 @@ export default function Alerts() {
         description="監控系統警告和重大問題 · 與 OpenClaw reviews 對應"
         icon="🔔"
         action={
-          openCount > 0 && (
-            <Badge variant="destructive" className="h-6">
-              {openCount} 未處理
-            </Badge>
-          )
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/review" className="gap-1">
+                <Lightbulb className="h-4 w-4" />
+                發想審核
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/cursor" className="gap-1">
+                <Bot className="h-4 w-4" />
+                OpenClaw 任務板
+              </Link>
+            </Button>
+            {openCount > 0 && (
+              <Badge variant="destructive" className="h-6">
+                {openCount} 未處理
+              </Badge>
+            )}
+          </div>
         }
       />
 
@@ -184,31 +202,34 @@ export default function Alerts() {
 
                   <p className="text-sm mb-4 line-clamp-2">{alert.message}</p>
 
-                  {/* Related links */}
-                  {(alert.relatedTaskId || alert.relatedRunId) && (
-                    <div className="flex flex-wrap gap-2 mb-4 text-xs">
-                      {alert.relatedTaskId && (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="h-auto p-0 text-xs"
-                          onClick={() => navigate(`/tasks/${alert.relatedTaskId}`)}
-                        >
-                          查看任務 <ExternalLink className="h-3 w-3 ml-1" />
-                        </Button>
-                      )}
-                      {alert.relatedRunId && (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="h-auto p-0 text-xs"
-                          onClick={() => navigate(`/runs/${alert.relatedRunId}`)}
-                        >
-                          查看執行 <ExternalLink className="h-3 w-3 ml-1" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  {/* Related links：警報 id 對應 review id，可導向發想審核 */}
+                  <div className="flex flex-wrap gap-2 mb-4 text-xs">
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" asChild>
+                      <Link to="/review">
+                        查看發想審核 <ExternalLink className="h-3 w-3 ml-1" />
+                      </Link>
+                    </Button>
+                    {alert.relatedTaskId && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs"
+                        onClick={() => navigate(`/tasks/${alert.relatedTaskId}`)}
+                      >
+                        查看任務 <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
+                    {alert.relatedRunId && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs"
+                        onClick={() => navigate(`/runs/${alert.relatedRunId}`)}
+                      >
+                        查看執行 <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
+                  </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 pt-3 border-t">
@@ -241,7 +262,10 @@ export default function Alerts() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toast({ description: '已建立事件（模擬）' })}>
+                        <DropdownMenuItem
+                          disabled={!features['ops.incidentCreate']}
+                          onClick={() => toast({ description: '尚未啟用：事件建立（ops.incidentCreate）' })}
+                        >
                           <Shield className="h-3 w-3 mr-2" />
                           建立事件
                         </DropdownMenuItem>

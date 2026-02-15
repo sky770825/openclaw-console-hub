@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
 
 export const C = {
@@ -48,8 +49,8 @@ export function Card({children,style={},glow,onClick,oc,...rest}){
 }
 
 export function Sec({icon,title,count,right,children}){
-  return <div style={{marginBottom:24}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+  return <div style={{marginBottom:24,minWidth:0}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
       <div style={{display:"flex",alignItems:"center",gap:7}}>
         <span style={{fontSize:15}}>{icon}</span>
         <h2 style={{margin:0,fontSize:14,fontWeight:700,color:C.t1,letterSpacing:-.3}}>{title}</h2>

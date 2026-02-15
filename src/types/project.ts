@@ -6,6 +6,7 @@ export interface ProjectPhase {
   id: string;
   name: string;
   done: boolean;
+  assigneeAgent?: string;
 }
 
 export interface Project {
@@ -16,6 +17,13 @@ export interface Project {
   progress: number;
   phases: ProjectPhase[];
   notes: string;
+  assigneeAgent?: string;
+  assigneeLabel?: string;
+  deadline?: string;
+  priority?: number;
+  tags?: string[];
+  deliverablesSummary?: string;
+  linkedTaskIds?: string[];
   updatedAt: string;
   createdAt: string;
 }

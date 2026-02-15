@@ -21,9 +21,36 @@ const apiKey =
 
 export const API_BASE = rawBase ? rawBase.replace(/\/$/, "") : "";
 
+function isLoopbackHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return h === "localhost" || h === "127.0.0.1" || h === "::1";
+}
+
+function computeApiBase(): string {
+  const b = rawBase ? rawBase.replace(/\/$/, "") : "";
+  if (!b) return "";
+  if (typeof window === "undefined" || !window.location?.origin) return b;
+  try {
+    const url = new URL(b);
+    const cur = new URL(window.location.origin);
+    const sameOrigin = url.origin === cur.origin;
+    const sameLoopback =
+      url.protocol === cur.protocol &&
+      url.port === cur.port &&
+      isLoopbackHost(url.hostname) &&
+      isLoopbackHost(cur.hostname);
+    return sameOrigin || sameLoopback ? "" : b;
+  } catch {
+    return "";
+  }
+}
+
+// If VITE_API_BASE_URL points to the same host (or a loopback alias), prefer relative paths.
+export const EFFECTIVE_API_BASE = computeApiBase();
+
 export function apiUrl(path: string): string {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  return API_BASE ? `${API_BASE}${normalized}` : normalized;
+  return EFFECTIVE_API_BASE ? `${EFFECTIVE_API_BASE}${normalized}` : normalized;
 }
 
 export function apiHeaders(json = true): Record<string, string> {
@@ -34,8 +61,8 @@ export function apiHeaders(json = true): Record<string, string> {
 }
 
 export function getApiDisplayLabel(): string {
-  if (!API_BASE) return "同源 proxy";
-  return `後端 ${API_BASE.replace(/^https?:\/\//, "").split("/")[0]}`;
+  if (!EFFECTIVE_API_BASE) return "同源 proxy";
+  return `後端 ${EFFECTIVE_API_BASE.replace(/^https?:\/\//, "").split("/")[0]}`;
 }
 
 const FETCH_TIMEOUT_MS = 25000;
@@ -146,10 +173,13 @@ export async function restartGateway(): Promise<OpenClawApiResult<{ ok?: boolean
 
 export async function runTask(taskId: string): Promise<OpenClawApiResult<{ id: string }>> {
   try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     const r = await fetch(apiUrl(`/api/openclaw/tasks/${taskId}/run`), {
       method: "POST",
       headers: apiHeaders(),
-    });
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
     let data: { id: string } | null = null;
     try {
       data = await r.json();
@@ -211,7 +241,7 @@ export async function deleteTask(taskId: string): Promise<Pick<OpenClawApiResult
 }
 
 export async function createTask(
-  payload: Partial<OpenClawTask> & { name?: string; tags?: string[]; status?: string }
+  payload: Partial<OpenClawTask> & { name?: string; tags?: string[]; status?: string; fromR?: string }
 ): Promise<OpenClawApiResult<Partial<OpenClawTask> & { id: string }>> {
   try {
     const r = await fetch(apiUrl("/api/openclaw/tasks"), {
@@ -231,8 +261,72 @@ export async function createTask(
   }
 }
 
+/** 從發想建立專案（欄位對應：title→title, summary→description, tags→tags） */
+export async function createProjectFromReview(idea: {
+  title: string;
+  summary?: string;
+  tags?: string[];
+  linkedTaskIds?: string[];
+}): Promise<CreateProjectResult> {
+  const phases = [
+    { id: `ph-${Date.now()}-a`, name: '實作', done: false },
+    { id: `ph-${Date.now()}-b`, name: '驗證', done: false },
+  ];
+  return createProject({
+    title: idea.title,
+    description: idea.summary ?? '',
+    status: 'planning',
+    progress: 0,
+    phases,
+    notes: '',
+    priority: 3,
+    tags: (idea.tags ?? []).filter(Boolean),
+    linkedTaskIds: idea.linkedTaskIds ?? [],
+  });
+}
+
+/** 從發想審核建立任務（使用 allowStub=1，寫入 from_review_id） */
+export async function createTaskFromReview(review: { id: string; title: string; type?: string; desc?: string }): Promise<OpenClawApiResult<Partial<OpenClawTask> & { id: string }>> {
+  try {
+    const payload = {
+      name: review.title,
+      title: review.title,
+      description: review.desc ?? '',
+      tags: [review.type || 'feature'].filter(Boolean),
+      status: 'ready',
+      subs: [{ t: '實作', d: false }, { t: '驗證', d: false }],
+      fromR: review.id,
+    };
+    const r = await fetch(apiUrl("/api/openclaw/tasks?allowStub=1"), {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify(payload),
+    });
+    let data: (Partial<OpenClawTask> & { id: string }) | null = null;
+    try {
+      data = r.status === 204 ? null : await r.json();
+    } catch {
+      data = null;
+    }
+    return { ok: r.ok, status: r.status, data: data ?? ({ id: '' } as { id: string }) };
+  } catch {
+    return { ok: false, status: 0, data: null };
+  }
+}
+
 export async function fetchBoardConfig(signal?: AbortSignal): Promise<OpenClawBoardConfig | null> {
   return fetchOpenClaw<OpenClawBoardConfig>('/api/openclaw/board-config', signal);
+}
+
+export async function fetchBoardHealth(signal?: AbortSignal): Promise<{
+  ok: boolean;
+  service: string;
+  timestamp: string;
+  backend: { supabaseConnected: boolean; n8nConfigured: boolean };
+  counts: { tasks: number; reviews: number; automations: number; runs: number; alerts: number };
+  notes: string[];
+} | null> {
+  return fetchOpenClaw('/api/openclaw/board-health', signal);
 }
 
 // ---- Agent Protocol API ----
@@ -364,7 +458,9 @@ export async function fetchProjects(): Promise<Project[]> {
       try {
         const raw = localStorage.getItem('openclaw_projects');
         if (raw) return JSON.parse(raw) as Project[];
-      } catch {}
+      } catch {
+        // Ignore parse errors and fallback to empty list.
+      }
       return [];
     }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -374,12 +470,17 @@ export async function fetchProjects(): Promise<Project[]> {
     try {
       const raw = localStorage.getItem('openclaw_projects');
       if (raw) return JSON.parse(raw) as Project[];
-    } catch {}
+    } catch {
+      // Ignore parse errors and fallback to empty list.
+    }
     return [];
   }
 }
 
-export async function createProject(project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project | null> {
+export type CreateProjectResult = { project: Project; savedTo: 'supabase' | 'local' } | null;
+export type UpdateProjectResult = { project: Project; savedTo: 'supabase' | 'local' } | null;
+
+export async function createProject(project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<CreateProjectResult> {
   try {
     const id = `proj-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const now = new Date().toISOString();
@@ -395,10 +496,10 @@ export async function createProject(project: Omit<Project, 'id' | 'createdAt' | 
       body: JSON.stringify(payload),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return (await r.json()) as Project;
+    const created = (await r.json()) as Project;
+    return { project: created, savedTo: 'supabase' };
   } catch (e) {
     console.error('[BoardApi] createProject error:', e);
-    // fallback: 存到 localStorage
     try {
       const id = `proj-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const now = new Date().toISOString();
@@ -406,14 +507,14 @@ export async function createProject(project: Omit<Project, 'id' | 'createdAt' | 
       const existing = JSON.parse(localStorage.getItem('openclaw_projects') || '[]') as Project[];
       existing.unshift(newProject);
       localStorage.setItem('openclaw_projects', JSON.stringify(existing));
-      return newProject;
+      return { project: newProject, savedTo: 'local' };
     } catch {
       return null;
     }
   }
 }
 
-export async function updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+export async function updateProject(id: string, updates: Partial<Project>): Promise<UpdateProjectResult> {
   try {
     const r = await fetch(apiUrl(`/api/openclaw/projects/${encodeURIComponent(id)}`), {
       method: 'PATCH',
@@ -421,17 +522,17 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
       body: JSON.stringify({ ...updates, updatedAt: new Date().toISOString() }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return (await r.json()) as Project;
+    const updated = (await r.json()) as Project;
+    return { project: updated, savedTo: 'supabase' };
   } catch (e) {
     console.error('[BoardApi] updateProject error:', e);
-    // fallback: 更新 localStorage
     try {
       const existing = JSON.parse(localStorage.getItem('openclaw_projects') || '[]') as Project[];
       const idx = existing.findIndex(p => p.id === id);
       if (idx === -1) return null;
       existing[idx] = { ...existing[idx], ...updates, updatedAt: new Date().toISOString() };
       localStorage.setItem('openclaw_projects', JSON.stringify(existing));
-      return existing[idx];
+      return { project: existing[idx], savedTo: 'local' };
     } catch {
       return null;
     }

@@ -10,6 +10,11 @@ export type {
   ScheduleType,
   Priority,
   LastRunStatus,
+  TaskComplexity,
+  TaskRiskLevel,
+  TaskType,
+  TaskExecutionAgent,
+  TaskModelProvider,
 } from './task';
 
 export type {
@@ -68,3 +73,19 @@ export type { Project, ProjectStatus, ProjectPhase } from './project';
 export { PROJECT_STATUS_LABELS } from './project';
 
 export type { SystemSchedule } from './systemSchedule';
+
+// ---- Review（小蔡發想審核）----
+export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Review {
+  id: string;
+  number: number;
+  title: string;
+  summary: string;
+  filePath: string;
+  status: ReviewStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  tags: string[];
+}

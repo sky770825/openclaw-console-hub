@@ -53,7 +53,7 @@ export const LiveExecutionPanel: React.FC<LiveExecutionPanelProps> = ({
   onComplete,
   className,
 }) => {
-  const { isConnected, logs, progress, subscribe, unsubscribe, clearLogs } = useWebSocket();
+  const { isConnected, isReconnecting, logs, progress, subscribe, unsubscribe, clearLogs } = useWebSocket();
 
   // 訂閱 run 更新
   useEffect(() => {
@@ -74,6 +74,17 @@ export const LiveExecutionPanel: React.FC<LiveExecutionPanelProps> = ({
   const currentStatus = progress?.status || 'pending';
   const statusInfo = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.pending;
   const StatusIcon = statusInfo.icon;
+
+  if (isReconnecting) {
+    return (
+      <div className={cn('rounded-lg border p-4', className)}>
+        <div className="flex items-center gap-2 text-amber-600">
+          <RotateCw className="h-4 w-4 animate-spin" />
+          <span>連線中斷，正在自動重連...</span>
+        </div>
+      </div>
+    );
+  }
 
   const progressPercent = progress
     ? Math.round((progress.step / progress.totalSteps) * 100)

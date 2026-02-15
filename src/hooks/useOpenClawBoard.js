@@ -9,7 +9,9 @@ import {
   runAutomation,
   deleteTask,
   createTask,
+  createTaskFromReview,
   fetchBoardConfig,
+  fetchBoardHealth,
 } from "@/services/openclawBoardApi";
 import { C } from "@/components/openclaw/uiPrimitives";
 
@@ -50,17 +52,25 @@ export function useOpenClawBoard() {
     const ac = new AbortController();
     let mounted = true;
     (async () => {
-      const [tList, rList, aList, evoList] = await Promise.all([
+      const [tList, rList, aList, evoList, boardHealth] = await Promise.all([
         fetchOpenClaw("/api/openclaw/tasks", ac.signal),
         fetchOpenClaw("/api/openclaw/reviews", ac.signal),
         fetchOpenClaw("/api/openclaw/automations", ac.signal),
         fetchOpenClaw("/api/openclaw/evolution-log", ac.signal),
+        fetchBoardHealth(ac.signal),
       ]);
       if (!mounted) return;
       if (Array.isArray(tList)) setTasks(tList.map((t) => ({ ...t, title: t.title ?? t.name, fromR: t.from_review_id || t.fromR })));
       if (Array.isArray(rList)) setReviews(rList);
       if (Array.isArray(aList)) setAutos(aList.map((a) => ({ ...a, lastRun: a.last_run || a.lastRun })));
       if (Array.isArray(evoList)) setEvo(evoList.map((e) => ({ ...e, t: e.t || "", x: e.x || "", c: e.c || C.t2, tag: e.tag, tc: e.tc || C.t2 })));
+      if (boardHealth && boardHealth.ok) {
+        const source = boardHealth.backend.supabaseConnected ? "Supabase" : "fallback";
+        setNotice({
+          type: boardHealth.backend.supabaseConnected ? "ok" : "err",
+          msg: `資料來源：${source}｜tasks ${boardHealth.counts.tasks}｜reviews ${boardHealth.counts.reviews}｜automations ${boardHealth.counts.automations}`,
+        });
+      }
     })();
     return () => {
       mounted = false;
@@ -110,6 +120,26 @@ export function useOpenClawBoard() {
     if (!r) return;
     addE(`駁回「${r.title}」`, C.t3, "駁回", C.t3);
     persistReview(upd);
+  };
+
+  const okRAndCreateTask = async (r) => {
+    try {
+      const { ok, status, data: created } = await createTaskFromReview(r);
+      if (!ok) {
+        showApiError(status, "建立任務失敗");
+        return;
+      }
+      const upd = { ...r, status: "approved" };
+      setReviews((p) => p.map((item) => (item.id === r.id ? upd : item)));
+      persistReview(upd);
+      const taskId = created?.id;
+      addE(`審核通過「${r.title}」→ 已轉成任務${taskId ? ` (${taskId})` : ""}`, C.green, "批准+轉任務", C.green);
+      if (taskId) setTasks((p) => [{ id: taskId, title: r.title, name: r.title, status: "queued", progress: 0, subs: [{ t: "實作", d: false }, { t: "驗證", d: false }], fromR: r.id }, ...p]);
+      showInfo(`已通過並轉成任務：${r.title}`);
+    } catch (e) {
+      console.warn("[OpenClaw] okRAndCreateTask failed", e);
+      showApiError(undefined, "轉成任務失敗");
+    }
   };
 
   const handleDrawerSave = (updated) => {
@@ -299,6 +329,7 @@ export function useOpenClawBoard() {
     togA,
     okR,
     noR,
+    okRAndCreateTask,
     handleDrawerSave,
     progT,
     runT,

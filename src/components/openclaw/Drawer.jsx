@@ -9,7 +9,7 @@ export function Drawer({ item, onClose, onSave }) {
     if (!item) return;
     setForm({ ...item, subs: item.subs ? [...item.subs] : [], chain: item.chain ? [...item.chain] : [] });
     setEditing(false);
-  }, [item?.id]);
+  }, [item]);
 
   if (!item) return null;
 

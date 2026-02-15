@@ -110,6 +110,7 @@ const mockApi = {
       taskId: task.id,
       taskName: task.name,
       status: 'queued',
+      agentType: task.agent?.type ?? 'openclaw',
       startedAt: now,
       endedAt: null,
       durationMs: null,
@@ -186,11 +187,31 @@ const mockApi = {
 
 let _apiFallbackWarned = false;
 /** 是否啟用 mock fallback（讀取操作失敗時可用，寫入操作應禁用） */
-let _mockFallbackEnabled = true;
+const _allowMockFallbackByEnv =
+  typeof import.meta !== 'undefined' &&
+  String(import.meta.env?.VITE_API_ALLOW_MOCK_FALLBACK ?? '').toLowerCase() === 'true';
+let _mockFallbackEnabled = !dataConfig.apiBaseUrl || _allowMockFallbackByEnv;
+
+type ApiSyncState = {
+  mode: 'backend' | 'mock';
+  lastError: string | null;
+  lastUpdatedAt: string;
+};
+
+let _apiSyncState: ApiSyncState = {
+  mode: dataConfig.apiBaseUrl ? 'backend' : 'mock',
+  lastError: null,
+  lastUpdatedAt: new Date().toISOString(),
+};
 
 /** 啟用/禁用 mock fallback */
 export function setMockFallback(enabled: boolean) {
   _mockFallbackEnabled = enabled;
+}
+
+/** 取得目前資料同步狀態（供 UI 顯示資料來源） */
+export function getApiSyncState(): ApiSyncState {
+  return { ..._apiSyncState };
 }
 
 /** 後端請求失敗時改用 mock，避免頁面報錯
@@ -202,15 +223,38 @@ function withMockFallback<T>(
   options?: { fallbackOnError?: boolean }
 ): Promise<T> {
   const shouldFallback = options?.fallbackOnError !== false && _mockFallbackEnabled;
-  if (!dataConfig.apiBaseUrl) return mockCall();
-  return apiCall().catch((err) => {
+  if (!dataConfig.apiBaseUrl) {
+    _apiSyncState = {
+      mode: 'mock',
+      lastError: null,
+      lastUpdatedAt: new Date().toISOString(),
+    };
+    return mockCall();
+  }
+  return apiCall()
+    .then((data) => {
+      _apiSyncState = {
+        mode: 'backend',
+        lastError: null,
+        lastUpdatedAt: new Date().toISOString(),
+      };
+      return data;
+    })
+    .catch((err) => {
     if (!shouldFallback) throw err;
     if (!_apiFallbackWarned) {
       _apiFallbackWarned = true;
-      console.warn('[API] 後端無法連線，改用 mock 資料。若需接後端，請確認 VITE_API_BASE_URL 正確且後端已啟動。');
+      console.warn(
+        '[API] 後端無法連線，改用 mock 資料。若需接後端，請確認 VITE_API_BASE_URL 正確且後端已啟動。'
+      );
     }
+    _apiSyncState = {
+      mode: 'mock',
+      lastError: err instanceof Error ? err.message : String(err),
+      lastUpdatedAt: new Date().toISOString(),
+    };
     return mockCall();
-  });
+    });
 }
 
 // 請求去重緩存（僅用於讀取操作）
@@ -349,6 +393,22 @@ export const getDashboardStats = dataConfig.apiBaseUrl
       )
   : () => import('./stats').then((m) => m.getDashboardStats());
 
+// ---- Domains / Compliance ----
+export const getDomains = dataConfig.apiBaseUrl
+  ? () => apiClient.getDomains()
+  : async () => ({
+      ok: true,
+      domains: (await import('@/data/domains').then((m) => m.DOMAIN_OPTIONS)).map((d) => ({
+        slug: d.slug,
+        label: d.label,
+        keywords: d.keywords,
+      })),
+    });
+
+export const getTaskCompliance = dataConfig.apiBaseUrl
+  ? () => apiClient.getTaskCompliance()
+  : async () => ({ ok: true, total: 0, ready: 0, compliantReady: 0, noncompliantReady: 0, sample: [] });
+
 // ---- System Schedules（系統排程）----
 /** 取得 OpenClaw 系統排程（cron jobs） */
 export const getSystemSchedules = dataConfig.apiBaseUrl
@@ -367,6 +427,7 @@ export const getAutoExecutorStatus = dataConfig.apiBaseUrl
       ok: false,
       isRunning: false,
       pollIntervalMs: 10000,
+      maxTasksPerMinute: 1,
       lastPollAt: null,
       lastExecutedTaskId: null,
       lastExecutedAt: null,
@@ -374,12 +435,301 @@ export const getAutoExecutorStatus = dataConfig.apiBaseUrl
       nextPollAt: null,
     });
 
+// ---- Maintenance ----
+export const reconcileMaintenance = dataConfig.apiBaseUrl
+  ? () => apiClient.reconcileMaintenance()
+  : async () => ({
+      ok: true,
+      scanned: 0,
+      fixedToReady: 0,
+      fixedToDone: 0,
+      fixedToRunning: 0,
+      details: [],
+    });
+
 /** 啟動自動執行器 */
 export const startAutoExecutor = dataConfig.apiBaseUrl
-  ? (pollIntervalMs?: number) => apiClient.startAutoExecutor(pollIntervalMs)
-  : async () => ({ ok: false, message: 'Mock 模式不支援自動執行', isRunning: false, pollIntervalMs: 10000, lastPollAt: null, lastExecutedTaskId: null, lastExecutedAt: null, totalExecutedToday: 0, nextPollAt: null });
+  ? (pollIntervalMs?: number, maxTasksPerMinute?: number) => apiClient.startAutoExecutor(pollIntervalMs, maxTasksPerMinute)
+  : async () => ({ ok: false, message: 'Mock 模式不支援自動執行', isRunning: false, pollIntervalMs: 10000, maxTasksPerMinute: 1, lastPollAt: null, lastExecutedTaskId: null, lastExecutedAt: null, totalExecutedToday: 0, nextPollAt: null });
 
 /** 停止自動執行器 */
 export const stopAutoExecutor = dataConfig.apiBaseUrl
   ? () => apiClient.stopAutoExecutor()
-  : async () => ({ ok: false, message: 'Mock 模式不支援自動執行', isRunning: false, pollIntervalMs: 10000, lastPollAt: null, lastExecutedTaskId: null, lastExecutedAt: null, totalExecutedToday: 0, nextPollAt: null });
+  : async () => ({ ok: false, message: 'Mock 模式不支援自動執行', isRunning: false, pollIntervalMs: 10000, maxTasksPerMinute: 1, lastPollAt: null, lastExecutedTaskId: null, lastExecutedAt: null, totalExecutedToday: 0, nextPollAt: null });
+
+// ---- Telegram (Ops) ----
+export const telegramForceTest = dataConfig.apiBaseUrl
+  ? () => apiClient.telegramForceTest()
+  : async () => ({ ok: false, description: 'Mock 模式不支援 Telegram 測試' });
+
+// ---- Task Indexer ----
+export const getTaskIndexerStatus = dataConfig.apiBaseUrl
+  ? () => apiClient.getTaskIndexerStatus()
+  : async () => ({
+      ok: false,
+      dir: '(mock)',
+      jsonlPath: '(mock)',
+      mdPath: '(mock)',
+      jsonlExists: false,
+      mdExists: false,
+    });
+
+export const rebuildTaskIndexMarkdown = dataConfig.apiBaseUrl
+  ? () => apiClient.rebuildTaskIndexMarkdown()
+  : async () => ({
+      ok: false,
+      count: 0,
+      mdPath: '(mock)',
+      jsonlPath: '(mock)',
+      message: 'Mock 模式不支援索引重建',
+    });
+
+export const getTaskIndexRecords = dataConfig.apiBaseUrl
+  ? (limit: number = 20) => apiClient.getTaskIndexRecords(limit)
+  : async () => ({ ok: false, total: 0, records: [] });
+
+export const generateDeterministicHandoff = dataConfig.apiBaseUrl
+  ? () => apiClient.generateDeterministicHandoff()
+  : async () => ({ ok: false, path: '(mock)', message: 'Mock 模式不支援 handoff' });
+
+// ---- Auto Task Generator API ----
+export const getAutoTaskGeneratorStatus = dataConfig.apiBaseUrl
+  ? () => apiClient.getAutoTaskGeneratorStatus()
+  : async () => ({
+      ok: false,
+      isRunning: false,
+      pollIntervalMs: 15 * 60 * 1000,
+      maxTasksPerCycle: 3,
+      backlogTarget: 20,
+      lastCycleAt: null,
+      nextCycleAt: null,
+      lastSummary: null,
+      generatedToday: 0,
+      totalGenerated: 0,
+      perSource: {
+        'internal-ops': 0,
+        'business-model': 0,
+        'external-radar': 0,
+      },
+      sourceWeights: {
+        'internal-ops': 50,
+        'business-model': 30,
+        'external-radar': 20,
+      },
+      qualityGateEnabled: true,
+      qualityGate: {
+        minAcceptanceCriteria: 2,
+        requireRollbackPlan: true,
+        minRollbackLength: 10,
+        requireEvidenceLinks: true,
+      },
+    });
+
+export const startAutoTaskGenerator = dataConfig.apiBaseUrl
+  ? (
+      pollIntervalMs?: number,
+      maxTasksPerCycle?: number,
+      backlogTarget?: number,
+      sourceWeights?: Record<'internal-ops' | 'business-model' | 'external-radar', number>,
+      qualityGate?: {
+        minAcceptanceCriteria: number;
+        requireRollbackPlan: boolean;
+        minRollbackLength: number;
+        requireEvidenceLinks: boolean;
+      },
+      qualityGateEnabled?: boolean
+    ) => apiClient.startAutoTaskGenerator(
+      pollIntervalMs,
+      maxTasksPerCycle,
+      backlogTarget,
+      sourceWeights,
+      qualityGate,
+      qualityGateEnabled
+    )
+  : async () => ({
+      ok: false,
+      message: 'Mock 模式不支援自動補任務',
+      isRunning: false,
+      pollIntervalMs: 15 * 60 * 1000,
+      maxTasksPerCycle: 3,
+      backlogTarget: 20,
+      lastCycleAt: null,
+      nextCycleAt: null,
+      lastSummary: null,
+      generatedToday: 0,
+      totalGenerated: 0,
+      perSource: {
+        'internal-ops': 0,
+        'business-model': 0,
+        'external-radar': 0,
+      },
+      sourceWeights: {
+        'internal-ops': 50,
+        'business-model': 30,
+        'external-radar': 20,
+      },
+      qualityGateEnabled: true,
+      qualityGate: {
+        minAcceptanceCriteria: 2,
+        requireRollbackPlan: true,
+        minRollbackLength: 10,
+        requireEvidenceLinks: true,
+      },
+      cycle: { created: 0, skipped: 0 },
+    });
+
+export const stopAutoTaskGenerator = dataConfig.apiBaseUrl
+  ? () => apiClient.stopAutoTaskGenerator()
+  : async () => ({
+      ok: false,
+      message: 'Mock 模式不支援自動補任務',
+      isRunning: false,
+      pollIntervalMs: 15 * 60 * 1000,
+      maxTasksPerCycle: 3,
+      backlogTarget: 20,
+      lastCycleAt: null,
+      nextCycleAt: null,
+      lastSummary: null,
+      generatedToday: 0,
+      totalGenerated: 0,
+      perSource: {
+        'internal-ops': 0,
+        'business-model': 0,
+        'external-radar': 0,
+      },
+      sourceWeights: {
+        'internal-ops': 50,
+        'business-model': 30,
+        'external-radar': 20,
+      },
+      qualityGateEnabled: true,
+      qualityGate: {
+        minAcceptanceCriteria: 2,
+        requireRollbackPlan: true,
+        minRollbackLength: 10,
+        requireEvidenceLinks: true,
+      },
+    });
+
+export const runAutoTaskGeneratorNow = dataConfig.apiBaseUrl
+  ? () => apiClient.runAutoTaskGeneratorNow()
+  : async () => ({
+      ok: false,
+      message: 'Mock 模式不支援自動補任務',
+      isRunning: false,
+      pollIntervalMs: 15 * 60 * 1000,
+      maxTasksPerCycle: 3,
+      backlogTarget: 20,
+      lastCycleAt: null,
+      nextCycleAt: null,
+      lastSummary: null,
+      generatedToday: 0,
+      totalGenerated: 0,
+      perSource: {
+        'internal-ops': 0,
+        'business-model': 0,
+        'external-radar': 0,
+      },
+      sourceWeights: {
+        'internal-ops': 50,
+        'business-model': 30,
+        'external-radar': 20,
+      },
+      qualityGateEnabled: true,
+      qualityGate: {
+        minAcceptanceCriteria: 2,
+        requireRollbackPlan: true,
+        minRollbackLength: 10,
+        requireEvidenceLinks: true,
+      },
+      cycle: { created: 0, skipped: 0 },
+    });
+
+// ---- Autopilot（自主循環模式）----
+/** 取得 Autopilot 狀態 */
+export const getAutopilotStatus = dataConfig.apiBaseUrl
+  ? () => apiClient.getAutopilotStatus()
+  : async () => ({
+      ok: false,
+      isRunning: false,
+      cycleCount: 0,
+      intervalMinutes: 10,
+      lastCycleAt: null,
+      nextCycleAt: null,
+      stats: { tasksCompleted: 0, tasksFailed: 0 },
+    });
+
+/** 啟動 Autopilot */
+export const startAutopilot = dataConfig.apiBaseUrl
+  ? (intervalMinutes?: number) => apiClient.startAutopilot(intervalMinutes)
+  : async () => ({ ok: false, message: 'Mock 模式不支援 Autopilot', isRunning: false, intervalMinutes: 10 });
+
+/** 停止 Autopilot */
+export const stopAutopilot = dataConfig.apiBaseUrl
+  ? () => apiClient.stopAutopilot()
+  : async () => ({ ok: false, message: 'Mock 模式不支援 Autopilot', isRunning: false });
+
+/** 取得 Autopilot 日誌 */
+export const getAutopilotLog = dataConfig.apiBaseUrl
+  ? () => apiClient.getAutopilotLog()
+  : async () => ({ ok: false, logs: [] as { timestamp: string; message: string; level: 'info' | 'warn' | 'error' }[] });
+
+// ---- Reviews（小蔡發想審核）----
+import type { Review } from '@/types';
+
+/** 取得發想審核列表 */
+export const listReviews = dataConfig.apiBaseUrl
+  ? () => apiClient.listReviews()
+  : async (): Promise<Review[]> => {
+      // Mock 模式：從 localStorage 讀取
+      const stored = localStorage.getItem('mock_reviews');
+      if (stored) return JSON.parse(stored);
+      // 預設 mock 資料
+      const defaultReviews: Review[] = [
+        {
+          id: 'idea-001',
+          number: 1,
+          title: 'Token 消耗優化策略',
+          summary: '發現 5 個高 Token 情境：連續錯誤重試、重複搜尋、大段代碼複製等，提出搜尋快取、指數退避、Context 壓縮等解決方案。',
+          filePath: 'docs/xiaocai-ideas/pending/idea-001-token-optimization.md',
+          status: 'pending',
+          createdAt: '2026-02-11',
+          tags: ['optimization', 'token', 'performance']
+        }
+      ];
+      localStorage.setItem('mock_reviews', JSON.stringify(defaultReviews));
+      return defaultReviews;
+    };
+
+/** 更新發想審核狀態 */
+export const updateReview = dataConfig.apiBaseUrl
+  ? (id: string, patch: Partial<Review>) => apiClient.updateReview(id, patch)
+  : async (id: string, patch: Partial<Review>): Promise<Review | null> => {
+      // Mock 模式：更新 localStorage
+      const reviews = await listReviews();
+      const idx = reviews.findIndex(r => r.id === id);
+      if (idx === -1) return null;
+      
+      const updated: Review = {
+        ...reviews[idx],
+        ...patch,
+        reviewedAt: new Date().toISOString().split('T')[0]
+      };
+      reviews[idx] = updated;
+      localStorage.setItem('mock_reviews', JSON.stringify(reviews));
+      return updated;
+    };
+
+/** 刪除發想審核（需後端支援） */
+export const deleteReview = dataConfig.apiBaseUrl
+  ? (id: string) => apiClient.deleteReview(id)
+  : async (id: string): Promise<void> => {
+      const reviews = await listReviews();
+      const filtered = reviews.filter(r => r.id !== id);
+      localStorage.setItem('mock_reviews', JSON.stringify(filtered));
+    };
+
+/** 取得此發想轉出的任務列表 */
+export const getTasksByReviewId = dataConfig.apiBaseUrl
+  ? (reviewId: string) => apiClient.getTasksByReviewId(reviewId)
+  : async (): Promise<import('@/types').Task[]> => [];

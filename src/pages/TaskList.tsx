@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageContainer, SectionHeader } from '@/components/layout/PageContainer';
 import { SearchInput, FilterBar, type FilterConfig, EmptyState } from '@/components/common';
 import { StatusBadge, PriorityBadge } from '@/components/common/Badges';
@@ -88,6 +88,8 @@ type SortDirection = 'asc' | 'desc';
 
 export default function TaskList() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromProject = (location.state as { projectId?: string; projectTitle?: string } | null) ?? {};
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
@@ -102,7 +104,7 @@ export default function TaskList() {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(task => {
+    const result = tasks.filter(task => {
       if (searchQuery && !task.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
@@ -244,7 +246,7 @@ export default function TaskList() {
       <SectionHeader
         title="任務列表"
         icon="📋"
-        description="查看和管理所有自動化任務"
+        description={fromProject.projectTitle ? `專案「${fromProject.projectTitle}」的任務與執行紀錄` : '查看和管理所有自動化任務'}
         action={
           <Button onClick={() => navigate('/tasks?new=true')}>
             <Plus className="h-4 w-4 mr-2" />

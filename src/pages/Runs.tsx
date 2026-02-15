@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { PageContainer, SectionHeader } from '@/components/layout/PageContainer';
 import { SearchInput, FilterBar, type FilterConfig, EmptyState } from '@/components/common';
 import { StatusBadge } from '@/components/common/Badges';
@@ -28,7 +28,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
@@ -41,10 +40,12 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
-  Play,
   XCircle,
   RotateCcw,
-  AlertTriangle
+  AlertTriangle,
+  Lightbulb,
+  Bot,
+  Kanban
 } from 'lucide-react';
 import { getRuns, getRun, api } from '@/services/api';
 import type { Run, RunStep } from '@/types';
@@ -116,8 +117,6 @@ function RunDetail({ run, onRerun, onClose }: RunDetailProps) {
   const { toast } = useToast();
   const [inputOpen, setInputOpen] = useState(false);
   const [outputOpen, setOutputOpen] = useState(false);
-  const [overrideOpen, setOverrideOpen] = useState(false);
-  const [overrideJson, setOverrideJson] = useState('{}');
 
   const copyRunId = () => {
     navigator.clipboard.writeText(run.id);
@@ -135,7 +134,13 @@ function RunDetail({ run, onRerun, onClose }: RunDetailProps) {
             </Button>
           </SheetTitle>
           <SheetDescription>
-            任務：{run.taskName}
+            {run.taskId ? (
+              <>
+                任務：<Link to={`/tasks/${run.taskId}`} className="text-primary hover:underline">{run.taskName}</Link>
+              </>
+            ) : (
+              `任務：${run.taskName}`
+            )}
           </SheetDescription>
         </SheetHeader>
 
@@ -262,46 +267,9 @@ function RunDetail({ run, onRerun, onClose }: RunDetailProps) {
               <RefreshCw className="h-4 w-4 mr-2" />
               重新執行
             </Button>
-            <Button variant="outline" onClick={() => setOverrideOpen(true)}>
-              <Play className="h-4 w-4 mr-2" />
-              自訂輸入執行
-            </Button>
           </div>
         </div>
       </SheetContent>
-
-      {/* Override JSON Modal */}
-      <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>自訂輸入執行</DialogTitle>
-            <DialogDescription className="sr-only">
-              輸入自訂 JSON 參數後可觸發任務執行
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">輸入 JSON（自訂參數）</label>
-            <Textarea
-              value={overrideJson}
-              onChange={(e) => setOverrideJson(e.target.value)}
-              className="font-mono text-sm min-h-[200px]"
-              placeholder='{"key": "value"}'
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOverrideOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={() => {
-              // Mock run with override
-              setOverrideOpen(false);
-              toast({ description: '已使用自訂輸入觸發任務' });
-            }}>
-              執行
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
@@ -309,6 +277,8 @@ function RunDetail({ run, onRerun, onClose }: RunDetailProps) {
 export default function Runs() {
   const navigate = useNavigate();
   const { runId } = useParams();
+  const [searchParams] = useSearchParams();
+  const taskIdFromUrl = searchParams.get('task') ?? undefined;
   const { toast } = useToast();
   const [runs, setRuns] = useState<Run[]>([]);
   const [selectedRun, setSelectedRun] = useState<Run | null>(null);
@@ -344,11 +314,12 @@ export default function Runs() {
 
   const filteredRuns = useMemo(() => {
     return runs.filter(run => {
+      if (taskIdFromUrl && run.taskId !== taskIdFromUrl) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (!run.id.toLowerCase().includes(q) && 
             !run.taskName.toLowerCase().includes(q) &&
-            !run.error?.message.toLowerCase().includes(q)) {
+            !(run.error?.message ?? '').toLowerCase().includes(q)) {
           return false;
         }
       }
@@ -357,7 +328,7 @@ export default function Runs() {
       }
       return true;
     });
-  }, [runs, searchQuery, activeFilters]);
+  }, [runs, searchQuery, activeFilters, taskIdFromUrl]);
 
   // 獲取失敗的任務列表
   const failedRuns = useMemo(() => {
@@ -464,12 +435,38 @@ export default function Runs() {
     navigate('/runs', { replace: true });
   };
 
+  const taskFilterLabel = taskIdFromUrl && filteredRuns[0]
+    ? `任務「${filteredRuns[0].taskName}」的執行過程紀錄`
+    : '所有任務的執行歷史 · 與 OpenClaw evolution_log 對應';
+
   return (
     <PageContainer>
       <SectionHeader
         title="執行紀錄"
         icon="▶"
-        description="所有任務的執行歷史 · 與 OpenClaw evolution_log 對應"
+        description={taskFilterLabel}
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/tasks" className="gap-1">
+                <Kanban className="h-4 w-4" />
+                任務看板
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/review" className="gap-1">
+                <Lightbulb className="h-4 w-4" />
+                發想審核
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/cursor" className="gap-1">
+                <Bot className="h-4 w-4" />
+                OpenClaw 任務板
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
       {/* 批量重跑失敗任務提示 */}
@@ -577,7 +574,19 @@ export default function Runs() {
                   </TableCell>
                 )}
                 <TableCell className="font-mono text-sm">{run.id}</TableCell>
-                <TableCell className="font-medium">{run.taskName}</TableCell>
+                <TableCell className="font-medium">
+                  {run.taskId ? (
+                    <Link
+                      to={`/tasks/${run.taskId}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-primary hover:underline"
+                    >
+                      {run.taskName}
+                    </Link>
+                  ) : (
+                    run.taskName
+                  )}
+                </TableCell>
                 <TableCell><StatusBadge status={run.status} /></TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {formatDate(run.startedAt)}
@@ -617,7 +626,17 @@ export default function Runs() {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="font-mono text-xs text-muted-foreground">{run.id}</p>
-                  <p className="font-medium">{run.taskName}</p>
+                  {run.taskId ? (
+                    <Link
+                      to={`/tasks/${run.taskId}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {run.taskName}
+                    </Link>
+                  ) : (
+                    <p className="font-medium">{run.taskName}</p>
+                  )}
                 </div>
                 <StatusBadge status={run.status} />
               </div>

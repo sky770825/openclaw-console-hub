@@ -22,10 +22,22 @@ export interface SystemSchedule {
   lastRunAt?: string | null;
   /** 最後執行狀態 */
   lastStatus?: 'ok' | 'failed' | 'running' | null;
+  /** 最後錯誤訊息 */
+  lastError?: string | null;
+  /** 連續錯誤次數 */
+  consecutiveErrors?: number;
   /** 任務描述（從 payload 提取） */
   description?: string;
   /** 來源 agent */
   agentId: string;
+  /** session 目標（main/isolated） */
+  sessionTarget?: 'main' | 'isolated' | null;
+  /** payload 類型（systemEvent/agentTurn） */
+  payloadKind?: 'systemEvent' | 'agentTurn' | null;
+  /** 指定模型（若有） */
+  model?: string | null;
+  /** 執行 timeout 秒數（若有） */
+  timeoutSeconds?: number | null;
   /** 建立時間 */
   createdAt: string;
   /** 更新時間 */
