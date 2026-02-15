@@ -22,6 +22,18 @@ runtime-checkpoints/
 server/runtime-checkpoints/
 server/projects/
 
+# Local state files (runtime artifacts)
+auto-executor-state.json
+auto-task-generator-state.json
+server/auto-task-generator-state.json
+server/autopilot-state.json
+
+# Ad-hoc backups
+*.bak
+
+# Project run artifacts
+projects/**/runs/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
