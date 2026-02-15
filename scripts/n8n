@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# 一鍵用 n8n：會自動讀專案根目錄的 .env，不用自己 export
+# 用法：
+#   ./scripts/n8n           → 手動觸發「Run Index 報到 Telegram」
+#   ./scripts/n8n list      → 列出所有 workflow
+
+set -e
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$REPO_ROOT/.env" ]; then
+  set -a
+  # 只讀 N8N 開頭的變數，避免覆蓋其他
+  while IFS= read -r line; do
+    line="${line%%[[:space:]]*}"
+    [[ "$line" =~ ^N8N_ ]] && [[ "$line" =~ = ]] && export "$line"
+  done < <(grep -E '^N8N_' "$REPO_ROOT/.env" 2>/dev/null || true)
+  set +a
+fi
+
+exec "$REPO_ROOT/scripts/n8n-run.sh" "$@"
