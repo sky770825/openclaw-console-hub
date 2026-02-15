@@ -50,7 +50,10 @@ railway up
 1. 把程式碼 push 到 GitHub
 2. 在 Railway Dashboard 建立新專案
 3. 選擇 "Deploy from GitHub repo"
-4. 選擇你的 repo，設定 root directory 為 `server/`
+4. 選擇你的 repo，**不要**設定 Root Directory（使用 repo 根目錄，根目錄的 `railway.json` 會用 `server/Dockerfile` 建置）。  
+   **若要檢查或修改 Root Directory：**  
+   → 登入 [Railway 後台](https://railway.app/dashboard) → 點選你的專案 → 點選該 Service → **Settings** 分頁 → 在 **Source** 區塊找到 **Root Directory**，留空或刪除欄位內容即可。  
+   → 說明：[Deploying a Monorepo - Root Directory](https://docs.railway.com/deployments/monorepo#deploying-an-isolated-monorepo)
 5. 在 Variables 頁面設定環境變數
 6. 自動部署完成！
 
@@ -73,8 +76,9 @@ const API_BASE = 'https://your-railway-app.up.railway.app';
 ## 🔧 疑難排解
 
 ### 部署失敗
-- 確認 Dockerfile 在 `server/` 目錄下
-- 檢查 Railway build logs
+- 本專案從 **repo 根目錄** 建置，使用 `railway.json` 指定 `server/Dockerfile`，建置時會複製 `server/` 並在容器內執行 `npm ci`（只安裝 server 依賴），不會再對根目錄跑 `npm ci`。
+- 若曾把 Railway 的 Root Directory 設成 `server/`，請改回 repo 根目錄（或清空），否則 Dockerfile 的 `COPY server/...` 會失敗。
+- 檢查 Railway build logs。
 
 ### API 無法連接
 - 確認 CORS 設定正確

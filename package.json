@@ -9,7 +9,10 @@
   },
   "scripts": {
     "dev": "vite",
+    "ports:free": "bash scripts/free-ports.sh",
+    "dev:fresh": "bash scripts/free-ports.sh && sleep 1 && vite",
     "build": "vite build",
+    "start": "npm run build && cd server && npm run dev",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest run",
@@ -21,7 +24,9 @@
     "deploy:preview": "npm run build && npx vercel",
     "deploy:ci": "npm run build && npx vercel --prod --yes",
     "deploy:ci:preview": "npm run build && npx vercel --yes",
-    "ci": "npm run lint && npm run test && npm run build"
+    "ci": "npm run lint && npm run test && npm run build",
+    "backup:auto": "bash scripts/auto-project-backup.sh",
+    "backup:auto:30d": "BACKUP_RETENTION_DAYS=30 BACKUP_KEEP_COUNT=50 bash scripts/auto-project-backup.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

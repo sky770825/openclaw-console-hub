@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-API 預設跑在 **http://localhost:3001**。
+API 預設跑在 **http://localhost:3011**（可用 `PORT=` 覆蓋）。
 
 ## 端點
 
@@ -29,14 +29,14 @@ API 預設跑在 **http://localhost:3001**。
 
 ## 中控台接上此後端
 
-1. 啟動此 server：`npm run dev`（port 3001）
+1. 啟動此 server：`npm run dev`（port 3011）
 2. 在專案**根目錄**（openclaw-console-hub-main）建立 `.env`：
    ```env
-   VITE_API_BASE_URL=http://localhost:3001
+   VITE_API_BASE_URL=http://localhost:3011
    ```
-3. 啟動中控台：`npm run dev`（port 8080）
-4. 打開 http://localhost:8080 ，點「立即執行」會打此後端，Run 會從 queued → running → success（模擬）。
+3. 啟動中控台：`npm run dev`（port 3009）
+4. 打開 http://localhost:3009 ，點「立即執行」會打此後端，Run 會從 queued → running → success（模擬）。
 
 ## 環境變數
 
-- `PORT`：API 埠號，預設 3001
+- `PORT`：API 埠號，預設 3011
