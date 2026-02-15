@@ -2,9 +2,9 @@
 # 任務板 API 腳本 — 供 Agent 用 exec 呼叫，控制 OpenClaw 任務板
 # 用法: ./task-board-api.sh <指令> [參數]
 # 指令: list-tasks | get-task <id> | run-task <id> | list-runs [taskId] | get-run <id> | rerun <id> | add-task <name> [description] | update-task <id> <name> [description]
-# 環境變數: TASK_BOARD_API_BASE (預設 http://localhost:3009，openclaw-console-hub 常用 3009 或 3010)
+# 環境變數: TASK_BOARD_API_BASE (預設 http://localhost:3011)
 
-BASE="${TASK_BOARD_API_BASE:-http://localhost:3009}"
+BASE="${TASK_BOARD_API_BASE:-http://localhost:3011}"
 BASE="${BASE%/}"
 
 cmd="${1:-}"
@@ -58,7 +58,7 @@ case "$cmd" in
     ;;
   *)
     echo "用法: $0 <list-tasks|get-task <id>|run-task <id>|list-runs [taskId]|get-run <id>|rerun <id>|add-task <name> [description]|update-task <id> <name> [description]>"
-    echo "環境變數: TASK_BOARD_API_BASE (預設 http://localhost:3009)"
+    echo "環境變數: TASK_BOARD_API_BASE (預設 http://localhost:3011)"
     exit 1
     ;;
 esac

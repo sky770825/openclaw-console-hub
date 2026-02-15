@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Telegram task bridge example (Node.js + Express)
+ * 僅供參考／手動執行，不會被任務板或 OpenClaw 自動啟動。
  *
  * Features:
  * - Parse Telegram commands: #task 新增|執行|重跑|查詢|列表
@@ -9,7 +10,7 @@
  *
  * Required env:
  * - PORT=3100
- * - TASK_API_BASE=http://localhost:3001
+ * - TASK_API_BASE=http://localhost:3011
  * - WEBHOOK_SECRET=change-me
  *
  * Optional env:
@@ -22,7 +23,7 @@ const crypto = require("node:crypto");
 const express = require("express");
 
 const PORT = Number(process.env.PORT || 3100);
-const TASK_API_BASE = process.env.TASK_API_BASE || "http://localhost:3001";
+const TASK_API_BASE = process.env.TASK_API_BASE || "http://localhost:3011";
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const WEBHOOK_MAX_SKEW_SEC = Number(process.env.WEBHOOK_MAX_SKEW_SEC || 300);
