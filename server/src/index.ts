@@ -48,6 +48,7 @@ import {
   openClawRunToRun,
 } from './openclawMapper.js';
 import { validateBody, validateParams, validateQuery } from './middlewares/validate.js';
+import { authMiddleware } from './middlewares/auth.js';
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -56,6 +57,7 @@ import {
   idParamSchema,
   taskFilterQuerySchema,
 } from './validation/schemas.js';
+import tasksRouter from './routes/tasks.js';
 import {
   hasN8n,
   listWorkflows,
@@ -455,33 +457,17 @@ app.use(limiter);
 
 app.use(express.json({ limit: '200kb' }));
 
-app.use('/api', (req, res, next) => {
-  const level = requiredAccessLevel(req);
-  if (level === 'none') return next();
-  if (!hasConfiguredKeys(level)) {
-    return res.status(503).json({
-      message: `Server misconfigured: missing API key for ${level} access`,
-    });
-  }
-  const provided = readApiKeyFromRequest(req);
-  if (!provided || !isAuthorized(level, provided)) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-  next();
-});
+// 使用新的认证中间件
+app.use('/api', authMiddleware);
+
+// 挂载路由模块
+app.use('/api/tasks', tasksRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
 
-// ---- Tasks ----
-app.get('/api/tasks', async (_req, res) => {
-  if (hasSupabase()) {
-    const ocTasks = await fetchOpenClawTasks();
-    const mapped = ocTasks.map(openClawTaskToTask);
-    return res.json(mapped);
-  }
-  res.json(tasks);
-});
+// ---- Tasks ---- (部分已迁移到 routes/tasks.ts)
+// 已迁移: GET /api/tasks, GET /api/tasks/:id
 
 // ---- Domains (Task Tagging Spec) ----
 // Frontend can use this to render consistent filters/badges.
@@ -579,17 +565,7 @@ app.get('/api/tasks/compliance', async (_req, res) => {
   });
 });
 
-app.get('/api/tasks/:id', async (req, res) => {
-  if (hasSupabase()) {
-    const ocTasks = await fetchOpenClawTasks();
-    const oc = ocTasks.find((x) => x.id === req.params.id);
-    if (!oc) return res.status(404).json({ message: 'Task not found' });
-    return res.json(openClawTaskToTask(oc));
-  }
-  const t = tasks.find((x) => x.id === req.params.id);
-  if (!t) return res.status(404).json({ message: 'Task not found' });
-  res.json(t);
-});
+// 已迁移到 routes/tasks.ts: GET /api/tasks/:id
 
 app.patch('/api/tasks/:id', validateBody(updateTaskSchema), async (req, res) => {
   const taskId = req.params.id;
