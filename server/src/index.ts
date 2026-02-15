@@ -495,6 +495,50 @@ app.patch('/api/features', (req, res) => {
   res.json({ ok: true, features: featureFlags });
 });
 
+// 任務空/無用審計：統計有多少空任務或無用任務
+app.get('/api/tasks/audit', async (_req, res) => {
+  const list = hasSupabase()
+    ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
+    : [...tasks];
+
+  const emptyName = list.filter((t) => !t.name?.trim() || /^任務-|^placeholder|^test$|^TEMP|^tmp$/i.test(t.name.trim()));
+  const emptyDesc = list.filter((t) => !t.description?.trim() || t.description.trim().length < 30);
+  const placeholderTitle = list.filter((t) => /^任務-[a-zA-Z0-9_-]{4,}$/.test(t.name?.trim() ?? ''));
+  const hasNeedsMeta = list.filter((t) => (t.tags ?? []).some((tag) => /needs-meta|noncompliant/i.test(String(tag))));
+  const readyButNoncompliant = list.filter((t) => {
+    if (t.status !== 'ready') return false;
+    const gate = validateTaskForGate(t, 'ready');
+    return !gate.ok;
+  });
+  const combined = new Set([
+    ...emptyName.map((x) => x.id),
+    ...emptyDesc.map((x) => x.id),
+    ...placeholderTitle.map((x) => x.id),
+    ...hasNeedsMeta.map((x) => x.id),
+  ]);
+  const emptyOrUselessCount = combined.size;
+  const sample = list
+    .filter((t) => combined.has(t.id))
+    .slice(0, 15)
+    .map((t) => ({ id: t.id, name: t.name, status: t.status, tags: t.tags }));
+
+  res.json({
+    ok: true,
+    total: list.length,
+    emptyOrUseless: {
+      count: emptyOrUselessCount,
+      byCriteria: {
+        emptyName: emptyName.length,
+        emptyOrTinyDesc: emptyDesc.length,
+        placeholderTitle: placeholderTitle.length,
+        hasNeedsMeta: hasNeedsMeta.length,
+        readyButNoncompliant: readyButNoncompliant.length,
+      },
+      sample,
+    },
+  });
+});
+
 // 任務合規檢查（Batch A）：幫小蔡快速看哪些卡缺欄位，避免一直「看起來 ready 但其實不能跑」
 app.get('/api/tasks/compliance', async (_req, res) => {
   const list = hasSupabase()

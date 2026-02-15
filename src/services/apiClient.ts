@@ -245,6 +245,24 @@ export const apiClient = {
     return request('/api/tasks/compliance');
   },
 
+  async getTaskAudit(): Promise<{
+    ok: boolean;
+    total: number;
+    emptyOrUseless: {
+      count: number;
+      byCriteria: {
+        emptyName: number;
+        emptyOrTinyDesc: number;
+        placeholderTitle: number;
+        hasNeedsMeta: number;
+        readyButNoncompliant: number;
+      };
+      sample: { id: string; name: string; status: string; tags: string[] }[];
+    };
+  }> {
+    return request('/api/tasks/audit');
+  },
+
   // ---- Telegram (Ops) ----
   async telegramForceTest(): Promise<{
     ok: boolean;

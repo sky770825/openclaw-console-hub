@@ -409,6 +409,25 @@ export const getTaskCompliance = dataConfig.apiBaseUrl
   ? () => apiClient.getTaskCompliance()
   : async () => ({ ok: true, total: 0, ready: 0, compliantReady: 0, noncompliantReady: 0, sample: [] });
 
+/** 任務空/無用審計 */
+export const getTaskAudit = dataConfig.apiBaseUrl
+  ? () => apiClient.getTaskAudit()
+  : async () => ({
+      ok: true,
+      total: 0,
+      emptyOrUseless: {
+        count: 0,
+        byCriteria: {
+          emptyName: 0,
+          emptyOrTinyDesc: 0,
+          placeholderTitle: 0,
+          hasNeedsMeta: 0,
+          readyButNoncompliant: 0,
+        },
+        sample: [],
+      },
+    });
+
 // ---- System Schedules（系統排程）----
 /** 取得 OpenClaw 系統排程（cron jobs） */
 export const getSystemSchedules = dataConfig.apiBaseUrl

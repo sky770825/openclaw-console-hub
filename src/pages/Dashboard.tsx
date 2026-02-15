@@ -35,7 +35,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor, getAutopilotStatus, startAutopilot, stopAutopilot, getAutopilotLog, telegramForceTest, getTaskCompliance } from '@/services/api';
+import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor, getAutopilotStatus, startAutopilot, stopAutopilot, getAutopilotLog, telegramForceTest, getTaskCompliance, getTaskAudit } from '@/services/api';
 import type { Run, Alert, AuditLog } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -189,6 +189,7 @@ export default function Dashboard() {
   const [autopilotLogs, setAutopilotLogs] = useState<AutopilotLogEntry[]>([]);
   const [isLoadingAutopilot, setIsLoadingAutopilot] = useState(false);
   const [taskCompliance, setTaskCompliance] = useState<TaskCompliance | null>(null);
+  const [taskAudit, setTaskAudit] = useState<Awaited<ReturnType<typeof getTaskAudit>> | null>(null);
   const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [isForcingTelegramTest, setIsForcingTelegramTest] = useState(false);
@@ -200,7 +201,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function loadData() {
-      const [statsData, runsData, alertsData, auditData, autoExecStatus, autopilotStatus, autopilotLogData, complianceData] = await Promise.all([
+      const [statsData, runsData, alertsData, auditData, autoExecStatus, autopilotStatus, autopilotLogData, complianceData, auditData2] = await Promise.all([
         getDashboardStats(),
         getRuns(),
         getAlerts(),
@@ -209,6 +210,7 @@ export default function Dashboard() {
         getAutopilotStatus(),
         getAutopilotLog(),
         getTaskCompliance(),
+        getTaskAudit(),
       ]);
       setStats(statsData);
       setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
@@ -219,22 +221,25 @@ export default function Dashboard() {
       const latestLogs = autopilotLogData.logs?.slice(-5) || [];
       setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
       setTaskCompliance(complianceData);
+      setTaskAudit(auditData2);
     }
     loadData();
 
     // 每 10 秒更新一次 AutoExecutor 和 Autopilot 狀態
     const interval = setInterval(async () => {
-      const [status, autopilotStatus, autopilotLogData, complianceData] = await Promise.all([
+      const [status, autopilotStatus, autopilotLogData, complianceData, auditData2] = await Promise.all([
         getAutoExecutorStatus(),
         getAutopilotStatus(),
         getAutopilotLog(),
         getTaskCompliance(),
+        getTaskAudit(),
       ]);
       setAutoExecutor((prev) => (isSameAutoExecutor(prev, status) ? prev : status));
       setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
       const latestLogs = autopilotLogData.logs?.slice(-5) || [];
       setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
       setTaskCompliance(complianceData);
+      setTaskAudit(auditData2);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -615,6 +620,50 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* 空/無用任務審計 */}
+          {taskAudit && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  空/無用任務
+                  <Badge variant={taskAudit.emptyOrUseless.count > 0 ? 'destructive' : 'secondary'}>
+                    {taskAudit.emptyOrUseless.count}/{taskAudit.total}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  依：空標題、空/極短說明、佔位符標題、needs-meta、ready 但不合規
+                </p>
+                {taskAudit.emptyOrUseless.byCriteria && (
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <span>空標題</span><span>{taskAudit.emptyOrUseless.byCriteria.emptyName}</span>
+                    <span>空/極短說明</span><span>{taskAudit.emptyOrUseless.byCriteria.emptyOrTinyDesc}</span>
+                    <span>佔位符</span><span>{taskAudit.emptyOrUseless.byCriteria.placeholderTitle}</span>
+                    <span>needs-meta</span><span>{taskAudit.emptyOrUseless.byCriteria.hasNeedsMeta}</span>
+                    <span>ready 不合規</span><span>{taskAudit.emptyOrUseless.byCriteria.readyButNoncompliant}</span>
+                  </div>
+                )}
+                {taskAudit.emptyOrUseless.sample?.length > 0 && (
+                  <div className="rounded-md border p-2 text-xs space-y-1 max-h-24 overflow-y-auto">
+                    {taskAudit.emptyOrUseless.sample.slice(0, 5).map((s) => (
+                      <div key={s.id} className="flex justify-between gap-2 truncate">
+                        <span className="truncate">{s.name || s.id}</span>
+                        <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => navigate(`/tasks/${s.id}`)}>
+                          打開
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button size="sm" variant="outline" className="w-full" onClick={() => navigate('/tasks?tag=needs-meta')}>
+                  查看 needs-meta
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Ready Compliance */}
           <Card>
