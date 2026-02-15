@@ -47,6 +47,15 @@ import {
   evolutionLogToLogEntry,
   openClawRunToRun,
 } from './openclawMapper.js';
+import { validateBody, validateParams, validateQuery } from './middlewares/validate.js';
+import {
+  createTaskSchema,
+  updateTaskSchema,
+  runTaskSchema,
+  updateAlertSchema,
+  idParamSchema,
+  taskFilterQuerySchema,
+} from './validation/schemas.js';
 import {
   hasN8n,
   listWorkflows,
@@ -582,7 +591,7 @@ app.get('/api/tasks/:id', async (req, res) => {
   res.json(t);
 });
 
-app.patch('/api/tasks/:id', async (req, res) => {
+app.patch('/api/tasks/:id', validateBody(updateTaskSchema), async (req, res) => {
   const taskId = req.params.id;
   const body = req.body as Partial<
     Pick<
@@ -613,10 +622,7 @@ app.patch('/api/tasks/:id', async (req, res) => {
       | 'modelConfig'
     >
   >;
-  // 驗證：名稱不能為空
-  if (body.name !== undefined && !body.name.trim()) {
-    return res.status(400).json({ message: '任務名稱不能為空' });
-  }
+  // 验证已由中间件处理,无需手动验证
   const now = new Date().toISOString();
 
   if (hasSupabase()) {
@@ -789,7 +795,7 @@ app.patch('/api/tasks/:id/progress', async (req, res) => {
   res.json(updated);
 });
 
-app.post('/api/tasks', async (req, res) => {
+app.post('/api/tasks', validateBody(createTaskSchema), async (req, res) => {
   const body = req.body as Partial<Task> & { id?: string };
   const allowStub =
     (typeof req.query.allowStub === 'string' && req.query.allowStub === '1') ||
