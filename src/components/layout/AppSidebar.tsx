@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, createContext, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Kanban, 
@@ -11,11 +12,16 @@ import {
   Menu,
   X,
   ChevronLeft,
-  Cog
+  Cog,
+  Bot,
+  FolderKanban,
+  Lightbulb,
+  Tags
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { useFeatures } from '@/hooks/useFeatures';
 
 interface SidebarContextValue {
   collapsed: boolean;
@@ -34,11 +40,15 @@ export function useSidebarContext() {
 
 const navItems = [
   { path: '/', label: '儀表板', icon: LayoutDashboard },
+  { path: '/cursor', label: 'OpenClaw Agent 板', icon: Bot },
+  { path: '/projects', label: '專案製作', icon: FolderKanban },
   { path: '/tasks', label: '任務看板', icon: Kanban },
   { path: '/tasks/list', label: '任務列表', icon: List },
   { path: '/runs', label: '執行紀錄', icon: Play },
   { path: '/logs', label: '日誌', icon: FileText },
   { path: '/alerts', label: '警報', icon: Bell },
+  { path: '/review', label: '發想審核', icon: Lightbulb },
+  { path: '/domains', label: '領域分類', icon: Tags },
   { path: '/settings', label: '設定', icon: Settings },
 ];
 
@@ -56,13 +66,30 @@ function NavItem({
   onClick?: () => void;
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = location.pathname === path || 
     (path !== '/' && location.pathname.startsWith(path));
+
+  const handleClick = (e: React.MouseEvent) => {
+    onClick?.();
+    navigate(path);
+    e.preventDefault();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick?.();
+      navigate(path);
+    }
+  };
 
   return (
     <Link
       to={path}
-      onClick={onClick}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      data-nav-path={path}
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
         'hover:bg-sidebar-accent',
@@ -79,6 +106,19 @@ function NavItem({
 }
 
 function SidebarContent({ collapsed, onItemClick }: { collapsed?: boolean; onItemClick?: () => void }) {
+  const { features } = useFeatures();
+  const visibleItems = navItems.filter((item) => {
+    if (item.path === '/cursor') return features['page.cursor'];
+    if (item.path === '/projects') return features['page.projects'];
+    if (item.path === '/tasks' || item.path === '/tasks/list') return true;
+    if (item.path === '/runs') return features['page.runs'];
+    if (item.path === '/logs') return features['page.logs'];
+    if (item.path === '/alerts') return features['page.alerts'];
+    if (item.path === '/review') return features['page.review'];
+    if (item.path === '/settings') return features['page.settings'];
+    if (item.path === '/domains') return true;
+    return true;
+  });
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -98,7 +138,7 @@ function SidebarContent({ collapsed, onItemClick }: { collapsed?: boolean; onIte
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1">
-        {navItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavItem 
             key={item.path} 
             {...item} 

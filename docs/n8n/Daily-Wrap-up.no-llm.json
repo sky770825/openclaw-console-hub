@@ -1,0 +1,169 @@
+{
+  "name": "Daily Wrap-up (Telegram, No LLM)",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "everyDay",
+            "hour": 23,
+            "minute": 0
+          }
+        ]
+      },
+      "id": "cron-daily-wrapup",
+      "name": "Daily Trigger (23:00)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($env.TASKBOARD_BASE_URL || $env.OPENCLAW_API_BASE || 'http://host.docker.internal:3011') + '/api/tasks'}}",
+        "method": "GET",
+        "responseFormat": "json",
+        "options": {
+          "timeout": 30000,
+          "fullResponse": true
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.OPENCLAW_API_KEY || ''}}"
+            }
+          ]
+        }
+      },
+      "id": "http-fetch-tasks",
+      "name": "Fetch Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($env.TASKBOARD_BASE_URL || $env.OPENCLAW_API_BASE || 'http://host.docker.internal:3011') + '/api/stats'}}",
+        "method": "GET",
+        "responseFormat": "json",
+        "options": {
+          "timeout": 30000,
+          "fullResponse": true
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.OPENCLAW_API_KEY || ''}}"
+            }
+          ]
+        }
+      },
+      "id": "http-fetch-stats",
+      "name": "Fetch Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function clamp(s, n) {\n  s = String(s || '');\n  return s.length <= n ? s : (s.slice(0, n).trimEnd() + '…');\n}\n\nfunction isSameLocalDay(a, b) {\n  const da = new Date(a);\n  const db = new Date(b);\n  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;\n  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();\n}\n\nfunction fmtDate(d) {\n  const y = d.getFullYear();\n  const m = String(d.getMonth() + 1).padStart(2, '0');\n  const day = String(d.getDate()).padStart(2, '0');\n  return `${y}-${m}-${day}`;\n}\n\nconst now = new Date();\nconst todayKey = fmtDate(now);\n\n// Code node output must be: [{ json: {...} }, ...]\n\nconst statsItem = ($input.all && $input.all()[0] && $input.all()[0].json) ? $input.all()[0].json : {};\nconst stats = (statsItem && typeof statsItem === 'object' && statsItem.body && typeof statsItem.body === 'object') ? statsItem.body : statsItem;\n\nlet tasksNodeJson;\ntry { tasksNodeJson = $node['Fetch Tasks']?.json; } catch (e) {}\nif (!tasksNodeJson) {\n  try { tasksNodeJson = $item(0).$node['Fetch Tasks']?.json; } catch (e) {}\n}\nif (!tasksNodeJson && typeof $items === 'function') {\n  try { tasksNodeJson = ($items('Fetch Tasks')[0] || {}).json; } catch (e) {}\n}\n\nconst tasksResp = (tasksNodeJson && typeof tasksNodeJson === 'object' && 'body' in tasksNodeJson) ? tasksNodeJson.body : tasksNodeJson;\n\nlet list = [];\nif (Array.isArray(tasksResp)) {\n  list = tasksResp;\n} else if (tasksResp && typeof tasksResp === 'object' && Array.isArray(tasksResp.data)) {\n  // Some setups wrap arrays as { data: [...] }\n  list = tasksResp.data;\n}\n\nconst doneToday = list\n  .filter((t) => t && t.status === 'done' && t.updatedAt && isSameLocalDay(t.updatedAt, now))\n  .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));\n\nconst blocked = list\n  .filter((t) => t && t.status === 'blocked')\n  .sort((a, b) => Number(a.priority || 3) - Number(b.priority || 3));\n\nconst tomorrow = list\n  .filter((t) => t && (t.status === 'ready' || t.status === 'running' || t.status === 'review'))\n  .sort((a, b) => {\n    const pa = Number(a.priority || 3);\n    const pb = Number(b.priority || 3);\n    if (pa !== pb) return pa - pb;\n    return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));\n  });\n\nconst maxDone = Number($env.DAILY_WRAPUP_MAX_DONE || 8);\nconst maxBlocked = Number($env.DAILY_WRAPUP_MAX_BLOCKED || 6);\nconst maxTomorrow = Number($env.DAILY_WRAPUP_MAX_TOMORROW || 8);\n\nfunction oneLineTask(t) {\n  const name = clamp(t.name || '(no name)', 80);\n  const id = String(t.id || '').slice(0, 8);\n  return id ? `${name} (#${id})` : name;\n}\n\nfunction blockedLine(t) {\n  const base = oneLineTask(t);\n  const hint = (Array.isArray(t.nextSteps) && t.nextSteps[0]) ? String(t.nextSteps[0]) : (t.summary ? String(t.summary).split(/\\r?\\n/)[0] : '');\n  const hint2 = clamp(hint, 80);\n  return hint2 ? `${base} - ${hint2}` : base;\n}\n\nconst lines = [];\nlines.push(`🌙 Daily Wrap-up ${todayKey}`);\n\n// Small ops stats (cheap + helpful)\nif (typeof stats.todayRuns === 'number' || typeof stats.successRate === 'number') {\n  const parts = [];\n  if (typeof stats.todayRuns === 'number') parts.push(`runs: ${stats.todayRuns}`);\n  if (typeof stats.successRate === 'number') parts.push(`success: ${stats.successRate}%`);\n  if (typeof stats.failedRuns === 'number') parts.push(`failed: ${stats.failedRuns}`);\n  if (typeof stats.queueDepth === 'number') parts.push(`queue: ${stats.queueDepth}`);\n  if (typeof stats.activeTasks === 'number') parts.push(`active: ${stats.activeTasks}`);\n  if (parts.length) lines.push(`📊 ${parts.join(' | ')}`);\n}\n\nlines.push('');\nlines.push(`✅ 今天完成 (${doneToday.length})`);\nif (doneToday.length === 0) {\n  lines.push('- (none)');\n} else {\n  for (const t of doneToday.slice(0, maxDone)) lines.push(`- ${oneLineTask(t)}`);\n  if (doneToday.length > maxDone) lines.push(`- … +${doneToday.length - maxDone} more`);\n}\n\nlines.push('');\nlines.push(`⛔ 卡点/阻塞 (${blocked.length})`);\nif (blocked.length === 0) {\n  lines.push('- (none)');\n} else {\n  for (const t of blocked.slice(0, maxBlocked)) lines.push(`- ${blockedLine(t)}`);\n  if (blocked.length > maxBlocked) lines.push(`- … +${blocked.length - maxBlocked} more`);\n}\n\nlines.push('');\nlines.push(`📌 明天计划 (${tomorrow.length})`);\nif (tomorrow.length === 0) {\n  lines.push('- (none)');\n} else {\n  for (const t of tomorrow.slice(0, maxTomorrow)) lines.push(`- ${oneLineTask(t)}`);\n  if (tomorrow.length > maxTomorrow) lines.push(`- … +${tomorrow.length - maxTomorrow} more`);\n}\n\nconst apiBase = ($env.TASKBOARD_BASE_URL || $env.OPENCLAW_API_BASE || 'http://host.docker.internal:3011').replace(/\\/+$/, '');\nlines.push('');\nlines.push(`🔗 任務板：${apiBase}`);\n\nconst text = clamp(lines.join('\\n'), 3800);\nreturn [{ json: { text } }];\n"
+      },
+      "id": "code-build-message",
+      "name": "Build Wrap-up Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{'https://api.telegram.org/bot' + ($env.TELEGRAM_BOT_TOKEN || 'REPLACE_ME') + '/sendMessage'}}",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{JSON.stringify({chat_id:($env.TELEGRAM_CHAT_ID || 'REPLACE_ME'),text:$json.text})}}"
+      },
+      "id": "http-telegram-send",
+      "name": "Telegram Send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1180,
+        300
+      ],
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Trigger (23:00)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Tasks": {
+      "main": [
+        [
+          {
+            "node": "Fetch Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Stats": {
+      "main": [
+        [
+          {
+            "node": "Build Wrap-up Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Wrap-up Message": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00000000-0000-0000-0000-000000000000",
+  "meta": {
+    "templateCredsSetup": "No n8n credentials required; uses env vars + Telegram Bot API over HTTP.",
+    "note": "0 token daily wrap-up. Adjust Cron time in node settings."
+  }
+}

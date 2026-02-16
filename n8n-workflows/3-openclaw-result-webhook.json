@@ -1,0 +1,55 @@
+{
+  "name": "OpenClaw 結果寫入任務板",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openclaw-result",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c3d4e5f6-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "openclaw-result"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TASKBOARD_API || 'http://localhost:3001' }}/api/openclaw/tasks",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body || $json }}",
+        "options": {}
+      },
+      "id": "c3d4e5f6-0002-4000-8000-000000000002",
+      "name": "寫入任務板",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "c3d4e5f6-0003-4000-8000-000000000003",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "寫入任務板", "type": "main", "index": 0 }]]
+    },
+    "寫入任務板": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "description": "接收 OpenClaw Agent 結果，POST 到 /webhook/openclaw-result 寫入任務板" }
+}

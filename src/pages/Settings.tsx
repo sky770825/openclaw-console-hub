@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { PageContainer, SectionHeader } from '@/components/layout/PageContainer';
+import { getFeatures, patchFeatures } from '@/services/features';
+import type { FeatureFlags, FeatureKey } from '@/services/features';
+import { dataConfig } from '@/services/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +34,10 @@ import {
   Copy,
   Trash2,
   Plus,
-  Shield
+  Shield,
+  LayoutDashboard,
+  Lightbulb,
+  Bot
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -47,9 +54,51 @@ const mockRoles = [
   { id: 'role-3', name: '檢視者', users: 10, permissions: '唯讀權限' },
 ];
 
+const FEATURE_LABELS: Record<FeatureKey, string> = {
+  'page.cursor': 'OpenClaw Agent 板',
+  'page.projects': '專案製作',
+  'page.review': '發想審核',
+  'page.alerts': '警報',
+  'page.logs': '日誌',
+  'page.runs': '執行紀錄',
+  'page.settings': '設定',
+  'task.bulkOps': '任務批次操作',
+  'ops.emergencyStop': '儀表板緊急停止',
+  'ops.incidentCreate': '建立事件（模擬）',
+};
+
 export default function Settings() {
   const { toast } = useToast();
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlags | null>(null);
+  const [featuresLoaded, setFeaturesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!dataConfig.apiBaseUrl) {
+      setFeaturesLoaded(true);
+      return;
+    }
+    getFeatures().then((res) => {
+      if (res?.ok && res.features) setFeatureFlags(res.features);
+      setFeaturesLoaded(true);
+    });
+  }, []);
+
+  const handleFeatureToggle = async (key: FeatureKey, value: boolean) => {
+    if (!dataConfig.apiBaseUrl) {
+      toast({ variant: 'destructive', description: '需設定 VITE_API_BASE_URL 才能變更功能開關' });
+      return;
+    }
+    const next = { ...featureFlags, [key]: value } as FeatureFlags;
+    setFeatureFlags(next);
+    const res = await patchFeatures({ [key]: value });
+    if (res?.ok) {
+      toast({ description: '功能開關已更新' });
+    } else {
+      toast({ variant: 'destructive', description: '更新失敗（需 API Key）' });
+      setFeatureFlags((prev) => (prev ? { ...prev, [key]: !value } : null));
+    }
+  };
 
   const handleSave = () => {
     toast({ description: '設定已儲存成功' });
@@ -66,12 +115,36 @@ export default function Settings() {
     <PageContainer>
       <SectionHeader
         title="設定"
-        description="配置您的 Openclaw 任務面板"
+        description="配置您的 OpenClaw 任務面板"
+        icon="⚙️"
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/" className="gap-1">
+                <LayoutDashboard className="h-4 w-4" />
+                儀表板
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/review" className="gap-1">
+                <Lightbulb className="h-4 w-4" />
+                發想審核
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/cursor" className="gap-1">
+                <Bot className="h-4 w-4" />
+                OpenClaw 任務板
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto p-1">
           <TabsTrigger value="general" className="py-2">一般設定</TabsTrigger>
+          <TabsTrigger value="features" className="py-2">功能開關</TabsTrigger>
           <TabsTrigger value="integrations" className="py-2">整合</TabsTrigger>
           <TabsTrigger value="notifications" className="py-2">通知</TabsTrigger>
           <TabsTrigger value="access" className="py-2">角色與權限</TabsTrigger>
@@ -125,6 +198,47 @@ export default function Settings() {
                 <Save className="h-4 w-4 mr-2" />
                 儲存變更
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Feature Flags */}
+        <TabsContent value="features">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                功能開關（Feature Flags）
+              </CardTitle>
+              <CardDescription>
+                {dataConfig.apiBaseUrl
+                  ? '開關各頁面與危險操作的可見性。寫入需 Admin API Key（VITE_OPENCLAW_API_KEY 需與後端 OPENCLAW_API_KEY 或 OPENCLAW_ADMIN_KEY 一致）。變更後側邊欄將於重新載入頁面後反映。'
+                  : '請設定 VITE_API_BASE_URL 後重新載入以使用功能開關'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {featureFlags &&
+                (Object.keys(FEATURE_LABELS) as FeatureKey[]).map((key) => {
+                  const isDanger = key === 'ops.emergencyStop' || key === 'ops.incidentCreate';
+                  return (
+                    <div key={key} className="flex items-center justify-between py-2 border-b last:border-0">
+                      <div className="flex items-center gap-2">
+                        <Label className="font-normal">{FEATURE_LABELS[key]}</Label>
+                        {isDanger && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-500/50 text-xs">
+                            高風險
+                          </Badge>
+                        )}
+                      </div>
+                      <Switch
+                        checked={featureFlags[key]}
+                        onCheckedChange={(v) => handleFeatureToggle(key, v)}
+                        disabled={!dataConfig.apiBaseUrl}
+                      />
+                    </div>
+                  );
+                })}
+              {!featureFlags && dataConfig.apiBaseUrl && <p className="text-sm text-muted-foreground">載入中…</p>}
             </CardContent>
           </Card>
         </TabsContent>

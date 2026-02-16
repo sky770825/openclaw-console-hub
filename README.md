@@ -11,7 +11,13 @@ npm i
 npm run dev
 ```
 
-瀏覽器開啟 http://localhost:8080/ 即可使用。
+瀏覽器開啟 http://localhost:3009/ 即可使用。
+
+**接本機後端（可真的「立即執行」）**
+
+1. 另開終端：`cd server && npm i && npm run dev`（API 預設跑在 http://localhost:3011，可用 `PORT=` 覆蓋）
+2. 專案根目錄建 `.env`，填：`VITE_API_BASE_URL=http://localhost:3011`
+3. 再跑一次中控台 `npm run dev`，點「立即執行」會打後端，Run 會模擬完成。
 
 ---
 
@@ -19,8 +25,10 @@ npm run dev
 
 | 目錄／檔案 | 說明 |
 |------------|------|
+| `docs/WHERE-TO-LOOK.md` | 快速索引（安全規範 / 子代理 guardrails / n8n / 常用腳本入口） |
 | `docs/OPENCLAW-CONCEPT.md` | 名詞定義（Task / Run / Log / Alert）、任務卡標準模板、最短路徑 |
 | `docs/TASK-TEMPLATE.md` | 任務卡 6 欄空白模板（Goal / Inputs / Outputs / Acceptance / Owner / Priority） |
+| `docs/ROADMAP.md` | 整體規劃與補強清單（已完成／建議補強／選做） |
 | `src/types/` | 型別定義（task / run / alert / log） |
 | `src/data/seedTasks.ts` | 種子任務 T-01～T-15 |
 | `src/data/seedRunsAlerts.ts` | 種子 Runs + Alerts（展示用） |
@@ -52,14 +60,15 @@ npm run dev
    - 任務卡 6 欄與 Kanban 六欄（Draft → Ready → Running → Review → Done → Blocked）
    - Run List / Run Detail / Logs / Alerts 是否符合預期
 
-3. **再決定串接方式**  
-   對齊後再設計 API 契約（可依 `src/types/*.ts`），把 `api.ts` 從 localStorage 改為呼叫 OpenClaw 後端（或透過 proxy）。
+3. **接上真實後端**  
+   後端實作好 REST API 後，在專案根目錄設 `VITE_API_BASE_URL`（見 `.env.example`），中控台會自動改打後端。  
+   規格與步驟見 [docs/API-INTEGRATION.md](docs/API-INTEGRATION.md)。
 
 ---
 
 ## 給 OpenClaw 團隊
 
-- **目前狀態**：UI 與型別、種子任務皆已就緒；**尚未**接真實執行引擎（runNow / rerun 僅寫入 localStorage，未觸發實際執行）。
+- **目前狀態**：UI、型別、種子任務、本機後端（`server/`）與「立即執行／重跑」流程皆已就緒；設好 `VITE_API_BASE_URL` 後會打 API，執行完成會顯示 toast。真實執行引擎可接在後端 `POST /api/tasks/:taskId/run` 之後。
 - **請先確認**：  
   - 名詞與欄位是否與你們一致（見 `docs/OPENCLAW-CONCEPT.md`）  
   - 任務卡 6 欄與 Kanban 流程是否可當作「官方模板」  

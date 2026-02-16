@@ -1,0 +1,345 @@
+{
+  "name": "OpenClaw - Run Index Reporter (Telegram)",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "everyMinute"
+          }
+        ]
+      },
+      "id": "a0b6e4fd-6f2a-4b6f-a5d3-9a6d2fd4a7c1",
+      "name": "每分鐘觸發",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($env.OPENCLAW_API_BASE || 'http://127.0.0.1:3011') + '/api/runs'}}",
+        "method": "GET",
+        "responseFormat": "json",
+        "options": {
+          "timeout": 30000
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.OPENCLAW_API_KEY || ''}}"
+            }
+          ]
+        }
+      },
+      "id": "6a3a1a5c-2d39-47b6-a2d7-3a6b2b1c5b36",
+      "name": "抓 Runs（OpenClaw）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        460,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = items[0].json;\nif (!Array.isArray(data)) {\n  return [];\n}\n\n// Keep a small local memory inside n8n (staticData) to avoid duplicate notifications.\nconst s = this.getWorkflowStaticData('global');\nif (!s.seenRunIds) s.seenRunIds = {};\n\nconst now = Date.now();\nconst maxAgeMs = Number($env.OPENCLAW_NOTIFY_MAX_AGE_MS || 6 * 60 * 60 * 1000); // default 6h\nconst maxKeep = Number($env.OPENCLAW_NOTIFY_MAX_KEEP || 5000);\n\n// prune old entries occasionally\nif (!s.lastPruneAt || (now - s.lastPruneAt) > 10 * 60 * 1000) {\n  const keys = Object.keys(s.seenRunIds);\n  if (keys.length > maxKeep) {\n    // Best-effort prune: keep newest by seenAt\n    keys.sort((a, b) => (s.seenRunIds[b] || 0) - (s.seenRunIds[a] || 0));\n    for (const k of keys.slice(maxKeep)) delete s.seenRunIds[k];\n  }\n  s.lastPruneAt = now;\n}\n\nconst onlySuccess = String($env.OPENCLAW_NOTIFY_ONLY_SUCCESS || 'true') !== 'false';\n\nconst out = [];\nfor (const r of data) {\n  if (!r || typeof r !== 'object') continue;\n  const id = String(r.id || '');\n  if (!id) continue;\n  if (s.seenRunIds[id]) continue;\n\n  const status = String(r.status || '');\n  if (onlySuccess && status !== 'success') continue;\n\n  const startedAt = r.startedAt ? Date.parse(r.startedAt) : NaN;\n  if (!Number.isNaN(startedAt) && (now - startedAt) > maxAgeMs) continue;\n\n  // Need runPath + taskId to be useful.\n  const runPath = String(r.runPath || '');\n  const taskId = String(r.taskId || '');\n  if (!runPath || !taskId) continue;\n\n  out.push({ json: { runId: id, taskId, taskName: String(r.taskName || ''), runPath, status } });\n}\n\n// Mark as seen immediately (idempotent) so retries don't spam.\nfor (const it of out) {\n  s.seenRunIds[it.json.runId] = now;\n}\n\nreturn out;"
+      },
+      "id": "f8c1b6db-1f4c-4c1d-9a1b-7d8a7c4c5b2e",
+      "name": "過濾新成功 Run（去重）",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        700,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "7e9a7f02-1b2c-4b25-9d7e-88f25b8b7b8b",
+      "name": "逐筆處理",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        940,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($env.OPENCLAW_API_BASE || 'http://127.0.0.1:3011') + '/api/tasks/' + encodeURIComponent($json.taskId)}}",
+        "method": "GET",
+        "responseFormat": "json",
+        "options": {
+          "timeout": 30000
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.OPENCLAW_API_KEY || ''}}"
+            }
+          ]
+        }
+      },
+      "id": "f3d7bd6b-0d5b-4d10-9e1c-7c3e6c2c9b0a",
+      "name": "抓 Task（補欄位）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1180,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const task = items[0].json;\nconst runId = $item(0).$node[\"逐筆處理\"].json.runId;\nconst runPath = $item(0).$node[\"逐筆處理\"].json.runPath;\nconst taskId = $item(0).$node[\"逐筆處理\"].json.taskId;\nconst taskName = $item(0).$node[\"逐筆處理\"].json.taskName || task?.name || '';\n\n// Build absolute filesystem path inside n8n docker container.\n// You must mount the repo into /workspace, e.g. -v \"/Users/.../openclaw任務面版設計:/workspace\"\nconst rel = String(runPath || '').replace(/^\\/+/, '');\nconst resultPath = '/workspace/' + rel.replace(/\\/+$/, '/') + 'RESULT.md';\n\nreturn [{\n  json: {\n    taskId,\n    taskName,\n    runId,\n    runPath,\n    resultPath,\n    projectPath: task?.projectPath || '',\n    idempotencyKey: task?.idempotencyKey || '',\n  }\n}];"
+      },
+      "id": "8b8f0a6b-1b7a-4d8d-b8e3-6d9c7a3e5f21",
+      "name": "組合路徑與上下文",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "filePath": "={{$json.resultPath}}"
+      },
+      "id": "5a2e8c3f-9b1e-4f8d-a2f3-8b9f1c2d3e4f",
+      "name": "讀 RESULT.md",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1660,
+        260
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "function clamp(s, n) {\n  s = String(s || '').trim();\n  if (!s) return '';\n  return s.length <= n ? s : (s.slice(0, n).trimEnd() + '…');\n}\n\nconst runId = $json.runId;\nconst taskId = $json.taskId;\nconst taskName = $json.taskName;\nconst runPath = $json.runPath;\nconst resultPath = $json.resultPath;\n\nlet text = '';\ntry {\n  const b = items[0].binary?.data;\n  if (b?.data) {\n    text = Buffer.from(b.data, 'base64').toString('utf8');\n  }\n} catch (e) {\n  text = '';\n}\n\n// Extract summary block if present.\nlet summary = '';\nif (text) {\n  const m = text.match(/\\n##\\s*summary\\s*\\n([\\s\\S]*?)(\\n##\\s|$)/i);\n  if (m && m[1]) summary = m[1].trim();\n}\nif (!summary && text) {\n  const lines = text.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);\n  summary = lines.slice(0, 8).join('\\n');\n}\nsummary = clamp(summary, 800);\n\n// Extract key outline points from RESULT.md\nlet outlinePoints = [];\nif (text) {\n  // Look for h2/h3 headings as outline\n  const headings = text.match(/^#{2,3}\\s+.+$/gm);\n  if (headings && headings.length > 0) {\n    outlinePoints = headings\n      .map(h => h.replace(/^#+\\s*/, '').trim())\n      .filter(h => !/^(summary|next|todo)/i.test(h))\n      .slice(0, 6);\n  }\n}\n\n// Extract model info\nlet model = '';\nif (text) {\n  const mm = text.match(/(?:model|模型)[：:]\\s*(.+)/i);\n  if (mm && mm[1]) model = mm[1].trim();\n}\n\n// Extract executor/agent info\nlet executor = '';\nif (text) {\n  const me = text.match(/(?:executor|執行者|agent)[：:]\\s*(.+)/i);\n  if (me && me[1]) executor = me[1].trim();\n}\n\n// Basic nextSteps heuristics.\nlet nextSteps = [];\nif (text) {\n  const m2 = text.match(/\\n##\\s*(next\\s*steps|nextSteps|todo|下一步)\\s*\\n([\\s\\S]*?)(\\n##\\s|$)/i);\n  if (m2 && m2[2]) {\n    nextSteps = m2[2]\n      .split(/\\r?\\n/)\n      .map(l => l.replace(/^[-*\\d.\\s]+/, '').trim())\n      .filter(Boolean)\n      .slice(0, 6);\n  }\n}\nif (nextSteps.length === 0) {\n  nextSteps = [\n    '查看 RESULT.md 的完整內容與驗收清單',\n    '依 acceptanceCriteria 逐項人工驗收',\n    '驗收通過後將任務狀態改為 done（或建立下一張任務）'\n  ];\n}\n\nconst evidenceLinks = [runPath.replace(/\\/+$/, '/') + 'RESULT.md'];\n\nreturn [{\n  json: {\n    taskId,\n    taskName,\n    runId,\n    runPath,\n    resultPath,\n    summary,\n    outlinePoints,\n    model,\n    executor,\n    nextSteps,\n    evidenceLinks\n  }\n}];"
+      },
+      "id": "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+      "name": "萃取索引摘要（不貼全文）",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{($env.OPENCLAW_API_BASE || 'http://127.0.0.1:3011') + '/api/tasks/' + encodeURIComponent($json.taskId) + '/progress'}}",
+        "method": "PATCH",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 30000
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.OPENCLAW_API_KEY || ''}}"
+            }
+          ]
+        },
+        "bodyParametersJson": "={{JSON.stringify({\n  status: 'review',\n  runId: $json.runId,\n  summary: $json.summary,\n  nextSteps: $json.nextSteps,\n  evidenceLinks: $json.evidenceLinks\n})}}"
+      },
+      "id": "9b8a7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d",
+      "name": "寫回任務卡（progress）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2140,
+        260
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{'https://api.telegram.org/bot' + ($env.TELEGRAM_BOT_TOKEN || 'REPLACE_ME') + '/sendMessage'}}",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 30000
+        },
+        "bodyParametersJson": "={{JSON.stringify({\n  chat_id: ($env.TELEGRAM_CHAT_ID || 'REPLACE_ME'),\n  parse_mode: 'HTML',\n  text: `🤖 <b>n8n 系統事件通知</b>\\n\\n` +\n    `📋 任務: ${$json.taskName || '(未命名)'}\\n` +\n    `✅ 狀態: 完成\\n` +\n    ($json.executor ? `👤 執行者: ${$json.executor}\\n` : '') +\n    ($json.model ? `🧠 子代理模型: ${$json.model}\\n` : '') +\n    `⏰ 時間: ${new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'})}\\n` +\n    `\\n📝 <b>重點摘要:</b>\\n${$json.summary || '(無摘要)'}\\n` +\n    (($json.outlinePoints || []).length > 0 ? `\\n📑 <b>內容大綱:</b>\\n${$json.outlinePoints.map(p => '• ' + p).join('\\n')}\\n` : '') +\n    `\\n🔜 <b>下一步:</b>\\n- ${($json.nextSteps || []).join('\\n- ')}\\n` +\n    `\\n🔗 詳細: ${($json.evidenceLinks || [])[0] || $json.runPath}`\n})}}"
+      },
+      "id": "0f1e2d3c-4b5a-6978-9f0e-1d2c3b4a5f6e",
+      "name": "Telegram 發索引摘要",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2380,
+        260
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "b3c2d1e0-f9a8-7654-3210-0f1e2d3c4b5a",
+      "name": "下一筆",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2620,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "每分鐘觸發": {
+      "main": [
+        [
+          {
+            "node": "抓 Runs（OpenClaw）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓 Runs（OpenClaw）": {
+      "main": [
+        [
+          {
+            "node": "過濾新成功 Run（去重）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "過濾新成功 Run（去重）": {
+      "main": [
+        [
+          {
+            "node": "逐筆處理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "逐筆處理": {
+      "main": [
+        [
+          {
+            "node": "抓 Task（補欄位）",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "下一筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓 Task（補欄位）": {
+      "main": [
+        [
+          {
+            "node": "組合路徑與上下文",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "組合路徑與上下文": {
+      "main": [
+        [
+          {
+            "node": "讀 RESULT.md",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "讀 RESULT.md": {
+      "main": [
+        [
+          {
+            "node": "萃取索引摘要（不貼全文）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "萃取索引摘要（不貼全文）": {
+      "main": [
+        [
+          {
+            "node": "寫回任務卡（progress）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "寫回任務卡（progress）": {
+      "main": [
+        [
+          {
+            "node": "Telegram 發索引摘要",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram 發索引摘要": {
+      "main": [
+        [
+          {
+            "node": "下一筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "下一筆": {
+      "main": [
+        [
+          {
+            "node": "逐筆處理",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00000000-0000-0000-0000-000000000000",
+  "meta": {
+    "templateCredsSetup": "No n8n credentials required; uses env vars + Telegram Bot API over HTTP."
+  }
+}
+

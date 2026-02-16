@@ -1,6 +1,6 @@
 /**
  * OpenClaw 第一階段種子任務（標準模板 6 欄）
- * 任務順序 = 建議執行順序
+ * 每欄皆有範例：Draft → Ready → Running → Review → Done → Blocked
  * @see docs/TASK-TEMPLATE.md
  */
 
@@ -9,6 +9,65 @@ import type { Task } from '@/types';
 const now = () => new Date().toISOString();
 
 export const seedTasks: Task[] = [
+  // === Draft（想法未成熟）===
+  {
+    id: 'T-09',
+    name: 'Run Override（JSON）',
+    description:
+      '建立 Override JSON modal：允許 Run with override（mock），可複製 run id。',
+    status: 'draft',
+    tags: ['runs', 'advanced', 'modal'],
+    owner: 'openclaw',
+    priority: 3,
+    scheduleType: 'manual',
+    lastRunStatus: 'none',
+    lastRunAt: null,
+    nextRunAt: null,
+    inputs: ['override payload schema（先自由 JSON）'],
+    outputs: ['Override JSON Modal + mock handler'],
+    acceptance: ['可輸入 JSON 並觸發一筆新 run（mock）', 'JSON 格式錯誤有提示'],
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
+    id: 'T-12',
+    name: 'Alert 規則（Mock）',
+    description:
+      '建立最小警報規則：failed runs > N 產生 alert；queue backlog 產生 alert（先 mock）。',
+    status: 'draft',
+    tags: ['alerts', 'rules', 'monitoring'],
+    owner: 'openclaw',
+    priority: 2,
+    scheduleType: 'manual',
+    lastRunStatus: 'none',
+    lastRunAt: null,
+    nextRunAt: null,
+    inputs: ['runs list', 'threshold 設定'],
+    outputs: ['mock rule engine（純前端或 mock service）'],
+    acceptance: ['規則觸發後 dashboard/alerts 會反映變化'],
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
+    id: 'T-14',
+    name: 'Settings – Notifications',
+    description:
+      '建立通知設定 UI：email/LINE/webhook（先 UI，mock save），預留未來整合。',
+    status: 'draft',
+    tags: ['settings', 'notifications', 'future'],
+    owner: 'openclaw',
+    priority: 1,
+    scheduleType: 'manual',
+    lastRunStatus: 'none',
+    lastRunAt: null,
+    nextRunAt: null,
+    inputs: ['通知渠道清單'],
+    outputs: ['Notifications tab UI（mock）'],
+    acceptance: ['可新增/刪除渠道（mock）', '顯示保存成功 toast'],
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  // === Ready（規格清楚、可直接做）===
   {
     id: 'T-01',
     name: '定義 OpenClaw 專案核心規範',
@@ -52,7 +111,7 @@ export const seedTasks: Task[] = [
     name: 'Mock Data 與 API 抽象層',
     description:
       '建立 mock data 與 api service 抽象層（先 mock、後可替換真 API），讓 UI 完整跑起來，不等待後端。',
-    status: 'ready',
+    status: 'done',
     tags: ['foundation', 'mock', 'api'],
     owner: 'openclaw',
     priority: 5,
@@ -71,7 +130,7 @@ export const seedTasks: Task[] = [
     name: 'Dashboard（KPI + 失敗焦點）',
     description:
       '建立儀表板：KPI 卡片、近期失敗清單、趨勢區（placeholder），做到『一眼知道有沒有在燒』。',
-    status: 'ready',
+    status: 'running',
     tags: ['dashboard', 'kpi', 'ux'],
     owner: 'openclaw',
     priority: 4,
@@ -109,7 +168,7 @@ export const seedTasks: Task[] = [
     name: 'Task Detail Drawer（Overview/Runs/Config/History）',
     description:
       '建立任務詳情 Drawer：從 Task card 進入，可查看概覽、歷史 runs、設定與變更紀錄（mock）。',
-    status: 'ready',
+    status: 'running',
     tags: ['taskboard', 'drawer', 'detail'],
     owner: 'openclaw',
     priority: 4,
@@ -128,7 +187,7 @@ export const seedTasks: Task[] = [
     name: 'Run List（執行紀錄）',
     description:
       '建立 Runs 頁：可用狀態/任務/時間篩選，桌機 table + 手機 card list，點擊進 Run Detail。',
-    status: 'ready',
+    status: 'review',
     tags: ['runs', 'history', 'rwd'],
     owner: 'openclaw',
     priority: 4,
@@ -147,7 +206,7 @@ export const seedTasks: Task[] = [
     name: 'Run Detail（Timeline + Error + Input/Output）',
     description:
       '建立 Run Detail：步驟時間軸、Input/Output 折疊摘要、Error panel、Re-run 按鈕。',
-    status: 'ready',
+    status: 'review',
     tags: ['runs', 'detail', 'debug'],
     owner: 'openclaw',
     priority: 5,
@@ -161,31 +220,17 @@ export const seedTasks: Task[] = [
     createdAt: now(),
     updatedAt: now(),
   },
-  {
-    id: 'T-09',
-    name: 'Run Override（JSON）',
-    description:
-      '建立 Override JSON modal：允許 Run with override（mock），可複製 run id。',
-    status: 'draft',
-    tags: ['runs', 'advanced', 'modal'],
-    owner: 'openclaw',
-    priority: 3,
-    scheduleType: 'manual',
-    lastRunStatus: 'none',
-    lastRunAt: null,
-    nextRunAt: null,
-    inputs: ['override payload schema（先自由 JSON）'],
-    outputs: ['Override JSON Modal + mock handler'],
-    acceptance: ['可輸入 JSON 並觸發一筆新 run（mock）', 'JSON 格式錯誤有提示'],
-    createdAt: now(),
-    updatedAt: now(),
-  },
+  // === Running（執行中）===
+  // T-04, T-06 已在上方
+  // === Review（待驗收）===
+  // T-07, T-08 已在上方
+  // === Blocked（缺決策／外部依賴）===
   {
     id: 'T-10',
     name: 'Logs Explorer（日誌查詢）',
     description:
       '建立 Logs Explorer：左側 filter（level/runId/keyword/time），右側 log stream，支援複製、error 高亮、回跳 run。',
-    status: 'ready',
+    status: 'blocked',
     tags: ['logs', 'debug', 'explorer'],
     owner: 'openclaw',
     priority: 3,
@@ -204,7 +249,7 @@ export const seedTasks: Task[] = [
     name: 'Alerts（警報列表 + Ack/Snooze）',
     description:
       '建立 Alerts 頁：警報卡片、嚴重度、狀態、Ack/Snooze UI（mock）。',
-    status: 'ready',
+    status: 'done',
     tags: ['alerts', 'monitoring', 'ux'],
     owner: 'openclaw',
     priority: 3,
@@ -219,30 +264,11 @@ export const seedTasks: Task[] = [
     updatedAt: now(),
   },
   {
-    id: 'T-12',
-    name: 'Alert 規則（Mock）',
-    description:
-      '建立最小警報規則：failed runs > N 產生 alert；queue backlog 產生 alert（先 mock）。',
-    status: 'draft',
-    tags: ['alerts', 'rules', 'monitoring'],
-    owner: 'openclaw',
-    priority: 2,
-    scheduleType: 'manual',
-    lastRunStatus: 'none',
-    lastRunAt: null,
-    nextRunAt: null,
-    inputs: ['runs list', 'threshold 設定'],
-    outputs: ['mock rule engine（純前端或 mock service）'],
-    acceptance: ['規則觸發後 dashboard/alerts 會反映變化'],
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
     id: 'T-13',
     name: 'Settings – General / Integrations',
     description:
       '建立 Settings tabs：General（系統名/時區等）、Integrations（Webhook URL、API keys masked、測試連線按鈕 UI）。',
-    status: 'draft',
+    status: 'blocked',
     tags: ['settings', 'integrations', 'future'],
     owner: 'openclaw',
     priority: 2,
@@ -256,31 +282,13 @@ export const seedTasks: Task[] = [
     createdAt: now(),
     updatedAt: now(),
   },
-  {
-    id: 'T-14',
-    name: 'Settings – Notifications',
-    description:
-      '建立通知設定 UI：email/LINE/webhook（先 UI，mock save），預留未來整合。',
-    status: 'draft',
-    tags: ['settings', 'notifications', 'future'],
-    owner: 'openclaw',
-    priority: 1,
-    scheduleType: 'manual',
-    lastRunStatus: 'none',
-    lastRunAt: null,
-    nextRunAt: null,
-    inputs: ['通知渠道清單'],
-    outputs: ['Notifications tab UI（mock）'],
-    acceptance: ['可新增/刪除渠道（mock）', '顯示保存成功 toast'],
-    createdAt: now(),
-    updatedAt: now(),
-  },
+  // === Done（完成且可複用）===
   {
     id: 'T-15',
     name: 'Empty / Loading / Error States（產品感收尾）',
     description:
       '建立 Skeleton、Empty、Error 元件，確保每個頁面在無資料/載入/錯誤都有一致體驗。',
-    status: 'ready',
+    status: 'done',
     tags: ['ux', 'components', 'polish'],
     owner: 'openclaw',
     priority: 3,

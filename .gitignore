@@ -11,6 +11,28 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+# 含 Telegram / Ollama 金鑰，勿提交
+ollama_bot2.env
+ollama_monitor_bot.env
+
+# Local backups / checkpoints (may include secrets in diffs/logs)
+backups/
+runtime-checkpoints/
+server/runtime-checkpoints/
+server/projects/
+
+# Local state files (runtime artifacts)
+auto-executor-state.json
+auto-task-generator-state.json
+server/auto-task-generator-state.json
+server/autopilot-state.json
+
+# Ad-hoc backups
+*.bak
+
+# Project run artifacts
+projects/**/runs/
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +44,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 大型拷貝目錄
+ollama-main*/
+
+# Local Netlify folder
+.netlify

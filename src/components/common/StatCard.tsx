@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+/** OpenClaw Stats 風格 — 與 Agent 板一致：大數值 + 小標籤、深色卡片 */
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -13,66 +13,54 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ 
-  title, 
-  value, 
+const OC_COLORS: Record<Exclude<StatCardProps['variant'], undefined>, string> = {
+  default: 'var(--oc-indigo)',
+  success: 'var(--oc-green)',
+  warning: 'var(--oc-amber)',
+  destructive: 'var(--oc-red)',
+  accent: 'var(--oc-purple)',
+};
+
+export function StatCard({
+  title,
+  value,
   icon: Icon,
-  trend, 
+  trend,
   trendValue,
   variant = 'default',
-  className 
+  className,
 }: StatCardProps) {
-  const variantStyles = {
-    default: 'border-border',
-    success: 'border-success/30 bg-success/5',
-    warning: 'border-warning/30 bg-warning/5',
-    destructive: 'border-destructive/30 bg-destructive/5',
-    accent: 'border-accent/30 bg-accent/5',
-  };
-
-  const iconStyles = {
-    default: 'bg-secondary text-foreground',
-    success: 'bg-success/10 text-success',
-    warning: 'bg-warning/10 text-warning',
-    destructive: 'bg-destructive/10 text-destructive',
-    accent: 'bg-accent/10 text-accent',
-  };
-
+  const color = OC_COLORS[variant];
   const TrendIcon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : Minus;
 
   return (
-    <Card className={cn(
-      'transition-all duration-200 hover:shadow-card-hover',
-      variantStyles[variant],
-      className
-    )}>
-      <CardContent className="p-4 md:p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-muted-foreground truncate">{title}</p>
-            <p className="text-2xl md:text-3xl font-semibold mt-1 tracking-tight">{value}</p>
-            {trendValue && (
-              <div className={cn(
-                'flex items-center gap-1 mt-2 text-xs font-medium',
-                trend === 'up' && 'text-success',
-                trend === 'down' && 'text-destructive',
-                trend === 'neutral' && 'text-muted-foreground'
-              )}>
-                <TrendIcon className="h-3 w-3" />
-                <span>{trendValue}</span>
-              </div>
-            )}
-          </div>
-          {Icon && (
-            <div className={cn(
-              'flex-shrink-0 p-2.5 rounded-lg ml-3',
-              iconStyles[variant]
-            )}>
-              <Icon className="h-5 w-5" />
-            </div>
+    <div
+      className={cn(
+        'oc-stat-item rounded-xl p-3 text-center transition-all duration-200',
+        'border border-[var(--oc-border)] bg-[var(--oc-s2)] hover:bg-[var(--oc-s3)]',
+        className
+      )}
+    >
+      <div className="oc-stat-value" style={{ color }}>{value}</div>
+      <div className="oc-stat-label">{title}</div>
+      {trendValue && (
+        <div
+          className={cn(
+            'flex items-center justify-center gap-1 mt-1 text-[10px] font-medium',
+            trend === 'up' && 'text-[var(--oc-green)]',
+            trend === 'down' && 'text-[var(--oc-red)]',
+            trend === 'neutral' && 'text-[var(--oc-t3)]'
           )}
+        >
+          <TrendIcon className="h-3 w-3" />
+          <span>{trendValue}</span>
         </div>
-      </CardContent>
-    </Card>
+      )}
+      {Icon && (
+        <div className="flex justify-center mt-2 opacity-70">
+          <Icon className="h-4 w-4" style={{ color }} />
+        </div>
+      )}
+    </div>
   );
 }

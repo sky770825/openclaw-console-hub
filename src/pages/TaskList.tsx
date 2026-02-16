@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageContainer, SectionHeader } from '@/components/layout/PageContainer';
 import { SearchInput, FilterBar, type FilterConfig, EmptyState } from '@/components/common';
 import { StatusBadge, PriorityBadge } from '@/components/common/Badges';
@@ -25,6 +25,7 @@ import {
   Play, 
   Pause, 
   Edit, 
+  Trash2,
   MoreHorizontal,
   ChevronUp,
   ChevronDown,
@@ -32,9 +33,11 @@ import {
   User,
   ArrowUpDown
 } from 'lucide-react';
-import { getTasks, triggerRun } from '@/services/api';
+import { getTasks, api } from '@/services/api';
 import type { Task } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { pollRunStatus } from '@/lib/pollRunStatus';
 
 const filterConfigs: FilterConfig[] = [
   {
@@ -86,6 +89,8 @@ type SortDirection = 'asc' | 'desc';
 
 export default function TaskList() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromProject = (location.state as { projectId?: string; projectTitle?: string } | null) ?? {};
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
@@ -100,7 +105,7 @@ export default function TaskList() {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(task => {
+    const result = tasks.filter(task => {
       if (searchQuery && !task.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
@@ -182,6 +187,67 @@ export default function TaskList() {
     setSelectedIds(newSet);
   };
 
+  const handleRunNow = async (taskId: string) => {
+    try {
+      const run = await api.runNow(taskId);
+      getTasks().then(setTasks);
+      toast.success('已加入執行佇列，正在執行…');
+      pollRunStatus(run.id, () => getTasks().then(setTasks));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '執行失敗');
+    }
+  };
+
+  const handleBulkRun = async () => {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      try {
+        const run = await api.runNow(id);
+        pollRunStatus(run.id, () => getTasks().then(setTasks));
+      } catch {
+        toast.error(`任務 ${id} 執行失敗`);
+      }
+    }
+    setTasks(await getTasks());
+    setSelectedIds(new Set());
+    toast.success(`已將 ${ids.length} 項加入執行佇列`);
+  };
+
+  const handleBulkBlocked = async () => {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await api.updateTask(id, { status: 'blocked' });
+    }
+    setTasks(await getTasks());
+    setSelectedIds(new Set());
+    toast.success(`已將 ${ids.length} 項移至 Blocked`);
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    try {
+      await api.batchDeleteTasks(ids);
+      setTasks(await getTasks());
+      setSelectedIds(new Set());
+      toast.success(`已刪除 ${ids.length} 項`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '批次刪除失敗');
+    }
+  };
+
+  const handleToggleBlocked = async (task: Task) => {
+    try {
+      await api.updateTask(task.id, {
+        status: task.status === 'blocked' ? 'ready' : 'blocked',
+      });
+      setTasks(await getTasks());
+      toast.success(task.status === 'blocked' ? '已解除封鎖' : '已移至 Blocked');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '更新失敗');
+    }
+  };
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="h-3 w-3 opacity-50" />;
     return sortDirection === 'asc' 
@@ -193,7 +259,8 @@ export default function TaskList() {
     <PageContainer>
       <SectionHeader
         title="任務列表"
-        description="查看和管理所有自動化任務"
+        icon="📋"
+        description={fromProject.projectTitle ? `專案「${fromProject.projectTitle}」的任務與執行紀錄` : '查看和管理所有自動化任務'}
         action={
           <Button onClick={() => navigate('/tasks?new=true')}>
             <Plus className="h-4 w-4 mr-2" />
@@ -225,13 +292,17 @@ export default function TaskList() {
           <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
             清除
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleBulkRun}>
             <Play className="h-3 w-3 mr-1" />
             執行選取項目
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleBulkBlocked}>
             <Pause className="h-3 w-3 mr-1" />
             移至 Blocked
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-destructive hover:text-destructive">
+            <Trash2 className="h-3 w-3 mr-1" />
+            批次刪除
           </Button>
         </div>
       )}
@@ -327,15 +398,15 @@ export default function TaskList() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => triggerRun(task.id)}>
+                      <DropdownMenuItem onClick={() => handleRunNow(task.id)}>
                         <Play className="h-3 w-3 mr-2" />
                         立即執行
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/tasks/${task.id}`)}>
                         <Edit className="h-3 w-3 mr-2" />
                         編輯
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleBlocked(task)}>
                         {task.status === 'blocked' ? '解除封鎖' : '移至 Blocked'}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate(`/runs?task=${task.id}`)}>
@@ -391,7 +462,7 @@ export default function TaskList() {
                   className="flex-1"
                   onClick={(e) => {
                     e.stopPropagation();
-                    triggerRun(task.id);
+                    handleRunNow(task.id);
                   }}
                 >
                   <Play className="h-3 w-3 mr-1" />

@@ -3,18 +3,30 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
+    "ports:free": "bash scripts/free-ports.sh",
+    "dev:fresh": "bash scripts/free-ports.sh && sleep 1 && vite",
     "build": "vite build",
+    "start": "npm run build && cd server && npm run dev",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit": "npm audit --production",
+    "audit:fix": "npm audit fix",
+    "preview": "vite preview",
     "deploy": "npm run build && npx vercel --prod",
     "deploy:preview": "npm run build && npx vercel",
     "deploy:ci": "npm run build && npx vercel --prod --yes",
-    "deploy:ci:preview": "npm run build && npx vercel --yes"
+    "deploy:ci:preview": "npm run build && npx vercel --yes",
+    "ci": "npm run lint && npm run test && npm run build",
+    "backup:auto": "bash scripts/auto-project-backup.sh",
+    "backup:auto:30d": "BACKUP_RETENTION_DAYS=30 BACKUP_KEEP_COUNT=50 bash scripts/auto-project-backup.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -69,9 +81,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@rollup/rollup-darwin-arm64": "^4.57.1",
+    "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
-    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

@@ -1,122 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Openclaw Task Console Design System */
+/* OpenClaw Agent 版設計系統 — 與 openclaw-cursor.jsx 一致 */
 
 @layer base {
   :root {
-    /* Core colors - Light mode */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* OpenClaw 深色主題（主應用與 Agent 板一致） */
+    --oc-bg: #06060a;
+    --oc-s1: #0c0c12;
+    --oc-s2: #13131b;
+    --oc-s3: #1a1a24;
+    --oc-border: rgba(255, 255, 255, 0.05);
+    --oc-border-h: rgba(255, 255, 255, 0.1);
+    --oc-t1: #eeeef2;
+    --oc-t2: #9d9daa;
+    --oc-t3: #5c5c6a;
+    --oc-indigo: #818cf8;
+    --oc-indigo-d: #6366f1;
+    --oc-indigo-g: rgba(99, 102, 241, 0.1);
+    --oc-green: #34d399;
+    --oc-green-g: rgba(52, 211, 153, 0.08);
+    --oc-amber: #fbbf24;
+    --oc-amber-g: rgba(251, 191, 36, 0.08);
+    --oc-red: #f87171;
+    --oc-red-g: rgba(248, 113, 113, 0.08);
+    --oc-cyan: #22d3ee;
+    --oc-purple: #c084fc;
+    --oc-purple-g: rgba(192, 132, 252, 0.08);
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --background: 240 6% 4%;
+    --foreground: 240 5% 94%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --card: 240 6% 7%;
+    --card-foreground: 240 5% 94%;
 
-    /* Primary - Deep slate blue */
-    --primary: 222 47% 20%;
-    --primary-foreground: 210 40% 98%;
+    --popover: 240 6% 7%;
+    --popover-foreground: 240 5% 94%;
 
-    /* Secondary - Light slate */
-    --secondary: 215 25% 93%;
-    --secondary-foreground: 222 47% 20%;
+    --primary: 243 75% 66%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Muted */
-    --muted: 215 20% 94%;
-    --muted-foreground: 215 16% 47%;
+    --secondary: 240 6% 10%;
+    --secondary-foreground: 240 5% 94%;
 
-    /* Accent - Teal */
-    --accent: 173 58% 39%;
-    --accent-foreground: 0 0% 100%;
+    --muted: 240 6% 10%;
+    --muted-foreground: 240 4% 46%;
 
-    /* Status colors */
-    --success: 158 64% 42%;
+    --accent: 158 64% 52%;
+    --accent-foreground: 240 6% 4%;
+
+    --success: 158 64% 52%;
     --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
+
+    --warning: 43 96% 56%;
     --warning-foreground: 0 0% 0%;
-    
-    --destructive: 0 72% 51%;
+
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --info: 206 100% 50%;
+    --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 222 47% 20%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 243 75% 66%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 215 20% 75%;
-    --sidebar-primary: 173 58% 50%;
+    --sidebar-background: 240 6% 3%;
+    --sidebar-foreground: 240 4% 65%;
+    --sidebar-primary: 243 75% 66%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 18%;
-    --sidebar-ring: 173 58% 50%;
-    --sidebar-muted: 215 16% 47%;
+    --sidebar-accent: 240 6% 8%;
+    --sidebar-accent-foreground: 240 5% 94%;
+    --sidebar-border: 240 4% 12%;
+    --sidebar-ring: 243 75% 66%;
+    --sidebar-muted: 240 4% 46%;
 
-    /* Chart colors */
-    --chart-1: 173 58% 39%;
-    --chart-2: 222 47% 40%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 0 72% 51%;
-    --chart-5: 262 52% 47%;
+    --chart-1: 243 75% 66%;
+    --chart-2: 158 64% 52%;
+    --chart-3: 43 96% 56%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 270 91% 65%;
   }
 
   .dark {
-    --background: 224 47% 6%;
-    --foreground: 210 40% 96%;
-
-    --card: 224 47% 9%;
-    --card-foreground: 210 40% 96%;
-
-    --popover: 224 47% 9%;
-    --popover-foreground: 210 40% 96%;
-
-    --primary: 173 58% 50%;
-    --primary-foreground: 224 47% 6%;
-
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 210 40% 96%;
-
-    --muted: 222 47% 12%;
-    --muted-foreground: 215 20% 55%;
-
-    --accent: 173 58% 45%;
-    --accent-foreground: 0 0% 100%;
-
-    --success: 158 64% 45%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 55%;
-    --warning-foreground: 0 0% 0%;
-    
-    --destructive: 0 62% 45%;
-    --destructive-foreground: 0 0% 100%;
-
-    --info: 206 100% 55%;
-    --info-foreground: 0 0% 100%;
-
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
-    --ring: 173 58% 50%;
-
-    --sidebar-background: 224 47% 5%;
-    --sidebar-foreground: 215 20% 70%;
-    --sidebar-primary: 173 58% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 15%;
-    --sidebar-ring: 173 58% 50%;
-    --sidebar-muted: 215 16% 50%;
+    --background: 240 6% 4%;
+    --foreground: 240 5% 94%;
+    --card: 240 6% 7%;
+    --card-foreground: 240 5% 94%;
+    --primary: 243 75% 66%;
+    --secondary: 240 6% 10%;
+    --muted: 240 6% 10%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 158 64% 52%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
   }
 }
 
@@ -129,6 +111,71 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* OpenClaw 主內容區背景（與 Agent 板一致） */
+.oc-main {
+  background: var(--oc-bg);
+}
+
+.oc-card {
+  background: var(--oc-s2);
+  border: 1px solid var(--oc-border);
+  border-radius: 12px;
+}
+
+.oc-card:hover {
+  background: var(--oc-s3);
+}
+
+.oc-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.oc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.oc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.oc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.oc-stat-item {
+  background: var(--oc-s2);
+  border: 1px solid var(--oc-border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.oc-stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.oc-stat-label {
+  font-size: 10px;
+  color: var(--oc-t3);
+  margin-top: 2px;
+  font-weight: 500;
 }
 
 @layer utilities {
@@ -191,5 +238,14 @@
 
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes oc-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(2); }
+  }
+
+  .animate-oc-pulse {
+    animation: oc-pulse 2s ease-in-out infinite;
   }
 }

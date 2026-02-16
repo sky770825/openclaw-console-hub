@@ -71,6 +71,43 @@ export async function getDashboardStats() {
     return result;
   })();
 
+  // Agent Usage Stats = 依實際執行 agent 統計
+  const agentStats = (() => {
+    const stats: Record<string, { runs: number; success: number; failed: number }> = {};
+    
+    // 初始化所有可能的 agent
+    const agents = ['codex', 'cursor', 'openclaw', 'auto'];
+    agents.forEach(agent => {
+      stats[agent] = { runs: 0, success: 0, failed: 0 };
+    });
+
+    // 從執行記錄中統計
+    runs.forEach(run => {
+      const task = tasks.find(t => t.id === run.taskId);
+      const agent = run.agentType || task?.agent?.type || 'openclaw';
+      
+      if (!stats[agent]) {
+        stats[agent] = { runs: 0, success: 0, failed: 0 };
+      }
+      
+      stats[agent].runs++;
+      if (run.status === 'success') {
+        stats[agent].success++;
+      } else if (run.status === 'failed') {
+        stats[agent].failed++;
+      }
+    });
+    
+    return Object.entries(stats)
+      .filter(([_, data]) => data.runs > 0)
+      .map(([name, data]) => ({
+        name,
+        ...data,
+        successRate: data.runs > 0 ? Math.round((data.success / data.runs) * 100) : 0,
+      }))
+      .sort((a, b) => b.runs - a.runs);
+  })();
+
   return {
     todayRuns,
     successRate,
@@ -79,5 +116,6 @@ export async function getDashboardStats() {
     queueDepth,
     activeTasks,
     weeklyTrend,
+    agentStats,
   };
 }

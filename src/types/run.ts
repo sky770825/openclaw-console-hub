@@ -12,6 +12,8 @@ export interface RunStep {
   startedAt?: string;
   endedAt?: string;
   message?: string;
+  agentType?: 'cursor' | 'codex' | 'openclaw' | 'auto';
+  modelUsed?: string;
 }
 
 export interface RunError {
@@ -30,6 +32,15 @@ export interface Run {
   durationMs?: number | null;
   inputSummary?: Record<string, unknown> | string;
   outputSummary?: Record<string, unknown> | string;
+  tokenUsage?: {
+    input: number;
+    output: number;
+    total: number;
+    estimated: boolean;
+  };
+  costUsd?: number | null;
   steps: RunStep[];
   error?: RunError;
+  agentType?: 'cursor' | 'codex' | 'openclaw' | 'auto';
+  modelUsed?: string;
 }

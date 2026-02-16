@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Menu, Search, Plus, Play, User, Bell, Moon, Sun } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Menu, Search, Plus, Play, User, Bell, Moon, Sun, Lightbulb, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,10 +16,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { useSidebarContext } from './AppSidebar';
-import { mockUser, mockAlerts } from '@/data/mock';
+import { mockUser } from '@/data/mock';
+import { getAlerts } from '@/services/api';
 import { cn } from '@/lib/utils';
 
 export function Topbar() {
@@ -28,8 +29,13 @@ export function Topbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(false);
+  const [openAlerts, setOpenAlerts] = useState(0);
 
-  const openAlerts = mockAlerts.filter(a => a.status === 'open').length;
+  useEffect(() => {
+    getAlerts().then((list) => {
+      setOpenAlerts(list.filter((a) => a.status === 'open').length);
+    }).catch(() => {});
+  }, []);
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);
@@ -37,7 +43,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-14 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+    <header className="sticky top-0 z-40 h-14 border-b backdrop-blur supports-[backdrop-filter]:backdrop-blur-xl" style={{ borderColor: 'var(--oc-border)', background: 'rgba(6,6,10,0.9)' }}>
       <div className="flex items-center justify-between h-full px-4">
         {/* Left: Mobile menu + Search */}
         <div className="flex items-center gap-2">
@@ -58,6 +64,11 @@ export function Topbar() {
               placeholder="搜尋任務、執行紀錄、日誌..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  navigate(`/tasks?q=${encodeURIComponent(searchQuery.trim())}`);
+                }
+              }}
               className="pl-9 h-8 text-sm bg-secondary/50"
             />
           </div>
@@ -80,6 +91,8 @@ export function Topbar() {
             <Button
               size="sm"
               className="h-8 gap-1.5"
+              data-nav-action="new-task"
+              data-nav-path="/tasks?new=true"
               onClick={() => navigate('/tasks?new=true')}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -89,10 +102,24 @@ export function Topbar() {
               variant="outline"
               size="sm"
               className="h-8 gap-1.5"
+              data-nav-action="run-now"
+              data-nav-path="/runs"
               onClick={() => navigate('/runs')}
             >
               <Play className="h-3.5 w-3.5" />
               <span className="hidden lg:inline">立即執行</span>
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden xl:flex" asChild>
+              <Link to="/review">
+                <Lightbulb className="h-3.5 w-3.5" />
+                <span className="hidden xl:inline">發想審核</span>
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden xl:flex" asChild>
+              <Link to="/cursor">
+                <Bot className="h-3.5 w-3.5" />
+                <span className="hidden xl:inline">OpenClaw</span>
+              </Link>
             </Button>
           </div>
 
@@ -157,6 +184,7 @@ export function Topbar() {
         <DialogContent className="top-4 translate-y-0 sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="sr-only">搜尋</DialogTitle>
+            <DialogDescription className="sr-only">搜尋任務、執行紀錄、日誌</DialogDescription>
           </DialogHeader>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -165,6 +193,12 @@ export function Topbar() {
               placeholder="搜尋任務、執行紀錄、日誌..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  navigate(`/tasks?q=${encodeURIComponent(searchQuery.trim())}`);
+                  setSearchOpen(false);
+                }
+              }}
               className="pl-9"
               autoFocus
             />

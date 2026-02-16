@@ -1,0 +1,43 @@
+{
+  "name": "排程執行下一個任務",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "每5分鐘",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TASKBOARD_API || 'http://localhost:3001' }}/api/openclaw/run-next",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "執行下一個任務",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "每5分鐘": {
+      "main": [[{ "node": "執行下一個任務", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "description": "每5分鐘呼叫任務板 API 執行第一個 queued 任務" }
+}
