@@ -9,7 +9,6 @@ import type {
   EvolutionLogRow,
   OpenClawRunRow,
 } from './openclawSupabase.js';
-import { validateTaskForGate } from './taskCompliance.js';
 
 // openclaw status: queued | in_progress | done
 // 主應用 status: draft | ready | running | review | done | blocked
@@ -151,19 +150,6 @@ export function openClawTaskToTask(oc: OpenClawTask): Task {
     createdAt: now,
     fromReviewId: oc.fromR ?? undefined,
   };
-
-  // Guardrail: "queued" maps to "ready" in OC_TO_TASK_STATUS, but many legacy/placeholder
-  // tasks are missing the Batch A meta fields. Those should not enter ready pool.
-  if (t.status === 'ready') {
-    const gate = validateTaskForGate(t, 'ready');
-    if (!gate.ok) {
-      t.status = 'draft';
-      const tags = new Set([...(t.tags ?? [])]);
-      tags.add('noncompliant');
-      tags.add('needs-meta');
-      t.tags = Array.from(tags);
-    }
-  }
 
   return t;
 }

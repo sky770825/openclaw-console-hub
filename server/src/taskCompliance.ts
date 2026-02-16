@@ -34,17 +34,10 @@ function isNonEmptyArray(v: unknown): v is unknown[] {
 export function validateTaskForGate(task: Task, gate: TaskGate): { ok: true } | { ok: false; missing: string[] } {
   const missing: string[] = [];
 
-  // 進 ready 前就必填（不然就會一直生出「新任務」垃圾卡）
-  if (!isNonEmptyString(task.projectPath)) missing.push('projectPath');
+  // 精簡必填：只檢查 name、agent.type、runCommands（status 由 schema 保證）
+  if (!isNonEmptyString(task.name)) missing.push('name');
   if (!task.agent?.type) missing.push('agent.type');
-  if (!isNonEmptyString(task.riskLevel)) missing.push('riskLevel');
-  if (!isNonEmptyString(task.rollbackPlan)) missing.push('rollbackPlan');
-  if (!isNonEmptyArray(task.acceptanceCriteria)) missing.push('acceptanceCriteria');
-  if (!isNonEmptyArray(task.deliverables)) missing.push('deliverables');
   if (!isNonEmptyArray(task.runCommands)) missing.push('runCommands');
-  if (!isNonEmptyString(task.modelPolicy)) missing.push('modelPolicy');
-  if (!isNonEmptyString(task.executionProvider)) missing.push('executionProvider');
-  if (typeof task.allowPaid !== 'boolean') missing.push('allowPaid');
 
   if (gate === 'run') {
     if (!isNonEmptyString(task.runPath)) missing.push('runPath');

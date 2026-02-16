@@ -68,7 +68,7 @@ export function requiredAccessLevel(req: Request): AccessLevel {
   const method = req.method.toUpperCase();
 
   // 輕量 status/health 端點免 auth（方便儀表板載入）
-  if (method === 'GET' && /\/openclaw\/(autopilot\/status|board-health)\b/.test(path)) {
+  if (method === 'GET' && /\/openclaw\/board-health\b/.test(path)) {
     return 'none';
   }
 

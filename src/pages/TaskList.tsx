@@ -25,6 +25,7 @@ import {
   Play, 
   Pause, 
   Edit, 
+  Trash2,
   MoreHorizontal,
   ChevronUp,
   ChevronDown,
@@ -222,6 +223,19 @@ export default function TaskList() {
     toast.success(`已將 ${ids.length} 項移至 Blocked`);
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    try {
+      await api.batchDeleteTasks(ids);
+      setTasks(await getTasks());
+      setSelectedIds(new Set());
+      toast.success(`已刪除 ${ids.length} 項`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '批次刪除失敗');
+    }
+  };
+
   const handleToggleBlocked = async (task: Task) => {
     try {
       await api.updateTask(task.id, {
@@ -285,6 +299,10 @@ export default function TaskList() {
           <Button variant="outline" size="sm" onClick={handleBulkBlocked}>
             <Pause className="h-3 w-3 mr-1" />
             移至 Blocked
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-destructive hover:text-destructive">
+            <Trash2 className="h-3 w-3 mr-1" />
+            批次刪除
           </Button>
         </div>
       )}

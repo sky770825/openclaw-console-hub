@@ -142,6 +142,13 @@ export const apiClient = {
     return true;
   },
 
+  async batchDeleteTasks(ids: string[]): Promise<void> {
+    await request<void>('/api/tasks/batch', {
+      method: 'DELETE',
+      body: { ids },
+    });
+  },
+
   async createTask(
     task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Task> {
@@ -232,35 +239,6 @@ export const apiClient = {
   // ---- Board / Taxonomy ----
   async getDomains(): Promise<{ ok: boolean; domains: Array<{ slug: string; label: string; keywords: string[] }> }> {
     return request('/api/domains');
-  },
-
-  async getTaskCompliance(): Promise<{
-    ok: boolean;
-    total: number;
-    ready: number;
-    compliantReady: number;
-    noncompliantReady: number;
-    sample: { id: string; name: string; missing: string[] }[];
-  }> {
-    return request('/api/tasks/compliance');
-  },
-
-  async getTaskAudit(): Promise<{
-    ok: boolean;
-    total: number;
-    emptyOrUseless: {
-      count: number;
-      byCriteria: {
-        emptyName: number;
-        emptyOrTinyDesc: number;
-        placeholderTitle: number;
-        hasNeedsMeta: number;
-        readyButNoncompliant: number;
-      };
-      sample: { id: string; name: string; status: string; tags: string[] }[];
-    };
-  }> {
-    return request('/api/tasks/audit');
   },
 
   // ---- Telegram (Ops) ----
@@ -405,127 +383,6 @@ export const apiClient = {
     });
   },
 
-  // ---- Auto Task Generator ----
-  async getAutoTaskGeneratorStatus(): Promise<{
-    ok: boolean;
-    isRunning: boolean;
-    pollIntervalMs: number;
-    maxTasksPerCycle: number;
-    backlogTarget: number;
-    lastCycleAt: string | null;
-    nextCycleAt: string | null;
-    lastSummary: string | null;
-    generatedToday: number;
-    totalGenerated: number;
-    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    qualityGateEnabled: boolean;
-    qualityGate: {
-      minAcceptanceCriteria: number;
-      requireRollbackPlan: boolean;
-      minRollbackLength: number;
-      requireEvidenceLinks: boolean;
-    };
-  }> {
-    return request('/api/openclaw/auto-task-generator/status');
-  },
-
-  async startAutoTaskGenerator(
-    pollIntervalMs?: number,
-    maxTasksPerCycle?: number,
-    backlogTarget?: number,
-    sourceWeights?: Record<'internal-ops' | 'business-model' | 'external-radar', number>,
-    qualityGate?: {
-      minAcceptanceCriteria: number;
-      requireRollbackPlan: boolean;
-      minRollbackLength: number;
-      requireEvidenceLinks: boolean;
-    },
-    qualityGateEnabled?: boolean
-  ): Promise<{
-    ok: boolean;
-    message: string;
-    isRunning: boolean;
-    pollIntervalMs: number;
-    maxTasksPerCycle: number;
-    backlogTarget: number;
-    lastCycleAt: string | null;
-    nextCycleAt: string | null;
-    lastSummary: string | null;
-    generatedToday: number;
-    totalGenerated: number;
-    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    qualityGateEnabled: boolean;
-    qualityGate: {
-      minAcceptanceCriteria: number;
-      requireRollbackPlan: boolean;
-      minRollbackLength: number;
-      requireEvidenceLinks: boolean;
-    };
-    cycle?: { created: number; skipped: number };
-  }> {
-    return request('/api/openclaw/auto-task-generator/start', {
-      method: 'POST',
-      body: { pollIntervalMs, maxTasksPerCycle, backlogTarget, sourceWeights, qualityGate, qualityGateEnabled },
-    });
-  },
-
-  async stopAutoTaskGenerator(): Promise<{
-    ok: boolean;
-    message: string;
-    isRunning: boolean;
-    pollIntervalMs: number;
-    maxTasksPerCycle: number;
-    backlogTarget: number;
-    lastCycleAt: string | null;
-    nextCycleAt: string | null;
-    lastSummary: string | null;
-    generatedToday: number;
-    totalGenerated: number;
-    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    qualityGateEnabled: boolean;
-    qualityGate: {
-      minAcceptanceCriteria: number;
-      requireRollbackPlan: boolean;
-      minRollbackLength: number;
-      requireEvidenceLinks: boolean;
-    };
-  }> {
-    return request('/api/openclaw/auto-task-generator/stop', {
-      method: 'POST',
-    });
-  },
-
-  async runAutoTaskGeneratorNow(): Promise<{
-    ok: boolean;
-    message: string;
-    isRunning: boolean;
-    pollIntervalMs: number;
-    maxTasksPerCycle: number;
-    backlogTarget: number;
-    lastCycleAt: string | null;
-    nextCycleAt: string | null;
-    lastSummary: string | null;
-    generatedToday: number;
-    totalGenerated: number;
-    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    qualityGateEnabled: boolean;
-    qualityGate: {
-      minAcceptanceCriteria: number;
-      requireRollbackPlan: boolean;
-      minRollbackLength: number;
-      requireEvidenceLinks: boolean;
-    };
-    cycle?: { created: number; skipped: number };
-  }> {
-    return request('/api/openclaw/auto-task-generator/run-now', {
-      method: 'POST',
-    });
-  },
-
   // ---- System Schedules（系統排程）----
   async getSystemSchedules(): Promise<{
     ok: boolean;
@@ -560,48 +417,4 @@ export const apiClient = {
     return request(`/api/openclaw/reviews/${encodeURIComponent(reviewId)}/tasks`);
   },
 
-  // ---- Autopilot（自主循環模式）----
-  async getAutopilotStatus(): Promise<{
-    ok: boolean;
-    isRunning: boolean;
-    cycleCount: number;
-    intervalMinutes: number;
-    lastCycleAt: string | null;
-    nextCycleAt: string | null;
-    stats: {
-      tasksCompleted: number;
-      tasksFailed: number;
-    };
-  }> {
-    return request('/api/openclaw/autopilot/status');
-  },
-
-  async startAutopilot(intervalMinutes?: number): Promise<{
-    ok: boolean;
-    message: string;
-    isRunning: boolean;
-    intervalMinutes: number;
-  }> {
-    return request('/api/openclaw/autopilot/start', {
-      method: 'POST',
-      body: { intervalMinutes },
-    });
-  },
-
-  async stopAutopilot(): Promise<{
-    ok: boolean;
-    message: string;
-    isRunning: boolean;
-  }> {
-    return request('/api/openclaw/autopilot/stop', {
-      method: 'POST',
-    });
-  },
-
-  async getAutopilotLog(): Promise<{
-    ok: boolean;
-    logs: { timestamp: string; message: string; level: 'info' | 'warn' | 'error' }[];
-  }> {
-    return request('/api/openclaw/autopilot/log');
-  },
 };

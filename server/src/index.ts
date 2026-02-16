@@ -118,11 +118,6 @@ import {
 import { fileURLToPath } from 'url';
 import { DOMAINS, applyDomainTagging } from './domains.js';
 import { loadFeatures, patchFeatures, saveFeatures, type FeatureFlags } from './features.js';
-import {
-  getState as getAutoTaskGeneratorState,
-  patchState as patchAutoTaskGeneratorState,
-  runOneCycle as runAutoTaskGeneratorCycle,
-} from './auto-task-generator.js';
 
 runSeed();
 
@@ -459,82 +454,6 @@ app.use(express.json({ limit: '200kb' }));
 
 // 使用新的认证中间件
 app.use('/api', authMiddleware);
-
-// GET /api/tasks/audit、/compliance 必須在 router 之前註冊，否則會被 /:id 攔截
-app.get('/api/tasks/audit', async (_req, res) => {
-  try {
-    const list = hasSupabase()
-      ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
-      : [...tasks];
-    const { validateTaskForGate } = await import('./taskCompliance.js');
-    const emptyName = list.filter((t) => !t.name?.trim() || /^任務-|^placeholder|^test$|^TEMP|^tmp$/i.test(t.name.trim()));
-    const emptyDesc = list.filter((t) => !t.description?.trim() || t.description.trim().length < 30);
-    const placeholderTitle = list.filter((t) => /^任務-[a-zA-Z0-9_-]{4,}$/.test(t.name?.trim() ?? ''));
-    const hasNeedsMeta = list.filter((t) => (t.tags ?? []).some((tag) => /needs-meta|noncompliant/i.test(String(tag))));
-    const readyButNoncompliant = list.filter((t) => {
-      if (t.status !== 'ready') return false;
-      const gate = validateTaskForGate(t, 'ready');
-      return !gate.ok;
-    });
-    const combined = new Set([
-      ...emptyName.map((x) => x.id),
-      ...emptyDesc.map((x) => x.id),
-      ...placeholderTitle.map((x) => x.id),
-      ...hasNeedsMeta.map((x) => x.id),
-    ]);
-    const sample = list
-      .filter((t) => combined.has(t.id))
-      .slice(0, 15)
-      .map((t) => ({ id: t.id, name: t.name, status: t.status, tags: t.tags }));
-    res.json({
-      ok: true,
-      total: list.length,
-      emptyOrUseless: {
-        count: combined.size,
-        byCriteria: {
-          emptyName: emptyName.length,
-          emptyOrTinyDesc: emptyDesc.length,
-          placeholderTitle: placeholderTitle.length,
-          hasNeedsMeta: hasNeedsMeta.length,
-          readyButNoncompliant: readyButNoncompliant.length,
-        },
-        sample,
-      },
-    });
-  } catch (e) {
-    console.error('[Tasks] GET /audit error:', e);
-    res.status(500).json({ ok: false, message: 'Failed to compute audit' });
-  }
-});
-app.get('/api/tasks/compliance', async (_req, res) => {
-  try {
-    const list = hasSupabase()
-      ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
-      : [...tasks];
-    const { validateTaskForGate } = await import('./taskCompliance.js');
-    let ready = 0;
-    let compliantReady = 0;
-    const sample: { id: string; name: string; missing: string[] }[] = [];
-    for (const t of list) {
-      if (t.status !== 'ready') continue;
-      ready++;
-      const gate = validateTaskForGate(t, 'ready');
-      if (gate.ok) compliantReady++;
-      else if (sample.length < 10) sample.push({ id: t.id, name: t.name, missing: gate.missing });
-    }
-    res.json({
-      ok: true,
-      total: list.length,
-      ready,
-      compliantReady,
-      noncompliantReady: ready - compliantReady,
-      sample,
-    });
-  } catch (e) {
-    console.error('[Tasks] GET /compliance error:', e);
-    res.status(500).json({ ok: false, message: 'Failed to compute compliance' });
-  }
-});
 
 // 挂载路由模块
 app.use('/api/tasks', tasksRouter);
@@ -879,6 +798,25 @@ app.post('/api/tasks', validateBody(createTaskSchema), async (req, res) => {
   }
   tasks.unshift(newTask);
   res.status(201).json(newTask);
+});
+
+// 批次刪除（須在 /:id 之前註冊）
+app.delete('/api/tasks/batch', async (req, res) => {
+  const body = req.body as { ids?: string[] };
+  const ids = Array.isArray(body?.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : [];
+  if (ids.length === 0) {
+    return res.status(400).json({ message: 'ids must be a non-empty array' });
+  }
+  if (hasSupabase() && supabase) {
+    const { error } = await supabase.from('openclaw_tasks').delete().in('id', ids);
+    if (error) return res.status(500).json({ message: 'Failed to delete tasks', error: error.message });
+    return res.status(204).send();
+  }
+  for (const id of ids) {
+    const idx = tasks.findIndex((x) => x.id === id);
+    if (idx !== -1) tasks.splice(idx, 1);
+  }
+  res.status(204).send();
 });
 
 app.delete('/api/tasks/:id', async (req, res) => {
@@ -2716,119 +2654,10 @@ app.post('/api/openclaw/indexer/rebuild-md', async (_req, res) => {
   }
 });
 
-// ---- Autopilot (UI-facing; lightweight loop) ----
-type AutopilotLogLevel = 'info' | 'warn' | 'error';
-type AutopilotLogItem = { timestamp: string; level: AutopilotLogLevel; message: string };
-const autopilotState: {
-  isRunning: boolean;
-  intervalMinutes: number;
-  cycleCount: number;
-  lastCycleAt: string | null;
-  nextCycleAt: string | null;
-  stats: { tasksCompleted: number; tasksFailed: number };
-  logs: AutopilotLogItem[];
-  timer: NodeJS.Timeout | null;
-} = {
-  isRunning: false,
-  intervalMinutes: 5,
-  cycleCount: 0,
-  lastCycleAt: null,
-  nextCycleAt: null,
-  stats: { tasksCompleted: 0, tasksFailed: 0 },
-  logs: [],
-  timer: null,
-};
-
-function autopilotLog(level: AutopilotLogLevel, message: string) {
-  autopilotState.logs.push({ timestamp: new Date().toISOString(), level, message });
-  if (autopilotState.logs.length > 200) autopilotState.logs.splice(0, autopilotState.logs.length - 200);
-}
-
-function stopAutopilotLoop() {
-  if (autopilotState.timer) clearTimeout(autopilotState.timer);
-  autopilotState.timer = null;
-  autopilotState.isRunning = false;
-  autopilotState.nextCycleAt = null;
-}
-
-async function runAutopilotCycle() {
-  if (!autopilotState.isRunning) return;
-  autopilotState.cycleCount += 1;
-  autopilotState.lastCycleAt = new Date().toISOString();
-  autopilotLog('info', `cycle #${autopilotState.cycleCount} tick`);
-
-  // NOTE: This is intentionally minimal. Real execution is handled by AutoExecutor/cron scripts.
-  // We keep this for UI visibility + future wiring.
-
-  const next = new Date(Date.now() + autopilotState.intervalMinutes * 60_000).toISOString();
-  autopilotState.nextCycleAt = next;
-  autopilotState.timer = setTimeout(() => {
-    runAutopilotCycle().catch((e) => autopilotLog('error', `cycle error: ${String(e)}`));
-  }, autopilotState.intervalMinutes * 60_000);
-}
-
-app.get('/api/openclaw/autopilot/status', (_req, res) => {
-  try {
-    // 排除 timer（NodeJS.Timeout 無法 JSON 序列化）
-    const { timer: _t, ...safe } = autopilotState;
-    res.json({ ok: true, ...safe });
-  } catch (e) {
-    console.error('[Autopilot] GET /status error:', e);
-    res.status(500).json({ ok: false, message: 'Failed to get autopilot status' });
-  }
-});
-
-app.get('/api/openclaw/autopilot/log', (_req, res) => {
-  res.json({ ok: true, logs: autopilotState.logs });
-});
-
-app.post('/api/openclaw/autopilot/start', (req, res) => {
-  const intervalMinutesRaw = (req.body as { intervalMinutes?: unknown } | undefined)?.intervalMinutes;
-  const intervalMinutes =
-    typeof intervalMinutesRaw === 'number' && Number.isFinite(intervalMinutesRaw)
-      ? Math.max(1, Math.round(intervalMinutesRaw))
-      : autopilotState.intervalMinutes;
-  autopilotState.intervalMinutes = intervalMinutes;
-  if (!autopilotState.isRunning) {
-    autopilotState.isRunning = true;
-    autopilotLog('info', `autopilot started (interval=${intervalMinutes}m)`);
-    autopilotState.nextCycleAt = new Date(Date.now() + intervalMinutes * 60_000).toISOString();
-    autopilotState.timer = setTimeout(() => {
-      runAutopilotCycle().catch((e) => autopilotLog('error', `cycle error: ${String(e)}`));
-    }, intervalMinutes * 60_000);
-  } else {
-    autopilotLog('info', `autopilot interval updated (interval=${intervalMinutes}m)`);
-    stopAutopilotLoop();
-    autopilotState.isRunning = true;
-    autopilotState.nextCycleAt = new Date(Date.now() + intervalMinutes * 60_000).toISOString();
-    autopilotState.timer = setTimeout(() => {
-      runAutopilotCycle().catch((e) => autopilotLog('error', `cycle error: ${String(e)}`));
-    }, intervalMinutes * 60_000);
-  }
-  res.json({
-    ok: true,
-    message: 'autopilot started',
-    isRunning: autopilotState.isRunning,
-    intervalMinutes: autopilotState.intervalMinutes,
-  });
-});
-
-app.post('/api/openclaw/autopilot/stop', (_req, res) => {
-  stopAutopilotLoop();
-  autopilotLog('info', 'autopilot stopped');
-  res.json({ ok: true, message: 'autopilot stopped', isRunning: autopilotState.isRunning });
-});
-
 // ---- Emergency Stop (ops) ----
 // Dashboard button calls this to stop any autonomous loops immediately.
 app.post('/api/emergency/stop-all', (_req, res) => {
   try {
-    // Stop UI autopilot loop.
-    stopAutopilotLoop();
-
-    // Stop Auto Task Generator loop.
-    stopAutoTaskGeneratorLoop();
-
     // Stop AutoExecutor loop.
     autoExecutorState.isRunning = false;
     autoExecutorState.nextPollAt = null;
@@ -2842,8 +2671,6 @@ app.post('/api/emergency/stop-all', (_req, res) => {
       ok: true,
       message: 'stopped',
       stopped: {
-        autopilot: true,
-        autoTaskGenerator: true,
         autoExecutor: true,
       },
     });
@@ -3403,139 +3230,6 @@ app.post('/api/openclaw/auto-executor/stop', (_req, res) => {
   });
 });
 
-// ==================== Auto Task Generator（自動補全任務排程）====================
-let autoTaskGeneratorTimer: NodeJS.Timeout | null = null;
-
-function stopAutoTaskGeneratorLoop() {
-  if (autoTaskGeneratorTimer) clearTimeout(autoTaskGeneratorTimer);
-  autoTaskGeneratorTimer = null;
-  patchAutoTaskGeneratorState({ isRunning: false, nextCycleAt: null });
-}
-
-async function scheduleNextAutoTaskGeneratorCycle() {
-  const st = getAutoTaskGeneratorState();
-  if (!st.isRunning) return;
-  const nextMs = st.pollIntervalMs;
-  const nextAt = new Date(Date.now() + nextMs).toISOString();
-  patchAutoTaskGeneratorState({ nextCycleAt: nextAt });
-  autoTaskGeneratorTimer = setTimeout(async () => {
-    try {
-      await runAutoTaskGeneratorCycle();
-    } catch (e) {
-      console.error('[AutoTaskGenerator] cycle error:', e);
-    }
-    scheduleNextAutoTaskGeneratorCycle();
-  }, nextMs);
-}
-
-app.get('/api/openclaw/auto-task-generator/status', (_req, res) => {
-  const st = getAutoTaskGeneratorState();
-  res.json({ ok: true, ...st });
-});
-
-app.post('/api/openclaw/auto-task-generator/start', (req, res) => {
-  const body = (req.body || {}) as {
-    pollIntervalMs?: number;
-    maxTasksPerCycle?: number;
-    backlogTarget?: number;
-    sourceWeights?: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    qualityGate?: {
-      minAcceptanceCriteria?: number;
-      requireRollbackPlan?: boolean;
-      minRollbackLength?: number;
-      requireEvidenceLinks?: boolean;
-    };
-    qualityGateEnabled?: boolean;
-  };
-  const pollIntervalMs = typeof body.pollIntervalMs === 'number' && body.pollIntervalMs >= 60_000
-    ? body.pollIntervalMs
-    : 15 * 60 * 1000;
-  const maxTasksPerCycle = typeof body.maxTasksPerCycle === 'number' && body.maxTasksPerCycle >= 1
-    ? Math.min(body.maxTasksPerCycle, 10)
-    : 3;
-  const backlogTarget = typeof body.backlogTarget === 'number' && body.backlogTarget >= 0
-    ? body.backlogTarget
-    : 20;
-  const sourceWeights = body.sourceWeights && typeof body.sourceWeights === 'object'
-    ? {
-        'internal-ops': Math.max(0, Number(body.sourceWeights['internal-ops']) || 35),
-        'business-model': Math.max(0, Number(body.sourceWeights['business-model']) || 50),
-        'external-radar': Math.max(0, Number(body.sourceWeights['external-radar']) || 15),
-      }
-    : undefined;
-	  const qualityGate = body.qualityGate && typeof body.qualityGate === 'object'
-	    ? {
-	        minAcceptanceCriteria: (() => {
-	          const n = Number(body.qualityGate.minAcceptanceCriteria);
-	          return Math.max(1, Number.isFinite(n) ? n : 3);
-	        })(),
-	        requireRollbackPlan:
-	          typeof body.qualityGate.requireRollbackPlan === 'boolean'
-	            ? body.qualityGate.requireRollbackPlan
-	            : true,
-	        minRollbackLength: (() => {
-	          const n = Number(body.qualityGate.minRollbackLength);
-	          return Math.max(0, Number.isFinite(n) ? n : 20);
-	        })(),
-	        requireEvidenceLinks:
-	          typeof body.qualityGate.requireEvidenceLinks === 'boolean'
-	            ? body.qualityGate.requireEvidenceLinks
-	            : true,
-	      }
-	    : undefined;
-  const qualityGateEnabled = body.qualityGateEnabled ?? true;
-
-  const patch: Parameters<typeof patchAutoTaskGeneratorState>[0] = {
-    isRunning: true,
-    pollIntervalMs,
-    maxTasksPerCycle,
-    backlogTarget,
-    qualityGateEnabled,
-  };
-  if (sourceWeights) patch.sourceWeights = sourceWeights;
-  if (qualityGate) patch.qualityGate = qualityGate;
-
-  patchAutoTaskGeneratorState(patch);
-  stopAutoTaskGeneratorLoop();
-  scheduleNextAutoTaskGeneratorCycle();
-  const st = getAutoTaskGeneratorState();
-  res.json({
-    ok: true,
-    message: '自動補任務排程已啟動',
-    ...st,
-  });
-});
-
-app.post('/api/openclaw/auto-task-generator/stop', (_req, res) => {
-  stopAutoTaskGeneratorLoop();
-  const st = getAutoTaskGeneratorState();
-  res.json({
-    ok: true,
-    message: '自動補任務排程已停止',
-    ...st,
-  });
-});
-
-app.post('/api/openclaw/auto-task-generator/run-now', async (_req, res) => {
-  try {
-    const result = await runAutoTaskGeneratorCycle();
-    const st = getAutoTaskGeneratorState();
-    res.json({
-      ok: true,
-      message: `立即補任務完成：建立 ${result.created} 筆，略過 ${result.skipped} 筆`,
-      ...st,
-      cycle: result,
-    });
-  } catch (e) {
-    console.error('[AutoTaskGenerator] run-now error:', e);
-    res.status(500).json({
-      ok: false,
-      message: String(e),
-      ...getAutoTaskGeneratorState(),
-    });
-  }
-});
-
 // ==================== System Schedules（系統排程）====================
 // 讀取 OpenClaw 的 cron job 列表，唯讀顯示於任務板
 
@@ -3858,7 +3552,6 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
   console.log(`  GET  /api/alerts, PATCH /api/alerts/:id`);
   console.log(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
-  console.log(`  AutoTaskGenerator: GET/POST /api/openclaw/auto-task-generator/status|start|stop|run-now`);
   console.log(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
   if (hasSupabase()) {
     console.log(`  [Supabase] 已連線 (openclaw_tasks / projects 等將正常運作)`);
@@ -3879,11 +3572,6 @@ server.listen(PORT, '127.0.0.1', () => {
   const disk = loadAutoExecutorDiskState();
   if (disk.enabled) {
     startAutoExecutor(disk.pollIntervalMs, disk.maxTasksPerMinute);
-  }
-  // Auto Task Generator bootstrap (restore loop if was running).
-  const genSt = getAutoTaskGeneratorState();
-  if (genSt.isRunning) {
-    scheduleNextAutoTaskGeneratorCycle();
   }
   setInterval(() => {
     const st = loadAutoExecutorDiskState();

@@ -33,6 +33,7 @@ import {
   Wrench,
   Copy,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,12 +72,9 @@ import {
   api,
   createTask,
   deleteTask,
+  batchDeleteTasks,
   forceRefreshTasks,
   getSystemSchedules,
-  getAutoTaskGeneratorStatus,
-  startAutoTaskGenerator,
-  stopAutoTaskGenerator,
-  runAutoTaskGeneratorNow,
   getAutoExecutorStatus,
   reconcileMaintenance,
   getTaskIndexerStatus,
@@ -1888,40 +1886,7 @@ export default function TaskBoard() {
   const [systemSchedules, setSystemSchedules] = useState<SystemSchedule[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [showSchedules, setShowSchedules] = useState(false);
-  const [generatorStatus, setGeneratorStatus] = useState<{
-    ok: boolean;
-    isRunning: boolean;
-    pollIntervalMs: number;
-    maxTasksPerCycle: number;
-    backlogTarget: number;
-    lastCycleAt: string | null;
-    nextCycleAt: string | null;
-    lastSummary: string | null;
-    generatedToday: number;
-    totalGenerated: number;
-    perSource: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    sourceWeights: Record<'internal-ops' | 'business-model' | 'external-radar', number>;
-    qualityGateEnabled: boolean;
-    qualityGate: {
-      minAcceptanceCriteria: number;
-      requireRollbackPlan: boolean;
-      minRollbackLength: number;
-      requireEvidenceLinks: boolean;
-    };
-  } | null>(null);
-  const [generatorSubmitting, setGeneratorSubmitting] = useState(false);
-  const [generatorIntervalMinutes, setGeneratorIntervalMinutes] = useState('15');
-  const [generatorMaxPerCycle, setGeneratorMaxPerCycle] = useState('3');
-  const [generatorBacklogTarget, setGeneratorBacklogTarget] = useState('20');
-  const [generatorWeightInternal, setGeneratorWeightInternal] = useState('50');
-  const [generatorWeightBusiness, setGeneratorWeightBusiness] = useState('30');
-  const [generatorWeightExternal, setGeneratorWeightExternal] = useState('20');
-  const [generatorQualityGateEnabled, setGeneratorQualityGateEnabled] = useState(true);
-  const [generatorMinAcceptance, setGeneratorMinAcceptance] = useState('2');
-  const [generatorRequireRollback, setGeneratorRequireRollback] = useState(true);
-  const [generatorMinRollbackLen, setGeneratorMinRollbackLen] = useState('10');
-  const [generatorRequireEvidence, setGeneratorRequireEvidence] = useState(true);
-  const generatorFormInitializedRef = useRef(false);
+  const [kanbanSelectedIds, setKanbanSelectedIds] = useState<Set<string>>(new Set());
   
   const refreshTasks = useCallback((force = false) => {
     setTasksLoading(true);
@@ -2059,44 +2024,6 @@ export default function TaskBoard() {
     };
   }, [showSchedules]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadGeneratorStatus = async () => {
-      try {
-        const status = await getAutoTaskGeneratorStatus();
-        if (!cancelled) {
-          setGeneratorStatus(status);
-          // 表單值只在首次載入同步，避免每 15 秒輪詢覆蓋輸入造成畫面閃動
-          if (!generatorFormInitializedRef.current) {
-            setGeneratorIntervalMinutes(String(Math.max(1, Math.round(status.pollIntervalMs / 60000))));
-            setGeneratorMaxPerCycle(String(status.maxTasksPerCycle));
-            setGeneratorBacklogTarget(String(status.backlogTarget));
-            setGeneratorWeightInternal(String(status.sourceWeights['internal-ops']));
-            setGeneratorWeightBusiness(String(status.sourceWeights['business-model']));
-            setGeneratorWeightExternal(String(status.sourceWeights['external-radar']));
-            setGeneratorQualityGateEnabled(status.qualityGateEnabled);
-            setGeneratorMinAcceptance(String(status.qualityGate.minAcceptanceCriteria));
-            setGeneratorRequireRollback(status.qualityGate.requireRollbackPlan);
-            setGeneratorMinRollbackLen(String(status.qualityGate.minRollbackLength));
-            setGeneratorRequireEvidence(status.qualityGate.requireEvidenceLinks);
-            generatorFormInitializedRef.current = true;
-          }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error('[TaskBoard] 載入自動補任務狀態失敗:', error);
-        }
-      }
-    };
-
-    loadGeneratorStatus();
-    const timer = setInterval(loadGeneratorStatus, 15000);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, []);
-
   // URL taskId → open drawer
   useEffect(() => {
     if (!taskIdParam) return;
@@ -2146,121 +2073,31 @@ export default function TaskBoard() {
     }
   };
 
-  const handleStartGenerator = async () => {
-    const minutes = Number(generatorIntervalMinutes);
-    const maxPerCycle = Number(generatorMaxPerCycle);
-    const backlogTarget = Number(generatorBacklogTarget);
-    const weightInternal = Number(generatorWeightInternal);
-    const weightBusiness = Number(generatorWeightBusiness);
-    const weightExternal = Number(generatorWeightExternal);
-    const minAcceptance = Number(generatorMinAcceptance);
-    const minRollbackLen = Number(generatorMinRollbackLen);
-    if (!Number.isFinite(minutes) || minutes < 1) {
-      toast.error('輪詢分鐘需 >= 1');
-      return;
-    }
-    if (!Number.isFinite(maxPerCycle) || maxPerCycle < 1 || maxPerCycle > 20) {
-      toast.error('每輪任務數需介於 1~20');
-      return;
-    }
-    if (!Number.isFinite(backlogTarget) || backlogTarget < 5 || backlogTarget > 200) {
-      toast.error('Backlog 目標需介於 5~200');
-      return;
-    }
-    if (
-      !Number.isFinite(weightInternal) ||
-      !Number.isFinite(weightBusiness) ||
-      !Number.isFinite(weightExternal) ||
-      weightInternal < 0 ||
-      weightBusiness < 0 ||
-      weightExternal < 0
-    ) {
-      toast.error('來源權重需為 >= 0 的數字');
-      return;
-    }
-    if (weightInternal + weightBusiness + weightExternal <= 0) {
-      toast.error('來源權重總和需大於 0');
-      return;
-    }
-    if (!Number.isFinite(minAcceptance) || minAcceptance < 1 || minAcceptance > 10) {
-      toast.error('最少驗收條件需介於 1~10');
-      return;
-    }
-    if (!Number.isFinite(minRollbackLen) || minRollbackLen < 0 || minRollbackLen > 500) {
-      toast.error('最少回滾字數需介於 0~500');
-      return;
-    }
-    setGeneratorSubmitting(true);
+  const handleKanbanBulkDelete = async () => {
+    const ids = Array.from(kanbanSelectedIds);
+    if (ids.length === 0) return;
     try {
-      const status = await startAutoTaskGenerator(
-        minutes * 60 * 1000,
-        maxPerCycle,
-        backlogTarget,
-        {
-          'internal-ops': weightInternal,
-          'business-model': weightBusiness,
-          'external-radar': weightExternal,
-        },
-        {
-          minAcceptanceCriteria: minAcceptance,
-          requireRollbackPlan: generatorRequireRollback,
-          minRollbackLength: minRollbackLen,
-          requireEvidenceLinks: generatorRequireEvidence,
-        },
-        generatorQualityGateEnabled
-      );
-      setGeneratorStatus(status);
+      await batchDeleteTasks(ids);
+      setKanbanSelectedIds(new Set());
       refreshTasks(true);
-      toast.success(`自動補任務已啟動（本輪新增 ${status.cycle?.created ?? 0}）`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '啟動失敗');
-    } finally {
-      setGeneratorSubmitting(false);
+      toast.success(`已刪除 ${ids.length} 項`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '批次刪除失敗');
     }
   };
 
-  const applyWeightTemplate = (preset: 'stable' | 'business' | 'explore') => {
-    if (preset === 'stable') {
-      setGeneratorWeightInternal('60');
-      setGeneratorWeightBusiness('25');
-      setGeneratorWeightExternal('15');
-      return;
-    }
-    if (preset === 'business') {
-      setGeneratorWeightInternal('35');
-      setGeneratorWeightBusiness('50');
-      setGeneratorWeightExternal('15');
-      return;
-    }
-    setGeneratorWeightInternal('30');
-    setGeneratorWeightBusiness('20');
-    setGeneratorWeightExternal('50');
-  };
-
-  const handleStopGenerator = async () => {
-    setGeneratorSubmitting(true);
+  const handleKanbanBulkMoveStatus = async (status: TaskStatus) => {
+    const ids = Array.from(kanbanSelectedIds);
+    if (ids.length === 0) return;
     try {
-      const status = await stopAutoTaskGenerator();
-      setGeneratorStatus(status);
-      toast.success('自動補任務已停止');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '停止失敗');
-    } finally {
-      setGeneratorSubmitting(false);
-    }
-  };
-
-  const handleRunGeneratorNow = async () => {
-    setGeneratorSubmitting(true);
-    try {
-      const status = await runAutoTaskGeneratorNow();
-      setGeneratorStatus(status);
+      for (const id of ids) {
+        await api.updateTask(id, { status });
+      }
+      setKanbanSelectedIds(new Set());
       refreshTasks(true);
-      toast.success(`已補任務：新增 ${status.cycle?.created ?? 0}，略過 ${status.cycle?.skipped ?? 0}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '執行失敗');
-    } finally {
-      setGeneratorSubmitting(false);
+      toast.success(`已將 ${ids.length} 項移至 ${KANBAN_COLUMNS.find((c) => c.status === status)?.label ?? status}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '批次更新失敗');
     }
   };
 
@@ -2976,151 +2813,6 @@ export default function TaskBoard() {
           className="py-16"
         />
       )}
-
-      <Card className="mt-8">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="font-medium">自動補全任務排程</h3>
-              <p className="text-xs text-muted-foreground">自動從內部優化、商業模式、外部情報補齊任務池</p>
-            </div>
-            <span
-              className={cn(
-                'text-xs px-2 py-1 rounded',
-                generatorStatus?.isRunning ? 'bg-green-100 text-green-700' : 'bg-secondary text-muted-foreground'
-              )}
-            >
-              {generatorStatus?.isRunning ? '運行中' : '已停止'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="grid gap-1">
-              <Label className="text-xs">輪詢（分鐘）</Label>
-              <Input value={generatorIntervalMinutes} onChange={(e) => setGeneratorIntervalMinutes(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">每輪最多新增</Label>
-              <Input value={generatorMaxPerCycle} onChange={(e) => setGeneratorMaxPerCycle(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">Ready 目標</Label>
-              <Input value={generatorBacklogTarget} onChange={(e) => setGeneratorBacklogTarget(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="grid gap-1">
-              <Label className="text-xs">權重：內部優化</Label>
-              <Input value={generatorWeightInternal} onChange={(e) => setGeneratorWeightInternal(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">權重：商業模式</Label>
-              <Input value={generatorWeightBusiness} onChange={(e) => setGeneratorWeightBusiness(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">權重：外部情報</Label>
-              <Input value={generatorWeightExternal} onChange={(e) => setGeneratorWeightExternal(e.target.value)} />
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => applyWeightTemplate('stable')}>
-              穩定優先 60/25/15
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => applyWeightTemplate('business')}>
-              商業優先 35/50/15
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => applyWeightTemplate('explore')}>
-              探索優先 30/20/50
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="grid gap-1">
-              <Label className="text-xs">品質閘門</Label>
-              <Select
-                value={generatorQualityGateEnabled ? 'on' : 'off'}
-                onValueChange={(v) => setGeneratorQualityGateEnabled(v === 'on')}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="on">啟用</SelectItem>
-                  <SelectItem value="off">停用</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">最少驗收條件</Label>
-              <Input value={generatorMinAcceptance} onChange={(e) => setGeneratorMinAcceptance(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">要求回滾計畫</Label>
-              <Select
-                value={generatorRequireRollback ? 'yes' : 'no'}
-                onValueChange={(v) => setGeneratorRequireRollback(v === 'yes')}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">是</SelectItem>
-                  <SelectItem value="no">否</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">最少回滾字數</Label>
-              <Input value={generatorMinRollbackLen} onChange={(e) => setGeneratorMinRollbackLen(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">要求證據連結</Label>
-              <Select
-                value={generatorRequireEvidence ? 'yes' : 'no'}
-                onValueChange={(v) => setGeneratorRequireEvidence(v === 'yes')}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">是</SelectItem>
-                  <SelectItem value="no">否</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={handleStartGenerator} disabled={generatorSubmitting}>
-              啟動排程
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleStopGenerator} disabled={generatorSubmitting}>
-              停止
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleRunGeneratorNow} disabled={generatorSubmitting}>
-              立即補任務一次
-            </Button>
-          </div>
-
-          {generatorStatus && (
-            <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-              <span>今日新增：{generatorStatus.generatedToday}</span>
-              <span>累計新增：{generatorStatus.totalGenerated}</span>
-              <span>內部：{generatorStatus.perSource['internal-ops']}</span>
-              <span>商業：{generatorStatus.perSource['business-model']}</span>
-              <span>外部：{generatorStatus.perSource['external-radar']}</span>
-              <span>
-                權重：{generatorStatus.sourceWeights['internal-ops']}/
-                {generatorStatus.sourceWeights['business-model']}/
-                {generatorStatus.sourceWeights['external-radar']}
-              </span>
-              <span>品質閘門：{generatorStatus.qualityGateEnabled ? '開啟' : '關閉'}</span>
-              <span>
-                閘門規則：驗收≥{generatorStatus.qualityGate.minAcceptanceCriteria} /
-                回滾{generatorStatus.qualityGate.requireRollbackPlan ? `≥${generatorStatus.qualityGate.minRollbackLength}字` : '不要求'} /
-                證據{generatorStatus.qualityGate.requireEvidenceLinks ? '必填' : '可選'}
-              </span>
-              {generatorStatus.nextCycleAt && <span>下次：{formatDate(generatorStatus.nextCycleAt)}</span>}
-              {generatorStatus.lastSummary && <span className="basis-full truncate">摘要：{generatorStatus.lastSummary}</span>}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* 系統排程區塊 */}
       <Card className="mt-8 border-dashed">
