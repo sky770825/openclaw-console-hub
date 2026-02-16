@@ -16,7 +16,7 @@
 
 | 變數 | 值 |
 |------|-----|
-| `TASKBOARD_API` | `http://localhost:3001` 或任務板 API 網址 |
+| `TASKBOARD_API` | `http://localhost:3011` 或任務板 API 網址 |
 
 本機開發時，n8n（Zeabur）需能存取任務板 API。若任務板在 localhost，可用 ngrok 暴露。
 
