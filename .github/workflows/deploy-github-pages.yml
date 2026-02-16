@@ -23,7 +23,7 @@ jobs:
           node-version: "20"
           cache: "npm"
       - name: Install
-        run: npm install --no-optional --no-audit
+        run: npm ci --omit=optional
       # 依 repo 名稱設 base，例如 https://<user>.github.io/<repo>/
       - name: Build
         run: npm run build
