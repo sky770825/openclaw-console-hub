@@ -460,6 +460,82 @@ app.use(express.json({ limit: '200kb' }));
 // 使用新的认证中间件
 app.use('/api', authMiddleware);
 
+// GET /api/tasks/audit、/compliance 必須在 router 之前註冊，否則會被 /:id 攔截
+app.get('/api/tasks/audit', async (_req, res) => {
+  try {
+    const list = hasSupabase()
+      ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
+      : [...tasks];
+    const { validateTaskForGate } = await import('./taskCompliance.js');
+    const emptyName = list.filter((t) => !t.name?.trim() || /^任務-|^placeholder|^test$|^TEMP|^tmp$/i.test(t.name.trim()));
+    const emptyDesc = list.filter((t) => !t.description?.trim() || t.description.trim().length < 30);
+    const placeholderTitle = list.filter((t) => /^任務-[a-zA-Z0-9_-]{4,}$/.test(t.name?.trim() ?? ''));
+    const hasNeedsMeta = list.filter((t) => (t.tags ?? []).some((tag) => /needs-meta|noncompliant/i.test(String(tag))));
+    const readyButNoncompliant = list.filter((t) => {
+      if (t.status !== 'ready') return false;
+      const gate = validateTaskForGate(t, 'ready');
+      return !gate.ok;
+    });
+    const combined = new Set([
+      ...emptyName.map((x) => x.id),
+      ...emptyDesc.map((x) => x.id),
+      ...placeholderTitle.map((x) => x.id),
+      ...hasNeedsMeta.map((x) => x.id),
+    ]);
+    const sample = list
+      .filter((t) => combined.has(t.id))
+      .slice(0, 15)
+      .map((t) => ({ id: t.id, name: t.name, status: t.status, tags: t.tags }));
+    res.json({
+      ok: true,
+      total: list.length,
+      emptyOrUseless: {
+        count: combined.size,
+        byCriteria: {
+          emptyName: emptyName.length,
+          emptyOrTinyDesc: emptyDesc.length,
+          placeholderTitle: placeholderTitle.length,
+          hasNeedsMeta: hasNeedsMeta.length,
+          readyButNoncompliant: readyButNoncompliant.length,
+        },
+        sample,
+      },
+    });
+  } catch (e) {
+    console.error('[Tasks] GET /audit error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to compute audit' });
+  }
+});
+app.get('/api/tasks/compliance', async (_req, res) => {
+  try {
+    const list = hasSupabase()
+      ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
+      : [...tasks];
+    const { validateTaskForGate } = await import('./taskCompliance.js');
+    let ready = 0;
+    let compliantReady = 0;
+    const sample: { id: string; name: string; missing: string[] }[] = [];
+    for (const t of list) {
+      if (t.status !== 'ready') continue;
+      ready++;
+      const gate = validateTaskForGate(t, 'ready');
+      if (gate.ok) compliantReady++;
+      else if (sample.length < 10) sample.push({ id: t.id, name: t.name, missing: gate.missing });
+    }
+    res.json({
+      ok: true,
+      total: list.length,
+      ready,
+      compliantReady,
+      noncompliantReady: ready - compliantReady,
+      sample,
+    });
+  } catch (e) {
+    console.error('[Tasks] GET /compliance error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to compute compliance' });
+  }
+});
+
 // 挂载路由模块
 app.use('/api/tasks', tasksRouter);
 
@@ -490,82 +566,7 @@ app.patch('/api/features', (req, res) => {
   res.json({ ok: true, features: featureFlags });
 });
 
-// 任務空/無用審計：統計有多少空任務或無用任務
-app.get('/api/tasks/audit', async (_req, res) => {
-  const list = hasSupabase()
-    ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
-    : [...tasks];
-
-  const emptyName = list.filter((t) => !t.name?.trim() || /^任務-|^placeholder|^test$|^TEMP|^tmp$/i.test(t.name.trim()));
-  const emptyDesc = list.filter((t) => !t.description?.trim() || t.description.trim().length < 30);
-  const placeholderTitle = list.filter((t) => /^任務-[a-zA-Z0-9_-]{4,}$/.test(t.name?.trim() ?? ''));
-  const hasNeedsMeta = list.filter((t) => (t.tags ?? []).some((tag) => /needs-meta|noncompliant/i.test(String(tag))));
-  const readyButNoncompliant = list.filter((t) => {
-    if (t.status !== 'ready') return false;
-    const gate = validateTaskForGate(t, 'ready');
-    return !gate.ok;
-  });
-  const combined = new Set([
-    ...emptyName.map((x) => x.id),
-    ...emptyDesc.map((x) => x.id),
-    ...placeholderTitle.map((x) => x.id),
-    ...hasNeedsMeta.map((x) => x.id),
-  ]);
-  const emptyOrUselessCount = combined.size;
-  const sample = list
-    .filter((t) => combined.has(t.id))
-    .slice(0, 15)
-    .map((t) => ({ id: t.id, name: t.name, status: t.status, tags: t.tags }));
-
-  res.json({
-    ok: true,
-    total: list.length,
-    emptyOrUseless: {
-      count: emptyOrUselessCount,
-      byCriteria: {
-        emptyName: emptyName.length,
-        emptyOrTinyDesc: emptyDesc.length,
-        placeholderTitle: placeholderTitle.length,
-        hasNeedsMeta: hasNeedsMeta.length,
-        readyButNoncompliant: readyButNoncompliant.length,
-      },
-      sample,
-    },
-  });
-});
-
-// 任務合規檢查（Batch A）：幫小蔡快速看哪些卡缺欄位，避免一直「看起來 ready 但其實不能跑」
-app.get('/api/tasks/compliance', async (_req, res) => {
-  const list = hasSupabase()
-    ? (await fetchOpenClawTasks().catch(() => [])).map(openClawTaskToTask)
-    : [...tasks];
-
-  let ready = 0;
-  let compliantReady = 0;
-  const sample: { id: string; name: string; missing: string[] }[] = [];
-
-  for (const t of list) {
-    if (t.status !== 'ready') continue;
-    ready++;
-    const gate = validateTaskForGate(t, 'ready');
-    if (gate.ok) {
-      compliantReady++;
-    } else if (sample.length < 10) {
-      sample.push({ id: t.id, name: t.name, missing: gate.missing });
-    }
-  }
-
-  res.json({
-    ok: true,
-    total: list.length,
-    ready,
-    compliantReady,
-    noncompliantReady: ready - compliantReady,
-    sample,
-  });
-});
-
-// 已迁移到 routes/tasks.ts: GET /api/tasks/:id
+// 任務 audit / compliance 已遷移至 routes/tasks.ts（須在 /:id 之前註冊）
 
 app.patch('/api/tasks/:id', validateBody(updateTaskSchema), async (req, res) => {
   const taskId = req.params.id;
@@ -2767,7 +2768,14 @@ async function runAutopilotCycle() {
 }
 
 app.get('/api/openclaw/autopilot/status', (_req, res) => {
-  res.json({ ok: true, ...autopilotState });
+  try {
+    // 排除 timer（NodeJS.Timeout 無法 JSON 序列化）
+    const { timer: _t, ...safe } = autopilotState;
+    res.json({ ok: true, ...safe });
+  } catch (e) {
+    console.error('[Autopilot] GET /status error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to get autopilot status' });
+  }
 });
 
 app.get('/api/openclaw/autopilot/log', (_req, res) => {

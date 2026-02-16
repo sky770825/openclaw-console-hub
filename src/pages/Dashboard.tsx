@@ -35,7 +35,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor, getAutopilotStatus, startAutopilot, stopAutopilot, getAutopilotLog, telegramForceTest, getTaskCompliance, getTaskAudit } from '@/services/api';
+import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorStatus, startAutoExecutor, stopAutoExecutor, getAutopilotStatus, startAutopilot, stopAutopilot, getAutopilotLog, telegramForceTest, getTaskCompliance, getTaskAudit, api } from '@/services/api';
 import type { Run, Alert, AuditLog } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -201,7 +201,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function loadData() {
-      const [statsData, runsData, alertsData, auditData, autoExecStatus, autopilotStatus, autopilotLogData, complianceData, auditData2] = await Promise.all([
+      const results = await Promise.allSettled([
         getDashboardStats(),
         getRuns(),
         getAlerts(),
@@ -212,34 +212,43 @@ export default function Dashboard() {
         getTaskCompliance(),
         getTaskAudit(),
       ]);
-      setStats(statsData);
-      setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
-      setAlerts(alertsData.filter(a => a.status === 'open').slice(0, 5));
-      setAuditLogs(auditData.slice(0, 5));
-      setAutoExecutor((prev) => (isSameAutoExecutor(prev, autoExecStatus) ? prev : autoExecStatus));
-      setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
-      const latestLogs = autopilotLogData.logs?.slice(-5) || [];
-      setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
-      setTaskCompliance(complianceData);
-      setTaskAudit(auditData2);
+      const [statsData, runsData, alertsData, auditData, autoExecStatus, autopilotStatus, autopilotLogData, complianceData, auditData2] = results.map((r) => (r.status === 'fulfilled' ? r.value : null));
+      if (statsData) setStats(statsData);
+      if (runsData) setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
+      if (alertsData) setAlerts(alertsData.filter(a => a.status === 'open').slice(0, 5));
+      if (auditData) setAuditLogs(auditData.slice(0, 5));
+      if (autoExecStatus) setAutoExecutor((prev) => (isSameAutoExecutor(prev, autoExecStatus) ? prev : autoExecStatus));
+      if (autopilotStatus) setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
+      if (autopilotLogData) {
+        const latestLogs = autopilotLogData.logs?.slice(-5) || [];
+        setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
+      }
+      if (complianceData) setTaskCompliance(complianceData);
+      if (auditData2?.ok) setTaskAudit(auditData2);
     }
-    loadData();
+    loadData().catch((err) => {
+      console.error('[Dashboard] loadData failed:', err);
+      toast.error('儀表板載入失敗，請重新整理');
+    });
 
     // 每 10 秒更新一次 AutoExecutor 和 Autopilot 狀態
     const interval = setInterval(async () => {
-      const [status, autopilotStatus, autopilotLogData, complianceData, auditData2] = await Promise.all([
+      const pollResults = await Promise.allSettled([
         getAutoExecutorStatus(),
         getAutopilotStatus(),
         getAutopilotLog(),
         getTaskCompliance(),
         getTaskAudit(),
       ]);
-      setAutoExecutor((prev) => (isSameAutoExecutor(prev, status) ? prev : status));
-      setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
-      const latestLogs = autopilotLogData.logs?.slice(-5) || [];
-      setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
-      setTaskCompliance(complianceData);
-      setTaskAudit(auditData2);
+      const [status, autopilotStatus, autopilotLogData, complianceData, auditData2] = pollResults.map((r) => (r.status === 'fulfilled' ? r.value : null));
+      if (status) setAutoExecutor((prev) => (isSameAutoExecutor(prev, status) ? prev : status));
+      if (autopilotStatus) setAutopilot((prev) => (isSameAutopilot(prev, autopilotStatus) ? prev : autopilotStatus));
+      if (autopilotLogData) {
+        const latestLogs = autopilotLogData.logs?.slice(-5) || [];
+        setAutopilotLogs((prev) => (isSameAutopilotLogs(prev, latestLogs) ? prev : latestLogs));
+      }
+      if (complianceData) setTaskCompliance(complianceData);
+      if (auditData2?.ok) setTaskAudit(auditData2);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -552,9 +561,16 @@ export default function Dashboard() {
                           variant="outline" 
                           size="sm" 
                           className="h-7"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            // Mock re-run
+                            try {
+                              await api.rerun(run.id);
+                              toast.success('已加入重跑佇列');
+                              const runsData = await getRuns();
+                              setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
+                            } catch (err) {
+                              toast.error(err instanceof Error ? err.message : '重跑失敗');
+                            }
                           }}
                         >
                           <RefreshCw className="h-3 w-3" />

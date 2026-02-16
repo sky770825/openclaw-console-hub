@@ -14,6 +14,7 @@ import {
 } from './seed';
 import type { Task, Run, Alert } from '@/types';
 import { apiClient } from './apiClient';
+import { DOMAIN_OPTIONS } from '@/data/domains';
 
 function newRunId(): string {
   return `R-${Date.now()}`;
@@ -398,7 +399,7 @@ export const getDomains = dataConfig.apiBaseUrl
   ? () => apiClient.getDomains()
   : async () => ({
       ok: true,
-      domains: (await import('@/data/domains').then((m) => m.DOMAIN_OPTIONS)).map((d) => ({
+      domains: DOMAIN_OPTIONS.map((d) => ({
         slug: d.slug,
         label: d.label,
         keywords: d.keywords,

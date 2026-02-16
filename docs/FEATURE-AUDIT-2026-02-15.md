@@ -41,8 +41,8 @@ API：
 - 用處：高（總覽、啟停 AutoExecutor/Autopilot、健康狀態）
 - Read/Write：R/W（啟停、緊急停止）
 - 開關：可（`ops.emergencyStop`）
-- 待處理：
-  - Dashboard 有「Mock re-run」註解（需做成真功能或移除）
+- 已處理：
+  - 近期失敗執行的「重跑」按鈕已串接 `api.rerun`
 
 ### 2) OpenClaw Agent 板 `/cursor`
 - 用處：中（偏展示/整合面板）
