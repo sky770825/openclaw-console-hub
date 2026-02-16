@@ -4,6 +4,7 @@ import {
   C,
   Pulse,
   Badge,
+  RiskBadge,
   Ring,
   Btn,
   Card,
@@ -197,7 +198,10 @@ export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz})
                 style={{ cursor: onMove ? "grab" : undefined }}
               >
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
-                  <Badge c={cc.c} bg={cc.c+"15"}>{cc.l}</Badge>
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                    <Badge c={cc.c} bg={cc.c+"15"}>{cc.l}</Badge>
+                    {t.riskLevel && t.riskLevel !== "low" && <RiskBadge level={t.riskLevel} />}
+                  </div>
                   {t.status!=="done"?<div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     <Ring pct={t.progress} size={32} stroke={2.5}/>
                     <span style={{position:"absolute",fontSize:8,fontWeight:700,color:C.t2}}>{t.progress}%</span>

@@ -105,6 +105,9 @@ import {
   notifyWorkflowComplete,
 } from './utils/telegram.js';
 
+// === 新增：風險分類器 ===
+import { classifyTaskRisk, type DispatchRiskLevel } from './riskClassifier.js';
+
 // === 新增：WebSocket 即時推播 ===
 import { wsManager } from './websocket.js';
 import http from 'http';
@@ -2944,6 +2947,24 @@ app.delete('/api/openclaw/projects/:id', async (req, res) => {
 
 // ==================== AutoExecutor 自動執行器 API ====================
 
+interface DispatchExecution {
+  taskId: string;
+  taskName: string;
+  riskLevel: DispatchRiskLevel;
+  status: 'success' | 'failed' | 'pending_review';
+  executedAt: string;
+  agentType: string;
+  summary: string;
+}
+
+interface DispatchPendingReview {
+  taskId: string;
+  taskName: string;
+  riskLevel: DispatchRiskLevel;
+  reason: string;
+  queuedAt: string;
+}
+
 interface AutoExecutorState {
   isRunning: boolean;
   pollIntervalMs: number;
@@ -2953,6 +2974,13 @@ interface AutoExecutorState {
   lastExecutedAt: string | null;
   totalExecutedToday: number;
   nextPollAt: string | null;
+  // === 自動派工 ===
+  dispatchMode: boolean;
+  dispatchStartedAt: string | null;
+  lastDigestAt: string | null;
+  digestIntervalMs: number;
+  recentExecutions: DispatchExecution[];
+  pendingReviews: DispatchPendingReview[];
 }
 
 // 記憶體中的自動執行器狀態
@@ -2965,6 +2993,13 @@ const autoExecutorState: AutoExecutorState = {
   lastExecutedAt: null,
   totalExecutedToday: 0,
   nextPollAt: null,
+  // === 自動派工 ===
+  dispatchMode: false,
+  dispatchStartedAt: null,
+  lastDigestAt: null,
+  digestIntervalMs: 1800000, // 30 分鐘
+  recentExecutions: [],
+  pendingReviews: [],
 };
 
 let autoExecutorInterval: NodeJS.Timeout | null = null;
@@ -2975,6 +3010,8 @@ type AutoExecutorDiskState = {
   pollIntervalMs: number;
   maxTasksPerMinute: number;
   updatedAt: string;
+  dispatchMode?: boolean;
+  digestIntervalMs?: number;
 };
 
 function repoRootPath(): string {
@@ -3075,6 +3112,49 @@ async function executeNextPendingTask(): Promise<void> {
     const task = pendingTasks[0];
     console.log(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
 
+    // === 自動派工閘門 ===
+    if (autoExecutorState.dispatchMode) {
+      const riskLevel = classifyTaskRisk(task);
+
+      if (riskLevel === 'critical') {
+        // 🟣 紫燈 → 不執行，等老蔡審核
+        autoExecutorState.pendingReviews.push({
+          taskId: task.id,
+          taskName: task.name || '未命名任務',
+          riskLevel,
+          reason: '高風險任務需要老蔡審核',
+          queuedAt: new Date().toISOString(),
+        });
+        await upsertOpenClawTask({ id: task.id, status: 'in_progress' }); // 標記為處理中避免重複抓取
+        await sendTelegramMessage(
+          `🟣 <b>高風險任務等待審核</b>\n\n` +
+          `<b>任務：</b>${task.name}\n` +
+          `<b>風險：</b>critical（需老蔡親自確認）\n` +
+          `<b>說明：</b>${(task.description || '無').slice(0, 200)}`,
+          { parseMode: 'HTML' }
+        );
+        console.log(`[AutoDispatch] 🟣 任務「${task.name}」需老蔡審核，已排入待審佇列`);
+        autoExecutorState.recentExecutions.push({
+          taskId: task.id,
+          taskName: task.name || '',
+          riskLevel,
+          status: 'pending_review',
+          executedAt: new Date().toISOString(),
+          agentType: 'pending',
+          summary: '等待老蔡審核',
+        });
+        return; // 跳過執行
+      }
+
+      if (riskLevel === 'medium') {
+        console.log(`[AutoDispatch] 🔴 中風險任務「${task.name}」，Claude 審慎執行`);
+      } else if (riskLevel === 'low') {
+        console.log(`[AutoDispatch] 🟡 低風險任務「${task.name}」，Claude 審核執行`);
+      } else {
+        console.log(`[AutoDispatch] 🟢 安全任務「${task.name}」，自動批准`);
+      }
+    }
+
     // 選擇 Agent 類型
     const agentType = AgentSelector.selectAgent(task);
 
@@ -3134,10 +3214,26 @@ async function executeNextPendingTask(): Promise<void> {
       autoExecutorState.totalExecutedToday++;
       autoExecutorState.lastExecutedTaskId = task.id;
       autoExecutorState.lastExecutedAt = new Date().toISOString();
-      
+
+      // 記錄到派工執行歷史
+      if (autoExecutorState.dispatchMode) {
+        autoExecutorState.recentExecutions.push({
+          taskId: task.id,
+          taskName: task.name || '',
+          riskLevel: classifyTaskRisk(task),
+          status: 'success',
+          executedAt: new Date().toISOString(),
+          agentType: agentType || 'auto',
+          summary: (result.output || '').slice(0, 300),
+        });
+        if (autoExecutorState.recentExecutions.length > 100) {
+          autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-100);
+        }
+      }
+
       // 發送成功通知
       await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
-      
+
       console.log(`[AutoExecutor] 任務完成: ${task.name}`);
     } catch (execError) {
       // 更新 run 為失敗
@@ -3160,6 +3256,22 @@ async function executeNextPendingTask(): Promise<void> {
       await notifyTaskFailure(task.name, task.id, runId, String(execError), 0);
       console.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
       autoExecutorExecHistoryMs.push(Date.now());
+
+      // 記錄到派工執行歷史
+      if (autoExecutorState.dispatchMode) {
+        autoExecutorState.recentExecutions.push({
+          taskId: task.id,
+          taskName: task.name || '',
+          riskLevel: classifyTaskRisk(task),
+          status: 'failed',
+          executedAt: new Date().toISOString(),
+          agentType: agentType || 'auto',
+          summary: String(execError).slice(0, 300),
+        });
+        if (autoExecutorState.recentExecutions.length > 100) {
+          autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-100);
+        }
+      }
     }
   } catch (e) {
     console.error('[AutoExecutor] 執行任務時發生錯誤:', e);
@@ -3237,6 +3349,173 @@ app.post('/api/openclaw/auto-executor/stop', (_req, res) => {
     message: 'AutoExecutor 已停止',
     ...autoExecutorState,
   });
+});
+
+// ==================== Auto Dispatch 自動派工 API ====================
+
+let dispatchDigestTimer: NodeJS.Timeout | null = null;
+
+function startDispatchDigestTimer(): void {
+  stopDispatchDigestTimer();
+  dispatchDigestTimer = setInterval(async () => {
+    await sendDispatchDigest();
+  }, autoExecutorState.digestIntervalMs);
+}
+
+function stopDispatchDigestTimer(): void {
+  if (dispatchDigestTimer) {
+    clearInterval(dispatchDigestTimer);
+    dispatchDigestTimer = null;
+  }
+}
+
+function generateDispatchDigest() {
+  const since = autoExecutorState.lastDigestAt || autoExecutorState.dispatchStartedAt || new Date().toISOString();
+  const recent = autoExecutorState.recentExecutions.filter((e) => e.executedAt > since);
+  return {
+    period: `${since.slice(11, 16)} ~ ${new Date().toISOString().slice(11, 16)}`,
+    totalExecuted: recent.length,
+    successes: recent.filter((e) => e.status === 'success').length,
+    failures: recent.filter((e) => e.status === 'failed').length,
+    pendingReviews: autoExecutorState.pendingReviews.length,
+    tasks: recent.map((e) => ({
+      name: e.taskName,
+      risk: e.riskLevel,
+      status: e.status,
+      summary: (e.summary || '').slice(0, 200),
+    })),
+  };
+}
+
+async function sendDispatchDigest(): Promise<void> {
+  const d = generateDispatchDigest();
+  if (d.totalExecuted === 0 && d.pendingReviews === 0) return;
+
+  const riskEmoji: Record<string, string> = { none: '🟢', low: '🟡', medium: '🔴', critical: '🟣' };
+  const statusEmoji: Record<string, string> = { success: '✅', failed: '❌', pending_review: '⏳' };
+
+  let text = `📋 <b>自動派工摘要</b>\n`;
+  text += `<b>期間：</b>${d.period}\n`;
+  text += `<b>已執行：</b>${d.totalExecuted} 個任務\n`;
+  text += `<b>成功：</b>${d.successes}  <b>失敗：</b>${d.failures}\n`;
+  if (d.pendingReviews > 0) {
+    text += `\n🟣 <b>等待老蔡審核：${d.pendingReviews} 個</b>\n`;
+  }
+  if (d.tasks.length > 0) {
+    text += `\n<b>任務明細：</b>\n`;
+    for (const t of d.tasks.slice(0, 10)) {
+      text += `${riskEmoji[t.risk] || '⚪'} ${t.name} → ${statusEmoji[t.status] || '?'}\n`;
+      if (t.summary && t.status === 'failed') {
+        text += `   └ ${t.summary.slice(0, 100)}\n`;
+      }
+    }
+  }
+
+  autoExecutorState.lastDigestAt = new Date().toISOString();
+  await sendTelegramMessage(text, { parseMode: 'HTML' });
+}
+
+// GET /api/openclaw/dispatch/status
+app.get('/api/openclaw/dispatch/status', (_req, res) => {
+  res.json({
+    ok: true,
+    dispatchMode: autoExecutorState.dispatchMode,
+    dispatchStartedAt: autoExecutorState.dispatchStartedAt,
+    isRunning: autoExecutorState.isRunning,
+    pendingReviewCount: autoExecutorState.pendingReviews.length,
+    pendingReviews: autoExecutorState.pendingReviews,
+    recentExecutionCount: autoExecutorState.recentExecutions.length,
+    recentExecutions: autoExecutorState.recentExecutions.slice(-20),
+    lastDigestAt: autoExecutorState.lastDigestAt,
+    digestIntervalMs: autoExecutorState.digestIntervalMs,
+  });
+});
+
+// POST /api/openclaw/dispatch/toggle
+app.post('/api/openclaw/dispatch/toggle', async (req, res) => {
+  const { enabled, digestIntervalMs } = req.body || {};
+  const wasOn = autoExecutorState.dispatchMode;
+  autoExecutorState.dispatchMode = enabled !== undefined ? Boolean(enabled) : !autoExecutorState.dispatchMode;
+
+  if (autoExecutorState.dispatchMode && !wasOn) {
+    // 開啟
+    autoExecutorState.dispatchStartedAt = new Date().toISOString();
+    autoExecutorState.recentExecutions = [];
+    autoExecutorState.pendingReviews = [];
+    autoExecutorState.lastDigestAt = null;
+    // 同時啟動 auto-executor
+    if (!autoExecutorState.isRunning) {
+      startAutoExecutor(autoExecutorState.pollIntervalMs, autoExecutorState.maxTasksPerMinute);
+      saveAutoExecutorDiskState({ enabled: true });
+    }
+    startDispatchDigestTimer();
+    await sendTelegramMessage(
+      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，Agent 向 Claude 報告\n紫燈任務將暫存等老蔡審核',
+      { parseMode: 'HTML' }
+    );
+  }
+
+  if (!autoExecutorState.dispatchMode && wasOn) {
+    // 關閉
+    autoExecutorState.dispatchStartedAt = null;
+    stopDispatchDigestTimer();
+    // 發送最後一次摘要
+    await sendDispatchDigest();
+    await sendTelegramMessage(
+      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向老蔡報告',
+      { parseMode: 'HTML' }
+    );
+  }
+
+  if (digestIntervalMs && typeof digestIntervalMs === 'number' && digestIntervalMs >= 60000) {
+    autoExecutorState.digestIntervalMs = digestIntervalMs;
+    if (autoExecutorState.dispatchMode) {
+      startDispatchDigestTimer(); // 重啟定時器
+    }
+  }
+
+  saveAutoExecutorDiskState({
+    dispatchMode: autoExecutorState.dispatchMode,
+    digestIntervalMs: autoExecutorState.digestIntervalMs,
+  });
+
+  res.json({
+    ok: true,
+    dispatchMode: autoExecutorState.dispatchMode,
+    message: autoExecutorState.dispatchMode ? '自動派工已開啟' : '自動派工已關閉',
+  });
+});
+
+// POST /api/openclaw/dispatch/review/:taskId
+app.post('/api/openclaw/dispatch/review/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  const { decision } = req.body || {};
+
+  const idx = autoExecutorState.pendingReviews.findIndex((r) => r.taskId === taskId);
+  if (idx === -1) {
+    return res.status(404).json({ ok: false, message: '找不到待審核任務' });
+  }
+
+  const review = autoExecutorState.pendingReviews[idx];
+
+  if (decision === 'approved') {
+    await upsertOpenClawTask({ id: taskId, status: 'queued' }); // 回到 ready 讓 auto-executor 抓
+    autoExecutorState.pendingReviews.splice(idx, 1);
+    await sendTelegramMessage(
+      `✅ 老蔡已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 執行`,
+      { parseMode: 'HTML' }
+    );
+    return res.json({ ok: true, taskId, decision: 'approved' });
+  }
+
+  // rejected
+  await upsertOpenClawTask({ id: taskId, status: 'done' }); // 標記完成（不執行）
+  autoExecutorState.pendingReviews.splice(idx, 1);
+  await sendTelegramMessage(
+    `❌ 老蔡已拒絕任務：<b>${review.taskName}</b>`,
+    { parseMode: 'HTML' }
+  );
+  res.json({ ok: true, taskId, decision: 'rejected' });
 });
 
 // ==================== Maintenance: Reconcile（狀態校正）====================
@@ -3623,6 +3902,16 @@ server.listen(PORT, '127.0.0.1', () => {
   const disk = loadAutoExecutorDiskState();
   if (disk.enabled) {
     startAutoExecutor(disk.pollIntervalMs, disk.maxTasksPerMinute);
+  }
+  // 恢復派工模式
+  if (disk.dispatchMode) {
+    autoExecutorState.dispatchMode = true;
+    autoExecutorState.dispatchStartedAt = new Date().toISOString();
+    if (disk.digestIntervalMs && disk.digestIntervalMs >= 60000) {
+      autoExecutorState.digestIntervalMs = disk.digestIntervalMs;
+    }
+    startDispatchDigestTimer();
+    console.log('[AutoDispatch] 從磁碟狀態恢復派工模式');
   }
   setInterval(() => {
     const st = loadAutoExecutorDiskState();

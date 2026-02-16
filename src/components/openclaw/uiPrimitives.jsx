@@ -48,6 +48,19 @@ export function Card({children,style={},glow,onClick,oc,...rest}){
     style={{background:h?C.s3:C.s2,border:glow?`1px solid ${glow}25`:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",cursor:onClick?"pointer":"default",transition:"all .2s",boxShadow:glow&&h?`0 0 20px ${glow}10`:"none",...style}} {...rest}>{children}</div>;
 }
 
+export const RISK_COLORS = {
+  none:     { emoji: "🟢", label: "安全",   c: C.green,  bg: C.greenG  },
+  low:      { emoji: "🟡", label: "低風險", c: C.amber,  bg: C.amberG  },
+  medium:   { emoji: "🔴", label: "中風險", c: C.red,    bg: C.redG    },
+  high:     { emoji: "🔴", label: "高風險", c: C.red,    bg: C.redG    },
+  critical: { emoji: "🟣", label: "需老蔡", c: C.purple, bg: C.purpleG },
+};
+
+export const RiskBadge = ({level}) => {
+  const cfg = RISK_COLORS[level] || RISK_COLORS.low;
+  return <Badge c={cfg.c} bg={cfg.bg}>{cfg.emoji} {cfg.label}</Badge>;
+};
+
 export function Sec({icon,title,count,right,children}){
   return <div style={{marginBottom:24,minWidth:0}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>

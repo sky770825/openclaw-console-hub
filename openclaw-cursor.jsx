@@ -1,6 +1,7 @@
 import { C, Pulse, Btn } from "./src/components/openclaw/uiPrimitives";
 import { Drawer } from "./src/components/openclaw/Drawer";
 import { ResetGatewayBtn } from "./src/components/openclaw/ResetGatewayBtn";
+import { DispatchToggle } from "./src/components/openclaw/DispatchToggle";
 import { TAB_ITEMS, renderTabContent } from "./src/components/openclaw/tabRegistry";
 import { getApiDisplayLabel } from "./src/services/openclawBoardApi";
 import { useOpenClawBoard } from "./src/hooks/useOpenClawBoard";
@@ -61,6 +62,7 @@ export default function OpenClawV4() {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <DispatchToggle />
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <Pulse c={C.green} s={5} /><span style={{ fontSize: 11, color: C.green, fontWeight: 500 }}>Online</span>
         </div>
