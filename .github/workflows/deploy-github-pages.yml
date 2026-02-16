@@ -23,14 +23,14 @@ jobs:
           node-version: "20"
           cache: "npm"
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-optional
       # 依 repo 名稱設 base，例如 https://<user>.github.io/<repo>/
       - name: Build
         run: npm run build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
   deploy:
