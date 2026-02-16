@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   C,
   Pulse,
   Badge,
   RiskBadge,
+  RISK_COLORS,
   Ring,
   Btn,
   Card,
@@ -636,5 +637,273 @@ export function EvoPanel({log}){
         {e.tag&&<Badge c={e.tc} bg={e.tc+"15"} style={{marginTop:3}}>{e.tag}</Badge>}
       </div>)}
     </div>
+  </Sec>;
+}
+
+// ==================== 🟣 派工審核面板 ====================
+
+const STATUS_EMOJI = { pending_review: "⏳", approved: "✅", rejected: "❌", completed: "✅", failed: "💥" };
+
+export function DispatchReviewPanel() {
+  const [dispatchStatus, setDispatchStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState({});
+
+  const poll = useCallback(async () => {
+    try {
+      const r = await fetch(apiUrl("/api/openclaw/dispatch/status"), {
+        headers: apiHeaders(false),
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data.ok) setDispatchStatus(data);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    poll().finally(() => setLoading(false));
+    const id = setInterval(poll, 10000);
+    return () => clearInterval(id);
+  }, [poll]);
+
+  const handleReview = async (taskId, decision) => {
+    setActionLoading(prev => ({ ...prev, [taskId]: decision }));
+    try {
+      const r = await fetch(apiUrl(`/api/openclaw/dispatch/review/${taskId}`), {
+        method: "POST",
+        headers: apiHeaders(),
+        body: JSON.stringify({ decision }),
+      });
+      if (r.ok) await poll();
+    } catch (e) {
+      console.warn("[Dispatch] review failed", e);
+    }
+    setActionLoading(prev => ({ ...prev, [taskId]: null }));
+  };
+
+  const handleApproveAll = async () => {
+    if (!dispatchStatus?.pendingReviews?.length) return;
+    if (!confirm(`確定要批准全部 ${dispatchStatus.pendingReviews.length} 個待審任務嗎？`)) return;
+    for (const r of dispatchStatus.pendingReviews) {
+      await handleReview(r.taskId, "approved");
+    }
+  };
+
+  if (loading && !dispatchStatus) {
+    return <Sec icon="🟣" title="派工審核" count="載入中…">
+      <div style={{ textAlign: "center", padding: 32, color: C.t3, fontSize: 12 }}>載入中…</div>
+    </Sec>;
+  }
+
+  const pending = dispatchStatus?.pendingReviews || [];
+  const recent = dispatchStatus?.recentExecutions || [];
+  const isOn = dispatchStatus?.dispatchMode;
+
+  const approveAllBtn = pending.length > 1 ? (
+    <Btn v="ok" sm onClick={handleApproveAll} oc="DISPATCH_APPROVE_ALL">
+      ✅ 全部批准 ({pending.length})
+    </Btn>
+  ) : null;
+
+  const rightEl = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {approveAllBtn}
+      <Badge c={isOn ? C.purple : C.t3} bg={isOn ? C.purpleG : "rgba(255,255,255,0.03)"}>
+        {isOn ? "派工開啟" : "派工關閉"}
+      </Badge>
+    </div>
+  );
+
+  return <>
+    <Sec icon="🟣" title="派工審核" count={pending.length + " 待審"} right={rightEl}>
+      {!isOn && <Card style={{ textAlign: "center", padding: "20px 16px", borderColor: C.purple + "25" }}>
+        <div style={{ fontSize: 28, marginBottom: 8 }}>🟣</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.t1, marginBottom: 4 }}>自動派工模式未開啟</div>
+        <div style={{ fontSize: 11, color: C.t3, lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
+          開啟後，Claude 會依照風險等級自動處理任務。<br />
+          紫燈（critical）任務會暫停並等待老蔡審核。
+        </div>
+        <div style={{ marginTop: 12, fontSize: 10, color: C.t3 }}>
+          請在頂部列點擊「派工關閉」按鈕開啟
+        </div>
+      </Card>}
+
+      {isOn && pending.length === 0 && (
+        <div style={{ textAlign: "center", padding: 24, color: C.t3, fontSize: 12 }}>
+          ✓ 沒有待審核的紫燈任務
+        </div>
+      )}
+
+      {pending.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {pending.map(r => {
+          const riskCfg = RISK_COLORS[r.riskLevel] || RISK_COLORS.critical;
+          const isActioning = actionLoading[r.taskId];
+          return <Card key={r.taskId} glow={C.purple} oc={`DISPATCH_REVIEW_${r.taskId}`}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 15 }}>🟣</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.taskName}</span>
+              </div>
+              <RiskBadge level={r.riskLevel} />
+            </div>
+            <div style={{ fontSize: 11, color: C.t2, marginBottom: 8, lineHeight: 1.5 }}>
+              <span style={{ color: C.t3 }}>原因：</span>{r.reason}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+              <span style={{ fontSize: 10, color: C.t3, fontFamily: "'JetBrains Mono',monospace" }}>
+                {r.taskId.slice(0, 12)}… · {new Date(r.queuedAt).toLocaleString("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <div style={{ display: "flex", gap: 6 }}>
+                <Btn sm v="no" oc={`DISPATCH_REJECT_${r.taskId}`} dis={!!isActioning} onClick={() => handleReview(r.taskId, "rejected")}>
+                  {isActioning === "rejected" ? "拒絕中…" : "✕ 拒絕"}
+                </Btn>
+                <Btn sm v="ok" oc={`DISPATCH_APPROVE_${r.taskId}`} dis={!!isActioning} onClick={() => handleReview(r.taskId, "approved")}>
+                  {isActioning === "approved" ? "批准中…" : "✓ 批准執行"}
+                </Btn>
+              </div>
+            </div>
+          </Card>;
+        })}
+      </div>}
+    </Sec>
+
+    {recent.length > 0 && <Sec icon="📋" title="派工執行紀錄" count={recent.length}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {[...recent].reverse().slice(0, 20).map((ex, i) => {
+          const riskCfg = RISK_COLORS[ex.riskLevel] || RISK_COLORS.low;
+          return <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+            <span style={{ fontSize: 12 }}>{riskCfg.emoji}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ex.taskName}</div>
+              <div style={{ fontSize: 10, color: C.t3 }}>
+                {ex.agentType || "auto"} · {ex.summary || ex.status}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
+              <Badge c={ex.status === "completed" ? C.green : ex.status === "failed" ? C.red : ex.status === "pending_review" ? C.purple : C.amber}
+                bg={ex.status === "completed" ? C.greenG : ex.status === "failed" ? C.redG : ex.status === "pending_review" ? C.purpleG : C.amberG}>
+                {STATUS_EMOJI[ex.status] || "⚪"} {ex.status === "pending_review" ? "待審" : ex.status === "completed" ? "完成" : ex.status === "failed" ? "失敗" : ex.status}
+              </Badge>
+              <span style={{ fontSize: 9, color: C.t3 }}>
+                {new Date(ex.executedAt).toLocaleString("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          </div>;
+        })}
+      </div>
+    </Sec>}
+
+    {isOn && dispatchStatus && <Sec icon="📊" title="派工摘要">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(100px,1fr))", gap: 8 }}>
+        {[
+          { l: "待審任務", v: dispatchStatus.pendingReviewCount, c: C.purple },
+          { l: "已執行", v: dispatchStatus.recentExecutionCount, c: C.green },
+          { l: "運行中", v: dispatchStatus.isRunning ? "是" : "否", c: dispatchStatus.isRunning ? C.green : C.t3 },
+          { l: "開始時間", v: dispatchStatus.dispatchStartedAt ? new Date(dispatchStatus.dispatchStartedAt).toLocaleString("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-", c: C.t2 },
+        ].map((s, i) => <div key={i} style={{ background: C.s2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: s.c, letterSpacing: -.5 }}>{s.v}</div>
+          <div style={{ fontSize: 10, color: C.t3, marginTop: 2, fontWeight: 500 }}>{s.l}</div>
+        </div>)}
+      </div>
+      {dispatchStatus.lastDigestAt && <div style={{ fontSize: 10, color: C.t3, marginTop: 8, textAlign: "right" }}>
+        最後摘要通知：{new Date(dispatchStatus.lastDigestAt).toLocaleString("zh-TW")}
+      </div>}
+    </Sec>}
+
+    <TelegramNotifySection />
+  </>;
+}
+
+// ==================== Telegram 通知設定 ====================
+
+function TelegramNotifySection() {
+  const [tgStatus, setTgStatus] = useState(null); // null = loading, true/false
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(apiUrl("/api/health"), { headers: apiHeaders(false) });
+        if (r.ok) {
+          const data = await r.json();
+          setTgStatus(!!data.telegram);
+        } else {
+          setTgStatus(false);
+        }
+      } catch {
+        setTgStatus(false);
+      }
+    })();
+  }, []);
+
+  const handleTest = async () => {
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const r = await fetch(apiUrl("/api/telegram/test"), {
+        method: "POST",
+        headers: apiHeaders(),
+      });
+      const data = await r.json();
+      setTestResult({ ok: data.ok, msg: data.message || (data.ok ? "已發送" : "發送失敗") });
+    } catch (e) {
+      setTestResult({ ok: false, msg: "請求失敗：" + String(e) });
+    }
+    setTestLoading(false);
+  };
+
+  return <Sec icon="📬" title="Telegram 通知">
+    <Card style={{ padding: "14px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 20 }}>🤖</span>
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: C.t1 }}>Telegram Bot 通知</div>
+            <div style={{ fontSize: 10, color: C.t3, marginTop: 1 }}>紫燈任務 → Telegram 通知老蔡審核</div>
+          </div>
+        </div>
+        <Badge
+          c={tgStatus === null ? C.t3 : tgStatus ? C.green : C.red}
+          bg={tgStatus === null ? "rgba(255,255,255,0.03)" : tgStatus ? C.greenG : C.redG}
+        >
+          {tgStatus === null ? "檢測中…" : tgStatus ? "✅ 已設定" : "❌ 未設定"}
+        </Badge>
+      </div>
+
+      {tgStatus === false && (
+        <div style={{ background: C.redG, border: `1px solid rgba(248,113,113,0.12)`, borderRadius: 8, padding: "10px 12px", marginBottom: 10, fontSize: 11, color: C.red, lineHeight: 1.5 }}>
+          Telegram 未設定。請在後端 <span style={{ fontFamily: "'JetBrains Mono',monospace", color: C.t1 }}>.env</span> 設定：
+          <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: C.t2, background: "rgba(0,0,0,0.3)", borderRadius: 6, padding: "8px 10px" }}>
+            TELEGRAM_BOT_TOKEN=你的BotToken<br />
+            TELEGRAM_CHAT_ID=你的ChatID
+          </div>
+          <div style={{ marginTop: 6, fontSize: 10, color: C.t3 }}>
+            設定完成後重啟後端即可生效。
+          </div>
+        </div>
+      )}
+
+      {tgStatus && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Btn sm v="pri" dis={testLoading} onClick={handleTest}>
+            {testLoading ? "發送中…" : "📤 發送測試訊息"}
+          </Btn>
+          {testResult && (
+            <span style={{ fontSize: 11, color: testResult.ok ? C.green : C.red }}>
+              {testResult.msg}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, fontSize: 10, color: C.t3, lineHeight: 1.6 }}>
+        <div style={{ fontWeight: 600, color: C.t2, marginBottom: 4 }}>通知時機：</div>
+        <div>🟣 紫燈任務進入待審佇列時 → 立即通知</div>
+        <div>📊 定時摘要（每 30 分鐘）→ 派工期間的執行統計</div>
+        <div>✅/❌ 老蔡批准或拒絕後 → 通知執行結果</div>
+      </div>
+    </Card>
   </Sec>;
 }
