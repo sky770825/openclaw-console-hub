@@ -588,13 +588,6 @@ export async function upsertOpenClawProject(project: Partial<OpenClawProject> & 
     status: project.status ?? 'planning',
     progress: project.progress ?? 0,
     notes: project.notes ?? '',
-    assignee_agent: project.assigneeAgent ?? null,
-    assignee_label: project.assigneeLabel ?? null,
-    deadline: project.deadline ?? null,
-    priority: project.priority ?? null,
-    tags: project.tags ?? null,
-    deliverables_summary: project.deliverablesSummary ?? null,
-    linked_task_ids: project.linkedTaskIds ?? null,
     updated_at: now,
     created_at: project.createdAt ?? now,
   };
