@@ -3851,7 +3851,7 @@ const server = http.createServer(app);
 // 初始化 WebSocket
 wsManager.initialize(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`OpenClaw API http://localhost:${PORT}`);
   console.log(`  WebSocket ws://localhost:${PORT}/ws`);
   console.log(`  GET  /api/tasks, /api/tasks/:id, PATCH /api/tasks/:id`);
