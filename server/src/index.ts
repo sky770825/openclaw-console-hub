@@ -17,6 +17,7 @@ import { runSeed } from './seed.js';
 import type { Task, Run, Alert } from './types.js';
 import {
   fetchOpenClawTasks,
+  fetchOpenClawTaskById,
   fetchOpenClawTasksByFromReviewId,
   upsertOpenClawTask,
   fetchOpenClawReviews,
@@ -103,6 +104,8 @@ import {
   notifyTaskSuccess,
   notifyWorkflowStart,
   notifyWorkflowComplete,
+  notifyRedAlert,
+  notifyProposal,
 } from './utils/telegram.js';
 
 // === 新增：風險分類器 ===
@@ -1733,6 +1736,265 @@ app.delete('/api/openclaw/reviews/:id', async (req, res) => {
     res.status(500).json({ message: 'Failed to delete review' });
   }
 });
+
+// ─── 紅色警戒 ─────────────────────────────────────────────
+
+/** 小蔡觸發紅色警戒：建立警報 + block 任務 + Telegram 通知 */
+app.post('/api/openclaw/red-alert', async (req, res) => {
+  try {
+    const { taskId, title, description, severity, category } = req.body as {
+      taskId?: string;
+      title?: string;
+      description?: string;
+      severity?: string;
+      category?: string;
+    };
+    if (!taskId || !title || !description) {
+      return res.status(400).json({ message: 'taskId, title, description 必填' });
+    }
+    const sev = severity === 'critical' ? 'critical' : 'high';
+    const reviewId = `alert-${Date.now()}`;
+
+    // 1. 建立警報紀錄（Supabase or in-memory）
+    if (hasSupabase()) {
+      await upsertOpenClawReview({
+        id: reviewId,
+        title: `🚨 ${title}`,
+        desc: description,
+        type: 'red_alert',
+        pri: sev === 'critical' ? 'P1' : 'P2',
+        status: 'pending',
+        src: `task:${taskId}`,
+        reasoning: `category: ${category || 'other'}`,
+      });
+    }
+    // in-memory fallback
+    alerts.push({
+      id: reviewId,
+      type: 'red_alert',
+      severity: sev === 'critical' ? 'critical' : 'high',
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      message: `${title}: ${description}`,
+      relatedTaskId: taskId,
+    });
+
+    // 2. 標記任務為 blocked（Supabase or in-memory）
+    if (hasSupabase()) {
+      const task = await fetchOpenClawTaskById(taskId);
+      if (task) {
+        await upsertOpenClawTask({ ...task, id: taskId, status: 'blocked' as never });
+      }
+    }
+    const memTask = tasks.find((t) => t.id === taskId);
+    if (memTask) memTask.status = 'blocked';
+
+    // 3. Telegram 通知（帶解決按鈕）
+    await notifyRedAlert(reviewId, taskId, title, description, sev);
+
+    // 4. WebSocket 廣播
+    wsManager.broadcast({ type: 'red_alert', data: { reviewId, taskId, title, severity: sev } });
+
+    res.status(201).json({ ok: true, reviewId });
+  } catch (e) {
+    console.error('[RedAlert] trigger error:', e);
+    res.status(500).json({ message: 'Failed to trigger red alert' });
+  }
+});
+
+/** 老蔡解除紅色警戒：review approved + 任務恢復 queued */
+app.post('/api/openclaw/red-alert/:reviewId/resolve', async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { taskId } = req.body as { taskId?: string };
+    if (!taskId) return res.status(400).json({ message: 'taskId 必填' });
+
+    // 1. 更新警報為已解除（Supabase or in-memory）
+    if (hasSupabase()) {
+      const reviews = await fetchOpenClawReviews();
+      const review = reviews.find((r) => r.id === reviewId);
+      if (review) await upsertOpenClawReview({ ...review, status: 'approved' });
+    }
+    const memAlert = alerts.find((a) => a.id === reviewId);
+    if (memAlert) memAlert.status = 'acked';
+
+    // 2. 解鎖任務
+    if (hasSupabase()) {
+      const task = await fetchOpenClawTaskById(taskId);
+      if (task) {
+        await upsertOpenClawTask({ ...task, id: taskId, status: 'queued' as never });
+      }
+    }
+    const memTask = tasks.find((t) => t.id === taskId);
+    if (memTask) memTask.status = 'ready';
+
+    // 3. WebSocket 廣播
+    wsManager.broadcast({ type: 'alert_resolved', data: { reviewId, taskId } });
+
+    res.json({ ok: true, message: 'Alert resolved, task unblocked' });
+  } catch (e) {
+    console.error('[RedAlert] resolve error:', e);
+    res.status(500).json({ message: 'Failed to resolve alert' });
+  }
+});
+
+// ─── /紅色警戒 ────────────────────────────────────────────
+
+// ─── 發想提案 ─────────────────────────────────────────────
+
+const PROPOSAL_CAT_EMOJI: Record<string, string> = {
+  commercial: '💼', system: '⚙️', tool: '🔧', risk: '🛡️', creative: '💡',
+};
+
+/** 小蔡提案：建立提案 review + Telegram 通知老蔡 */
+app.post('/api/openclaw/proposal', async (req, res) => {
+  try {
+    const { title, category, background, idea, goal, risk } = req.body as {
+      title?: string;
+      category?: string;
+      background?: string;
+      idea?: string;
+      goal?: string;
+      risk?: string;
+    };
+    if (!title || !category || !background || !idea) {
+      return res.status(400).json({ message: 'title, category, background, idea 必填' });
+    }
+    const catEmoji = PROPOSAL_CAT_EMOJI[category] || '💡';
+    const reviewId = `proposal-${Date.now()}`;
+    const desc = [
+      `【背景】${background}`,
+      `【點子】${idea}`,
+      goal ? `【目標】${goal}` : '',
+      risk ? `【風險】${risk}` : '',
+    ].filter(Boolean).join('\n');
+
+    // 1. 建立提案紀錄（Supabase or in-memory）
+    if (hasSupabase()) {
+      await upsertOpenClawReview({
+        id: reviewId,
+        title: `${catEmoji} ${title}`,
+        desc,
+        type: 'proposal',
+        pri: 'medium',
+        status: 'pending',
+        src: `agent-proposal:${category}`,
+        reasoning: idea,
+      });
+    }
+    // in-memory fallback
+    alerts.push({
+      id: reviewId,
+      type: 'proposal',
+      severity: 'medium',
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      message: `${catEmoji} ${title}: ${idea}`,
+      relatedTaskId: '',
+    });
+
+    // 2. Telegram 通知（帶審核按鈕）
+    await notifyProposal(reviewId, title, category, background, goal || '', risk || '');
+
+    // 3. WebSocket 廣播
+    wsManager.broadcast({ type: 'new_proposal', data: { reviewId, title, category } });
+
+    res.status(201).json({ ok: true, reviewId });
+  } catch (e) {
+    console.error('[Proposal] submit error:', e);
+    res.status(500).json({ message: 'Failed to submit proposal' });
+  }
+});
+
+/** 老蔡審核提案：批准 / 駁回 / 批准+轉任務 */
+app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { decision, note } = req.body as { decision?: string; note?: string };
+    if (!decision || !['approved', 'rejected', 'task'].includes(decision)) {
+      return res.status(400).json({ message: 'decision 必填（approved / rejected / task）' });
+    }
+
+    const newStatus = decision === 'rejected' ? 'rejected' : 'approved';
+
+    // 1. 更新 review 狀態（Supabase or in-memory）
+    if (hasSupabase()) {
+      const reviews = await fetchOpenClawReviews();
+      const review = reviews.find((r) => r.id === reviewId);
+      if (review) {
+        await upsertOpenClawReview({
+          ...review,
+          status: newStatus,
+          reasoning: note ? `${review.reasoning || ''}\n---\n老蔡：${note}` : review.reasoning,
+        });
+      }
+    }
+    const memAlert = alerts.find((a) => a.id === reviewId);
+    if (memAlert) memAlert.status = newStatus === 'approved' ? 'acked' : 'snoozed';
+
+    // 2. 如果是「批准+轉任務」，建立任務
+    let taskId: string | null = null;
+    if (decision === 'task') {
+      // 先從 Supabase 找 review 資料
+      let reviewTitle = '';
+      let reviewDesc = '';
+      if (hasSupabase()) {
+        const reviews = await fetchOpenClawReviews();
+        const review = reviews.find((r) => r.id === reviewId);
+        if (review) {
+          reviewTitle = review.title;
+          reviewDesc = review.desc ?? '';
+        }
+      }
+      // fallback: 從 in-memory alerts 找
+      if (!reviewTitle && memAlert) {
+        reviewTitle = memAlert.message.split(':')[0]?.trim() || reviewId;
+        reviewDesc = memAlert.message;
+      }
+      if (reviewTitle) {
+        const tId = `t${Date.now()}`;
+        if (hasSupabase()) {
+          await upsertOpenClawTask({
+            id: tId,
+            title: reviewTitle,
+            name: reviewTitle,
+            status: 'queued' as never,
+            progress: 0,
+            cat: 'feature',
+            subs: [{ t: '實作', d: false }, { t: '驗證', d: false }],
+            fromR: reviewId,
+            thought: reviewDesc,
+          } as never);
+        }
+        // in-memory fallback
+        tasks.push({
+          id: tId,
+          name: reviewTitle,
+          description: reviewDesc,
+          status: 'ready',
+          tags: ['feature'],
+          projectPath: '',
+          isAutoGenerated: false,
+          updatedAt: new Date().toISOString(),
+        } as never);
+        taskId = tId;
+      }
+    }
+
+    // 3. WebSocket 廣播
+    wsManager.broadcast({
+      type: 'proposal_decided',
+      data: { reviewId, decision, taskId },
+    });
+
+    res.json({ ok: true, decision, taskId });
+  } catch (e) {
+    console.error('[Proposal] decide error:', e);
+    res.status(500).json({ message: 'Failed to decide proposal' });
+  }
+});
+
+// ─── /發想提案 ────────────────────────────────────────────
 
 /** 取得此發想審核轉出的任務列表 */
 app.get('/api/openclaw/reviews/:id/tasks', async (req, res) => {

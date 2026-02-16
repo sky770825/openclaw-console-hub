@@ -658,6 +658,62 @@ async function poll(): Promise<void> {
         });
         continue;
       }
+      // 紅色警戒解除 callback
+      if (text.startsWith('alert:resolve:')) {
+        const parts = text.split(':');
+        const reviewId = parts[2] ?? '';
+        const taskId = parts[3] ?? '';
+        if (reviewId && taskId) {
+          const result = await fetchJsonWithTimeout(
+            `${TASKBOARD_BASE_URL}/api/openclaw/red-alert/${reviewId}/resolve`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ taskId }),
+            },
+            10000
+          );
+          const ok = result && typeof result === 'object' && (result as Record<string, unknown>).ok === true;
+          const reply = ok
+            ? `✅ <b>警報已解除</b>\n\n任務 <code>${taskId}</code> 已恢復為可執行狀態`
+            : `⚠️ <b>解除失敗</b>\n\n請手動檢查任務板`;
+          await sendTelegramMessageToChat(chatId, reply, { token: TOKEN, parseMode: 'HTML' });
+        }
+        continue;
+      }
+      // 發想提案審核 callback（proposal:approve / proposal:reject / proposal:task）
+      if (text.startsWith('proposal:')) {
+        const parts = text.split(':');
+        const action = parts[1] ?? '';  // approve | reject | task
+        const reviewId = parts[2] ?? '';
+        if (reviewId && ['approve', 'reject', 'task'].includes(action)) {
+          const decision = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'task';
+          const result = await fetchJsonWithTimeout(
+            `${TASKBOARD_BASE_URL}/api/openclaw/proposal/${reviewId}/decide`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ decision }),
+            },
+            10000
+          );
+          const ok = result && typeof result === 'object' && (result as Record<string, unknown>).ok === true;
+          const taskCreated = ok && (result as Record<string, unknown>).taskId;
+          let reply: string;
+          if (!ok) {
+            reply = `⚠️ <b>操作失敗</b>\n\n請手動到任務板審核`;
+          } else if (decision === 'approved') {
+            reply = `✅ <b>提案已批准</b>\n\n提案 <code>${reviewId}</code> 已通過`;
+          } else if (decision === 'rejected') {
+            reply = `❌ <b>提案已駁回</b>\n\n提案 <code>${reviewId}</code> 已駁回`;
+          } else {
+            reply = `📋 <b>提案已批准並轉為任務</b>\n\n提案 <code>${reviewId}</code> 已轉成任務` +
+              (taskCreated ? ` <code>${(result as Record<string, unknown>).taskId}</code>` : '');
+          }
+          await sendTelegramMessageToChat(chatId, reply, { token: TOKEN, parseMode: 'HTML' });
+        }
+        continue;
+      }
       if (text === '/codex-triage') {
         await promptCodexTriage(chatId);
         continue;

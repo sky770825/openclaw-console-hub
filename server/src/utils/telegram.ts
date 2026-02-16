@@ -200,6 +200,88 @@ export async function notifyWorkflowComplete(
   await sendTelegramMessage(text, { parseMode: 'HTML', silent: failed === 0 });
 }
 
+/** 紅色警戒通知 — 帶解決按鈕 */
+export async function notifyRedAlert(
+  reviewId: string,
+  taskId: string,
+  title: string,
+  description: string,
+  severity: 'high' | 'critical'
+): Promise<void> {
+  const chatId = TELEGRAM_CHAT_ID;
+  if (!chatId) return;
+
+  const icon = severity === 'critical' ? '🚨🔴' : '⚠️🟠';
+  const truncatedDesc = description.length > 300
+    ? description.slice(0, 300) + '...'
+    : description;
+
+  const text =
+    `${icon} <b>紅色警戒</b>\n\n` +
+    `<b>問題：</b>${title}\n` +
+    `<b>任務 ID：</b><code>${taskId}</code>\n` +
+    `<b>嚴重程度：</b>${severity === 'critical' ? 'CRITICAL' : 'HIGH'}\n\n` +
+    `<b>描述：</b>\n${truncatedDesc}\n\n` +
+    `<b>狀態：</b> 任務已自動暫停，等待人工處理`;
+
+  const replyMarkup = {
+    inline_keyboard: [
+      [{ text: '✅ 已修復，恢復任務', callback_data: `alert:resolve:${reviewId}:${taskId}` }],
+    ],
+  };
+
+  await sendTelegramMessageToChat(chatId, text, { parseMode: 'HTML', replyMarkup });
+}
+
+/** 發想提案通知 — 帶批准/駁回/轉任務按鈕 */
+export async function notifyProposal(
+  reviewId: string,
+  title: string,
+  category: string,
+  background: string,
+  goal: string,
+  risk: string
+): Promise<void> {
+  const chatId = TELEGRAM_CHAT_ID;
+  if (!chatId) return;
+
+  const catEmoji: Record<string, string> = {
+    commercial: '💼', system: '⚙️', tool: '🔧', risk: '🛡️', creative: '💡',
+  };
+  const catLabel: Record<string, string> = {
+    commercial: '商業', system: '系統', tool: '工具', risk: '風險', creative: '創意',
+  };
+  const emoji = catEmoji[category] || '💡';
+  const label = catLabel[category] || category;
+
+  const truncBg = background.length > 200 ? background.slice(0, 200) + '...' : background;
+  const truncGoal = goal.length > 150 ? goal.slice(0, 150) + '...' : goal;
+  const truncRisk = risk.length > 150 ? risk.slice(0, 150) + '...' : risk;
+
+  const text =
+    `${emoji} <b>發想提案</b>  [${label}]\n\n` +
+    `<b>標題：</b>${title}\n` +
+    `<b>提案 ID：</b><code>${reviewId}</code>\n\n` +
+    `<b>背景：</b>\n${truncBg}\n\n` +
+    (truncGoal ? `<b>目標：</b>\n${truncGoal}\n\n` : '') +
+    (truncRisk ? `<b>風險：</b>\n${truncRisk}\n\n` : '') +
+    `⏳ <b>等待老蔡審核</b>`;
+
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: '✅ 批准', callback_data: `proposal:approve:${reviewId}` },
+        { text: '❌ 駁回', callback_data: `proposal:reject:${reviewId}` },
+      ],
+      [
+        { text: '📋 批准+轉任務', callback_data: `proposal:task:${reviewId}` },
+      ],
+    ],
+  };
+
+  await sendTelegramMessageToChat(chatId, text, { parseMode: 'HTML', replyMarkup });
+}
+
 export const message = {
   send: sendTelegramMessage,
 };

@@ -78,7 +78,7 @@ export function AutoPanel({autos,onTog,onRun,onView}){
 export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask}){
   const pending=reviews.filter(r=>r.status==="pending"), approved=reviews.filter(r=>r.status==="approved");
   const priCfg={critical:{l:"嚴重",c:C.red,bg:C.redG},high:{l:"高",c:C.amber,bg:C.amberG},medium:{l:"中",c:C.green,bg:C.greenG}};
-  const typI={tool:"⚙️",skill:"🧠",issue:"🔧",learn:"📚"};
+  const typI={tool:"⚙️",skill:"🧠",issue:"🔧",learn:"📚",proposal:"💡",red_alert:"🚨"};
   
   // 全部通過處理函數
   const handleApproveAll = () => {
