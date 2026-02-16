@@ -241,37 +241,26 @@ export default function Projects() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {p.description && (
-                    <p className="text-[11px] text-muted-foreground line-clamp-2">{p.description}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>
                   )}
-                  {(p.assigneeAgent || p.assigneeLabel) && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      {p.assigneeLabel || ASSIGNEE_OPTIONS.find((o) => o.value === p.assigneeAgent)?.label || p.assigneeAgent}
-                    </p>
-                  )}
-                  {p.deadline && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      截止：{p.deadline}
-                    </p>
-                  )}
-                  {(p.tags?.length ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {(p.tags ?? []).slice(0, 4).map((t) => (
-                        <Badge key={t} variant="secondary" className="text-[10px] font-normal">
-                          <Tag className="h-2.5 w-2.5 mr-0.5" />
-                          {t}
-                        </Badge>
-                      ))}
-                      {(p.tags?.length ?? 0) > 4 && <span className="text-[10px] text-muted-foreground">+{(p.tags?.length ?? 0) - 4}</span>}
-                    </div>
-                  )}
-                  {p.deliverablesSummary && (
-                    <p className="text-[11px] text-muted-foreground line-clamp-1 flex items-center gap-1">
-                      <Package className="h-3 w-3 shrink-0" />
-                      {p.deliverablesSummary}
-                    </p>
-                  )}
+                  {/* 備註摘要：顯示 notes 的前幾行重點 */}
+                  {p.notes && (() => {
+                    const lines = p.notes.split('\n').filter((l) => l.trim() && !l.startsWith('#'));
+                    const preview = lines.slice(0, 5);
+                    if (preview.length === 0) return null;
+                    return (
+                      <div className="rounded-md border bg-muted/30 px-2.5 py-2 space-y-0.5">
+                        {preview.map((line, i) => (
+                          <p key={i} className="text-[11px] text-muted-foreground leading-relaxed truncate">
+                            {line.replace(/^[-*]\s*/, '').replace(/\[[ x]\]\s*/i, (m) => m.includes('x') ? '✅ ' : '⬜ ')}
+                          </p>
+                        ))}
+                        {lines.length > 5 && (
+                          <p className="text-[10px] text-muted-foreground/60">...還有 {lines.length - 5} 行</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-muted-foreground">
                       <span>進度</span>
@@ -284,40 +273,7 @@ export default function Projects() {
                       階段 {p.phases.filter((ph) => ph.done).length}/{p.phases.length}
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openTaskListForProject(p.id, p.title);
-                      }}
-                    >
-                      <ListTodo className="h-3 w-3" />
-                      任務列表
-                    </Button>
-                    {(p.linkedTaskIds?.length ?? 0) > 0 && (
-                      <div className="flex flex-wrap gap-1 items-center">
-                        <span className="text-[10px] text-muted-foreground shrink-0">關聯：</span>
-                        {(p.linkedTaskIds ?? []).slice(0, 5).map((taskId) => (
-                          <Link
-                            key={taskId}
-                            to={`/tasks/${taskId}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[10px] text-primary hover:underline px-1.5 py-0.5 rounded bg-primary/10"
-                          >
-                            {taskId}
-                          </Link>
-                        ))}
-                        {(p.linkedTaskIds?.length ?? 0) > 5 && (
-                          <span className="text-[10px] text-muted-foreground">+{(p.linkedTaskIds?.length ?? 0) - 5}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">更新：{formatDate(p.updatedAt)}</p>
+                  <p className="text-[10px] text-muted-foreground">更新：{formatDate(p.updatedAt)}</p>
                 </CardContent>
               </Card>
             ))}

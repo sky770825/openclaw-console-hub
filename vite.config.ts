@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
   base: process.env.VITE_BASE_PATH ?? "/",
   server: {
     host: "::",
-    port: 3009,
+    port: 5173,
+    allowedHosts: true,
     hmr: {
       overlay: false,
     },

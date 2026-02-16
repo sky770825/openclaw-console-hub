@@ -56,19 +56,13 @@ export default function OpenClawV4() {
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${C.indigoD},${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, boxShadow: `0 4px 14px ${C.indigoG}` }}>🦀</div>
         <div>
-          <h1 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.2 }}>OpenClaw<span style={{ fontWeight: 400, color: C.t3, marginLeft: 7, fontSize: 12 }}>v4 Ultimate Board</span></h1>
-          <div style={{ fontSize: 10, color: C.t3, marginTop: 1 }}>n8n + Telegram + Supabase + Vercel · RBAC · Plugin System</div>
+          <h1 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.2 }}>OpenClaw<span style={{ fontWeight: 400, color: C.t3, marginLeft: 7, fontSize: 12 }}>Agent Board</span></h1>
+          <div style={{ fontSize: 10, color: C.t3, marginTop: 1 }}>Supabase + Telegram · 任務自動化控制台</div>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ fontSize: 10, color: C.t3 }}>✈️ TG</span><Pulse c={C.green} s={5} />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ fontSize: 10, color: C.t3 }}>🔗 n8n</span><Pulse c={C.green} s={5} />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <Pulse c={C.green} /><span style={{ fontSize: 11, color: C.green, fontWeight: 500 }}>Online</span>
+          <Pulse c={C.green} s={5} /><span style={{ fontSize: 11, color: C.green, fontWeight: 500 }}>Online</span>
         </div>
         <div style={{ fontSize: 10, color: C.t3 }}>API: {getApiDisplayLabel()}</div>
         <ResetGatewayBtn />

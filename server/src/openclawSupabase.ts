@@ -581,16 +581,14 @@ export async function fetchOpenClawProjects(): Promise<OpenClawProject[]> {
 export async function upsertOpenClawProject(project: Partial<OpenClawProject> & { id: string }): Promise<OpenClawProject | null> {
   if (!hasSupabase() || !supabase) return null;
   const now = new Date().toISOString();
-  const payload = {
-    id: project.id,
-    title: project.title ?? '',
-    description: project.description ?? '',
-    status: project.status ?? 'planning',
-    progress: project.progress ?? 0,
-    notes: project.notes ?? '',
-    updated_at: now,
-    created_at: project.createdAt ?? now,
-  };
+  // 只放有明確值的欄位，避免 PATCH 時把未傳的欄位覆蓋成空字串
+  const payload: Record<string, unknown> = { id: project.id, updated_at: now };
+  if (project.title !== undefined) payload.title = project.title;
+  if (project.description !== undefined) payload.description = project.description;
+  if (project.status !== undefined) payload.status = project.status;
+  if (project.progress !== undefined) payload.progress = project.progress;
+  if (project.notes !== undefined) payload.notes = project.notes;
+  if (project.createdAt !== undefined) payload.created_at = project.createdAt;
   const { data, error } = await supabase.from('openclaw_projects').upsert(payload).select().single();
   if (error) {
     console.error('[OpenClaw] upsert project error:', error.message);
