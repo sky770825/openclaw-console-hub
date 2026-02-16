@@ -67,7 +67,7 @@ const statusConfig: Record<TaskStatus | RunStatus | LastRunStatus, { label: stri
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  const config = statusConfig[status] ?? { label: status ?? '未知', className: 'bg-muted text-muted-foreground' };
   return (
     <span className={cn(
       'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border',
@@ -97,7 +97,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
 };
 
 export function PriorityBadge({ priority, showLabel = true, className }: PriorityBadgeProps) {
-  const config = priorityConfig[priority];
+  const config = priorityConfig[priority] ?? { label: `P${priority ?? '?'}`, className: 'bg-muted text-muted-foreground' };
   return (
     <span className={cn(
       'inline-flex items-center justify-center px-1.5 py-0.5 rounded text-xs font-semibold min-w-[24px]',

@@ -114,6 +114,7 @@ import {
   ensureRunWorkspace,
   buildRunPath,
   normalizeProjectPath,
+  parseProjectAndModule,
 } from './taskCompliance.js';
 import { fileURLToPath } from 'url';
 import { DOMAINS, applyDomainTagging } from './domains.js';
@@ -545,7 +546,7 @@ app.patch('/api/tasks/:id', validateBody(updateTaskSchema), async (req, res) => 
     });
     updatedTask = { ...updatedTask, tags: domainApplied.tags };
 
-    // Gate: transition to ready 時做欄位強制，並預先建立 projects 骨架
+    // Gate: transition to ready 時做欄位強制
     if (body.status === 'ready') {
       const gate = validateTaskForGate(updatedTask, 'ready');
       if (!gate.ok) {
@@ -553,9 +554,12 @@ app.patch('/api/tasks/:id', validateBody(updateTaskSchema), async (req, res) => 
           message: `Task cannot transition to ready; missing: ${gate.missing.join(', ')}`,
         });
       }
-      const ensured = ensureProjectSkeleton(updatedTask);
-      if (!ensured.ok) {
-        return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+      // projectPath 有填才建 skeleton，沒填就跳過
+      if (updatedTask.projectPath) {
+        const ensured = ensureProjectSkeleton(updatedTask);
+        if (!ensured.ok) {
+          return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+        }
       }
     }
 
@@ -759,9 +763,12 @@ app.post('/api/tasks', validateBody(createTaskSchema), async (req, res) => {
           message: `Task cannot be created as ready; missing: ${gate.missing.join(', ')}`,
         });
       }
-      const ensured = ensureProjectSkeleton(t);
-      if (!ensured.ok) {
-        return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+      // 有明確的 projectPath（非預設值）才建 skeleton，否則跳過
+      if (t.projectPath && t.projectPath !== 'projects/default/' && parseProjectAndModule(t.projectPath)) {
+        const ensured = ensureProjectSkeleton(t);
+        if (!ensured.ok) {
+          return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+        }
       }
     }
 
@@ -1444,8 +1451,10 @@ app.get('/api/openclaw/tasks', async (_req, res) => {
       }));
     }
     // 回傳給中控板：含 Task 欄位 + 看板用 title/subs/progress/cat（供多任務板同步）
+    // 注意：status 必須保留 OpenClaw 格式（queued/in_progress/done），看板 UI 依此過濾
     const mapped = (data ?? []).map((oc) => ({
       ...openClawTaskToTask(oc),
+      status: oc.status ?? 'queued',  // 覆蓋回 OpenClaw 原始狀態，避免 ready/running 被看板過濾掉
       title: oc.title,
       subs: oc.subs ?? [],
       progress: oc.progress,
@@ -3228,6 +3237,48 @@ app.post('/api/openclaw/auto-executor/stop', (_req, res) => {
     message: 'AutoExecutor 已停止',
     ...autoExecutorState,
   });
+});
+
+// ==================== Maintenance: Reconcile（狀態校正）====================
+app.post('/api/openclaw/maintenance/reconcile', async (_req, res) => {
+  try {
+    if (!hasSupabase()) {
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    const ocTasks = await fetchOpenClawTasks();
+    const dbRuns = await fetchOpenClawRuns(2000);
+    // 找出所有 active run 的 task_id
+    const activeRunTaskIds = new Set(
+      (dbRuns ?? [])
+        .filter((r: { status?: string }) => r.status === 'running' || r.status === 'in_progress')
+        .map((r: { task_id?: string }) => r.task_id)
+        .filter(Boolean)
+    );
+    let fixedToReady = 0;
+    let fixedToDone = 0;
+    let fixedToRunning = 0;
+    const details: Array<{ taskId: string; from: string; to: string; reason: string }> = [];
+    for (const t of ocTasks ?? []) {
+      const st = t.status ?? '';
+      if ((st === 'running' || st === 'in_progress') && !activeRunTaskIds.has(t.id)) {
+        // running 但沒有 active run → 改成 done（假設已完成）
+        await upsertOpenClawTask({ id: t.id, status: 'done' });
+        details.push({ taskId: t.id, from: st, to: 'done', reason: 'no active run' });
+        fixedToDone++;
+      }
+    }
+    res.json({
+      ok: true,
+      scanned: (ocTasks ?? []).length,
+      fixedToReady,
+      fixedToDone,
+      fixedToRunning,
+      details,
+    });
+  } catch (e) {
+    console.error('[Reconcile] error:', e);
+    res.status(500).json({ message: 'Reconcile failed' });
+  }
 });
 
 // ==================== System Schedules（系統排程）====================
