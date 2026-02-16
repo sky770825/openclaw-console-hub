@@ -18,7 +18,7 @@ jobs:
           node-version: "20"
           cache: "npm"
       - name: Install dependencies
-        run: npm ci --ignore-optional
+        run: npm install --no-optional --no-audit
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
       - name: Pull Vercel Environment Information
