@@ -15,6 +15,73 @@ import {
   fetchBoardHealth,
 } from "@/services/openclawBoardApi";
 import { C } from "@/components/openclaw/uiPrimitives";
+import { recordReviewDecision, recordTaskCompletion } from "@/services/aiMemoryStore";
+
+// ─── 風險偵測與修改策略自動生成 ───
+const RISK_KEYWORDS = {
+  critical: ["安全漏洞", "資料外洩", "權限繞過", "注入攻擊", "後門", "root 存取", "生產環境崩潰", "全站停機"],
+  high: ["XSS", "CSRF", "未授權", "SQL injection", "critical", "嚴重", "緊急修復", "資料遺失"],
+  medium: ["效能瓶頸", "相容性", "單點故障", "memory leak", "race condition", "風險", "risk", "deprecated"],
+  low: ["code smell", "技術債", "重構", "refactor", "minor", "低優先"],
+};
+
+function detectRiskLevel(r) {
+  // 已有明確 riskLevel
+  if (r.riskLevel && r.riskLevel !== "none") return r.riskLevel;
+  // 從分類判斷
+  const src = r.src || r.filePath || "";
+  if (src.includes("agent-proposal:risk")) return "medium";
+  // 從 pri 判斷
+  if (r.pri === "critical") return "critical";
+  // 從文字偵測（按嚴重度從高到低匹配）
+  const text = `${r.title || ""} ${r.desc || r.summary || ""} ${r.reasoning || r.reviewNote || ""}`.toLowerCase();
+  for (const level of ["critical", "high", "medium", "low"]) {
+    if (RISK_KEYWORDS[level].some(kw => text.includes(kw.toLowerCase()))) return level;
+  }
+  return "none";
+}
+
+const RISK_STRATEGIES = {
+  critical: [
+    { action: "立即停機評估", detail: "確認是否需要緊急停機或回滾" },
+    { action: "安全團隊介入", detail: "通知安全團隊進行緊急審查" },
+    { action: "建立修復任務", detail: "拆解為具體修復子任務並排最高優先" },
+    { action: "影響範圍評估", detail: "確認受影響的模組、資料和使用者" },
+    { action: "全面回歸測試", detail: "修復後需全面回歸+滲透測試" },
+  ],
+  high: [
+    { action: "立即安全審查", detail: "由安全團隊進行程式碼/架構審查" },
+    { action: "建立修復任務", detail: "拆解為具體修復子任務並排入高優先" },
+    { action: "影響範圍評估", detail: "確認受影響的模組、資料和使用者" },
+    { action: "回歸測試", detail: "修復後需全面回歸測試" },
+  ],
+  medium: [
+    { action: "評估影響範圍", detail: "確認影響的功能和使用者數量" },
+    { action: "排入修復排程", detail: "加入近期迭代的修復清單" },
+    { action: "監控指標", detail: "設定監控告警，追蹤問題發展" },
+  ],
+  low: [
+    { action: "記錄追蹤", detail: "加入技術債清單持續追蹤" },
+    { action: "排入重構排程", detail: "納入下次重構週期處理" },
+  ],
+  none: [],
+};
+
+function generateRiskStrategy(riskLevel, r) {
+  const strategies = RISK_STRATEGIES[riskLevel] || [];
+  if (strategies.length === 0) return null;
+  return {
+    riskLevel,
+    strategies,
+    summary: riskLevel === "critical"
+      ? `🟣 極高風險：需立即停機評估，老蔡親自審核`
+      : riskLevel === "high"
+        ? `🔴 高風險：需立即處理，建議拆解為修復任務`
+        : riskLevel === "medium"
+          ? `🟠 中風險：建議排入近期迭代修復`
+          : `🟡 低風險：加入技術債追蹤`,
+  };
+}
 
 export function useOpenClawBoard() {
   const [autos, setAutos] = useState([]);
@@ -82,7 +149,8 @@ export function useOpenClawBoard() {
             if (src.startsWith("agent-proposal")) collaborators.push({ name: "Claude Agent", role: "提案者" });
             if (r.reviewNote || (r.status === "approved" || r.status === "rejected")) collaborators.push({ name: "老蔡", role: "審核者" });
           }
-          return {
+          // risk detection
+          const normalized = {
             ...r,
             desc: r.desc || r.summary || "",
             src: r.src || r.filePath || "",
@@ -94,6 +162,10 @@ export function useOpenClawBoard() {
             collaborators,
             _hasTask: hasTask,
           };
+          const riskLevel = detectRiskLevel(normalized);
+          normalized._riskLevel = riskLevel;
+          normalized._riskStrategy = generateRiskStrategy(riskLevel, normalized);
+          return normalized;
         }));
       }
       if (Array.isArray(aList)) setAutos(aList.map((a) => ({ ...a, lastRun: a.last_run || a.lastRun })));
@@ -145,6 +217,7 @@ export function useOpenClawBoard() {
     if (!r) return;
     addE(`審核通過「${r.title}」→ 排入執行`, C.green, "批准", C.green);
     persistReview(upd);
+    recordReviewDecision(r, "approved");
   };
 
   const noR = (id) => {
@@ -154,6 +227,7 @@ export function useOpenClawBoard() {
     if (!r) return;
     addE(`駁回「${r.title}」`, C.t3, "駁回", C.t3);
     persistReview(upd);
+    recordReviewDecision(r, "rejected");
   };
 
   const archiveR = (id, action) => {
@@ -165,6 +239,7 @@ export function useOpenClawBoard() {
     const label = newStatus === "archived" ? "收錄" : "拉回待審";
     addE(`${label}「${r.title}」`, C.t3, label, C.t3);
     persistReview(upd);
+    if (newStatus === "archived") recordReviewDecision(r, "archived");
   };
 
   const okRAndCreateTask = async (r) => {
@@ -227,6 +302,7 @@ export function useOpenClawBoard() {
         ad ? C.green : C.indigo
       );
       persistTask(upd);
+      if (ad) recordTaskCompletion(upd);
       return upd;
     }));
   };
@@ -393,6 +469,141 @@ export function useOpenClawBoard() {
     }
   };
 
+  // ─── 風險分流自動審核 ───
+  // 低/中風險：AI 蓋章後自動通過 + 轉任務
+  // 高/極高風險：AI 蓋章後送老蔡專區，老蔡核准後才轉任務
+  const autoReviewByRisk = async (id) => {
+    const r = reviews.find((item) => item.id === id);
+    if (!r || r.status !== "pending") return;
+    const risk = r._riskLevel || "none";
+
+    // AI 蓋章標記
+    const stamped = {
+      ...r,
+      _aiStamped: true,
+      _aiStampedAt: new Date().toISOString(),
+      _aiStampRisk: risk,
+    };
+
+    if (risk === "none" || risk === "low" || risk === "medium") {
+      // ── 低/中風險：直接通過 + 轉任務 ──
+      try {
+        const { ok, status, data: created } = await createTaskFromReview(stamped);
+        if (!ok) {
+          // API 失敗也 fallback 建任務（in-memory）
+          const upd = { ...stamped, status: "approved" };
+          setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+          persistReview(upd);
+          const fbId = `task-fb-${Date.now()}-${id.slice(-4)}`;
+          setTasks((p) => [{ id: fbId, title: r.title, name: r.title, status: "queued", progress: 0, subs: [{ t: "實作", d: false }, { t: "驗證", d: false }], fromR: r.id }, ...p]);
+          addE(`🔖 AI 蓋章通過「${r.title}」→ 已轉任務（${risk === "none" ? "安全" : risk === "low" ? "低風險" : "中風險"}，本地）`, C.green, "批准+轉任務", C.green);
+          showInfo(`AI 自動通過：${r.title}（本地任務）`);
+          recordReviewDecision(r, "approved", { taskId: fbId, reason: `AI 自動過篩（${risk}）` });
+          return;
+        }
+        const upd = { ...stamped, status: "approved" };
+        setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+        persistReview(upd);
+        const taskId = created?.id;
+        if (taskId) {
+          setTasks((p) => [{ id: taskId, title: r.title, name: r.title, status: "queued", progress: 0, subs: [{ t: "實作", d: false }, { t: "驗證", d: false }], fromR: r.id }, ...p]);
+        }
+        addE(`🔖 AI 蓋章通過「${r.title}」→ 已轉任務（${risk === "none" ? "安全" : risk === "low" ? "低風險" : "中風險"}）`, C.green, "批准+轉任務", C.green);
+        showInfo(`AI 自動通過：${r.title}`);
+        recordReviewDecision(r, "approved", { taskId: taskId || "", reason: `AI 自動過篩（${risk}）` });
+      } catch (e) {
+        console.warn("[OpenClaw] autoReviewByRisk failed", e);
+        showApiError(undefined, "自動審核失敗");
+      }
+    } else {
+      // ── 高/極高風險：送老蔡專區 ──
+      const upd = { ...stamped, _pendingBoss: true };
+      setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+      persistReview(upd);
+      const riskLabel = risk === "critical" ? "極高風險" : "高風險";
+      addE(`🔖 AI 蓋章「${r.title}」→ 送老蔡審核（${riskLabel}）`, C.purple, "送審老蔡", C.purple);
+      showInfo(`${riskLabel}：${r.title} 已送老蔡專區`);
+      recordReviewDecision(r, "pending_boss", { reason: `${riskLabel}，需老蔡審核` });
+    }
+  };
+
+  // 老蔡核准高風險項目 → 轉任務執行
+  const bossApproveReview = async (id) => {
+    const r = reviews.find((item) => item.id === id);
+    if (!r) return;
+    try {
+      const { ok, status, data: created } = await createTaskFromReview(r);
+      if (!ok) {
+        // API 失敗也 fallback 建任務（in-memory）
+        const upd = { ...r, status: "approved", _pendingBoss: false, _bossApproved: true, _bossApprovedAt: new Date().toISOString() };
+        setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+        persistReview(upd);
+        const fbId = `task-fb-${Date.now()}-${id.slice(-4)}`;
+        setTasks((p) => [{ id: fbId, title: r.title, name: r.title, status: "queued", progress: 0, subs: [{ t: "實作", d: false }, { t: "驗證", d: false }], fromR: r.id }, ...p]);
+        addE(`👤 老蔡核准「${r.title}」→ 已轉任務（本地）`, C.green, "老蔡核准", C.green);
+        showInfo(`老蔡已核准：${r.title} → 任務已發布（本地）`);
+        recordReviewDecision(r, "approved", { taskId: fbId, reason: "老蔡核准高風險項目" });
+        return;
+      }
+      const upd = { ...r, status: "approved", _pendingBoss: false, _bossApproved: true, _bossApprovedAt: new Date().toISOString() };
+      setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+      persistReview(upd);
+      const taskId = created?.id;
+      if (taskId) {
+        setTasks((p) => [{ id: taskId, title: r.title, name: r.title, status: "queued", progress: 0, subs: [{ t: "實作", d: false }, { t: "驗證", d: false }], fromR: r.id }, ...p]);
+      }
+      addE(`👤 老蔡核准「${r.title}」→ 已轉任務發布執行`, C.green, "老蔡核准", C.green);
+      showInfo(`老蔡已核准：${r.title} → 任務已發布`);
+      recordReviewDecision(r, "approved", { taskId: taskId || "", reason: "老蔡核准高風險項目" });
+    } catch (e) {
+      console.warn("[OpenClaw] bossApproveReview failed", e);
+      showApiError(undefined, "老蔡核准轉任務失敗");
+    }
+  };
+
+  // 老蔡駁回高風險項目
+  const bossRejectReview = (id) => {
+    const r = reviews.find((item) => item.id === id);
+    if (!r) return;
+    const upd = { ...r, status: "rejected", _pendingBoss: false, _bossRejected: true, _bossRejectedAt: new Date().toISOString() };
+    setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+    persistReview(upd);
+    addE(`👤 老蔡駁回「${r.title}」`, C.red, "老蔡駁回", C.red);
+    recordReviewDecision(r, "rejected", { reason: "老蔡駁回高風險項目" });
+  };
+
+  // ─── 審核意見 ───
+  const commentR = (id, comment, action) => {
+    if (!comment && action === "comment") return;
+    setReviews((p) => p.map((r) => {
+      if (r.id !== id) return r;
+      const upd = { ...r, _reviewComment: comment, _reviewedAt: new Date().toISOString() };
+      persistReview(upd);
+      return upd;
+    }));
+    const r = reviews.find((item) => item.id === id);
+    if (r) addE(`審核意見「${r.title}」：${comment?.slice(0, 30) || "(無內容)"}`, C.indigo, "審核意見", C.indigo);
+  };
+
+  // ─── 風險項目一鍵批准 ───
+  const approveRiskItems = (riskLevel) => {
+    const targets = reviews.filter(r =>
+      r.status === "pending" && r._riskLevel === riskLevel
+    );
+    if (targets.length === 0) {
+      showInfo(`沒有 ${riskLevel} 風險的待審項目`);
+      return;
+    }
+    if (!confirm(`確定要一次批准全部 ${targets.length} 個「${riskLevel === "high" ? "高" : riskLevel === "medium" ? "中" : "低"}風險」項目嗎？`)) return;
+    targets.forEach(r => {
+      const upd = { ...r, status: "approved" };
+      setReviews((p) => p.map((item) => (item.id === r.id ? upd : item)));
+      persistReview(upd);
+    });
+    addE(`一鍵批准 ${targets.length} 個 ${riskLevel} 風險項目`, C.amber, "風險批准", C.amber);
+    showInfo(`已批准 ${targets.length} 個風險項目`);
+  };
+
   return {
     autos,
     reviews,
@@ -416,5 +627,10 @@ export function useOpenClawBoard() {
     moveT,
     addQuiz,
     submitIdea,
+    approveRiskItems,
+    commentR,
+    autoReviewByRisk,
+    bossApproveReview,
+    bossRejectReview,
   };
 }

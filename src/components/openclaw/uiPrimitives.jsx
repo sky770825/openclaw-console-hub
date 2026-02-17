@@ -49,16 +49,36 @@ export function Card({children,style={},glow,onClick,oc,...rest}){
 }
 
 export const RISK_COLORS = {
-  none:     { emoji: "🟢", label: "安全",   c: C.green,  bg: C.greenG  },
-  low:      { emoji: "🟡", label: "低風險", c: C.amber,  bg: C.amberG  },
-  medium:   { emoji: "🔴", label: "中風險", c: C.red,    bg: C.redG    },
-  high:     { emoji: "🔴", label: "高風險", c: C.red,    bg: C.redG    },
-  critical: { emoji: "🟣", label: "需老蔡", c: C.purple, bg: C.purpleG },
+  none:     { emoji: "🟢", label: "安全",     c: C.green,  bg: C.greenG,  rank: 0 },
+  low:      { emoji: "🟡", label: "低風險",   c: "#a3e635", bg: "rgba(163,230,53,0.08)", rank: 1 },
+  medium:   { emoji: "🟠", label: "中風險",   c: C.amber,  bg: C.amberG,  rank: 2 },
+  high:     { emoji: "🔴", label: "高風險",   c: C.red,    bg: C.redG,    rank: 3 },
+  critical: { emoji: "🟣", label: "極高風險", c: C.purple, bg: C.purpleG, rank: 4 },
 };
 
 export const RiskBadge = ({level}) => {
   const cfg = RISK_COLORS[level] || RISK_COLORS.low;
   return <Badge c={cfg.c} bg={cfg.bg}>{cfg.emoji} {cfg.label}</Badge>;
+};
+
+// 風險蓋章 — 用於已審核項目的醒目標記
+export const RiskStamp = ({level}) => {
+  const cfg = RISK_COLORS[level];
+  if (!cfg || level === "none") return null;
+  return <span style={{
+    display:"inline-flex",alignItems:"center",justifyContent:"center",
+    width:28,height:28,borderRadius:"50%",
+    border:`2.5px solid ${cfg.c}`,
+    background:`${cfg.c}15`,
+    fontSize:14,flexShrink:0,
+    boxShadow:`0 0 8px ${cfg.c}30`,
+    position:"relative",
+  }} title={`風險等級：${cfg.label}`}>
+    {cfg.emoji}
+    <span style={{position:"absolute",bottom:-2,right:-2,fontSize:7,fontWeight:800,color:cfg.c,background:C.s2,borderRadius:3,padding:"0 2px",lineHeight:1}}>
+      L{cfg.rank}
+    </span>
+  </span>;
 };
 
 export function Sec({icon,title,count,right,children}){

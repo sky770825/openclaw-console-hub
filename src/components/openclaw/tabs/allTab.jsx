@@ -9,7 +9,7 @@ import { C } from "../uiPrimitives";
 
 export function renderAllTab(data, actions) {
   const { autos, reviews, tasks, evo } = data;
-  const { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz } = actions;
+  const { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz, approveRiskItems, commentR, autoReviewByRisk } = actions;
 
   return <>
     <Stats tasks={tasks} autos={autos} reviews={reviews} />
@@ -29,7 +29,7 @@ export function renderAllTab(data, actions) {
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:-6}}>
           <span data-oc-action="GOTO_MULTIREVIEW" onClick={()=>document.querySelector('[data-oc-action="TAB_REVIEW"]')?.click()} style={{fontSize:10,color:C.indigo,cursor:"pointer",textDecoration:"underline"}}>前往多分類審核 →</span>
         </div>
-        <ReviewPanel reviews={reviews} onOk={okR} onNo={noR} onOkAndCreateTask={okRAndCreateTask} onArchive={archiveR} onView={setDrawer} />
+        <ReviewPanel reviews={reviews} onOk={okR} onNo={noR} onOkAndCreateTask={okRAndCreateTask} onArchive={archiveR} onView={setDrawer} onApproveRiskItems={approveRiskItems} onComment={commentR} onAutoReview={autoReviewByRisk} />
       </div>
     </div>
 

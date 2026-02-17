@@ -37,6 +37,7 @@ export default function OpenClawV4() {
     moveT,
     addQuiz,
     submitIdea,
+    approveRiskItems,
   } = useOpenClawBoard();
 
   const [tab, setTab] = useState("all");
@@ -87,7 +88,7 @@ export default function OpenClawV4() {
       {renderTabContent(
         tab,
         { autos, reviews, tasks, boardConfig, evo },
-        { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz, submitIdea }
+        { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz, submitIdea, approveRiskItems }
       )}
     </div>
 

@@ -3,7 +3,7 @@ import { MultiReview } from "../MultiReview";
 
 export function renderReviewTab(data, actions) {
   const { reviews } = data;
-  const { setDrawer, okR, noR, okRAndCreateTask, archiveR, submitIdea } = actions;
+  const { setDrawer, okR, noR, okRAndCreateTask, archiveR, submitIdea, approveRiskItems, commentR, autoReviewByRisk } = actions;
   return (
     <div style={{ maxWidth: 720 }}>
       <IdeaComposer onSubmit={submitIdea} />
@@ -14,6 +14,9 @@ export function renderReviewTab(data, actions) {
         onOkAndCreateTask={okRAndCreateTask}
         onArchive={archiveR}
         onView={setDrawer}
+        onApproveRiskItems={approveRiskItems}
+        onComment={commentR}
+        onAutoReview={autoReviewByRisk}
       />
     </div>
   );

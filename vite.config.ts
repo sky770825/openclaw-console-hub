@@ -14,11 +14,25 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
-    // 開發時將 /api 轉發至後端（須與 .env 的 PORT 一致，預設 3011）
+    // ─── 雙後端分流 proxy ───
+    // 核心指揮中心 API → port 3011（我們這端）
+    // 社區 API → port 3009（小蔡那端）
     proxy: {
+      // 社區 API 必須放在 /api 前面（更具體的路徑優先）
+      "/api/community": {
+        target: "http://localhost:3009",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/community/, "/api"),
+      },
       "/api": {
         target: "http://localhost:3011",
         changeOrigin: true,
+      },
+      // 社區 WebSocket
+      "/ws/community": {
+        target: "ws://localhost:3009",
+        ws: true,
+        rewrite: (p) => p.replace(/^\/ws\/community/, "/ws"),
       },
       "/ws": {
         target: "ws://localhost:3011",

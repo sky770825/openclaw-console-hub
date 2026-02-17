@@ -5,9 +5,13 @@ import { renderTasksTab } from "./tabs/tasksTab";
 import { renderEvoTab } from "./tabs/evoTab";
 import { renderSystemTab } from "./tabs/systemTab";
 import { renderDispatchTab } from "./tabs/dispatchTab";
+import { renderBossTab } from "./tabs/bossTab";
+import { renderAiWorkspaceTab } from "./tabs/aiWorkspaceTab";
 
 export const TAB_ITEMS = [
   { key: "all", label: "總覽" },
+  { key: "ai", label: "🤖 AI 工作區" },
+  { key: "boss", label: "👤 老蔡" },
   { key: "dispatch", label: "🟣 派工審核" },
   { key: "auto", label: "⚡ 自動化" },
   { key: "review", label: "🔍 審核" },
@@ -19,6 +23,8 @@ export const TAB_ITEMS = [
 export function renderTabContent(tab, data, actions) {
   const tabRenderers = {
     all: renderAllTab,
+    ai: renderAiWorkspaceTab,
+    boss: renderBossTab,
     dispatch: renderDispatchTab,
     auto: renderAutoTab,
     review: renderReviewTab,

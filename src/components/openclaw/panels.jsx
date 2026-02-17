@@ -5,6 +5,7 @@ import {
   Pulse,
   Badge,
   RiskBadge,
+  RiskStamp,
   RISK_COLORS,
   Ring,
   Btn,
@@ -75,11 +76,52 @@ export function AutoPanel({autos,onTog,onRun,onView}){
   </Sec>;
 }
 
-export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchive}){
+// ── 審核意見對話欄 ──
+function ReviewCommentDialog({ review, onClose, onSubmit, onDirectApprove }) {
+  const [comment, setComment] = useState("");
+  if (!review) return null;
+  return <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)"}} onClick={onClose}>
+    <div onClick={e=>e.stopPropagation()} style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px 24px",width:"90%",maxWidth:460,boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <span style={{fontSize:16}}>💬</span>
+        <span style={{fontSize:14,fontWeight:700,color:C.t1,flex:1}}>審核意見</span>
+        <span onClick={onClose} style={{fontSize:16,color:C.t3,cursor:"pointer"}}>✕</span>
+      </div>
+      <div style={{background:C.s1,borderRadius:10,padding:"10px 12px",marginBottom:12,border:`1px solid ${C.border}`}}>
+        <div style={{fontSize:12,fontWeight:600,color:C.t1,marginBottom:4}}>{review.title}</div>
+        <div style={{fontSize:11,color:C.t3}}>{review.desc?.slice(0,120)}{review.desc?.length>120?"…":""}</div>
+      </div>
+      <textarea
+        value={comment}
+        onChange={e=>setComment(e.target.value)}
+        placeholder="輸入您的審核意見或備註…"
+        rows={4}
+        style={{width:"100%",borderRadius:10,border:`1px solid ${C.border}`,background:C.s1,color:C.t1,fontSize:12,padding:"10px 12px",resize:"vertical",fontFamily:"inherit",marginBottom:12,boxSizing:"border-box"}}
+        autoFocus
+      />
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",flexWrap:"wrap"}}>
+        <Btn sm v="def" onClick={onClose}>取消</Btn>
+        <Btn sm v="def" onClick={()=>{onSubmit(review.id, comment, "comment"); onClose();}}>
+          💾 儲存意見
+        </Btn>
+        <Btn sm v="ok" onClick={()=>{onDirectApprove(review.id, comment); onClose();}}>
+          ✅ 直接核准
+        </Btn>
+      </div>
+    </div>
+  </div>;
+}
+
+export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchive,onApproveRiskItems,onComment,onAutoReview}){
+  const [commentTarget, setCommentTarget] = useState(null);
   const pending=reviews.filter(r=>r.status==="pending"), approved=reviews.filter(r=>r.status==="approved"), archived=reviews.filter(r=>r.status==="archived");
-  const priCfg={critical:{l:"嚴重",c:C.red,bg:C.redG},high:{l:"高",c:C.amber,bg:C.amberG},medium:{l:"中",c:C.green,bg:C.greenG}};
+  const priCfg={critical:{l:"極高",c:C.purple,bg:C.purpleG},high:{l:"高",c:C.red,bg:C.redG},medium:{l:"中",c:C.amber,bg:C.amberG},low:{l:"低",c:"#a3e635",bg:"rgba(163,230,53,0.08)"}};
   const typI={tool:"⚙️",skill:"🧠",issue:"🔧",learn:"📚",proposal:"💡",red_alert:"🚨"};
-  
+
+  // 風險統計
+  const riskPending = pending.filter(r => r._riskLevel && r._riskLevel !== "none");
+  const riskApproved = approved.filter(r => r._riskLevel && r._riskLevel !== "none");
+
   // 全部通過處理函數
   const handleApproveAll = () => {
     if (!confirm(`確定要一次通過全部 ${pending.length} 個發想嗎？`)) return;
@@ -91,30 +133,74 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchiv
       ✅ 全部通過 ({pending.length})
     </Btn>
   ) : null;
+  const riskApproveBtn = riskPending.length > 0 && onApproveRiskItems ? (
+    <Btn sm v="warn" onClick={() => onApproveRiskItems("all")} oc="REVIEW_APPROVE_RISK_ALL">
+      ⚠️ 風險項一鍵批准 ({riskPending.length})
+    </Btn>
+  ) : null;
+  // 批量 AI 蓋章：低/中風險自動通過轉任務，高風險送老蔡
+  const autoReviewBtn = pending.length > 0 && onAutoReview ? (
+    <Btn sm v="pri" onClick={async () => {
+      if (!confirm(`AI 將自動蓋章審核 ${pending.length} 個項目：\n・低/中風險 → 自動通過+轉任務\n・高/極高風險 → 送老蔡簽核\n\n確定？`)) return;
+      for (const r of pending) await onAutoReview(r.id);
+    }} oc="REVIEW_AI_STAMP_ALL">
+      🔖 AI 批量蓋章 ({pending.length})
+    </Btn>
+  ) : null;
   const rightEl = (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {autoReviewBtn}
+      {riskApproveBtn}
       {approveAllBtn}
       <Link to="/review" style={{ fontSize: 11, color: C.indigo, textDecoration: "underline", fontWeight: 500 }}>前往完整審核中心 →</Link>
     </div>
   );
   
-  return <Sec icon="🔍" title="審核中心" count={pending.length+" 待審"} right={rightEl}>
+  // 處理意見提交
+  const handleCommentSubmit = (id, comment, action) => {
+    if (onComment) onComment(id, comment, action);
+    // 同時更新本地顯示
+    // （透過父層 hook 處理 persist）
+  };
+  const handleDirectApprove = (id, comment) => {
+    if (onComment) onComment(id, comment, "approve");
+    onOk?.(id);
+  };
+
+  return <><Sec icon="🔍" title="審核中心" count={pending.length+" 待審"} right={rightEl}>
     {pending.length===0&&<div style={{textAlign:"center",padding:24,color:C.t3,fontSize:12}}>✓ 全部審核完畢</div>}
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
       {pending.map(r=>{const pc=priCfg[r.pri]||priCfg.medium;
-        return <Card key={r.id} oc={`REVIEW_CARD_${r.id}`} glow={r.pri==="critical"?C.red:undefined}>
+        const hasRisk = r._riskLevel && r._riskLevel !== "none";
+        const riskStrat = r._riskStrategy;
+        return <Card key={r.id} oc={`REVIEW_CARD_${r.id}`} glow={r.pri==="critical"?C.red:hasRisk?RISK_COLORS[r._riskLevel]?.c:undefined}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
             <div style={{display:"flex",alignItems:"center",gap:5,flex:1,minWidth:0}}>
               <span style={{fontSize:13}}>{typI[r.type]}</span>
               <span style={{fontSize:12.5,fontWeight:600,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
             </div>
-            <Badge c={pc.c} bg={pc.bg}>{pc.l}</Badge>
+            <div style={{display:"flex",gap:4,flexShrink:0}}>
+              {hasRisk && <RiskBadge level={r._riskLevel} />}
+              <Badge c={pc.c} bg={pc.bg}>{pc.l}</Badge>
+            </div>
           </div>
           <p style={{fontSize:12,color:C.t2,margin:"0 0 6px",lineHeight:1.4}}>{r.desc}</p>
+          {/* 風險修改策略 */}
+          {hasRisk && riskStrat && <div style={{background:r._riskLevel==="high"?C.redG:r._riskLevel==="medium"?"rgba(251,191,36,0.06)":"rgba(52,211,153,0.04)",border:`1px solid ${r._riskLevel==="high"?"rgba(239,68,68,0.15)":r._riskLevel==="medium"?"rgba(251,191,36,0.15)":"rgba(52,211,153,0.1)"}`,borderRadius:8,padding:"8px 10px",marginBottom:6}}>
+            <div style={{fontSize:11,fontWeight:600,color:r._riskLevel==="high"?C.red:r._riskLevel==="medium"?C.amber:C.green,marginBottom:4}}>{riskStrat.summary}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:3}}>
+              {riskStrat.strategies.map((s,i)=><div key={i} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:10}}>
+                <span style={{color:C.t3,flexShrink:0}}>•</span>
+                <div><span style={{fontWeight:600,color:C.t1}}>{s.action}</span><span style={{color:C.t3}}> — {s.detail}</span></div>
+              </div>)}
+            </div>
+          </div>}
           <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
             <div data-oc-action={`REVIEW_VIEW_${r.id}`} onClick={()=>onView(r)} style={{flex:1,minWidth:80,background:C.indigoG,borderRadius:7,padding:"6px 10px",cursor:"pointer",fontSize:11,color:C.t3,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               💭 {r.reasoning}
             </div>
+            <Btn sm v="def" onClick={()=>setCommentTarget(r)} style={{whiteSpace:"nowrap"}}>💬 意見</Btn>
+            {onAutoReview && <Btn oc={`REVIEW_AI_STAMP_${r.id}`} sm v="pri" onClick={()=>onAutoReview(r.id)} style={{whiteSpace:"nowrap"}}>🔖 AI蓋章</Btn>}
             {onArchive && <Btn oc={`REVIEW_ARCHIVE_${r.id}`} sm v="def" onClick={()=>onArchive(r.id)} style={{whiteSpace:"nowrap"}}>📥 收錄</Btn>}
             <Btn oc={`REVIEW_QUICK_REJECT_${r.id}`} sm v="no" onClick={()=>onNo(r.id)} style={{whiteSpace:"nowrap"}}>✕ 未通過</Btn>
             <Btn oc={`REVIEW_QUICK_APPROVE_${r.id}`} sm v="ok" onClick={()=>onOk(r.id)} style={{whiteSpace:"nowrap"}}>✓ 通過</Btn>
@@ -132,28 +218,54 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchiv
         </Card>;})}
     </div>
     {approved.length>0&&<div style={{marginTop:12}}>
-      <div style={{fontSize:10,fontWeight:650,color:C.t3,marginBottom:6}}>✅ 已批准 ({approved.length})</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+        <div style={{fontSize:10,fontWeight:650,color:C.green}}>✅ 已批准 ({approved.length})</div>
+        {riskApproved.length>0&&<div style={{fontSize:10,color:C.amber,fontWeight:600}}>⚠️ {riskApproved.length} 項有風險</div>}
+      </div>
       {approved.map(r=>{
         const pct = r.progress ?? 50;
         const collabs = r.collaborators || [];
-        return <div key={r.id} onClick={()=>onView?.(r)} style={{background:C.greenG,border:`1px solid rgba(52,211,153,0.08)`,borderRadius:8,padding:"8px 10px",marginBottom:4,cursor:"pointer",transition:"all .15s"}}
-          onMouseEnter={e=>e.currentTarget.style.background="rgba(52,211,153,0.12)"} onMouseLeave={e=>e.currentTarget.style.background=C.greenG}>
-          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
+        const hasRisk = r._riskLevel && r._riskLevel !== "none";
+        const riskColor = hasRisk ? (RISK_COLORS[r._riskLevel]||RISK_COLORS.low) : null;
+        const hasComment = r._reviewComment;
+        return <div key={r.id} style={{background:hasRisk?riskColor.bg:C.greenG,border:`1px solid ${hasRisk?riskColor.c+"20":"rgba(52,211,153,0.08)"}`,borderRadius:10,padding:"10px 12px",marginBottom:6,transition:"all .15s"}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:6}}>
+            {/* 風險蓋章 */}
+            {hasRisk && <RiskStamp level={r._riskLevel} />}
             <span style={{fontSize:12}}>{typI[r.type]}</span>
-            <span style={{flex:1,fontSize:12,fontWeight:600,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+            {/* 已批核的標題用綠色 */}
+            <span style={{flex:1,fontSize:12,fontWeight:600,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+            {hasRisk && <RiskBadge level={r._riskLevel} />}
             <span style={{fontSize:11,fontWeight:700,color:pct===100?C.green:C.amber,flexShrink:0}}>{pct}%</span>
           </div>
+          {/* 審核意見（如有） */}
+          {hasComment && <div style={{fontSize:10,color:C.indigo,marginBottom:4,padding:"4px 8px",background:C.indigoG,borderRadius:6,borderLeft:`2px solid ${C.indigo}`}}>
+            💬 {r._reviewComment}
+          </div>}
+          {/* 風險修改策略摘要 */}
+          {hasRisk && r._riskStrategy && <div style={{fontSize:10,color:riskColor.c,marginBottom:4,padding:"3px 6px",background:riskColor.bg,borderRadius:4}}>
+            {r._riskStrategy.summary}
+          </div>}
           {/* 迷你進度條 */}
-          <div style={{height:3,background:"rgba(255,255,255,0.04)",borderRadius:2,overflow:"hidden",marginBottom:collabs.length>0?4:0}}>
+          <div style={{height:3,background:"rgba(255,255,255,0.04)",borderRadius:2,overflow:"hidden",marginBottom:4}}>
             <div style={{height:"100%",width:`${pct}%`,background:pct===100?C.green:pct>50?C.amber:C.indigo,borderRadius:2,transition:"width .3s"}}/>
           </div>
           {/* 協作者 */}
-          {collabs.length>0&&<div style={{display:"flex",alignItems:"center",gap:4}}>
+          {collabs.length>0&&<div style={{display:"flex",alignItems:"center",gap:4,marginBottom:6}}>
             <div style={{display:"flex",marginRight:2}}>
               {collabs.slice(0,4).map((c,i)=><span key={i} title={`${c.name||c} ${c.role?`(${c.role})`:""}`} style={{width:18,height:18,borderRadius:"50%",background:`hsl(${(c.name||c).charCodeAt(0)*37%360},55%,42%)`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:700,border:"1.5px solid #06060a",marginLeft:i>0?-6:0,zIndex:collabs.length-i}}>{(c.name||c).charAt(0)}</span>)}
             </div>
             <span style={{fontSize:9,color:C.t3}}>{collabs.map(c=>c.name||c).join("、")}</span>
           </div>}
+          {/* 操作按鈕列 */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            <Btn sm v="def" onClick={()=>onView?.(r)} style={{fontSize:10}}>🔍 查看詳情</Btn>
+            <Btn sm v="def" onClick={()=>setCommentTarget(r)} style={{fontSize:10}}>💬 補充意見</Btn>
+            {onOkAndCreateTask && <Btn sm v="pri" onClick={()=>onOkAndCreateTask(r)} style={{fontSize:10}}>📋 轉任務</Btn>}
+            {onArchive && <Btn sm v="def" onClick={()=>onArchive(r.id)} style={{fontSize:10}}>📥 歸檔</Btn>}
+            <span style={{flex:1}}/>
+            <span style={{fontSize:9,color:C.green,fontWeight:600}}>✅ 已簽核</span>
+          </div>
         </div>;
       })}
     </div>}
@@ -166,7 +278,15 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchiv
         <Badge c={C.t3} bg={C.s1}>收錄中</Badge>
       </div>)}
     </div>}
-  </Sec>;
+  </Sec>
+  {/* 審核意見對話欄 */}
+  <ReviewCommentDialog
+    review={commentTarget}
+    onClose={()=>setCommentTarget(null)}
+    onSubmit={handleCommentSubmit}
+    onDirectApprove={handleDirectApprove}
+  />
+  </>;
 }
 
 const DONE_COL_MAX_HEIGHT = 320; // 完成欄最大高度，避免版面被拉長

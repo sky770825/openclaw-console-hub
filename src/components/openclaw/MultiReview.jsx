@@ -264,7 +264,7 @@ function ReviewPropBar({ groups }) {
 }
 
 // ── 主元件 ──
-export function MultiReview({ reviews, onOk, onNo, onView, onOkAndCreateTask, onArchive }) {
+export function MultiReview({ reviews, onOk, onNo, onView, onOkAndCreateTask, onArchive, onApproveRiskItems, onComment, onAutoReview }) {
   const [groupBy, setGroupBy] = useState(() => readLS(LS_KEY, null) ?? "pipeline");
   const [collapsedMap, setCollapsedMap] = useState(() => readLS(LS_COLLAPSED, {}));
 
@@ -316,6 +316,9 @@ export function MultiReview({ reviews, onOk, onNo, onView, onOkAndCreateTask, on
             onView={onView}
             onOkAndCreateTask={onOkAndCreateTask}
             onArchive={onArchive}
+            onApproveRiskItems={onApproveRiskItems}
+            onComment={onComment}
+            onAutoReview={onAutoReview}
           />
         </ReviewSection>;
       })}
