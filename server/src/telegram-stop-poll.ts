@@ -226,6 +226,14 @@ const MENU_KEYBOARD = {
       { text: '🛟 自救巡檢', callback_data: '/recover' },
       { text: '🧾 產生 Handoff', callback_data: '/handoff' },
     ],
+    [
+      { text: '📋 日報', callback_data: '/report' },
+      { text: '🏥 健康檢查', callback_data: '/health' },
+    ],
+    [
+      { text: '🟣 切換派工', callback_data: '/dispatch' },
+      { text: '🔧 修復任務', callback_data: '/reconcile' },
+    ],
     [{ text: '🧑‍💻 交給 Codex 排查', callback_data: '/codex-triage' }],
     [{ text: '❓ 幫助', callback_data: '/help' }],
   ],
@@ -238,6 +246,8 @@ const MENU_REPLY_KEYBOARD = {
     [{ text: '📊 系統狀態' }, { text: '🚀 任務板' }],
     [{ text: '🧠 模型路由' }, { text: '🧹 清理任務' }],
     [{ text: '🛟 自救巡檢' }, { text: '🧾 產生 Handoff' }],
+    [{ text: '📋 日報' }, { text: '🏥 健康檢查' }],
+    [{ text: '🟣 切換派工' }, { text: '🔧 修復任務' }],
     [{ text: '🧑‍💻 交給 Codex 排查' }, { text: '❓ 幫助' }],
     [{ text: '🔘 功能欄' }, { text: '🙈 隱藏按鈕' }],
   ],
@@ -536,6 +546,120 @@ async function startCodexTriage(chatId: number, issueText: string): Promise<void
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
+// ── 新增指令：健康檢查、派工切換、日報、修復、甦醒、指令選單 ──
+
+async function replyHealth(chatId: number): Promise<void> {
+  const health = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/health`, {}, 8000);
+  if (!health) {
+    await sendTelegramMessageToChat(chatId, '⚠️ 健康檢查 API 無回應', { token: TOKEN, parseMode: 'HTML' });
+    return;
+  }
+  const h = asObj(health);
+  const svc = asObj(h.services);
+  const sb = asObj(svc.supabase);
+  const tg = asObj(svc.telegram);
+  const ae = asObj(h.autoExecutor);
+  const mem = asObj(h.memory);
+  const text =
+    `🏥 <b>系統健康檢查</b>\n\n` +
+    `<b>版本：</b> ${h.version ?? '-'}\n` +
+    `<b>Uptime：</b> ${h.uptime ?? '-'}s\n` +
+    `<b>Supabase：</b> ${sb.ping === 'ok' ? '✅' : sb.configured ? '⚠️' : '❌'}\n` +
+    `<b>Telegram：</b> ${tg.configured ? '✅' : '❌'}\n` +
+    `<b>AutoExecutor：</b> ${ae.isRunning === true ? '🟢 ON' : '🔴 OFF'}\n` +
+    `<b>Dispatch：</b> ${ae.dispatchMode === true ? '🟢 ON' : '🔴 OFF'}\n` +
+    `<b>記憶體：</b> ${mem.heapUsed ?? '?'}/${mem.heapTotal ?? '?'} MB`;
+  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+}
+
+async function replyDispatchToggle(chatId: number): Promise<void> {
+  const status = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/dispatch/status`, {}, 5000);
+  const sobj = asObj(status);
+  const currentOn = sobj.dispatchMode === true;
+  const result = await fetchJsonWithTimeout(
+    `${TASKBOARD_BASE_URL}/api/openclaw/dispatch/toggle`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: !currentOn }),
+    },
+    8000
+  );
+  const robj = asObj(result);
+  const newState = robj.dispatchMode === true;
+  const text = `🟣 <b>派工模式</b>\n\n${newState ? '✅ 已開啟自動派工' : '⏸ 已關閉自動派工'}`;
+  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+}
+
+async function replyReport(chatId: number): Promise<void> {
+  await sendTelegramMessageToChat(chatId, '📋 正在生成日報，請稍候...', { token: TOKEN, parseMode: 'HTML' });
+  const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/daily-report?notify=1`, {}, 30000);
+  const robj = asObj(result);
+  const text = robj.ok
+    ? '📋 <b>日報已生成並發送到 Telegram</b>'
+    : `⚠️ <b>日報生成失敗</b>\n\n<code>${String(robj.message ?? robj.error ?? 'unknown').slice(0, 500)}</code>`;
+  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+}
+
+async function replyReconcile(chatId: number): Promise<void> {
+  const result = await fetchJsonWithTimeout(
+    `${TASKBOARD_BASE_URL}/api/openclaw/maintenance/reconcile`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+    15000
+  );
+  const robj = asObj(result);
+  const text = robj.ok !== false
+    ? `🔧 <b>任務修復完成</b>\n\n掃描：${robj.scanned ?? '?'} | 修正：${Number(robj.fixedToDone ?? 0) + Number(robj.fixedToRunning ?? 0) + Number(robj.fixedToReady ?? 0)} 筆`
+    : `⚠️ <b>修復失敗</b>\n\n<code>${String(robj.message ?? 'unknown').slice(0, 500)}</code>`;
+  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+}
+
+async function replyWake(chatId: number): Promise<void> {
+  const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/wake-report`, {}, 8000);
+  const robj = asObj(result);
+  const reports = Array.isArray(robj.reports) ? (robj.reports as unknown[]) : (Array.isArray(result) ? (result as unknown[]) : []);
+  const unresolved = reports.filter((r) => !asObj(r).resolved);
+  if (unresolved.length === 0) {
+    await sendTelegramMessageToChat(chatId, '🔔 <b>甦醒報告</b>\n\n目前沒有未解決的甦醒報告 ✅', { token: TOKEN, parseMode: 'HTML' });
+    return;
+  }
+  const lines = unresolved.slice(0, 5).map((r, i) => {
+    const ro = asObj(r);
+    return `${i + 1}. [${ro.level ?? '-'}] 錯誤 ${ro.totalErrors ?? '?'} 次`;
+  });
+  const text =
+    `🔔 <b>甦醒報告</b>\n\n` +
+    `<b>未解決：</b> ${unresolved.length}\n\n` +
+    lines.join('\n') +
+    (unresolved.length > 5 ? `\n...共 ${unresolved.length} 筆` : '');
+  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+}
+
+async function replyCmdMenu(chatId: number): Promise<void> {
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: '📋 日報', callback_data: '/report' },
+        { text: '🏥 健康檢查', callback_data: '/health' },
+      ],
+      [
+        { text: '🟣 切換派工', callback_data: '/dispatch' },
+        { text: '🔔 甦醒報告', callback_data: '/wake' },
+      ],
+      [
+        { text: '🔧 修復孤立任務', callback_data: '/reconcile' },
+        { text: '📊 系統狀態', callback_data: '/status' },
+      ],
+      [{ text: '⬅️ 回主菜單', callback_data: '/start' }],
+    ],
+  };
+  await sendTelegramMessageToChat(chatId, '⌘ <b>指令選單</b>\n\n選擇要執行的指令：', {
+    token: TOKEN,
+    parseMode: 'HTML',
+    replyMarkup: keyboard,
+  });
+}
+
 async function promptCodexTriage(chatId: number): Promise<void> {
   codexTriagePending = true;
   codexTriagePendingAt = Date.now();
@@ -802,6 +926,22 @@ async function poll(): Promise<void> {
         await replyHandoff(chatId);
         continue;
       }
+      if (text === '📋 日報') {
+        await replyReport(chatId);
+        continue;
+      }
+      if (text === '🏥 健康檢查') {
+        await replyHealth(chatId);
+        continue;
+      }
+      if (text === '🟣 切換派工') {
+        await replyDispatchToggle(chatId);
+        continue;
+      }
+      if (text === '🔧 修復任務') {
+        await replyReconcile(chatId);
+        continue;
+      }
       if (text === '🧑‍💻 交給 Codex 排查') {
         await promptCodexTriage(chatId);
         continue;
@@ -849,6 +989,30 @@ async function poll(): Promise<void> {
       }
       if (cmd === '/recover') {
         await replyRecover(chatId);
+        continue;
+      }
+      if (cmd === '/health') {
+        await replyHealth(chatId);
+        continue;
+      }
+      if (cmd === '/dispatch') {
+        await replyDispatchToggle(chatId);
+        continue;
+      }
+      if (cmd === '/report') {
+        await replyReport(chatId);
+        continue;
+      }
+      if (cmd === '/reconcile') {
+        await replyReconcile(chatId);
+        continue;
+      }
+      if (cmd === '/wake') {
+        await replyWake(chatId);
+        continue;
+      }
+      if (cmd === '/cmd') {
+        await replyCmdMenu(chatId);
         continue;
       }
       // Ollama chat: default for any non-command message in the authorized chat.
@@ -911,7 +1075,7 @@ export function startTelegramStopPoll(): void {
   ensureWebhookDisabled()
     .finally(() => logBotIdentityOnce())
     .finally(() => {
-      console.log('[TelegramControl] 已啟動（getUpdates 輪詢），支援 /start /status /tasks /recover /codex-triage /stop ...');
+      console.log('[TelegramControl] 已啟動（getUpdates 輪詢），支援 /start /status /tasks /health /dispatch /report /reconcile /wake /cmd /recover /codex-triage /stop ...');
       loop();
     });
 }

@@ -2992,8 +2992,9 @@ app.get('/api/openclaw/daily-report', async (req, res) => {
     for (const t of allTasks) {
       const s = t.status || 'unknown';
       tasksByStatus[s] = (tasksByStatus[s] || 0) + 1;
-      if (t.updated_at?.startsWith(today) && t.status === 'done') completedToday++;
-      if (t.created_at?.startsWith(today)) createdToday++;
+      const tAny = t as unknown as Record<string, unknown>;
+      if (tAny.updated_at && String(tAny.updated_at).startsWith(today) && t.status === 'done') completedToday++;
+      if (tAny.created_at && String(tAny.created_at).startsWith(today)) createdToday++;
     }
 
     // 統計審核

@@ -4,6 +4,7 @@ import { renderReviewTab } from "./tabs/reviewTab";
 import { renderTasksTab } from "./tabs/tasksTab";
 import { renderEvoTab } from "./tabs/evoTab";
 import { renderSystemTab } from "./tabs/systemTab";
+import { renderCmdTab } from "./tabs/cmdTab";
 import { renderDispatchTab } from "./tabs/dispatchTab";
 import { renderBossTab } from "./tabs/bossTab";
 import { renderAiWorkspaceTab } from "./tabs/aiWorkspaceTab";
@@ -18,6 +19,7 @@ export const TAB_ITEMS = [
   { key: "tasks", label: "📊 任務" },
   { key: "evo", label: "🧬 進化" },
   { key: "system", label: "⚙️ 系統" },
+  { key: "cmd", label: "⌘ 指令" },
 ];
 
 export function renderTabContent(tab, data, actions) {
@@ -31,6 +33,7 @@ export function renderTabContent(tab, data, actions) {
     tasks: renderTasksTab,
     evo: renderEvoTab,
     system: renderSystemTab,
+    cmd: renderCmdTab,
   };
 
   const render = tabRenderers[tab] || tabRenderers.all;
