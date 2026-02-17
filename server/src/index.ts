@@ -2978,6 +2978,93 @@ app.patch('/api/openclaw/wake-report/:id', async (req, res) => {
   }
 });
 
+// ---- Daily Report ----
+app.get('/api/openclaw/daily-report', async (req, res) => {
+  try {
+    const sendTg = req.query.notify === '1';
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 統計任務
+    const allTasks = hasSupabase() ? await fetchOpenClawTasks() : [];
+    const tasksByStatus: Record<string, number> = {};
+    let completedToday = 0;
+    let createdToday = 0;
+    for (const t of allTasks) {
+      const s = t.status || 'unknown';
+      tasksByStatus[s] = (tasksByStatus[s] || 0) + 1;
+      if (t.updated_at?.startsWith(today) && t.status === 'done') completedToday++;
+      if (t.created_at?.startsWith(today)) createdToday++;
+    }
+
+    // 統計審核
+    const allReviews = hasSupabase() ? await fetchOpenClawReviews() : [];
+    let reviewsPending = 0;
+    let reviewsApproved = 0;
+    let reviewsRejected = 0;
+    for (const r of allReviews) {
+      if (r.status === 'pending') reviewsPending++;
+      else if (r.status === 'approved') reviewsApproved++;
+      else if (r.status === 'rejected') reviewsRejected++;
+    }
+
+    // 統計執行
+    const { totalExecutedToday, lastExecutedAt } = autoExecutorState;
+
+    // 甦醒報告
+    const unresolvedWakes = wakeReports.filter(w => !w.resolved).length;
+
+    const report = {
+      date: today,
+      tasks: {
+        total: allTasks.length,
+        byStatus: tasksByStatus,
+        createdToday,
+        completedToday,
+      },
+      reviews: {
+        total: allReviews.length,
+        pending: reviewsPending,
+        approved: reviewsApproved,
+        rejected: reviewsRejected,
+      },
+      execution: {
+        totalExecutedToday,
+        lastExecutedAt,
+        dispatchMode: autoExecutorState.dispatchMode,
+      },
+      wakeReports: {
+        unresolved: unresolvedWakes,
+        total: wakeReports.length,
+      },
+      uptime: Math.floor(process.uptime()),
+    };
+
+    // 發 Telegram
+    if (sendTg) {
+      const tgText = [
+        `📊 <b>每日報告</b> — ${today}`,
+        ``,
+        `<b>任務</b>：總 ${allTasks.length} | 今日新增 ${createdToday} | 今日完成 ${completedToday}`,
+        `  排隊 ${tasksByStatus['queued'] || 0} · 進行中 ${tasksByStatus['in_progress'] || 0} · 完成 ${tasksByStatus['done'] || 0}`,
+        ``,
+        `<b>審核</b>：待審 ${reviewsPending} · 通過 ${reviewsApproved} · 駁回 ${reviewsRejected}`,
+        ``,
+        `<b>自動執行</b>：今日 ${totalExecutedToday} 次 | 派工${autoExecutorState.dispatchMode ? '開啟' : '關閉'}`,
+        ``,
+        `<b>甦醒</b>：未解決 ${unresolvedWakes} 個`,
+        `<b>運行</b>：${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`,
+      ].join('\n');
+      sendTelegramMessage(tgText, { parseMode: 'HTML' }).catch(e =>
+        console.warn('[DailyReport] Telegram send failed:', e));
+    }
+
+    res.json({ ok: true, report });
+  } catch (e) {
+    console.error('[OpenClaw] daily-report error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to generate daily report' });
+  }
+});
+
 // ---- Task Indexer (Index-of-Index) ----
 type TaskIndexRecord = {
   taskId: string;
@@ -4221,18 +4308,44 @@ app.get('/health', async (_req, res) => {
 });
 app.get('/api/health', async (_req, res) => {
   const ws = wsManager.getStats();
+  const mem = process.memoryUsage();
+
+  // Supabase ping check
+  let supabasePing: 'ok' | 'fail' | 'not_configured' = 'not_configured';
+  if (hasSupabase() && supabase) {
+    try {
+      const start = Date.now();
+      await supabase.from('openclaw_tasks').select('id', { count: 'exact', head: true });
+      supabasePing = Date.now() - start < 5000 ? 'ok' : 'fail';
+    } catch { supabasePing = 'fail'; }
+  }
+
   res.json({
     ok: true,
     service: 'openclaw-server',
-    supabase: hasSupabase(),
-    telegram: isTelegramConfigured(),
-    websocket: ws,
+    version: '0.6.0',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    services: {
+      supabase: { configured: hasSupabase(), ping: supabasePing },
+      telegram: { configured: isTelegramConfigured() },
+      n8n: { configured: hasN8n() },
+      websocket: ws,
+    },
+    memory: {
+      rss: Math.round(mem.rss / 1024 / 1024),
+      heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+      unit: 'MB',
+    },
     autoExecutor: {
       isRunning: autoExecutorState.isRunning,
+      dispatchMode: autoExecutorState.dispatchMode,
       pollIntervalMs: autoExecutorState.pollIntervalMs,
       maxTasksPerMinute: autoExecutorState.maxTasksPerMinute,
       lastPollAt: autoExecutorState.lastPollAt,
       lastExecutedAt: autoExecutorState.lastExecutedAt,
+      totalExecutedToday: autoExecutorState.totalExecutedToday,
     },
   });
 });
