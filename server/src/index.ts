@@ -12,7 +12,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { tasks, runs, alerts } from './store.js';
+import { tasks, runs, alerts, memReviews } from './store.js';
 import { runSeed } from './seed.js';
 import type { Task, Run, Alert } from './types.js';
 import {
@@ -1688,6 +1688,11 @@ app.get('/api/openclaw/reviews', async (_req, res) => {
         /* seed 失敗仍回傳 []，不中斷請求 */
       }
     }
+    // 合併 in-memory proposals（Supabase 寫失敗時的 fallback）
+    const supabaseIds = new Set(data.map((r) => r.id));
+    for (const mr of memReviews) {
+      if (!supabaseIds.has(mr.id)) data.push(mr);
+    }
     res.json(data.map((r, i) => openClawReviewToReview(r, i)));
   } catch (e) {
     res.status(500).json({ message: 'Failed to fetch reviews' });
@@ -1707,7 +1712,9 @@ app.post('/api/openclaw/reviews', async (req, res) => {
 app.patch('/api/openclaw/reviews/:id', async (req, res) => {
   try {
     const body = req.body as { status?: string; reviewNote?: string; reviewedAt?: string };
-    const existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
+    let existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
+    // fallback: 從 in-memory proposals 找
+    if (!existing) existing = memReviews.find((r) => r.id === req.params.id);
     if (!existing) return res.status(404).json({ message: 'Review not found' });
     const payload = {
       ...existing,
@@ -1716,7 +1723,16 @@ app.patch('/api/openclaw/reviews/:id', async (req, res) => {
       reasoning: body.reviewNote !== undefined ? body.reviewNote : existing.reasoning,
     };
     const review = await upsertOpenClawReview(payload);
-    if (!review) return res.status(500).json({ message: 'Failed to update review' });
+    // 如果 Supabase 寫失敗，更新 in-memory
+    if (!review) {
+      const mr = memReviews.find((r) => r.id === req.params.id);
+      if (mr) {
+        mr.status = payload.status;
+        mr.reasoning = payload.reasoning;
+        return res.json(openClawReviewToReview(mr, 0));
+      }
+      return res.status(500).json({ message: 'Failed to update review' });
+    }
     const list = await fetchOpenClawReviews();
     const idx = list.findIndex((r) => r.id === review.id);
     res.json(openClawReviewToReview(review, idx >= 0 ? idx : 0));
@@ -1869,9 +1885,25 @@ app.post('/api/openclaw/proposal', async (req, res) => {
       risk ? `【風險】${risk}` : '',
     ].filter(Boolean).join('\n');
 
-    // 1. 建立提案紀錄（Supabase or in-memory）
+    // 1. 建立提案紀錄（Supabase + in-memory fallback）
+    const reviewData = {
+      id: reviewId,
+      title: `${catEmoji} ${title}`,
+      desc,
+      type: 'proposal',
+      pri: 'medium',
+      status: 'pending',
+      src: `agent-proposal:${category}`,
+      reasoning: idea,
+    };
+    let savedToSupabase = false;
     if (hasSupabase()) {
-      await upsertOpenClawReview({
+      const result = await upsertOpenClawReview(reviewData);
+      savedToSupabase = !!result;
+    }
+    // in-memory fallback — 確保 GET /reviews 一定拿得到
+    if (!savedToSupabase) {
+      memReviews.push({
         id: reviewId,
         title: `${catEmoji} ${title}`,
         desc,
@@ -1880,18 +1912,9 @@ app.post('/api/openclaw/proposal', async (req, res) => {
         status: 'pending',
         src: `agent-proposal:${category}`,
         reasoning: idea,
+        created_at: new Date().toISOString(),
       });
     }
-    // in-memory fallback
-    alerts.push({
-      id: reviewId,
-      type: 'proposal',
-      severity: 'medium',
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      message: `${catEmoji} ${title}: ${idea}`,
-      relatedTaskId: '',
-    });
 
     // 2. Telegram 通知（帶審核按鈕）
     await notifyProposal(reviewId, title, category, background, goal || '', risk || '');
@@ -1931,6 +1954,12 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
     }
     const memAlert = alerts.find((a) => a.id === reviewId);
     if (memAlert) memAlert.status = newStatus === 'approved' ? 'acked' : 'snoozed';
+    // 更新 in-memory reviews fallback
+    const memRev = memReviews.find((r) => r.id === reviewId);
+    if (memRev) {
+      memRev.status = newStatus;
+      if (note) memRev.reasoning = `${memRev.reasoning || ''}\n---\n老蔡：${note}`;
+    }
 
     // 2. 如果是「批准+轉任務」，建立任務
     let taskId: string | null = null;
@@ -1945,6 +1974,11 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
           reviewTitle = review.title;
           reviewDesc = review.desc ?? '';
         }
+      }
+      // fallback: 從 in-memory reviews 找
+      if (!reviewTitle && memRev) {
+        reviewTitle = memRev.title;
+        reviewDesc = memRev.desc ?? '';
       }
       // fallback: 從 in-memory alerts 找
       if (!reviewTitle && memAlert) {
