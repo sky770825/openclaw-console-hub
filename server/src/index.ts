@@ -2885,6 +2885,47 @@ app.post('/api/openclaw/wake-report', async (req, res) => {
     }
 
     console.log(`[OpenClaw] 🚨 Wake Report received: ${report.level} — ${report.totalErrors} errors`);
+
+    // ── 通知管道 ──
+
+    // 1) Telegram 通知老蔡
+    const topOpsText = report.topOperations
+      .slice(0, 3)
+      .map(([op, cnt]: [string, number]) => `${op}(${cnt}次)`)
+      .join(', ');
+    const recentText = report.errors
+      .slice(-3)
+      .map((e: { operation: string; error: string }) => `• ${e.operation} — ${String(e.error).slice(0, 60)}`)
+      .join('\n');
+    const tgMsg = [
+      `🚨 <b>AI 甦醒警報</b> [${report.level}]`,
+      ``,
+      `累積錯誤：${report.totalErrors} 次`,
+      `主要問題：${topOpsText || '未知'}`,
+      `策略切換：${report.preStrategy} → ${report.newStrategy}`,
+      ``,
+      `最近錯誤：`,
+      recentText || '（無詳細記錄）',
+      ``,
+      `💡 請開啟 Claude Code 處理，或到面板查看詳情`,
+    ].join('\n');
+
+    if (report.level === 'escalate') {
+      notifyRedAlert(report.id, report.id, 'AI 甦醒警報', tgMsg, 'critical').catch(err =>
+        console.warn('[OpenClaw] wake Telegram (escalate) failed:', err));
+    } else {
+      sendTelegramMessage(tgMsg, { parseMode: 'HTML' }).catch(err =>
+        console.warn('[OpenClaw] wake Telegram failed:', err));
+    }
+
+    // 2) n8n webhook（如有設定 N8N_WEBHOOK_WAKE_REPORT 環境變數）
+    if (process.env.N8N_WEBHOOK_WAKE_REPORT) {
+      triggerWebhook(process.env.N8N_WEBHOOK_WAKE_REPORT, {
+        source: 'openclaw-wake',
+        ...report,
+      }).catch(err => console.warn('[OpenClaw] wake n8n webhook failed:', err));
+    }
+
     res.json({ ok: true, id: report.id });
   } catch (e) {
     console.error('[OpenClaw] POST /api/openclaw/wake-report error:', e);
