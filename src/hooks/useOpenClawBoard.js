@@ -13,6 +13,7 @@ import {
   submitProposal,
   fetchBoardConfig,
   fetchBoardHealth,
+  postWakeReport,
 } from "@/services/openclawBoardApi";
 import { C } from "@/components/openclaw/uiPrimitives";
 import { recordReviewDecision, recordTaskCompletion, recordStrategySwitch, recordError } from "@/services/aiMemoryStore";
@@ -489,6 +490,17 @@ export function useOpenClawBoard() {
         addE(`⚠️ 錯誤累積 ${errors.length} 次 → AI 甦醒！檢查中...`, C.amber, "甦醒", C.amber);
       }
     }
+
+    // 同步甦醒報告到後端（讓 CLI 可讀取）
+    const newStrategy = level === "escalate" ? "deep" : (aiStrategy === "fast" ? "standard" : aiStrategy);
+    postWakeReport({
+      level,
+      totalErrors: errors.length,
+      errors: diagnosis.errors,
+      topOperations: topOps,
+      preStrategy: aiStrategy,
+      newStrategy,
+    }).catch(e => console.warn("[WakeReport] 回報失敗，已存 localStorage", e));
 
     // 開啟甦醒面板
     setWakePanel({

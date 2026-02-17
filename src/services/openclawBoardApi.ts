@@ -578,3 +578,54 @@ export async function deleteProject(id: string): Promise<boolean> {
     }
   }
 }
+
+// ─── Wake Report（甦醒報告：前端 → 後端 → CLI 可讀）───
+
+export async function postWakeReport(report: {
+  level: string;
+  totalErrors: number;
+  errors: Array<{ ts: number; operation: string; error: string; taskId?: string }>;
+  topOperations: Array<[string, number]>;
+  preStrategy: string;
+  newStrategy: string;
+}): Promise<{ ok: boolean; id?: string }> {
+  try {
+    const r = await fetch(apiUrl('/api/openclaw/wake-report'), {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify(report),
+    });
+    if (!r.ok) {
+      console.warn('[OpenClaw] postWakeReport failed:', r.status);
+      return { ok: false };
+    }
+    return await r.json();
+  } catch (e) {
+    console.warn('[OpenClaw] postWakeReport error:', e);
+    // fallback: 存到 localStorage，讓下次 GET 時能補傳
+    try {
+      const key = 'openclaw_wake_reports_pending';
+      const pending = JSON.parse(localStorage.getItem(key) || '[]');
+      pending.unshift({ ...report, ts: new Date().toISOString(), id: `wake-local-${Date.now()}` });
+      if (pending.length > 20) pending.length = 20;
+      localStorage.setItem(key, JSON.stringify(pending));
+    } catch { /* ignore */ }
+    return { ok: false };
+  }
+}
+
+export async function fetchWakeReports(): Promise<Array<Record<string, unknown>>> {
+  try {
+    const r = await fetch(apiUrl('/api/openclaw/wake-report'), {
+      headers: apiHeaders(false),
+    });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data?.reports || [];
+  } catch {
+    // fallback: 讀 localStorage pending
+    try {
+      return JSON.parse(localStorage.getItem('openclaw_wake_reports_pending') || '[]');
+    } catch { return []; }
+  }
+}

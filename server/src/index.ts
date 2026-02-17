@@ -2830,6 +2830,113 @@ app.get('/api/openclaw/board-health', async (_req, res) => {
   }
 });
 
+// ---- Wake Report（甦醒報告：前端錯誤累積觸發 → 後端存檔 → CLI 可讀取） ----
+type WakeReport = {
+  id: string;
+  ts: string;
+  level: 'wakeup' | 'escalate';
+  totalErrors: number;
+  errors: Array<{ ts: number; operation: string; error: string; taskId?: string }>;
+  topOperations: Array<[string, number]>;
+  preStrategy: string;
+  newStrategy: string;
+  resolved: boolean;
+  resolvedAt?: string;
+};
+
+const wakeReports: WakeReport[] = [];
+
+// POST — 前端甦醒時寫入
+app.post('/api/openclaw/wake-report', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const report: WakeReport = {
+      id: `wake-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      ts: new Date().toISOString(),
+      level: body.level || 'wakeup',
+      totalErrors: body.totalErrors || 0,
+      errors: Array.isArray(body.errors) ? body.errors.slice(0, 20) : [],
+      topOperations: Array.isArray(body.topOperations) ? body.topOperations : [],
+      preStrategy: body.preStrategy || 'auto',
+      newStrategy: body.newStrategy || 'standard',
+      resolved: false,
+    };
+    wakeReports.unshift(report);
+    // 最多保留 50 筆
+    if (wakeReports.length > 50) wakeReports.length = 50;
+
+    // 嘗試寫入 Supabase（如果可用）
+    if (hasSupabase()) {
+      try {
+        await supabase!.from('openclaw_wake_reports').insert({
+          id: report.id,
+          created_at: report.ts,
+          level: report.level,
+          total_errors: report.totalErrors,
+          errors: report.errors,
+          top_operations: report.topOperations,
+          pre_strategy: report.preStrategy,
+          new_strategy: report.newStrategy,
+          resolved: false,
+        });
+      } catch (dbErr) {
+        console.warn('[OpenClaw] wake-report Supabase insert failed (in-memory OK):', dbErr);
+      }
+    }
+
+    console.log(`[OpenClaw] 🚨 Wake Report received: ${report.level} — ${report.totalErrors} errors`);
+    res.json({ ok: true, id: report.id });
+  } catch (e) {
+    console.error('[OpenClaw] POST /api/openclaw/wake-report error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to save wake report' });
+  }
+});
+
+// GET — CLI / 外部讀取甦醒報告
+app.get('/api/openclaw/wake-report', async (_req, res) => {
+  try {
+    // 優先從 Supabase 讀
+    if (hasSupabase()) {
+      try {
+        const { data } = await supabase!.from('openclaw_wake_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (data && data.length > 0) {
+          res.json({ ok: true, source: 'supabase', reports: data });
+          return;
+        }
+      } catch { /* fallback to in-memory */ }
+    }
+    res.json({ ok: true, source: 'memory', reports: wakeReports.slice(0, 20) });
+  } catch (e) {
+    console.error('[OpenClaw] GET /api/openclaw/wake-report error:', e);
+    res.status(500).json({ ok: false, reports: [] });
+  }
+});
+
+// PATCH — 標記已處理
+app.patch('/api/openclaw/wake-report/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = wakeReports.find(r => r.id === id);
+    if (report) {
+      report.resolved = true;
+      report.resolvedAt = new Date().toISOString();
+    }
+    if (hasSupabase()) {
+      try {
+        await supabase!.from('openclaw_wake_reports')
+          .update({ resolved: true, resolved_at: new Date().toISOString() })
+          .eq('id', id);
+      } catch { /* ignore */ }
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
 // ---- Task Indexer (Index-of-Index) ----
 type TaskIndexRecord = {
   taskId: string;
