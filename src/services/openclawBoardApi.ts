@@ -314,6 +314,24 @@ export async function createTaskFromReview(review: { id: string; title: string; 
   }
 }
 
+/** 提交構想提案（呼叫 POST /api/openclaw/proposal） */
+export async function submitProposal(payload: {
+  title: string; category: string; background: string;
+  idea: string; goal?: string; risk?: string;
+}): Promise<OpenClawApiResult<{ ok: boolean; reviewId: string }>> {
+  try {
+    const r = await fetch(apiUrl("/api/openclaw/proposal"), {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    return { ok: r.ok, status: r.status, data };
+  } catch {
+    return { ok: false, status: 0, data: null };
+  }
+}
+
 export async function fetchBoardConfig(signal?: AbortSignal): Promise<OpenClawBoardConfig | null> {
   return fetchOpenClaw<OpenClawBoardConfig>('/api/openclaw/board-config', signal);
 }

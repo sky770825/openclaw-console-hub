@@ -231,10 +231,10 @@ export async function upsertOpenClawAutomation(a: Partial<OpenClawAutomation> & 
 }
 
 const SEED_AUTOMATIONS: (Partial<OpenClawAutomation> & { id: string })[] = [
-  { id: 'a1', name: 'Security Scan', cron: '0 */6 * * *', active: true, chain: ['CodeQL', 'Trivy', 'SAST'], health: 94, runs: 128, lastRun: '2026-02-13 01:30' },
-  { id: 'a2', name: 'Dependency Update', cron: '0 3 * * 1', active: true, chain: ['Renovate', 'Unit Test', 'Canary'], health: 91, runs: 52, lastRun: '2026-02-10 03:00' },
-  { id: 'a3', name: 'Perf Baseline', cron: '30 2 * * *', active: false, chain: ['Lighthouse CI', 'k6', 'Report'], health: 88, runs: 77, lastRun: '2026-02-11 02:30' },
-  { id: 'a4', name: 'Release Notes Bot', cron: '0 18 * * 5', active: true, chain: ['Collect PR', 'Summarize', 'Publish'], health: 96, runs: 39, lastRun: '2026-02-07 18:00' },
+  { id: 'a1', name: '安全掃描', cron: '0 */6 * * *', active: true, chain: ['程式碼分析', '漏洞掃描', '靜態檢測'], health: 94, runs: 128, lastRun: '2026-02-13 01:30' },
+  { id: 'a2', name: '套件更新', cron: '0 3 * * 1', active: true, chain: ['自動升版', '單元測試', '金絲雀部署'], health: 91, runs: 52, lastRun: '2026-02-10 03:00' },
+  { id: 'a3', name: '效能基線', cron: '30 2 * * *', active: false, chain: ['Lighthouse', '壓力測試', '出報告'], health: 88, runs: 77, lastRun: '2026-02-11 02:30' },
+  { id: 'a4', name: '發行紀錄', cron: '0 18 * * 5', active: true, chain: ['蒐集 PR', 'AI 摘要', '發佈'], health: 96, runs: 39, lastRun: '2026-02-07 18:00' },
 ];
 
 export async function seedOpenClawAutomationsIfEmpty(): Promise<boolean> {

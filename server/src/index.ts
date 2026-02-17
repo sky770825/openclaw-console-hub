@@ -1661,19 +1661,26 @@ app.post('/api/openclaw/run-next', async (_req, res) => {
   res.status(201).json({ run: result.run, taskId: result.taskId });
 });
 
-/** 將 openclaw_reviews 轉成發想審核頁面使用的 Review 格式 */
+/** 將 openclaw_reviews 轉成發想審核頁面使用的 Review 格式（含完整欄位） */
 function openClawReviewToReview(r: import('./openclawSupabase.js').OpenClawReview, index: number) {
+  // 從 src 解析 proposal category（格式 "agent-proposal:system"）
+  const proposalCat = r.src?.startsWith('agent-proposal:') ? r.src.split(':')[1] : undefined;
   return {
     id: r.id,
     number: index + 1,
     title: r.title,
-    summary: r.desc ?? '',
-    filePath: r.src ?? '',
-    status: r.status as 'pending' | 'approved' | 'rejected',
+    type: r.type ?? 'tool',
+    pri: r.pri ?? 'medium',
+    desc: r.desc ?? '',
+    reasoning: r.reasoning ?? '',
+    src: r.src ?? '',
+    date: r.created_at ? new Date(r.created_at).toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' }) : '',
+    status: r.status as 'pending' | 'approved' | 'rejected' | 'archived',
     createdAt: r.created_at ?? new Date().toISOString(),
     reviewedAt: r.status !== 'pending' ? r.created_at : undefined,
     reviewNote: r.reasoning ?? undefined,
-    tags: [r.type, r.pri].filter(Boolean),
+    tags: [r.type, r.pri, proposalCat].filter(Boolean),
+    proposalCategory: proposalCat,
   };
 }
 

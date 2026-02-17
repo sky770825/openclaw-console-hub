@@ -10,6 +10,7 @@ import {
   deleteTask,
   createTask,
   createTaskFromReview,
+  submitProposal,
   fetchBoardConfig,
   fetchBoardHealth,
 } from "@/services/openclawBoardApi";
@@ -61,7 +62,40 @@ export function useOpenClawBoard() {
       ]);
       if (!mounted) return;
       if (Array.isArray(tList)) setTasks(tList.map((t) => ({ ...t, title: t.title ?? t.name, fromR: t.from_review_id || t.fromR })));
-      if (Array.isArray(rList)) setReviews(rList);
+      if (Array.isArray(rList)) {
+        // also fetch tasks to cross-reference review→task linkage
+        const taskIds = new Set((tList || []).map(t => t.fromR).filter(Boolean));
+        setReviews(rList.map((r) => {
+          const hasTask = taskIds.has(r.id);
+          // infer progress from status
+          const progress = r.progress ?? (
+            r.status === "rejected" ? 0 :
+            r.status === "pending" ? 10 :
+            r.status === "archived" ? 100 :
+            r.status === "approved" && hasTask ? 75 :
+            r.status === "approved" ? 50 : 0
+          );
+          // infer collaborators
+          const collaborators = r.collaborators || [];
+          if (collaborators.length === 0) {
+            const src = r.src || r.filePath || "";
+            if (src.startsWith("agent-proposal")) collaborators.push({ name: "Claude Agent", role: "提案者" });
+            if (r.reviewNote || (r.status === "approved" || r.status === "rejected")) collaborators.push({ name: "老蔡", role: "審核者" });
+          }
+          return {
+            ...r,
+            desc: r.desc || r.summary || "",
+            src: r.src || r.filePath || "",
+            type: r.type || (r.tags && r.tags[0]) || "tool",
+            pri: r.pri || (r.tags && r.tags[1]) || "medium",
+            reasoning: r.reasoning || r.reviewNote || "",
+            date: r.date || (r.createdAt ? new Date(r.createdAt).toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" }) : ""),
+            progress,
+            collaborators,
+            _hasTask: hasTask,
+          };
+        }));
+      }
       if (Array.isArray(aList)) setAutos(aList.map((a) => ({ ...a, lastRun: a.last_run || a.lastRun })));
       if (Array.isArray(evoList)) setEvo(evoList.map((e) => ({ ...e, t: e.t || "", x: e.x || "", c: e.c || C.t2, tag: e.tag, tc: e.tc || C.t2 })));
       if (boardHealth && boardHealth.ok) {
@@ -119,6 +153,17 @@ export function useOpenClawBoard() {
     setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
     if (!r) return;
     addE(`駁回「${r.title}」`, C.t3, "駁回", C.t3);
+    persistReview(upd);
+  };
+
+  const archiveR = (id, action) => {
+    const r = reviews.find((item) => item.id === id);
+    if (!r) return;
+    const newStatus = action === "unarchive" ? "pending" : "archived";
+    const upd = { ...r, status: newStatus };
+    setReviews((p) => p.map((item) => (item.id === id ? upd : item)));
+    const label = newStatus === "archived" ? "收錄" : "拉回待審";
+    addE(`${label}「${r.title}」`, C.t3, label, C.t3);
     persistReview(upd);
   };
 
@@ -316,6 +361,38 @@ export function useOpenClawBoard() {
     }
   };
 
+  const CAT_EMOJI = { commercial: "\u{1F4BC}", system: "\u2699\uFE0F", tool: "\u{1F527}", risk: "\u{1F6E1}\uFE0F", creative: "\u{1F4A1}" };
+
+  const submitIdea = async ({ title, category, background, idea, goal, risk }) => {
+    try {
+      const { ok, status, data } = await submitProposal({ title, category, background, idea, goal, risk });
+      if (!ok) {
+        showApiError(status, "提交構想失敗");
+        return false;
+      }
+      const emoji = CAT_EMOJI[category] || "\u{1F4A1}";
+      setReviews((prev) => [{
+        id: data.reviewId,
+        title: `${emoji} ${title}`,
+        type: "proposal",
+        pri: "medium",
+        status: "pending",
+        desc: `\u3010\u80CC\u666F\u3011${background}\n\u3010\u9EDE\u5B50\u3011${idea}`,
+        reasoning: idea,
+        src: `agent-proposal:${category}`,
+        tags: ["proposal", "medium"],
+        date: new Date().toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" }),
+      }, ...prev]);
+      addE(`提交構想「${title}」→ 等待審核`, C.purple, "構想", C.purple);
+      showInfo(`構想已提交：${title}`);
+      return true;
+    } catch (e) {
+      console.warn("[OpenClaw] submitIdea failed", e);
+      showApiError(undefined, "提交構想失敗");
+      return false;
+    }
+  };
+
   return {
     autos,
     reviews,
@@ -329,6 +406,7 @@ export function useOpenClawBoard() {
     togA,
     okR,
     noR,
+    archiveR,
     okRAndCreateTask,
     handleDrawerSave,
     progT,
@@ -337,5 +415,6 @@ export function useOpenClawBoard() {
     delT,
     moveT,
     addQuiz,
+    submitIdea,
   };
 }

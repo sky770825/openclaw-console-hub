@@ -27,6 +27,7 @@ export default function OpenClawV4() {
     togA,
     okR,
     noR,
+    archiveR,
     okRAndCreateTask,
     handleDrawerSave,
     progT,
@@ -35,6 +36,7 @@ export default function OpenClawV4() {
     delT,
     moveT,
     addQuiz,
+    submitIdea,
   } = useOpenClawBoard();
 
   const [tab, setTab] = useState("all");
@@ -45,6 +47,7 @@ export default function OpenClawV4() {
       @keyframes oc-fi{from{opacity:0}to{opacity:1}}
       @keyframes oc-sl{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
       @keyframes oc-su{from{transform:translateY(6px);opacity:0}to{transform:translateY(0);opacity:1}}
+      @keyframes oc-lit-pulse{0%,100%{box-shadow:0 0 24px rgba(248,113,113,0.15)}50%{box-shadow:0 0 40px rgba(248,113,113,0.25),0 0 60px rgba(248,113,113,0.1)}}
       @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
       *{box-sizing:border-box}
       @media (max-width:900px){.oc-grid-all{grid-template-columns:1fr!important}}
@@ -84,7 +87,7 @@ export default function OpenClawV4() {
       {renderTabContent(
         tab,
         { autos, reviews, tasks, boardConfig, evo },
-        { setDrawer, togA, runA, okR, noR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz }
+        { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz, submitIdea }
       )}
     </div>
 

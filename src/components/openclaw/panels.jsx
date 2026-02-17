@@ -75,8 +75,8 @@ export function AutoPanel({autos,onTog,onRun,onView}){
   </Sec>;
 }
 
-export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask}){
-  const pending=reviews.filter(r=>r.status==="pending"), approved=reviews.filter(r=>r.status==="approved");
+export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchive}){
+  const pending=reviews.filter(r=>r.status==="pending"), approved=reviews.filter(r=>r.status==="approved"), archived=reviews.filter(r=>r.status==="archived");
   const priCfg={critical:{l:"嚴重",c:C.red,bg:C.redG},high:{l:"高",c:C.amber,bg:C.amberG},medium:{l:"中",c:C.green,bg:C.greenG}};
   const typI={tool:"⚙️",skill:"🧠",issue:"🔧",learn:"📚",proposal:"💡",red_alert:"🚨"};
   
@@ -115,22 +115,55 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask}){
             <div data-oc-action={`REVIEW_VIEW_${r.id}`} onClick={()=>onView(r)} style={{flex:1,minWidth:80,background:C.indigoG,borderRadius:7,padding:"6px 10px",cursor:"pointer",fontSize:11,color:C.t3,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               💭 {r.reasoning}
             </div>
+            {onArchive && <Btn oc={`REVIEW_ARCHIVE_${r.id}`} sm v="def" onClick={()=>onArchive(r.id)} style={{whiteSpace:"nowrap"}}>📥 收錄</Btn>}
             <Btn oc={`REVIEW_QUICK_REJECT_${r.id}`} sm v="no" onClick={()=>onNo(r.id)} style={{whiteSpace:"nowrap"}}>✕ 未通過</Btn>
             <Btn oc={`REVIEW_QUICK_APPROVE_${r.id}`} sm v="ok" onClick={()=>onOk(r.id)} style={{whiteSpace:"nowrap"}}>✓ 通過</Btn>
             {onOkAndCreateTask && <Btn oc={`REVIEW_APPROVE_AND_TASK_${r.id}`} sm v="pri" onClick={()=>onOkAndCreateTask(r)} style={{whiteSpace:"nowrap"}}>📋 通過+轉任務</Btn>}
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:10,color:C.t3}}>{r.src} · {r.date}</span>
-            <div style={{display:"flex",gap:5}}>
-              <span style={{fontSize:10,color:C.t3,cursor:"pointer",textDecoration:"underline"}} onClick={()=>onView(r)}>查看詳情 →</span>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:10,color:C.t3}}>{r.src} · {r.date}</span>
+              {(r.collaborators||[]).length>0&&<div style={{display:"flex",marginLeft:4}}>
+                {(r.collaborators||[]).slice(0,3).map((c,i)=><span key={i} title={c.name||c} style={{width:16,height:16,borderRadius:"50%",background:`hsl(${(c.name||c).charCodeAt(0)*37%360},55%,42%)`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:7,color:"#fff",fontWeight:700,border:"1px solid #06060a",marginLeft:i>0?-5:0}}>{(c.name||c).charAt(0)}</span>)}
+              </div>}
             </div>
+            <span style={{fontSize:10,color:C.t3,cursor:"pointer",textDecoration:"underline"}} onClick={()=>onView(r)}>查看詳情 →</span>
           </div>
         </Card>;})}
     </div>
     {approved.length>0&&<div style={{marginTop:12}}>
-      <div style={{fontSize:10,fontWeight:650,color:C.t3,marginBottom:6}}>✅ 已批准</div>
-      {approved.map(r=><div key={r.id} style={{display:"flex",alignItems:"center",gap:7,padding:"7px 10px",background:C.greenG,border:`1px solid rgba(52,211,153,0.08)`,borderRadius:8,fontSize:12,color:C.t2,marginBottom:4}}>
-        <span>{typI[r.type]}</span><span style={{flex:1,color:C.t1}}>{r.title}</span><Badge c={C.green} bg={C.greenG}>已批准</Badge>
+      <div style={{fontSize:10,fontWeight:650,color:C.t3,marginBottom:6}}>✅ 已批准 ({approved.length})</div>
+      {approved.map(r=>{
+        const pct = r.progress ?? 50;
+        const collabs = r.collaborators || [];
+        return <div key={r.id} onClick={()=>onView?.(r)} style={{background:C.greenG,border:`1px solid rgba(52,211,153,0.08)`,borderRadius:8,padding:"8px 10px",marginBottom:4,cursor:"pointer",transition:"all .15s"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(52,211,153,0.12)"} onMouseLeave={e=>e.currentTarget.style.background=C.greenG}>
+          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
+            <span style={{fontSize:12}}>{typI[r.type]}</span>
+            <span style={{flex:1,fontSize:12,fontWeight:600,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+            <span style={{fontSize:11,fontWeight:700,color:pct===100?C.green:C.amber,flexShrink:0}}>{pct}%</span>
+          </div>
+          {/* 迷你進度條 */}
+          <div style={{height:3,background:"rgba(255,255,255,0.04)",borderRadius:2,overflow:"hidden",marginBottom:collabs.length>0?4:0}}>
+            <div style={{height:"100%",width:`${pct}%`,background:pct===100?C.green:pct>50?C.amber:C.indigo,borderRadius:2,transition:"width .3s"}}/>
+          </div>
+          {/* 協作者 */}
+          {collabs.length>0&&<div style={{display:"flex",alignItems:"center",gap:4}}>
+            <div style={{display:"flex",marginRight:2}}>
+              {collabs.slice(0,4).map((c,i)=><span key={i} title={`${c.name||c} ${c.role?`(${c.role})`:""}`} style={{width:18,height:18,borderRadius:"50%",background:`hsl(${(c.name||c).charCodeAt(0)*37%360},55%,42%)`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:700,border:"1.5px solid #06060a",marginLeft:i>0?-6:0,zIndex:collabs.length-i}}>{(c.name||c).charAt(0)}</span>)}
+            </div>
+            <span style={{fontSize:9,color:C.t3}}>{collabs.map(c=>c.name||c).join("、")}</span>
+          </div>}
+        </div>;
+      })}
+    </div>}
+    {archived.length>0&&<div style={{marginTop:12}}>
+      <div style={{fontSize:10,fontWeight:650,color:C.t3,marginBottom:6}}>📥 收錄（{archived.length}）</div>
+      {archived.map(r=><div key={r.id} onClick={()=>onView?.(r)} style={{display:"flex",alignItems:"center",gap:7,padding:"7px 10px",background:C.s1,border:`1px solid rgba(148,163,184,0.08)`,borderRadius:8,fontSize:12,color:C.t2,marginBottom:4,cursor:"pointer",transition:"all .15s"}}
+        onMouseEnter={e=>e.currentTarget.style.background=C.s2} onMouseLeave={e=>e.currentTarget.style.background=C.s1}>
+        <span>{typI[r.type]}</span><span style={{flex:1,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+        {onArchive && <span style={{fontSize:10,color:C.indigo,cursor:"pointer",textDecoration:"underline",whiteSpace:"nowrap"}} onClick={(e)=>{e.stopPropagation();onArchive(r.id,'unarchive');}}>拉回待審</span>}
+        <Badge c={C.t3} bg={C.s1}>收錄中</Badge>
       </div>)}
     </div>}
   </Sec>;
@@ -138,101 +171,133 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask}){
 
 const DONE_COL_MAX_HEIGHT = 320; // 完成欄最大高度，避免版面被拉長
 
-export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz}){
-  const [dragOverCol, setDragOverCol] = useState(null);
-  const [hideDone, setHideDone] = useState(true); // 預設隱藏已完成，避免版面過長
-  const cols=[{k:"queued",l:"排隊中",i:"📋",c:C.t3},{k:"in_progress",l:"進行中",i:"🔄",c:C.indigo},{k:"done",l:"完成",i:"✅",c:C.green}];
-  const displayCols = hideDone ? cols.filter((c) => c.k !== "done") : cols;
+function CompactTaskCard({t,cc,onView,onProg,onRun,onDelete,onMove,canDrag,onDragStart}){
+  const [open,setOpen]=useState(false);
+  const doneSubs=(t.subs||[]).filter(s=>s.d).length, totalSubs=(t.subs||[]).length;
+  return <div
+    data-oc-action={`TASK_CARD_${t.id}`}
+    draggable={canDrag}
+    onDragStart={onDragStart}
+    style={{background:open?C.s3:C.s2,border:`1px solid ${C.border}`,borderRadius:8,cursor:canDrag?"grab":"pointer",transition:"all .15s",overflow:"hidden"}}
+  >
+    {/* 緊湊行：色點 + 標題優先 + 尾部指標 */}
+    <div onClick={()=>setOpen(p=>!p)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 8px",minHeight:0}}>
+      <span style={{width:7,height:7,borderRadius:"50%",background:cc.c,flexShrink:0}} title={cc.l}/>
+      {t.riskLevel && t.riskLevel !== "low" && <span style={{width:7,height:7,borderRadius:"50%",background:(RISK_COLORS[t.riskLevel]||RISK_COLORS.low).c,flexShrink:0,border:"1px solid rgba(0,0,0,0.3)"}} title={(RISK_COLORS[t.riskLevel]||RISK_COLORS.low).label}/>}
+      <span style={{fontSize:11,fontWeight:600,color:C.t1,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title??t.name}</span>
+      {t.auto && <span style={{fontSize:8,color:C.indigo,flexShrink:0}}>⚡</span>}
+      {totalSubs>0&&<span style={{fontSize:8,color:C.t3,whiteSpace:"nowrap",flexShrink:0}}>{doneSubs}/{totalSubs}</span>}
+      {t.status!=="done"&&t.progress>0?<span style={{fontSize:8,color:C.t2,whiteSpace:"nowrap",flexShrink:0}}>{t.progress}%</span>:null}
+      {t.status==="done"&&<span style={{fontSize:9,flexShrink:0}}>✅</span>}
+      <span style={{fontSize:8,color:C.t3,transition:"transform .15s",transform:open?"rotate(180deg)":"rotate(0)",flexShrink:0}}>▾</span>
+    </div>
+    {/* 展開區塊 */}
+    {open && <div style={{padding:"4px 10px 8px",borderTop:`1px solid ${C.border}`,animation:"oc-su .12s ease"}}>
+      {(t.subs||[]).length>0&&<div style={{display:"flex",flexDirection:"column",gap:1,marginBottom:5}}>
+        {(t.subs||[]).map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10}}>
+          <span style={{width:11,height:11,borderRadius:2,border:s.d?"none":`1.5px solid ${C.t3}`,background:s.d?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,color:"#fff",flexShrink:0}}>{s.d&&"✓"}</span>
+          <span style={{color:s.d?C.t3:C.t2,textDecoration:s.d?"line-through":"none"}}>{s.t}</span>
+        </div>)}
+      </div>}
+      {t.thought&&<div data-oc-action={`TASK_VIEW_${t.id}`} onClick={(e)=>{e.stopPropagation();onView(t);}} style={{background:"rgba(99,102,241,0.03)",borderRadius:5,padding:"4px 7px",marginBottom:5,cursor:"pointer",fontSize:10,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>💭 {t.thought}</div>}
+      <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
+        {t.status==="queued" && onRun && <Btn oc={`TASK_RUN_${t.id}`} sm v="pri" onClick={()=>onRun(t.id)} style={{fontSize:10,padding:"2px 8px"}}>▶ 執行</Btn>}
+        {t.status==="in_progress" && t.auto && <Btn oc={`TASK_PROGRESS_${t.id}`} sm v="pri" onClick={()=>onProg(t.id)} style={{fontSize:10,padding:"2px 8px"}}>▶ 推進</Btn>}
+        {onMove && t.status!=="queued" && <Btn sm v="gh" onClick={()=>onMove(t.id,"queued")} style={{fontSize:9,color:C.t3,padding:"2px 6px"}}>↩ 排隊</Btn>}
+        {onMove && t.status!=="in_progress" && <Btn sm v="gh" onClick={()=>onMove(t.id,"in_progress")} style={{fontSize:9,color:C.t3,padding:"2px 6px"}}>⏱ 進行中</Btn>}
+        {onMove && t.status!=="done" && <Btn sm v="gh" onClick={()=>onMove(t.id,"done")} style={{fontSize:9,color:C.t3,padding:"2px 6px"}}>✅ 完成</Btn>}
+        <span style={{flex:1}}/>
+        <span data-oc-action={`TASK_VIEW_${t.id}`} onClick={()=>onView(t)} style={{fontSize:9,color:C.indigo,cursor:"pointer",textDecoration:"underline"}}>詳情</span>
+        {onDelete && <Btn oc={`TASK_DELETE_${t.id}`} sm v="gh" onClick={()=>onDelete(t.id)} style={{color:C.t3,fontSize:9,padding:"2px 6px"}}>🗑</Btn>}
+      </div>
+    </div>}
+  </div>;
+}
+
+const STATUS_CFG={queued:{l:"排隊",i:"📋",c:C.t3},in_progress:{l:"進行",i:"🔄",c:C.indigo},done:{l:"完成",i:"✅",c:C.green}};
+const LS_VIEW_KEY = "openclaw_taskboard_view";
+
+export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz,bare=false}){
+  const [hideDone, setHideDone] = useState(true);
+  const [viewMode, setViewMode] = useState(() => { try { return localStorage.getItem(LS_VIEW_KEY) || "grid"; } catch { return "grid"; } });
   const catC={bugfix:{l:"修復",c:C.red},learn:{l:"學習",c:C.purple},feature:{l:"功能",c:C.indigo},improve:{l:"改進",c:C.green}};
   const resolveCat = (cat) => catC[cat] ?? { l: cat || "其他", c: C.t3 };
 
-  const handleDragStart = (e, taskId) => {
-    e.dataTransfer.setData(DRAG_TYPE, taskId);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", taskId);
-  };
-  const handleDragOver = (e, colKey) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverCol(colKey);
-  };
+  const setView = (v) => { setViewMode(v); try { localStorage.setItem(LS_VIEW_KEY, v); } catch {} };
+
+  const filtered = hideDone ? tasks.filter(t => t.status !== "done") : tasks;
+
+  // === 網格視圖：auto-fill 多欄，每張卡片最小 200px ===
+  const gridView = <div className="oc-task-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:4}}>
+    {filtered.map(t=><CompactTaskCard
+      key={t.id} t={t} cc={resolveCat(t.cat)}
+      onView={onView} onProg={onProg} onRun={onRun} onDelete={onDelete} onMove={onMove}
+      canDrag={false}
+    />)}
+    {filtered.length===0&&<div style={{gridColumn:"1/-1",padding:16,textAlign:"center",color:C.t3,fontSize:11}}>目前沒有任務</div>}
+  </div>;
+
+  // === 列表視圖：單欄極緊湊 ===
+  const listView = <div style={{display:"flex",flexDirection:"column",gap:2}}>
+    {filtered.map(t=>{
+      const cc=resolveCat(t.cat);
+      const sc=STATUS_CFG[t.status]||STATUS_CFG.queued;
+      return <div key={t.id} onClick={()=>onView(t)} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:5,cursor:"pointer",transition:"background .1s"}}
+        onMouseEnter={e=>e.currentTarget.style.background=C.s3} onMouseLeave={e=>e.currentTarget.style.background=C.s2}
+      >
+        <span style={{width:5,height:5,borderRadius:"50%",background:sc.c,flexShrink:0}}/>
+        <span style={{width:5,height:5,borderRadius:"50%",background:cc.c,flexShrink:0}} title={cc.l}/>
+        <span style={{fontSize:10.5,fontWeight:600,color:C.t1,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title??t.name}</span>
+        {t.progress>0&&t.status!=="done"&&<span style={{fontSize:8,color:C.t3,flexShrink:0}}>{t.progress}%</span>}
+      </div>;
+    })}
+    {filtered.length===0&&<div style={{padding:16,textAlign:"center",color:C.t3,fontSize:11}}>目前沒有任務</div>}
+  </div>;
+
+  // === Kanban 視圖：傳統三欄（保留拖拉） ===
+  const [dragOverCol, setDragOverCol] = useState(null);
+  const handleDragStart = (e, taskId) => { e.dataTransfer.setData(DRAG_TYPE, taskId); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", taskId); };
+  const handleDragOver = (e, colKey) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverCol(colKey); };
   const handleDragLeave = () => setDragOverCol(null);
-  const handleDrop = (e, colKey) => {
-    e.preventDefault();
-    setDragOverCol(null);
-    const id = e.dataTransfer.getData(DRAG_TYPE) || e.dataTransfer.getData("text/plain");
-    if (id && onMove) onMove(id, colKey);
-  };
+  const handleDrop = (e, colKey) => { e.preventDefault(); setDragOverCol(null); const id = e.dataTransfer.getData(DRAG_TYPE) || e.dataTransfer.getData("text/plain"); if (id && onMove) onMove(id, colKey); };
+  const kanbanCols=[{k:"queued",l:"排隊中",i:"📋",c:C.t3},{k:"in_progress",l:"進行中",i:"🔄",c:C.indigo},{k:"done",l:"完成",i:"✅",c:C.green}];
+  const displayKanbanCols = hideDone ? kanbanCols.filter(c=>c.k!=="done") : kanbanCols;
+  const kanbanView = <div className="oc-task-cols" style={{display:"grid",gridTemplateColumns:`repeat(${displayKanbanCols.length},minmax(100px,1fr))`,gap:6}}>
+    {displayKanbanCols.map(col=>{const ct=tasks.filter(t=>t.status===col.k);
+      const isDropTarget = dragOverCol === col.k;
+      return <div key={col.k} onDragOver={e=>handleDragOver(e,col.k)} onDragLeave={handleDragLeave} onDrop={e=>handleDrop(e,col.k)}
+        style={{borderRadius:10,minHeight:60,transition:"background .15s",background:isDropTarget?`${col.c}18`:"transparent",border:isDropTarget?`2px dashed ${col.c}`:"2px solid transparent"}}>
+        <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4,padding:"4px 8px",background:"rgba(255,255,255,0.02)",borderRadius:6,borderBottom:`2px solid ${col.c}`}}>
+          <span style={{fontSize:10}}>{col.i}</span><span style={{fontSize:10,fontWeight:600,color:col.c}}>{col.l}</span>
+          <span style={{marginLeft:"auto",fontSize:9,color:C.t3}}>{ct.length}</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:3,minHeight:30,...(col.k==="done"?{maxHeight:DONE_COL_MAX_HEIGHT,overflowY:"auto"}:{})}}>
+          {ct.map(t=><CompactTaskCard key={t.id} t={t} cc={resolveCat(t.cat)} onView={onView} onProg={onProg} onRun={onRun} onDelete={onDelete} onMove={onMove} canDrag={!!onMove} onDragStart={e=>onMove&&handleDragStart(e,t.id)} />)}
+          {ct.length===0&&<div style={{padding:8,textAlign:"center",color:C.t3,fontSize:9,border:`1px dashed ${C.border}`,borderRadius:6}}>空</div>}
+        </div>
+      </div>;})}
+  </div>;
+
+  const content = viewMode === "list" ? listView : viewMode === "kanban" ? kanbanView : gridView;
+
+  if (bare) return content;
 
   const doneCount = tasks.filter((t) => t.status === "done").length;
-  const rightEl = <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:8}}>
-    {onAddQuiz && <Btn sm v="pri" onClick={onAddQuiz} style={{fontSize:11}}>➕ 測驗單</Btn>}
-    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:11,color:C.t3}}>
-      <input type="checkbox" checked={hideDone} onChange={(e)=>setHideDone(e.target.checked)} style={{accentColor:C.green}} />
-      隱藏已完成{doneCount > 0 && ` (${doneCount})`}
+  const viewBtns = [
+    {k:"grid",l:"網格",i:"▦"},{k:"list",l:"列表",i:"☰"},{k:"kanban",l:"看板",i:"▥"}
+  ];
+  const rightEl = <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:6}}>
+    <div style={{display:"flex",gap:1,background:C.s1,borderRadius:6,padding:1}}>
+      {viewBtns.map(v=><button key={v.k} onClick={()=>setView(v.k)} style={{padding:"2px 8px",borderRadius:5,border:"none",background:viewMode===v.k?"rgba(255,255,255,0.08)":"transparent",color:viewMode===v.k?C.t1:C.t3,fontSize:10,cursor:"pointer",fontFamily:"inherit",transition:"all .1s"}} title={v.l}>{v.i}</button>)}
+    </div>
+    {onAddQuiz && <Btn sm v="pri" onClick={onAddQuiz} style={{fontSize:10,padding:"2px 8px"}}>➕ 測驗單</Btn>}
+    <label style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",fontSize:10,color:C.t3}}>
+      <input type="checkbox" checked={hideDone} onChange={(e)=>setHideDone(e.target.checked)} style={{accentColor:C.green,width:12,height:12}} />
+      隱藏完成{doneCount > 0 && ` (${doneCount})`}
     </label>
   </div>;
 
-  return <Sec icon="📊" title="任務看板" count={tasks.length} right={rightEl}>
-    <div className="oc-task-cols" style={{display:"grid",gridTemplateColumns:`repeat(${displayCols.length},minmax(100px,1fr))`,gap:8}}>
-      {displayCols.map(col=>{const ct=tasks.filter(t=>t.status===col.k);
-        const isDropTarget = dragOverCol === col.k;
-        const isDoneCol = col.k === "done";
-        return <div key={col.k}
-          onDragOver={(e)=>handleDragOver(e,col.k)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e)=>handleDrop(e,col.k)}
-          style={{ borderRadius: 12, minHeight: 120, transition: "background 0.15s", background: isDropTarget ? `${col.c}18` : "transparent", border: isDropTarget ? `2px dashed ${col.c}` : "2px solid transparent" }}
-        >
-          <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8,padding:"6px 9px",background:"rgba(255,255,255,0.02)",borderRadius:8,borderBottom:`2px solid ${col.c}`}}>
-            <span style={{fontSize:12}}>{col.i}</span>
-            <span style={{fontSize:12,fontWeight:600,color:col.c}}>{col.l}</span>
-            <span style={{marginLeft:"auto",fontSize:10,color:C.t3}}>{ct.length}</span>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,minHeight:70,...(isDoneCol ? {maxHeight:DONE_COL_MAX_HEIGHT,overflowY:"auto",overflowX:"hidden"} : {})}}>
-            {ct.map(t=>{const cc=resolveCat(t.cat);
-              return <Card
-                key={t.id}
-                oc={`TASK_CARD_${t.id}`}
-                draggable={!!onMove}
-                onDragStart={(e)=>onMove && handleDragStart(e,t.id)}
-                style={{ cursor: onMove ? "grab" : undefined }}
-              >
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                    <Badge c={cc.c} bg={cc.c+"15"}>{cc.l}</Badge>
-                    {t.riskLevel && t.riskLevel !== "low" && <RiskBadge level={t.riskLevel} />}
-                  </div>
-                  {t.status!=="done"?<div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <Ring pct={t.progress} size={32} stroke={2.5}/>
-                    <span style={{position:"absolute",fontSize:8,fontWeight:700,color:C.t2}}>{t.progress}%</span>
-                  </div>:<span style={{fontSize:14}}>✅</span>}
-                </div>
-                <div style={{fontSize:12.5,fontWeight:600,color:C.t1,marginBottom:6}}>{t.title??t.name}</div>
-                <div style={{display:"flex",flexDirection:"column",gap:2,marginBottom:6}}>
-                  {(t.subs||[]).map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
-                    <span style={{width:13,height:13,borderRadius:3,border:s.d?"none":`1.5px solid ${C.t3}`,background:s.d?C.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,color:"#fff",flexShrink:0}}>{s.d&&"✓"}</span>
-                    <span style={{color:s.d?C.t3:C.t2,textDecoration:s.d?"line-through":"none"}}>{s.t}</span>
-                  </div>)}
-                </div>
-                <div data-oc-action={`TASK_VIEW_${t.id}`} onClick={()=>onView(t)} style={{background:"rgba(99,102,241,0.03)",borderRadius:6,padding:"5px 8px",marginBottom:6,cursor:"pointer",fontSize:10.5,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>💭 {t.thought}</div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:4}}>
-                  <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
-                    {t.auto && <Badge c={C.indigo} bg={C.indigoG}>⚡ 自動</Badge>}
-                    {t.status==="queued" && onRun && <Btn oc={`TASK_RUN_${t.id}`} sm v="pri" onClick={()=>onRun(t.id)}>▶ 執行</Btn>}
-                    {t.status==="in_progress" && t.auto && <Btn oc={`TASK_PROGRESS_${t.id}`} sm v="pri" onClick={()=>onProg(t.id)}>▶ 推進</Btn>}
-                    {onMove && t.status!=="queued" && <Btn sm v="gh" onClick={()=>onMove(t.id,"queued")} style={{fontSize:10,color:C.t3}}>↩ 移到排隊</Btn>}
-                    {onMove && t.status!=="in_progress" && <Btn sm v="gh" onClick={()=>onMove(t.id,"in_progress")} style={{fontSize:10,color:C.t3}}>⏱ 設為進行中</Btn>}
-                    {onMove && t.status!=="done" && <Btn sm v="gh" onClick={()=>onMove(t.id,"done")} style={{fontSize:10,color:C.t3}}>✅ 標記完成</Btn>}
-                  </div>
-                  {onDelete && <Btn oc={`TASK_DELETE_${t.id}`} sm v="gh" onClick={()=>onDelete(t.id)} style={{color:C.t3,fontSize:10}}>🗑 刪除</Btn>}
-                </div>
-              </Card>;})}
-            {ct.length===0&&<div style={{padding:16,textAlign:"center",color:C.t3,fontSize:11,border:`1px dashed ${C.border}`,borderRadius:10}}>空</div>}
-          </div>
-        </div>;})}
-    </div>
-  </Sec>;
+  return <Sec icon="📊" title="任務看板" count={tasks.length} right={rightEl}>{content}</Sec>;
 }
 
 export function N8nPanel({ flows }){
@@ -626,18 +691,109 @@ export function PluginPanel({ plugins }){
   </Sec>;
 }
 
+const TAG_ICON={"批准":"✅","批准+轉任務":"📋","駁回":"❌","收錄":"📥","推進":"▶","完成":"🏆","執行":"🚀","自動化":"⚡","狀態變更":"🔄","刪除":"🗑","學習":"📚","構想":"💡","拉回待審":"↩"};
+const MILESTONE_TAGS=new Set(["完成","批准+轉任務","構想"]);
+
+function evoDateLabel(isoStr) {
+  if (!isoStr) return "未知";
+  const d = new Date(isoStr);
+  if (isNaN(d)) return "未知";
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((today - target) / 86400000);
+  if (diff === 0) return "今天";
+  if (diff === 1) return "昨天";
+  if (diff === 2) return "前天";
+  if (diff <= 7) return `${diff} 天前`;
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function groupEvoByDate(log) {
+  const groups = [];
+  let currentDate = null;
+  let currentGroup = null;
+  for (const e of log) {
+    const dateStr = evoDateLabel(e.created_at);
+    if (dateStr !== currentDate) {
+      currentDate = dateStr;
+      currentGroup = { date: dateStr, events: [] };
+      groups.push(currentGroup);
+    }
+    currentGroup.events.push(e);
+  }
+  return groups;
+}
+
 export function EvoPanel({log}){
-  return <Sec icon="🧬" title="進化紀錄" count={log.length}>
-    <div style={{position:"relative",paddingLeft:16}}>
-      <div style={{position:"absolute",left:4,top:0,bottom:0,width:2,background:`linear-gradient(to bottom,${C.indigo},${C.purple},${C.green})`,borderRadius:1}}/>
-      {log.map((e,i)=><div key={i} style={{position:"relative",marginBottom:12,paddingLeft:12}}>
-        <div style={{position:"absolute",left:-14.5,top:4,width:9,height:9,borderRadius:5,background:e.c,border:`2px solid ${C.s1}`}}/>
-        <div style={{fontSize:9.5,color:C.t3,marginBottom:1}}>{e.t}</div>
-        <div style={{fontSize:12,color:C.t2,lineHeight:1.4}}>{e.x}</div>
-        {e.tag&&<Badge c={e.tc} bg={e.tc+"15"} style={{marginTop:3}}>{e.tag}</Badge>}
-      </div>)}
+  const [expandAll, setExpandAll] = useState(false);
+  const groups = groupEvoByDate(log);
+  const milestones = log.filter(e => MILESTONE_TAGS.has(e.tag));
+  const stats = {};
+  for (const e of log) { const t = e.tag || "其他"; stats[t] = (stats[t] || 0) + 1; }
+
+  return <Sec icon="🧬" title="進化歷史碑" count={log.length} right={
+    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+      <button onClick={()=>setExpandAll(p=>!p)} style={{fontSize:10,color:C.t3,background:"none",border:`1px solid ${C.border}`,borderRadius:5,padding:"2px 8px",cursor:"pointer",fontFamily:"inherit"}}>{expandAll?"收合全部":"展開全部"}</button>
+    </div>
+  }>
+    {/* 里程碑摘要條 */}
+    {milestones.length>0&&<div style={{marginBottom:14,padding:"10px 12px",background:`linear-gradient(135deg,${C.indigoG},${C.purpleG})`,border:`1px solid ${C.indigo}20`,borderRadius:10}}>
+      <div style={{fontSize:10,fontWeight:650,color:C.indigo,marginBottom:6}}>🏛 里程碑</div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        {milestones.slice(0,5).map((e,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:12}}>{TAG_ICON[e.tag]||"🔹"}</span>
+          <span style={{fontSize:11,color:C.t1,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.x}</span>
+          <span style={{fontSize:9,color:C.t3,whiteSpace:"nowrap"}}>{e.t}</span>
+        </div>)}
+        {milestones.length>5&&<div style={{fontSize:9,color:C.t3,textAlign:"center"}}>⋯ 共 {milestones.length} 個里程碑</div>}
+      </div>
+    </div>}
+
+    {/* 活動統計條 */}
+    <div style={{display:"flex",gap:3,marginBottom:12,flexWrap:"wrap"}}>
+      {Object.entries(stats).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([tag,cnt])=>
+        <span key={tag} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"2px 8px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:6,fontSize:9,color:C.t2}}>
+          <span>{TAG_ICON[tag]||"•"}</span>{tag}<span style={{fontWeight:700,color:C.t1}}>{cnt}</span>
+        </span>
+      )}
+    </div>
+
+    {/* 時間線主體（按日期分組） */}
+    <div style={{position:"relative",paddingLeft:18}}>
+      <div style={{position:"absolute",left:5,top:0,bottom:0,width:2,background:`linear-gradient(to bottom,${C.indigo},${C.purple}40,${C.green}20)`,borderRadius:1}}/>
+      {groups.map((g,gi)=><EvoDateGroup key={gi} group={g} defaultOpen={expandAll||gi===0} />)}
     </div>
   </Sec>;
+}
+
+function EvoDateGroup({group,defaultOpen}){
+  const [open,setOpen]=useState(defaultOpen);
+  useEffect(()=>{setOpen(defaultOpen);},[defaultOpen]);
+  const hasMilestone=group.events.some(e=>MILESTONE_TAGS.has(e.tag));
+  return <div style={{marginBottom:8}}>
+    {/* 日期標頭 */}
+    <div onClick={()=>setOpen(p=>!p)} style={{position:"relative",display:"flex",alignItems:"center",gap:6,cursor:"pointer",marginBottom:open?6:0,marginLeft:-18,paddingLeft:18}}>
+      <div style={{position:"absolute",left:1,width:10,height:10,borderRadius:5,background:hasMilestone?C.indigo:C.s3,border:`2px solid ${hasMilestone?C.indigo:C.t3}`}}/>
+      <span style={{fontSize:10,fontWeight:700,color:hasMilestone?C.indigo:C.t2}}>{group.date}</span>
+      <span style={{fontSize:9,color:C.t3}}>({group.events.length})</span>
+      <span style={{fontSize:8,color:C.t3,transition:"transform .15s",transform:open?"rotate(0)":"rotate(-90deg)"}}>▼</span>
+    </div>
+    {/* 事件列表 */}
+    {open&&<div style={{display:"flex",flexDirection:"column",gap:2,animation:"oc-su .12s ease"}}>
+      {group.events.map((e,i)=>{
+        const isMilestone=MILESTONE_TAGS.has(e.tag);
+        return <div key={i} style={{position:"relative",marginLeft:-2,paddingLeft:8,display:"flex",alignItems:"flex-start",gap:6,...(isMilestone?{background:`${e.c}08`,borderRadius:6,padding:"4px 8px 4px 8px",marginRight:4}:{})}}>
+          <div style={{position:"absolute",left:-11,top:6,width:5,height:5,borderRadius:3,background:e.c,flexShrink:0}}/>
+          <span style={{fontSize:13,flexShrink:0,lineHeight:1}}>{TAG_ICON[e.tag]||"•"}</span>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,color:isMilestone?C.t1:C.t2,fontWeight:isMilestone?600:400,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.x}</div>
+          </div>
+          <span style={{fontSize:8,color:C.t3,whiteSpace:"nowrap",flexShrink:0,lineHeight:1.8}}>{e.t}</span>
+        </div>;
+      })}
+    </div>}
+  </div>;
 }
 
 // ==================== 🟣 派工審核面板 ====================
