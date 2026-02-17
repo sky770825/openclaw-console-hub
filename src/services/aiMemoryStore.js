@@ -262,3 +262,30 @@ export function recordInsight({ title, content, tags = [], importance = 7 }) {
     importance,
   });
 }
+
+/** AI 策略切換收錄 */
+export function recordStrategySwitch({ from, to, reason = "" }) {
+  const labelMap = { auto: "自動", fast: "快速", standard: "標準", deep: "深度" };
+  return addMemory({
+    type: "decision",
+    source: "strategy",
+    title: `策略切換：${labelMap[from] || from} → ${labelMap[to] || to}`,
+    content: `AI 策略從「${labelMap[from] || from}」切換至「${labelMap[to] || to}」。${reason}`,
+    tags: ["strategy", from, to],
+    meta: { from, to },
+    importance: 6,
+  });
+}
+
+/** 錯誤事件收錄 */
+export function recordError({ operation, error, taskId, context = "" }) {
+  return addMemory({
+    type: "insight",
+    source: "error",
+    title: `⚠️ 錯誤：${operation}`,
+    content: `操作「${operation}」失敗：${error}。${context}`,
+    tags: ["error", operation],
+    meta: { operation, error: String(error), taskId },
+    importance: 7,
+  });
+}

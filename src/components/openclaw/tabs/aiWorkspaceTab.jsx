@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { C, Btn, Card, Sec, Badge, RiskBadge, RiskStamp, RISK_COLORS } from "../uiPrimitives";
 import { searchMemory, getMemoryStats, addMemory, recordInsight, recordDailyReport, exportMemory } from "@/services/aiMemoryStore";
+import { AI_STRATEGIES } from "@/hooks/useOpenClawBoard";
 
 const LS_COLLAPSED = "openclaw_ai_ws_collapsed";
 const LS_REPORTS = "openclaw_ai_reports";
@@ -300,13 +301,16 @@ function MemoryCenter({ colMap, toggle }) {
   </Collapse>;
 }
 
+const ERROR_THRESHOLD_DISPLAY = 3;
+const ERROR_THRESHOLD_MAX = 5;
+
 export function renderAiWorkspaceTab(data, actions) {
   return <AiWorkspace data={data} actions={actions} />;
 }
 
 function AiWorkspace({ data, actions }) {
   const { reviews = [], tasks = [], evo = [] } = data || {};
-  const { autoReviewByRisk, setDrawer, okR, noR, okRAndCreateTask } = actions || {};
+  const { autoReviewByRisk, setDrawer, okR, noR, okRAndCreateTask, progT, batchProgTasks, activateQueuedTasks, aiStrategy, setAiStrategy, errorAccum, wakePanel, dismissWake, createFixTasks } = actions || {};
 
   const [colMap, setColMap] = useState(() => readLS(LS_COLLAPSED, {}));
   const toggle = (id) => setColMap(p => { const n = { ...p, [id]: !p[id] }; writeLS(LS_COLLAPSED, n); return n; });
@@ -342,6 +346,151 @@ function AiWorkspace({ data, actions }) {
       {sentToBoss.length > 0 && <Badge c={C.purple} bg={C.purpleG}>{sentToBoss.length} 送審中</Badge>}
       <Badge c={C.green} bg={C.greenG}>{activeTasks.length} 執行中</Badge>
     </div>
+
+    {/* ── 策略選擇器 ── */}
+    {setAiStrategy && <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, padding: "8px 12px", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 10 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: C.t2, marginRight: 4 }}>AI 策略：</span>
+      {[
+        { key: "auto", label: "🔄 自動", desc: "依門檻分數自動判定", c: C.cyan },
+        { key: "fast", label: "⚡ 快速", desc: AI_STRATEGIES.fast.desc, c: "#fbbf24" },
+        { key: "standard", label: "🔵 標準", desc: AI_STRATEGIES.standard.desc, c: "#818cf8" },
+        { key: "deep", label: "🟣 深度", desc: AI_STRATEGIES.deep.desc, c: "#a78bfa" },
+      ].map(s => (
+        <button key={s.key} onClick={() => setAiStrategy(s.key)} title={s.desc} style={{
+          padding: "4px 10px", borderRadius: 6, border: aiStrategy === s.key ? `1.5px solid ${s.c}` : `1px solid ${C.border}`,
+          background: aiStrategy === s.key ? `${s.c}15` : "transparent",
+          color: aiStrategy === s.key ? s.c : C.t3, fontSize: 10, fontWeight: aiStrategy === s.key ? 700 : 500,
+          cursor: "pointer", transition: "all .15s", fontFamily: "inherit", whiteSpace: "nowrap",
+        }}>
+          {s.label}
+        </button>
+      ))}
+      <span style={{ flex: 1 }} />
+      <span style={{ fontSize: 9, color: C.t3 }}>
+        {aiStrategy === "auto" ? "自動：依項目複雜度判定" :
+         aiStrategy === "fast" ? "快速：除 critical 全自動過" :
+         aiStrategy === "standard" ? "標準：低/中風險自動，高風險送老蔡" :
+         "深度：僅 none 自動過，其餘全送老蔡"}
+      </span>
+    </div>}
+
+    {/* ── 錯誤累積指示器 ── */}
+    {errorAccum && errorAccum.errors.length > 0 && <div style={{
+      display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 12px",
+      background: wakePanel ? "rgba(239,68,68,0.08)" : "rgba(251,191,36,0.06)",
+      border: `1px solid ${wakePanel ? C.red : C.amber}30`,
+      borderRadius: 10, borderLeft: `4px solid ${wakePanel ? C.red : C.amber}`,
+      animation: wakePanel ? "oc-lit-pulse 2s infinite" : undefined,
+    }}>
+      <span style={{ fontSize: 16 }}>{wakePanel ? "🚨" : "⚠️"}</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: wakePanel ? C.red : C.amber }}>
+          {wakePanel ? "AI 已甦醒 — 偵測到連續錯誤" : `錯誤累積中：${errorAccum.errors.length} 次`}
+        </div>
+        <div style={{ fontSize: 9, color: C.t3 }}>
+          {wakePanel
+            ? `${errorAccum.errors.length} 次錯誤觸發甦醒（門檻 ${ERROR_THRESHOLD_DISPLAY}）· 正在診斷中...`
+            : `5 分鐘內累積 ${errorAccum.errors.length} 次（門檻：${ERROR_THRESHOLD_DISPLAY} 次甦醒）`}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {Array.from({ length: ERROR_THRESHOLD_MAX }).map((_, i) => (
+          <div key={i} style={{
+            width: 8, height: 8, borderRadius: "50%",
+            background: i < errorAccum.errors.length ? (i >= ERROR_THRESHOLD_MAX - 2 ? C.red : C.amber) : "rgba(255,255,255,0.06)",
+            transition: "all .2s",
+          }} />
+        ))}
+      </div>
+      {errorAccum.wakeCount > 0 && <span style={{ fontSize: 8, color: C.t3 }}>累計甦醒 {errorAccum.wakeCount} 次</span>}
+    </div>}
+
+    {/* ── 甦醒面板 ── */}
+    {wakePanel && <div style={{
+      marginBottom: 16, padding: "14px 16px",
+      background: "linear-gradient(135deg, rgba(239,68,68,0.06), rgba(168,85,247,0.06))",
+      border: `1px solid ${C.red}30`, borderRadius: 12,
+      animation: "oc-su .3s ease",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 22 }}>🧠</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.red }}>AI 甦醒診斷</div>
+          <div style={{ fontSize: 10, color: C.t3 }}>偵測到 {wakePanel.diagnosis.totalErrors} 次錯誤，自動掃描 debug 資訊</div>
+        </div>
+        <Badge c={C.red} bg="rgba(239,68,68,0.1)">
+          {wakePanel.diagnosis.level === "escalate" ? "強制升級" : "警示甦醒"}
+        </Badge>
+      </div>
+
+      {/* 錯誤分析 */}
+      <div style={{ padding: "10px 12px", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.t1, marginBottom: 6 }}>錯誤分佈</div>
+        {wakePanel.diagnosis.topOperations.map(([op, count]) => (
+          <div key={op} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+            <div style={{ flex: 1, fontSize: 10, color: C.t2 }}>{op}</div>
+            <div style={{ display: "flex", gap: 2 }}>
+              {Array.from({ length: count }).map((_, i) => (
+                <div key={i} style={{ width: 12, height: 6, borderRadius: 2, background: count >= 3 ? C.red : C.amber }} />
+              ))}
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: count >= 3 ? C.red : C.amber, minWidth: 20, textAlign: "right" }}>{count}x</span>
+          </div>
+        ))}
+      </div>
+
+      {/* 最近錯誤明細 */}
+      <div style={{ padding: "8px 12px", background: C.s1, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 10, maxHeight: 120, overflowY: "auto" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.t2, marginBottom: 4 }}>最近錯誤</div>
+        {wakePanel.errors.map((e, i) => (
+          <div key={i} style={{ fontSize: 9, color: C.t3, marginBottom: 2, display: "flex", gap: 6 }}>
+            <span style={{ color: C.t3, whiteSpace: "nowrap" }}>{new Date(e.ts).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+            <span style={{ color: C.red }}>{e.operation}</span>
+            <span style={{ color: C.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(e.error).slice(0, 60)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* 建議行動 */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.t1, marginBottom: 6 }}>處理方式</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {wakePanel.suggestedActions.map((a, i) => (
+          <button key={i} onClick={() => {
+            if (a.type === "dismiss") {
+              dismissWake && dismissWake(false);
+            } else if (a.type === "escalate") {
+              // 已自動處理，僅顯示
+            } else {
+              createFixTasks && createFixTasks([a]);
+            }
+          }} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+            background: a.type === "dismiss" ? C.greenG : a.type === "fix" ? "rgba(251,191,36,0.06)" : C.s2,
+            border: `1px solid ${a.type === "dismiss" ? C.green : a.type === "fix" ? C.amber : C.border}30`,
+            borderRadius: 8, cursor: "pointer", width: "100%", textAlign: "left",
+            color: a.type === "dismiss" ? C.green : C.t1, fontSize: 11, fontWeight: 600,
+            fontFamily: "inherit", transition: "all .15s",
+          }}>
+            {a.label}
+          </button>
+        ))}
+        {/* 組合行動：先修一部分 + 開清單 */}
+        {wakePanel.suggestedActions.filter(a => a.type === "fix" || a.type === "ticket").length > 1 && (
+          <button onClick={() => {
+            const all = wakePanel.suggestedActions.filter(a => a.type === "fix" || a.type === "ticket");
+            createFixTasks && createFixTasks(all);
+            dismissWake && dismissWake(true); // 維持當前策略
+          }} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+            background: "rgba(168,85,247,0.06)", border: `1px solid ${C.purple}30`,
+            borderRadius: 8, cursor: "pointer", width: "100%", textAlign: "left",
+            color: C.purple, fontSize: 11, fontWeight: 600, fontFamily: "inherit", transition: "all .15s",
+          }}>
+            🔀 全部開立修復清單 + 維持當前策略
+          </button>
+        )}
+      </div>
+    </div>}
 
     {/* ── 流水線概覽 ── */}
     <div style={{ display: "flex", gap: 4, marginBottom: 16, padding: "8px 12px", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 10, overflowX: "auto" }}>
@@ -398,6 +547,8 @@ function AiWorkspace({ data, actions }) {
                 <div style={{ fontSize: 10, color: C.t2, lineHeight: 1.4, marginBottom: 4 }}>{(r.desc || "").slice(0, 80)}{(r.desc || "").length > 80 ? "…" : ""}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: C.t3, marginBottom: 4 }}>
                   <span>{r.src || "未知來源"}</span> · <span>{r.date}</span>
+                  {r._strategyScore !== undefined && <span style={{ marginLeft: "auto" }}>策略分：{r._strategyScore}</span>}
+                  {r._strategy && <Badge c={AI_STRATEGIES[r._strategy]?.color || C.t3} bg="transparent" style={{ fontSize: 7 }}>{AI_STRATEGIES[r._strategy]?.label || r._strategy}</Badge>}
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                   {setDrawer && <Btn sm v="def" onClick={() => setDrawer(r)} style={{ fontSize: 9, padding: "2px 8px" }}>🔍</Btn>}
@@ -453,28 +604,64 @@ function AiWorkspace({ data, actions }) {
           badge={activeTasks.length > 0 ? <Badge c={C.indigo} bg={C.indigoG}>運行中</Badge> : null}
           open={true} map={colMap} toggle={toggle}>
           {activeTasks.length === 0 && <div style={{ textAlign: "center", padding: 12, color: C.t3, fontSize: 10 }}>目前沒有執行中的任務</div>}
-          {activeTasks.map(t => <Card key={t.id} style={{ padding: "8px 10px", marginBottom: 4 }} glow={C.indigo}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <span style={{ fontSize: 10 }}>🔄</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: C.t1, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || t.name}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: C.indigo }}>{t.progress || 0}%</span>
-            </div>
-            <div style={{ height: 3, background: "rgba(255,255,255,0.04)", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${t.progress || 0}%`, background: C.indigo, borderRadius: 2, transition: "width .3s" }} />
-            </div>
-            {t.thought && <div style={{ fontSize: 9, color: C.t3, marginTop: 3 }}>💭 {t.thought}</div>}
-          </Card>)}
+
+          {/* 批量操作 */}
+          {activeTasks.length > 0 && <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+            {batchProgTasks && <Btn sm v="pri" onClick={() => batchProgTasks("in_progress")} style={{ flex: 1, justifyContent: "center" }}>
+              ⚡ 批量推進 ({activeTasks.filter(t => (t.subs || []).some(s => !s.d)).length})
+            </Btn>}
+          </div>}
+
+          {activeTasks.map(t => {
+            const doneSubs = (t.subs || []).filter(s => s.d).length;
+            const totalSubs = (t.subs || []).length;
+            const nextSub = (t.subs || []).find(s => !s.d);
+            return <Card key={t.id} style={{ padding: "8px 10px", marginBottom: 4 }} glow={C.indigo}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <span style={{ fontSize: 10 }}>🔄</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: C.t1, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || t.name}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.indigo }}>{t.progress || 0}%</span>
+              </div>
+              <div style={{ height: 3, background: "rgba(255,255,255,0.04)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${t.progress || 0}%`, background: C.indigo, borderRadius: 2, transition: "width .3s" }} />
+              </div>
+              {totalSubs > 0 && <div style={{ fontSize: 8, color: C.t3, marginTop: 3 }}>
+                📎 {doneSubs}/{totalSubs} 步驟{nextSub ? ` · 下一步：${nextSub.t}` : ""}
+              </div>}
+              {t.thought && <div style={{ fontSize: 9, color: C.t3, marginTop: 2 }}>💭 {t.thought}</div>}
+              {progT && nextSub && <div style={{ marginTop: 4 }}>
+                <Btn sm v="pri" onClick={() => progT(t.id)} style={{ fontSize: 8, padding: "2px 8px" }}>▶ 推進「{nextSub.t}」</Btn>
+              </div>}
+            </Card>;
+          })}
         </Collapse>
 
         {/* 排隊中 */}
         <Collapse id="queued" icon="📋" title="排隊中" count={queuedTasks.length}
           open={true} map={colMap} toggle={toggle}>
           {queuedTasks.length === 0 && <div style={{ textAlign: "center", padding: 12, color: C.t3, fontSize: 10 }}>沒有排隊中的任務</div>}
-          {queuedTasks.map(t => <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 7, marginBottom: 2 }}>
-            <span style={{ fontSize: 10 }}>📋</span>
-            <span style={{ flex: 1, fontSize: 10, fontWeight: 600, color: C.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || t.name}</span>
-            {t.fromR && <Badge c={C.indigo} bg={C.indigoG} style={{ fontSize: 7 }}>來自審核</Badge>}
-          </div>)}
+
+          {/* 批量操作 */}
+          {queuedTasks.length > 0 && <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+            {activateQueuedTasks && <Btn sm v="pri" onClick={activateQueuedTasks} style={{ flex: 1, justifyContent: "center" }}>
+              🚀 全部啟動 ({queuedTasks.length})
+            </Btn>}
+            {batchProgTasks && <Btn sm v="def" onClick={() => batchProgTasks("queued")} style={{ flex: 1, justifyContent: "center" }}>
+              ⚡ 推進一步 ({queuedTasks.length})
+            </Btn>}
+          </div>}
+
+          {queuedTasks.map(t => {
+            const totalSubs = (t.subs || []).length;
+            return <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 7, marginBottom: 2 }}>
+              <span style={{ fontSize: 10 }}>📋</span>
+              <span style={{ flex: 1, fontSize: 10, fontWeight: 600, color: C.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || t.name}</span>
+              {totalSubs > 0 && <span style={{ fontSize: 8, color: C.t3 }}>{totalSubs}步</span>}
+              {t._taskType && <Badge c={C.amber} bg={C.amberG} style={{ fontSize: 7 }}>{t._taskType}</Badge>}
+              {t._strategy && <Badge c={AI_STRATEGIES[t._strategy]?.color || C.t3} bg="transparent" style={{ fontSize: 7 }}>{t._strategy === "fast" ? "⚡" : t._strategy === "deep" ? "🟣" : "🔵"}</Badge>}
+              {t.fromR && <Badge c={C.indigo} bg={C.indigoG} style={{ fontSize: 7 }}>審核轉入</Badge>}
+            </div>;
+          })}
         </Collapse>
 
         {/* 已完成 */}
