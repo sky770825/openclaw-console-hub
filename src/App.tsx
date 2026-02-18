@@ -76,17 +76,12 @@ const App = () => (
                 <Route path="/review" element={<ReviewCenter />} />
                 {/* ─── 研究中心（核心基建）─── */}
                 <Route path="/center" element={<HubCenters />} />
-                <Route path="/center/tech" element={<HubCenters />} />
                 <Route path="/center/protection" element={<ProtectionCenter />} />
                 <Route path="/center/protection/:module" element={<ProtectionCenter />} />
                 <Route path="/center/defense" element={<DefenseCenter />} />
                 <Route path="/center/defense/:module" element={<DefenseCenter />} />
-                <Route path="/center/infra" element={<HubCenters />} />
-                <Route path="/center/infra/:module" element={<HubCenters />} />
-                <Route path="/center/commerce" element={<HubCenters />} />
-                <Route path="/center/commerce/:module" element={<HubCenters />} />
-                <Route path="/center/tech" element={<HubCenters />} />
-                <Route path="/center/tech/:module" element={<HubCenters />} />
+                <Route path="/center/:centerId" element={<HubCenters />} />
+                <Route path="/center/:centerId/:module" element={<HubCenters />} />
                 {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
                 <Route path="/community/*" element={<CommunityFrame />} />
                 <Route path="/settings" element={<Settings />} />
