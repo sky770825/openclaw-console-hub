@@ -1,0 +1,99 @@
+{
+  "name": "Telegram 任務狀態（/status）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t5-001-telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "t5-if-status",
+              "leftValue": "={{ $json.message?.text || $json.body?.message?.text || '' }}",
+              "rightValue": "/status",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "t5-002-if",
+      "name": "是 /status 嗎",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.TASKBOARD_API || 'http://localhost:3011' }}/api/openclaw/tasks",
+        "options": {}
+      },
+      "id": "t5-003-get-tasks",
+      "name": "取得任務列表",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first().json;\nconst list = Array.isArray(items) ? items : (items.data || []);\nconst queued = list.filter(t => (t.status || '') === 'queued').length;\nconst inProgress = list.filter(t => (t.status || '') === 'in_progress').length;\nconst done = list.filter(t => (t.status || '') === 'done').length;\nlet text = `📊 任務狀態\\n排隊: ${queued} | 進行中: ${inProgress} | 完成: ${done}\\n`;\nif (list.length > 0) {\n  const top = list.slice(0, 5);\n  text += '\\n最近任務:\\n' + top.map(t => `• ${t.title || t.id} [${t.status || '-'}] ${(t.progress || 0)}%`).join('\\n');\n}\nreturn [{ json: { reply: text } }];"
+      },
+      "id": "t5-004-format",
+      "name": "整理摘要",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {}
+      },
+      "id": "t5-005-reply",
+      "name": "回覆狀態",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 200]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "是 /status 嗎", "type": "main", "index": 0 }]]
+    },
+    "是 /status 嗎": {
+      "main": [
+        [{ "node": "取得任務列表", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "取得任務列表": {
+      "main": [[{ "node": "整理摘要", "type": "main", "index": 0 }]]
+    },
+    "整理摘要": {
+      "main": [[{ "node": "回覆狀態", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "Telegram 傳 /status 取得任務板摘要並回覆。需在 n8n 設定 Telegram Credentials 與 TASKBOARD_API。"
+  }
+}

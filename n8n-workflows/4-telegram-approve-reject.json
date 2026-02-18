@@ -1,0 +1,134 @@
+{
+  "name": "Telegram 審核指令（approve / reject）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t4-001-telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst message = item.message || item.body?.message || {};\nconst text = (message.text || '').trim();\nconst match = text.match(/^\\/(approve|reject)\\s+(\\S+)/);\nif (!match) return [];\nreturn [{ json: { action: match[1], id: match[2] } }];"
+      },
+      "id": "t4-002-parse",
+      "name": "解析指令",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "t4-if-approve",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "t4-003-if",
+      "name": "是 approve 嗎",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.TASKBOARD_API || 'http://localhost:3011' }}/api/openclaw/reviews/{{ $json.id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"approved\"\n}",
+        "options": {}
+      },
+      "id": "t4-004-patch-approve",
+      "name": "批准審核",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.TASKBOARD_API || 'http://localhost:3011' }}/api/openclaw/reviews/{{ $json.id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"rejected\"\n}",
+        "options": {}
+      },
+      "id": "t4-005-patch-reject",
+      "name": "駁回審核",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "=✅ 已批准審核項目 {{ $('解析指令').first().json.id }}",
+        "additionalFields": {}
+      },
+      "id": "t4-006-reply-approve",
+      "name": "回覆批准",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "=❌ 已駁回審核項目 {{ $('解析指令').first().json.id }}",
+        "additionalFields": {}
+      },
+      "id": "t4-007-reply-reject",
+      "name": "回覆駁回",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 400]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "解析指令", "type": "main", "index": 0 }]]
+    },
+    "解析指令": {
+      "main": [[{ "node": "是 approve 嗎", "type": "main", "index": 0 }]]
+    },
+    "是 approve 嗎": {
+      "main": [
+        [{ "node": "批准審核", "type": "main", "index": 0 }],
+        [{ "node": "駁回審核", "type": "main", "index": 0 }]
+      ]
+    },
+    "批准審核": {
+      "main": [[{ "node": "回覆批准", "type": "main", "index": 0 }]]
+    },
+    "駁回審核": {
+      "main": [[{ "node": "回覆駁回", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "Telegram 傳 /approve &lt;id&gt; 或 /reject &lt;id&gt;，更新審核狀態並回覆。需在 n8n 設定 Telegram Credentials 與 TASKBOARD_API。"
+  }
+}

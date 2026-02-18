@@ -1,0 +1,32 @@
+---
+description: OpenClaw 與 openguardrails 擴充的 Node 版本一致防呆；修改 Node 或擴充時必須警示
+globs: "**/.env*,**/restart*openclaw*,**/OPENCLAW*.md,**/NODE*.md,docs/**openclaw*,docs/**NODE*GUARD*,scripts/*.sh"
+alwaysApply: false
+---
+
+# OpenClaw Node 版本與擴充一致（防呆）
+
+## 約束
+
+- **OpenClaw Gateway** 與 **openguardrails-for-openclaw** 擴充必須使用**同一個 Node 版本**（建議 **Node 22**）。
+- 擴充內含原生模組 **better-sqlite3**（`~/.openclaw/extensions/openguardrails-for-openclaw/node_modules/better-sqlite3`），會針對「執行時的 Node 版本」編譯；版本不一致會出現：
+  - `NODE_MODULE_VERSION 141`（Node 22）vs `127`（Node 18）等錯誤。
+
+## 修改時必須遵守
+
+1. **若要改 OpenClaw 使用的 Node 版本**  
+   - 需在**同一 Node 版本**下對擴充執行：`cd ~/.openclaw/extensions/openguardrails-for-openclaw && npm rebuild better-sqlite3`  
+   - 且 Gateway 必須用**該 Node 版本**啟動（例如 `nvm use 22` 後再 `openclaw gateway` 或重新 `openclaw gateway install`）。
+
+2. **若在擴充目錄執行 `npm install` / `npm update` / `npm rebuild`**  
+   - 請確認當時的 `node -v` 與**實際跑 OpenClaw Gateway 的 Node 版本一致**，否則會出現 better_sqlite3 載入錯誤。
+
+3. **勿在未確認 Node 版本一致的情況下**  
+   - 修改系統或專案預設 Node 版本、  
+   - 修改 Gateway 的啟動方式（launchd / PATH）、  
+   - 或對 openguardrails 擴充做 `npm install`/`rebuild`。
+
+## 建議
+
+- 本環境建議固定使用 **Node 22** 跑 OpenClaw，並以 `nvm use 22`（或 `nvm alias default 22`）後再啟動或安裝 Gateway。
+- 每次變更 Node 或擴充相依後，若仍有 openguardrails 錯誤，請先檢查：執行 `node -v` 的版本是否與啟動 Gateway 的 Node 相同。
