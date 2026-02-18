@@ -25,13 +25,11 @@ import {
   fetchOpenClawAutomations,
   upsertOpenClawAutomation,
   fetchOpenClawEvolutionLog,
-  insertOpenClawEvolutionLog,
   fetchOpenClawRuns,
   fetchOpenClawRunById,
   insertOpenClawRun,
   updateOpenClawRun,
   fetchOpenClawAuditLogs,
-  fetchOpenClawUIActions,
 } from './openclawSupabase.js';
 import { hasSupabase, supabase } from './supabase.js';
 import {
@@ -57,6 +55,7 @@ import projectsRouter from './routes/projects.js';
 import memoryRouter from './routes/memory.js';
 import openclawTasksRouter from './routes/openclaw-tasks.js';
 import openclawReviewsRouter from './routes/openclaw-reviews.js';
+import openclawDataRouter from './routes/openclaw-data.js';
 import autoExecutorRouter, {
   autoExecutorState,
   startAutoExecutor,
@@ -474,6 +473,7 @@ app.use('/api/openclaw', autoExecutorRouter);
 app.use('/api/openclaw', memoryRouter);
 app.use('/api/openclaw/tasks', openclawTasksRouter);
 app.use('/api/openclaw/reviews', openclawReviewsRouter);
+app.use('/api/openclaw', openclawDataRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
@@ -1761,36 +1761,8 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
   }
 });
 
-// /api/openclaw/reviews/:id/tasks 已遷移至 routes/openclaw-reviews.ts
-
-app.get('/api/openclaw/automations', async (_req, res) => {
-  try {
-    const data = await fetchOpenClawAutomations();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to fetch automations' });
-  }
-});
-
-app.post('/api/openclaw/automations', async (req, res) => {
-  try {
-    const a = await upsertOpenClawAutomation(req.body);
-    if (!a) return res.status(500).json({ message: 'Failed to save automation' });
-    res.status(201).json(a);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to save automation' });
-  }
-});
-
-app.patch('/api/openclaw/automations/:id', async (req, res) => {
-  try {
-    const a = await upsertOpenClawAutomation({ ...req.body, id: req.params.id });
-    if (!a) return res.status(500).json({ message: 'Failed to update automation' });
-    res.json(a);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to update automation' });
-  }
-});
+// automations CRUD + evolution-log + ui-actions 已遷移至 routes/openclaw-data.ts
+// 保留 automations/:id/run — 因依賴執行引擎（executeNextQueuedTask 等）
 
 app.post('/api/openclaw/automations/:id/run', async (req, res) => {
   try {
@@ -1930,34 +1902,6 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ ok: false, message: 'Failed to run automation' });
-  }
-});
-
-app.get('/api/openclaw/evolution-log', async (_req, res) => {
-  try {
-    const data = await fetchOpenClawEvolutionLog();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to fetch evolution log' });
-  }
-});
-
-app.post('/api/openclaw/evolution-log', async (req, res) => {
-  try {
-    const ok = await insertOpenClawEvolutionLog(req.body);
-    if (!ok) return res.status(500).json({ message: 'Failed to insert evolution log' });
-    res.status(201).json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to insert evolution log' });
-  }
-});
-
-app.get('/api/openclaw/ui-actions', async (_req, res) => {
-  try {
-    const data = await fetchOpenClawUIActions();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to fetch ui actions' });
   }
 });
 
