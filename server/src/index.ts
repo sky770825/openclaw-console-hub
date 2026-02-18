@@ -19,12 +19,9 @@ import type { Task, Run, Alert } from './types.js';
 import {
   fetchOpenClawTasks,
   fetchOpenClawTaskById,
-  fetchOpenClawTasksByFromReviewId,
   upsertOpenClawTask,
   fetchOpenClawReviews,
   upsertOpenClawReview,
-  deleteOpenClawReview,
-  seedOpenClawReviewsIfEmpty,
   fetchOpenClawAutomations,
   upsertOpenClawAutomation,
   fetchOpenClawEvolutionLog,
@@ -58,6 +55,8 @@ import {
 import tasksRouter from './routes/tasks.js';
 import projectsRouter from './routes/projects.js';
 import memoryRouter from './routes/memory.js';
+import openclawTasksRouter from './routes/openclaw-tasks.js';
+import openclawReviewsRouter from './routes/openclaw-reviews.js';
 import autoExecutorRouter, {
   autoExecutorState,
   startAutoExecutor,
@@ -473,6 +472,8 @@ app.use('/api/tasks', tasksRouter);
 app.use('/api/openclaw/projects', projectsRouter);
 app.use('/api/openclaw', autoExecutorRouter);
 app.use('/api/openclaw', memoryRouter);
+app.use('/api/openclaw/tasks', openclawTasksRouter);
+app.use('/api/openclaw/reviews', openclawReviewsRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
@@ -1444,195 +1445,8 @@ async function executeNextQueuedTask(): Promise<
   return { ok: true, run, taskId: task.id };
 }
 
-app.get('/api/openclaw/tasks', async (_req, res) => {
-  try {
-    if (!hasSupabase()) {
-      log.error('[OpenClaw] GET /api/openclaw/tasks: Supabase not connected');
-      return res.status(503).json({ message: 'Supabase not connected' });
-    }
-    let data = await fetchOpenClawTasks();
-    // 若 Supabase 空，fallback 到 in-memory 任務（讓 OpenClaw 可讀取主應用任務）
-    if ((!data || data.length === 0) && tasks.length > 0) {
-      data = tasks.map((t) => ({
-        id: t.id,
-        title: t.name,
-        cat: (t.tags?.[0] as string) ?? 'feature',
-        status: t.status === 'done' ? 'done' : t.status === 'running' ? 'in_progress' : 'queued',
-        progress: t.status === 'done' ? 100 : 0,
-        auto: false,
-        from_review_id: null,
-        subs: [] as { t: string; d: boolean }[],
-        thought: t.description,
-      }));
-    }
-    // 回傳給中控板：含 Task 欄位 + 看板用 title/subs/progress/cat（供多任務板同步）
-    // 注意：status 必須保留 OpenClaw 格式（queued/in_progress/done），看板 UI 依此過濾
-    const mapped = (data ?? []).map((oc) => ({
-      ...openClawTaskToTask(oc),
-      status: oc.status ?? 'queued',  // 覆蓋回 OpenClaw 原始狀態，避免 ready/running 被看板過濾掉
-      title: oc.title,
-      subs: oc.subs ?? [],
-      progress: oc.progress,
-      cat: oc.cat,
-      thought: oc.thought,
-      from_review_id: oc.fromR ?? null,
-    }));
-    res.json(mapped);
-  } catch (e) {
-    log.error('[OpenClaw] GET /api/openclaw/tasks error:', e);
-    res.status(500).json({ message: 'Failed to fetch tasks' });
-  }
-});
-
-app.post('/api/openclaw/tasks', async (req, res) => {
-  try {
-    if (!hasSupabase()) {
-      log.error('[OpenClaw] POST /api/openclaw/tasks: Supabase not connected');
-      return res.status(503).json({ message: 'Supabase not connected' });
-    }
-    // 前端送來 Task 格式，可帶 subs/title（看板用）
-    const body = req.body as Partial<Task> & {
-      id?: string;
-      subs?: { t: string; d: boolean }[];
-      title?: string;
-      // OpenClaw taskboard specific: link to a review item
-      fromR?: string;
-      from_review_id?: string;
-    };
-
-    // Stop "empty/stub" cards from being created repeatedly.
-    // - Many OpenClaw-side callers may send only {title/name/desc/status/tags/subs}.
-    // - Those cards are non-actionable in our taskboard (missing required meta), and they
-    //   also create noisy "新任務" placeholders.
-    // If someone *really* wants to create stub cards, they can pass `?allowStub=1`.
-    const q = (req.query ?? {}) as Record<string, unknown>;
-    const allowStub = String(q.allowStub ?? '') === '1';
-    const maybeTitle = String(body.name ?? body.title ?? '').trim();
-    const maybeDesc = String(body.description ?? '').trim();
-    const hasAnyComplianceField =
-      typeof body.projectPath === 'string' ||
-      typeof body.rollbackPlan === 'string' ||
-      Array.isArray(body.acceptanceCriteria) ||
-      Array.isArray(body.deliverables) ||
-      Array.isArray(body.runCommands) ||
-      typeof body.modelPolicy === 'string' ||
-      typeof body.executionProvider === 'string' ||
-      typeof body.allowPaid === 'boolean' ||
-      typeof body.riskLevel === 'string' ||
-      body.agent?.type != null;
-    const looksLikeStub = !hasAnyComplianceField;
-    const looksLikeEmptyCard =
-      (maybeTitle.length === 0 || maybeTitle === '新任務') &&
-      maybeDesc.length === 0 &&
-      (!Array.isArray(body.subs) || body.subs.length === 0);
-
-    if (!allowStub && looksLikeStub) {
-      if (looksLikeEmptyCard) {
-        // Ignore silently: this prevents "空卡一直再生" when some client retries.
-        return res.status(204).send();
-      }
-      return res.status(400).json({
-        message:
-          'Stub task creation is disabled. Please create tasks via /api/tasks with full metadata (projectPath/agent/risk/rollback/acceptance/deliverables/runCommands/modelPolicy/executionProvider/allowPaid), or call this endpoint with ?allowStub=1.',
-      });
-    }
-
-    const id = body.id ?? `t${Date.now()}`;
-    const fromR = body.fromR ?? body.from_review_id ?? null;
-    const ocPayload = {
-      ...taskToOpenClawTask({
-        id,
-        name: body.name ?? body.title ?? '新任務',
-        description: body.description ?? '',
-        status: body.status ?? 'draft',
-        tags: body.tags ?? ['feature'],
-      }),
-      title: body.title ?? body.name ?? '新任務',
-      subs: Array.isArray(body.subs) ? body.subs : [],
-      ...(fromR != null && { fromR }),
-    };
-    const task = await upsertOpenClawTask(ocPayload);
-    if (!task) {
-      log.error('[OpenClaw] POST /api/openclaw/tasks: upsert failed');
-      return res.status(500).json({ message: 'Failed to save task' });
-    }
-    res.status(201).json({
-      ...openClawTaskToTask(task),
-      title: task.title,
-      subs: task.subs ?? [],
-      progress: task.progress,
-      cat: task.cat,
-      thought: task.thought,
-      from_review_id: task.fromR ?? null,
-    });
-  } catch (e) {
-    log.error('[OpenClaw] POST /api/openclaw/tasks error:', e);
-    res.status(500).json({ message: 'Failed to save task' });
-  }
-});
-
-app.patch('/api/openclaw/tasks/:id', async (req, res) => {
-  try {
-    if (!hasSupabase()) {
-      log.error('[OpenClaw] PATCH /api/openclaw/tasks: Supabase not connected');
-      return res.status(503).json({ message: 'Supabase not connected' });
-    }
-    // 先取得現有任務
-    const ocTasks = await fetchOpenClawTasks();
-    const existing = ocTasks.find((x) => x.id === req.params.id);
-    if (!existing) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-    const body = req.body as Partial<Task> & { subs?: { t: string; d: boolean }[]; title?: string };
-    const currentTask = openClawTaskToTask(existing);
-    const updatedTask: Task = {
-      ...currentTask,
-      ...body,
-      id: req.params.id,
-    };
-    const ocPayload = {
-      ...taskToOpenClawTask(updatedTask),
-      title: body.title ?? existing.title,
-      subs: Array.isArray(body.subs) ? body.subs : existing.subs,
-    };
-    const task = await upsertOpenClawTask(ocPayload);
-    if (!task) {
-      log.error('[OpenClaw] PATCH /api/openclaw/tasks: upsert failed');
-      return res.status(500).json({ message: 'Failed to update task' });
-    }
-    res.json({
-      ...openClawTaskToTask(task),
-      title: task.title,
-      subs: task.subs ?? [],
-      progress: task.progress,
-      cat: task.cat,
-      thought: task.thought,
-      from_review_id: task.fromR ?? null,
-    });
-  } catch (e) {
-    log.error('[OpenClaw] PATCH /api/openclaw/tasks error:', e);
-    res.status(500).json({ message: 'Failed to update task' });
-  }
-});
-
-// 刪除任務：永久刪除 DB 列，無法回復（no restore）
-app.delete('/api/openclaw/tasks/:id', async (req, res) => {
-  try {
-    if (!hasSupabase() || !supabase) {
-      log.error('[OpenClaw] DELETE /api/openclaw/tasks: Supabase not connected');
-      return res.status(503).json({ message: 'Supabase not connected' });
-    }
-    const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
-    if (error) {
-      log.error('[OpenClaw] DELETE /api/openclaw/tasks error:', error.message);
-      return res.status(500).json({ message: 'Failed to delete task' });
-    }
-    return res.status(204).send();
-  } catch (e) {
-    log.error('[OpenClaw] DELETE /api/openclaw/tasks error:', e);
-    res.status(500).json({ message: 'Failed to delete task' });
-  }
-});
+// OpenClaw 任務 CRUD 已遷移至 routes/openclaw-tasks.ts
+// 以下保留需要 index.ts 本地函數（createRun/simulateExecution）的執行路由
 
 // OpenClaw 執行任務（與 /api/tasks/:id/run 相同邏輯；有 Supabase 時寫入 openclaw_runs）
 app.post('/api/openclaw/tasks/:id/run', async (req, res) => {
@@ -1670,104 +1484,7 @@ app.post('/api/openclaw/run-next', async (_req, res) => {
   res.status(201).json({ run: result.run, taskId: result.taskId });
 });
 
-/** 將 openclaw_reviews 轉成發想審核頁面使用的 Review 格式（含完整欄位） */
-function openClawReviewToReview(r: import('./openclawSupabase.js').OpenClawReview, index: number) {
-  // 從 src 解析 proposal category（格式 "agent-proposal:system"）
-  const proposalCat = r.src?.startsWith('agent-proposal:') ? r.src.split(':')[1] : undefined;
-  return {
-    id: r.id,
-    number: index + 1,
-    title: r.title,
-    type: r.type ?? 'tool',
-    pri: r.pri ?? 'medium',
-    desc: r.desc ?? '',
-    reasoning: r.reasoning ?? '',
-    src: r.src ?? '',
-    date: r.created_at ? new Date(r.created_at).toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' }) : '',
-    status: r.status as 'pending' | 'approved' | 'rejected' | 'archived',
-    createdAt: r.created_at ?? new Date().toISOString(),
-    reviewedAt: r.status !== 'pending' ? r.created_at : undefined,
-    reviewNote: r.reasoning ?? undefined,
-    tags: [r.type, r.pri, proposalCat].filter(Boolean),
-    proposalCategory: proposalCat,
-  };
-}
-
-app.get('/api/openclaw/reviews', async (_req, res) => {
-  try {
-    let data = await fetchOpenClawReviews();
-    if (data.length === 0 && hasSupabase()) {
-      try {
-        await seedOpenClawReviewsIfEmpty();
-        data = await fetchOpenClawReviews();
-      } catch (_) {
-        /* seed 失敗仍回傳 []，不中斷請求 */
-      }
-    }
-    // 合併 in-memory proposals（Supabase 寫失敗時的 fallback）
-    const supabaseIds = new Set(data.map((r) => r.id));
-    for (const mr of memReviews) {
-      if (!supabaseIds.has(mr.id)) data.push(mr);
-    }
-    res.json(data.map((r, i) => openClawReviewToReview(r, i)));
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to fetch reviews' });
-  }
-});
-
-app.post('/api/openclaw/reviews', async (req, res) => {
-  try {
-    const review = await upsertOpenClawReview(req.body);
-    if (!review) return res.status(500).json({ message: 'Failed to save review' });
-    res.status(201).json(review);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to save review' });
-  }
-});
-
-app.patch('/api/openclaw/reviews/:id', async (req, res) => {
-  try {
-    const body = req.body as { status?: string; reviewNote?: string; reviewedAt?: string };
-    let existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
-    // fallback: 從 in-memory proposals 找
-    if (!existing) existing = memReviews.find((r) => r.id === req.params.id);
-    if (!existing) return res.status(404).json({ message: 'Review not found' });
-    const payload = {
-      ...existing,
-      id: req.params.id,
-      status: body.status ?? existing.status,
-      reasoning: body.reviewNote !== undefined ? body.reviewNote : existing.reasoning,
-    };
-    const review = await upsertOpenClawReview(payload);
-    // 如果 Supabase 寫失敗，更新 in-memory
-    if (!review) {
-      const mr = memReviews.find((r) => r.id === req.params.id);
-      if (mr) {
-        mr.status = payload.status;
-        mr.reasoning = payload.reasoning;
-        return res.json(openClawReviewToReview(mr, 0));
-      }
-      return res.status(500).json({ message: 'Failed to update review' });
-    }
-    const list = await fetchOpenClawReviews();
-    const idx = list.findIndex((r) => r.id === review.id);
-    res.json(openClawReviewToReview(review, idx >= 0 ? idx : 0));
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to update review' });
-  }
-});
-
-app.delete('/api/openclaw/reviews/:id', async (req, res) => {
-  try {
-    const existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
-    if (!existing) return res.status(404).json({ message: 'Review not found' });
-    const ok = await deleteOpenClawReview(req.params.id);
-    if (!ok) return res.status(500).json({ message: 'Failed to delete review' });
-    return res.status(204).send();
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to delete review' });
-  }
-});
+// OpenClaw reviews CRUD 已遷移至 routes/openclaw-reviews.ts
 
 // ─── 紅色警戒 ─────────────────────────────────────────────
 
@@ -2044,18 +1761,7 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
   }
 });
 
-// ─── /發想提案 ────────────────────────────────────────────
-
-/** 取得此發想審核轉出的任務列表 */
-app.get('/api/openclaw/reviews/:id/tasks', async (req, res) => {
-  try {
-    const ocTasks = await fetchOpenClawTasksByFromReviewId(req.params.id);
-    const mapped = ocTasks.map(openClawTaskToTask);
-    return res.json(mapped);
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to fetch tasks for review' });
-  }
-});
+// /api/openclaw/reviews/:id/tasks 已遷移至 routes/openclaw-reviews.ts
 
 app.get('/api/openclaw/automations', async (_req, res) => {
   try {
