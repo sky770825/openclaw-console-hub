@@ -30,6 +30,20 @@ if [ -f "$PROJECT_DIR/.env" ]; then
   TG_CHAT="${TELEGRAM_CHAT_ID:-$TG_CHAT}"
 fi
 
+# API 認證 header（從 .env 讀取 OPENCLAW_API_KEY）
+AUTH_HEADER=""
+if [ -n "${OPENCLAW_API_KEY:-}" ]; then
+  AUTH_HEADER="x-api-key: ${OPENCLAW_API_KEY}"
+fi
+
+api_curl() {
+  if [ -n "$AUTH_HEADER" ]; then
+    curl -s -H "$AUTH_HEADER" "$@"
+  else
+    curl -s "$@"
+  fi
+}
+
 log() { echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
 
 notify_tg() {
@@ -153,7 +167,7 @@ while IFS= read -r task_json; do
   log "── 執行任務: $TASK_NAME ($TASK_ID) ──"
 
   # 更新狀態為 in_progress
-  curl -s -X PATCH "${API_BASE}/api/openclaw/tasks/${TASK_ID}" \
+  api_curl -X PATCH "${API_BASE}/api/openclaw/tasks/${TASK_ID}" \
     -H 'Content-Type: application/json' \
     -d '{"status":"in_progress"}' > /dev/null 2>&1 || true
 
@@ -180,7 +194,7 @@ while IFS= read -r task_json; do
 
   if [ $EXIT_CODE -eq 0 ]; then
     log "✅ 任務完成: $TASK_NAME"
-    curl -s -X PATCH "${API_BASE}/api/openclaw/tasks/${TASK_ID}" \
+    api_curl -X PATCH "${API_BASE}/api/openclaw/tasks/${TASK_ID}" \
       -H 'Content-Type: application/json' \
       -d '{"status":"done"}' > /dev/null 2>&1 || true
     RESULTS="${RESULTS}

@@ -8,6 +8,16 @@
 
 API_BASE="${TASK_BOARD_API_BASE:-http://localhost:3011}"
 
+# 載入 .env 取得 API Key
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$(dirname "$SCRIPT_DIR")/.env" ]; then
+  set -a; source "$(dirname "$SCRIPT_DIR")/.env"; set +a
+fi
+AUTH_ARGS=()
+if [ -n "${OPENCLAW_API_KEY:-}" ]; then
+  AUTH_ARGS=(-H "x-api-key: ${OPENCLAW_API_KEY}")
+fi
+
 show_help() {
     echo "🚨 OpenClaw 任務板 - 緊急終止工具"
     echo ""
@@ -26,7 +36,7 @@ show_help() {
 # 列出執行中的任務
 list_running() {
     echo "📋 正在查詢執行中的任務..."
-    response=$(curl -s "${API_BASE}/api/emergency/running")
+    response=$(curl -s "${AUTH_ARGS[@]}" "${API_BASE}/api/emergency/running")
     
     count=$(echo "$response" | grep -o '"count":[0-9]*' | cut -d: -f2)
     
@@ -47,7 +57,7 @@ list_running() {
 stop_all() {
     echo "🚨 正在終止所有執行中的任務..."
     
-    response=$(curl -s -X POST "${API_BASE}/api/emergency/stop-all" \
+    response=$(curl -s "${AUTH_ARGS[@]}" -X POST "${API_BASE}/api/emergency/stop-all" \
         -H "Content-Type: application/json" \
         -d '{"reason":"用戶緊急終止(/stop all)"}')
     
@@ -65,7 +75,7 @@ stop_task() {
     local task_id="$1"
     echo "🚨 正在終止任務: $task_id..."
     
-    response=$(curl -s -X POST "${API_BASE}/api/emergency/stop/${task_id}" \
+    response=$(curl -s "${AUTH_ARGS[@]}" -X POST "${API_BASE}/api/emergency/stop/${task_id}" \
         -H "Content-Type: application/json" \
         -d '{"reason":"用戶緊急終止(/stop)"}')
     

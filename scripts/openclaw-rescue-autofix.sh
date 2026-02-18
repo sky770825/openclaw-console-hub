@@ -10,6 +10,15 @@ TASKBOARD_BASE="http://127.0.0.1:3011"
 POLL_INTERVAL_MS="${POLL_INTERVAL_MS:-60000}"
 MAX_TASKS_PER_MIN="${MAX_TASKS_PER_MIN:-1}"
 
+# 載入 .env 取得 API Key
+if [ -f "$WS/.env" ]; then
+  set -a; source "$WS/.env"; set +a
+fi
+AUTH_ARGS=()
+if [ -n "${OPENCLAW_API_KEY:-}" ]; then
+  AUTH_ARGS=(-H "x-api-key: ${OPENCLAW_API_KEY}")
+fi
+
 wait_for_gateway() {
   local i=0
   local out=""
@@ -72,7 +81,7 @@ block_noncompliant_ready() {
   while IFS= read -r id; do
     [[ -z "$id" ]] && continue
     # Best-effort; ignore failures so we can continue.
-    curl -sS -m 6 -X PATCH "$TASKBOARD_BASE/api/tasks/$id" \
+    curl -sS -m 6 "${AUTH_ARGS[@]}" -X PATCH "$TASKBOARD_BASE/api/tasks/$id" \
       -H "Content-Type: application/json" \
       -d '{"status":"blocked","tags":["noncompliant","needs-meta"]}' >/dev/null 2>&1 || true
     (( blocked++ ))
@@ -100,7 +109,7 @@ start_auto_executor_if_needed() {
   fi
 
   echo "starting auto-executor (pollIntervalMs=$POLL_INTERVAL_MS, maxTasksPerMinute=$MAX_TASKS_PER_MIN)"
-  curl -sS -m 6 -X POST "$TASKBOARD_BASE/api/openclaw/auto-executor/start" \
+  curl -sS -m 6 "${AUTH_ARGS[@]}" -X POST "$TASKBOARD_BASE/api/openclaw/auto-executor/start" \
     -H "Content-Type: application/json" \
     -d "{\"pollIntervalMs\":$POLL_INTERVAL_MS,\"maxTasksPerMinute\":$MAX_TASKS_PER_MIN}" \
     | jq '{ok,message,isRunning,pollIntervalMs,maxTasksPerMinute}' 2>/dev/null || true

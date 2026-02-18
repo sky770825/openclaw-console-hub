@@ -251,3 +251,27 @@ FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE INDEX IF NOT EXISTS idx_openclaw_projects_status ON public.openclaw_projects (status);
 CREATE INDEX IF NOT EXISTS idx_openclaw_projects_updated_at ON public.openclaw_projects (updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_openclaw_project_phases_project_id ON public.openclaw_project_phases (project_id);
+
+-- =====================================================
+-- 13. openclaw_memory（AI 記憶系統 — 2026-02-18 新增）
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.openclaw_memory (
+  id text PRIMARY KEY,
+  ts timestamptz NOT NULL DEFAULT now(),
+  type text NOT NULL CHECK (type IN ('decision','task_result','report','insight','external','note')),
+  source text NOT NULL,
+  title text NOT NULL,
+  content text,
+  tags text[] DEFAULT '{}',
+  meta jsonb DEFAULT '{}'::jsonb,
+  importance integer DEFAULT 5 CHECK (importance >= 0 AND importance <= 10),
+  related_ids text[] DEFAULT '{}',
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.openclaw_memory ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_openclaw_memory_ts ON public.openclaw_memory (ts DESC);
+CREATE INDEX IF NOT EXISTS idx_openclaw_memory_type ON public.openclaw_memory (type);
+CREATE INDEX IF NOT EXISTS idx_openclaw_memory_source ON public.openclaw_memory (source);
+CREATE INDEX IF NOT EXISTS idx_openclaw_memory_importance ON public.openclaw_memory (importance DESC);
+CREATE INDEX IF NOT EXISTS idx_openclaw_memory_tags ON public.openclaw_memory USING GIN (tags);

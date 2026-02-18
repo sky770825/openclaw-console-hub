@@ -737,3 +737,137 @@ export async function seedXiaoCaiIdeasIfEmpty(): Promise<void> {
   }
   log.info('[OpenClaw] seeded default xiaocai ideas');
 }
+
+// =====================================================
+// AI Memory — openclaw_memory 表
+// =====================================================
+
+export interface OpenClawMemory {
+  id: string;
+  ts: string;
+  type: string;
+  source: string;
+  title: string;
+  content: string;
+  tags: string[];
+  meta: Record<string, unknown>;
+  importance: number;
+  relatedIds: string[];
+}
+
+function mapMemory(row: Record<string, unknown>): OpenClawMemory {
+  return {
+    id: String(row.id),
+    ts: String(row.ts ?? row.created_at ?? ''),
+    type: String(row.type ?? 'note'),
+    source: String(row.source ?? 'manual'),
+    title: String(row.title ?? ''),
+    content: String(row.content ?? ''),
+    tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+    meta: (row.meta && typeof row.meta === 'object') ? (row.meta as Record<string, unknown>) : {},
+    importance: Number(row.importance ?? 5),
+    relatedIds: Array.isArray(row.related_ids) ? (row.related_ids as string[]) : [],
+  };
+}
+
+export async function fetchOpenClawMemory(opts?: {
+  type?: string;
+  source?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ total: number; items: OpenClawMemory[] }> {
+  if (!hasSupabase() || !supabase) return { total: 0, items: [] };
+  let query = supabase.from('openclaw_memory').select('*', { count: 'exact' });
+  if (opts?.type) query = query.eq('type', opts.type);
+  if (opts?.source) query = query.eq('source', opts.source);
+  query = query.order('ts', { ascending: false });
+  if (opts?.offset) query = query.range(opts.offset, opts.offset + (opts.limit ?? 50) - 1);
+  else if (opts?.limit) query = query.limit(opts.limit);
+  else query = query.limit(50);
+  const { data, error, count } = await query;
+  if (error) {
+    log.error('[OpenClaw] fetch memory error:', error.message);
+    return { total: 0, items: [] };
+  }
+  return { total: count ?? (data?.length ?? 0), items: (data ?? []).map(r => mapMemory(r as Record<string, unknown>)) };
+}
+
+export async function searchOpenClawMemory(queryText: string, opts?: {
+  type?: string;
+  source?: string;
+  tags?: string[];
+  limit?: number;
+}): Promise<OpenClawMemory[]> {
+  if (!hasSupabase() || !supabase) return [];
+  let query = supabase.from('openclaw_memory').select('*');
+  if (opts?.type) query = query.eq('type', opts.type);
+  if (opts?.source) query = query.eq('source', opts.source);
+  if (opts?.tags && opts.tags.length > 0) query = query.overlaps('tags', opts.tags);
+  // Text search on title + content using ilike for each keyword
+  if (queryText.trim()) {
+    for (const kw of queryText.trim().split(/\s+/)) {
+      query = query.or(`title.ilike.%${kw}%,content.ilike.%${kw}%`);
+    }
+  }
+  query = query.order('importance', { ascending: false }).order('ts', { ascending: false }).limit(opts?.limit ?? 20);
+  const { data, error } = await query;
+  if (error) {
+    log.error('[OpenClaw] search memory error:', error.message);
+    return [];
+  }
+  return (data ?? []).map(r => mapMemory(r as Record<string, unknown>));
+}
+
+export async function upsertOpenClawMemory(mem: Partial<OpenClawMemory> & { id: string }): Promise<OpenClawMemory | null> {
+  if (!hasSupabase() || !supabase) return null;
+  const row = {
+    id: mem.id,
+    ts: mem.ts || new Date().toISOString(),
+    type: mem.type || 'note',
+    source: mem.source || 'manual',
+    title: mem.title || '',
+    content: mem.content || '',
+    tags: mem.tags || [],
+    meta: mem.meta || {},
+    importance: mem.importance ?? 5,
+    related_ids: mem.relatedIds || [],
+  };
+  const { data, error } = await supabase.from('openclaw_memory').upsert(row, { onConflict: 'id' }).select().single();
+  if (error) {
+    log.error('[OpenClaw] upsert memory error:', error.message);
+    return null;
+  }
+  return data ? mapMemory(data as Record<string, unknown>) : null;
+}
+
+export async function deleteOpenClawMemory(id: string): Promise<boolean> {
+  if (!hasSupabase() || !supabase) return false;
+  const { error } = await supabase.from('openclaw_memory').delete().eq('id', id);
+  if (error) {
+    log.error('[OpenClaw] delete memory error:', error.message);
+    return false;
+  }
+  return true;
+}
+
+export async function getOpenClawMemoryStats(): Promise<{
+  total: number;
+  byType: Record<string, number>;
+  bySource: Record<string, number>;
+} | null> {
+  if (!hasSupabase() || !supabase) return null;
+  const { data, error } = await supabase.from('openclaw_memory').select('type, source');
+  if (error) {
+    log.error('[OpenClaw] memory stats error:', error.message);
+    return null;
+  }
+  const byType: Record<string, number> = {};
+  const bySource: Record<string, number> = {};
+  (data ?? []).forEach((r: Record<string, unknown>) => {
+    const t = String(r.type ?? 'note');
+    const s = String(r.source ?? 'manual');
+    byType[t] = (byType[t] || 0) + 1;
+    bySource[s] = (bySource[s] || 0) + 1;
+  });
+  return { total: data?.length ?? 0, byType, bySource };
+}

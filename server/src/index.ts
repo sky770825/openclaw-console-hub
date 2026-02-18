@@ -57,6 +57,7 @@ import {
 } from './validation/schemas.js';
 import tasksRouter from './routes/tasks.js';
 import projectsRouter from './routes/projects.js';
+import memoryRouter from './routes/memory.js';
 import autoExecutorRouter, {
   autoExecutorState,
   startAutoExecutor,
@@ -471,6 +472,7 @@ app.use('/api', authMiddleware);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/openclaw/projects', projectsRouter);
 app.use('/api/openclaw', autoExecutorRouter);
+app.use('/api/openclaw', memoryRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;

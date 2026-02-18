@@ -23,6 +23,39 @@
 const LS_KEY = "openclaw_ai_memory";
 const MAX_ENTRIES = 500;
 
+// ── API 設定 ──
+const API_BASE = import.meta.env?.VITE_API_BASE_URL || "";
+const apiKey =
+  typeof import.meta.env?.VITE_OPENCLAW_API_KEY === "string"
+    ? import.meta.env.VITE_OPENCLAW_API_KEY.trim()
+    : "";
+
+function apiHeaders() {
+  const h = { "Content-Type": "application/json" };
+  if (apiKey) h["x-api-key"] = apiKey;
+  return h;
+}
+
+/** Fire-and-forget sync to backend */
+function syncToBackend(entry) {
+  if (!API_BASE && !location.origin) return;
+  const base = API_BASE || "";
+  fetch(`${base}/api/openclaw/memory`, {
+    method: "POST",
+    headers: apiHeaders(),
+    body: JSON.stringify(entry),
+  }).catch(() => { /* 靜默失敗，localStorage 仍是 source of truth */ });
+}
+
+function syncDeleteToBackend(id) {
+  if (!API_BASE && !location.origin) return;
+  const base = API_BASE || "";
+  fetch(`${base}/api/openclaw/memory/${id}`, {
+    method: "DELETE",
+    headers: apiHeaders(),
+  }).catch(() => {});
+}
+
 // ── 讀寫 ──
 function load() {
   try {
@@ -72,6 +105,7 @@ export function addMemory({ type, source, title, content, tags = [], meta = {}, 
   };
   entries.unshift(entry);
   save(entries);
+  syncToBackend(entry);
   return entry;
 }
 
@@ -165,6 +199,7 @@ export function deleteMemory(id) {
   const entries = load();
   const filtered = entries.filter(e => e.id !== id);
   save(filtered);
+  syncDeleteToBackend(id);
 }
 
 // ── 清空全部 ──
@@ -175,6 +210,24 @@ export function clearAllMemory() {
 // ── 匯出（JSON） ──
 export function exportMemory() {
   return load();
+}
+
+// ── 一次性全量同步到後端 ──
+export async function syncAllToBackend() {
+  const entries = load();
+  if (entries.length === 0) return { ok: true, synced: 0 };
+  const base = API_BASE || "";
+  try {
+    const resp = await fetch(`${base}/api/openclaw/memory/batch`, {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({ items: entries }),
+    });
+    if (!resp.ok) return { ok: false, error: `HTTP ${resp.status}` };
+    return await resp.json();
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
 }
 
 // ── 匯入 ──

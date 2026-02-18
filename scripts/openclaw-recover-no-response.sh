@@ -30,6 +30,16 @@ OLDER_THAN_MINUTES="${OLDER_THAN_MINUTES:-45}"
 STALE_LIMIT="${STALE_LIMIT:-50}"
 CLEANUP_STALE_RUNS="${CLEANUP_STALE_RUNS:-false}"
 
+# 載入 .env 取得 API Key
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$(dirname "$SCRIPT_DIR")/.env" ]; then
+  set -a; source "$(dirname "$SCRIPT_DIR")/.env"; set +a
+fi
+_AUTH_ARGS=()
+if [ -n "${OPENCLAW_API_KEY:-}" ]; then
+  _AUTH_ARGS=(-H "x-api-key: ${OPENCLAW_API_KEY}")
+fi
+
 say() { printf '%s\n' "$*"; }
 hr() { say "------------------------------------------------------------"; }
 
@@ -52,10 +62,10 @@ curl_json() {
   local method="${2:-GET}"
   local data="${3:-}"
   if [[ "$method" == "GET" ]]; then
-    curl -sS --max-time 4 "$url"
+    curl -sS --max-time 4 "${_AUTH_ARGS[@]}" "$url"
     return 0
   fi
-  curl -sS --max-time 10 -X "$method" -H "Content-Type: application/json" --data-binary "$data" "$url"
+  curl -sS --max-time 10 "${_AUTH_ARGS[@]}" -X "$method" -H "Content-Type: application/json" --data-binary "$data" "$url"
 }
 
 check_taskboard() {
@@ -134,7 +144,7 @@ say "[4/5] Cleanup stale runs (> ${OLDER_THAN_MINUTES}m) limit=${STALE_LIMIT}"
 telegram_test() {
   say "[5/5] Telegram test: POST ${TASKBOARD_URL}/api/telegram/test"
   # If Telegram is not configured, server returns 503; treat as non-fatal.
-  if curl -sS --max-time 6 -X POST "${TASKBOARD_URL}/api/telegram/test" >/dev/null; then
+  if curl -sS --max-time 6 "${_AUTH_ARGS[@]}" -X POST "${TASKBOARD_URL}/api/telegram/test" >/dev/null; then
     say "OK (test message sent)"
     return 0
   fi
