@@ -660,6 +660,50 @@ async function replyCmdMenu(chatId: number): Promise<void> {
   });
 }
 
+async function replyDeputy(chatId: number, arg?: string): Promise<void> {
+  if (arg === 'on' || arg === 'off') {
+    const enabled = arg === 'on';
+    const result = await fetchJsonWithTimeout(
+      `${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled, source: 'telegram' }),
+      },
+      8000
+    );
+    const robj = asObj(result);
+    const text = robj.ok
+      ? (enabled
+          ? '🤖 <b>暫代模式已開啟</b>\n\nClaude Code 將在每次巡檢時自動執行可處理的任務。\n\n關閉：/deputy off'
+          : '⏸ <b>暫代模式已關閉</b>\n\n僅巡檢報告，不自動執行。')
+      : `⚠️ 操作失敗：${String(robj.message ?? 'unknown')}`;
+    await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+    return;
+  }
+
+  // 顯示狀態 + 開關按鈕
+  const status = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/status`, {}, 5000);
+  const sobj = asObj(status);
+  const on = sobj.enabled === true;
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: on ? '⏸ 關閉暫代' : '🤖 開啟暫代', callback_data: on ? 'deputy:off' : 'deputy:on' },
+      ],
+      [{ text: '⬅️ 回主菜單', callback_data: '/start' }],
+    ],
+  };
+  const lastRun = asObj(sobj.lastRun);
+  const text =
+    `🤖 <b>暫代模式</b>\n\n` +
+    `<b>狀態：</b> ${on ? '🟢 開啟' : '🔴 關閉'}\n` +
+    `<b>每輪最多：</b> ${sobj.maxTasksPerRun ?? 3} 個任務\n` +
+    `<b>允許 tag：</b> ${Array.isArray(sobj.allowedTags) ? (sobj.allowedTags as string[]).join(', ') : 'auto-ok'}\n` +
+    (lastRun.lastDeputyRun ? `\n<b>上次執行：</b> ${String(lastRun.lastDeputyRun).slice(0, 16)}\n<b>結果：</b> ✅${lastRun.success ?? 0} ❌${lastRun.failed ?? 0}` : '');
+  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML', replyMarkup: keyboard });
+}
+
 async function promptCodexTriage(chatId: number): Promise<void> {
   codexTriagePending = true;
   codexTriagePendingAt = Date.now();
@@ -756,6 +800,14 @@ async function poll(): Promise<void> {
         console.log(`[TelegramControl] recv update kind=${kind} chatId=${chatId} cmd=${text.split(/\s+/)[0] ?? ''}`);
       }
 
+      if (text === 'deputy:on') {
+        await replyDeputy(chatId, 'on');
+        continue;
+      }
+      if (text === 'deputy:off') {
+        await replyDeputy(chatId, 'off');
+        continue;
+      }
       if (text === 'run:recover:check') {
         await runRecoveryScript(chatId, 'check');
         continue;
@@ -1013,6 +1065,11 @@ async function poll(): Promise<void> {
       }
       if (cmd === '/cmd') {
         await replyCmdMenu(chatId);
+        continue;
+      }
+      if (cmd === '/deputy') {
+        const arg = text.replace(/^\/deputy\s*/i, '').trim().toLowerCase();
+        await replyDeputy(chatId, arg || undefined);
         continue;
       }
       // Ollama chat: default for any non-command message in the authorized chat.

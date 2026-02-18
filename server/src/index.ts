@@ -3066,6 +3066,61 @@ app.get('/api/openclaw/daily-report', async (req, res) => {
   }
 });
 
+// ---- Deputy Mode (暫代模式) ----
+
+const DEPUTY_STATE_FILE = path.join(import.meta.dirname ? path.resolve(import.meta.dirname, '../..') : process.cwd(), '.openclaw-deputy-mode.json');
+const DEPUTY_LAST_FILE = path.join(import.meta.dirname ? path.resolve(import.meta.dirname, '../..') : process.cwd(), '.openclaw-deputy-last-run.json');
+
+function readDeputyState(): Record<string, unknown> {
+  try {
+    return JSON.parse(fs.readFileSync(DEPUTY_STATE_FILE, 'utf8'));
+  } catch {
+    return { enabled: false };
+  }
+}
+
+function writeDeputyState(state: Record<string, unknown>): void {
+  fs.writeFileSync(DEPUTY_STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
+}
+
+app.get('/api/openclaw/deputy/status', (_req, res) => {
+  const state = readDeputyState();
+  let lastRun: Record<string, unknown> = {};
+  try {
+    lastRun = JSON.parse(fs.readFileSync(DEPUTY_LAST_FILE, 'utf8'));
+  } catch { /* no last run */ }
+  res.json({ ok: true, ...state, lastRun });
+});
+
+app.post('/api/openclaw/deputy/toggle', async (req, res) => {
+  try {
+    const state = readDeputyState();
+    const body = req.body || {};
+    const newEnabled = typeof body.enabled === 'boolean' ? body.enabled : !state.enabled;
+
+    const newState = {
+      ...state,
+      enabled: newEnabled,
+      enabledAt: newEnabled ? new Date().toISOString() : (state.enabledAt || null),
+      enabledBy: body.source || 'api',
+      maxTasksPerRun: body.maxTasksPerRun || state.maxTasksPerRun || 3,
+      allowedTags: body.allowedTags || state.allowedTags || ['auto-ok'],
+      excludeTags: body.excludeTags || state.excludeTags || [],
+    };
+    writeDeputyState(newState);
+
+    const msg = newEnabled
+      ? '🤖 <b>暫代模式已開啟</b>\n\nClaude Code 將在每次巡檢時自動執行可處理的任務。\n規則：最多每輪 ' + (newState.maxTasksPerRun) + ' 個任務、只處理 auto-ok 標記的任務。\n\n關閉：/deputy off'
+      : '⏸ <b>暫代模式已關閉</b>\n\nClaude Code 不再自動執行任務，僅巡檢報告。';
+    sendTelegramMessage(msg, { parseMode: 'HTML' }).catch(() => {});
+
+    res.json({ ok: true, enabled: newEnabled, message: newEnabled ? '暫代模式已開啟' : '暫代模式已關閉' });
+  } catch (e) {
+    console.error('[OpenClaw] deputy toggle error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to toggle deputy mode' });
+  }
+});
+
 // ---- Task Indexer (Index-of-Index) ----
 type TaskIndexRecord = {
   taskId: string;
