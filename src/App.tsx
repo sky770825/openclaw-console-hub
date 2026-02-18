@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,21 +10,23 @@ import { CoreAuthProvider } from "@/components/auth";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
 import Dashboard from "./pages/Dashboard";
-import TaskBoard from "./pages/TaskBoard";
-import TaskList from "./pages/TaskList";
-import Runs from "./pages/Runs";
-import Logs from "./pages/Logs";
-import Alerts from "./pages/Alerts";
-import Settings from "./pages/Settings";
-import Projects from "./pages/Projects";
-import ReviewCenter from "./pages/ReviewCenter";
 import NotFound from "./pages/NotFound";
-import Domains from "./pages/Domains";
-import OpenClawV4 from "../openclaw-cursor.jsx";
-import CommunityFrame from "./pages/CommunityFrame";
-import HubCenters from "./pages/HubCenters";
-import DefenseCenter from "./pages/DefenseCenter";
-import ProtectionCenter from "./pages/ProtectionCenter";
+
+// Lazy-loaded route pages
+const TaskBoard = lazy(() => import("./pages/TaskBoard"));
+const TaskList = lazy(() => import("./pages/TaskList"));
+const Runs = lazy(() => import("./pages/Runs"));
+const Logs = lazy(() => import("./pages/Logs"));
+const Alerts = lazy(() => import("./pages/Alerts"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ReviewCenter = lazy(() => import("./pages/ReviewCenter"));
+const Domains = lazy(() => import("./pages/Domains"));
+const OpenClawV4 = lazy(() => import("../openclaw-cursor.jsx"));
+const CommunityFrame = lazy(() => import("./pages/CommunityFrame"));
+const HubCenters = lazy(() => import("./pages/HubCenters"));
+const DefenseCenter = lazy(() => import("./pages/DefenseCenter"));
+const ProtectionCenter = lazy(() => import("./pages/ProtectionCenter"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,35 +62,37 @@ const App = () => (
         <CoreAuthProvider>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <KeyboardShortcuts />
-            <Routes>
-              <Route element={<AppLayout />}>
-                {/* ─── 核心指揮中心路由（需通過防線認證）─── */}
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/cursor" element={<OpenClawV4 />} />
-                <Route path="/tasks" element={<TaskBoard />} />
-                <Route path="/tasks/list" element={<TaskList />} />
-                <Route path="/tasks/:taskId" element={<TaskBoard />} />
-                <Route path="/runs" element={<Runs />} />
-                <Route path="/runs/:runId" element={<Runs />} />
-                <Route path="/logs" element={<Logs />} />
-                <Route path="/alerts" element={<Alerts />} />
-                <Route path="/projects" element={<Projects />} />
-                <Route path="/domains" element={<Domains />} />
-                <Route path="/review" element={<ReviewCenter />} />
-                {/* ─── 研究中心（核心基建）─── */}
-                <Route path="/center" element={<HubCenters />} />
-                <Route path="/center/protection" element={<ProtectionCenter />} />
-                <Route path="/center/protection/:module" element={<ProtectionCenter />} />
-                <Route path="/center/defense" element={<DefenseCenter />} />
-                <Route path="/center/defense/:module" element={<DefenseCenter />} />
-                <Route path="/center/:centerId" element={<HubCenters />} />
-                <Route path="/center/:centerId/:module" element={<HubCenters />} />
-                {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
-                <Route path="/community/*" element={<CommunityFrame />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<div className="flex items-center justify-center h-32 text-muted-foreground text-sm">載入中…</div>}>
+              <Routes>
+                <Route element={<AppLayout />}>
+                  {/* ─── 核心指揮中心路由（需通過防線認證）─── */}
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/cursor" element={<OpenClawV4 />} />
+                  <Route path="/tasks" element={<TaskBoard />} />
+                  <Route path="/tasks/list" element={<TaskList />} />
+                  <Route path="/tasks/:taskId" element={<TaskBoard />} />
+                  <Route path="/runs" element={<Runs />} />
+                  <Route path="/runs/:runId" element={<Runs />} />
+                  <Route path="/logs" element={<Logs />} />
+                  <Route path="/alerts" element={<Alerts />} />
+                  <Route path="/projects" element={<Projects />} />
+                  <Route path="/domains" element={<Domains />} />
+                  <Route path="/review" element={<ReviewCenter />} />
+                  {/* ─── 研究中心（核心基建）─── */}
+                  <Route path="/center" element={<HubCenters />} />
+                  <Route path="/center/protection" element={<ProtectionCenter />} />
+                  <Route path="/center/protection/:module" element={<ProtectionCenter />} />
+                  <Route path="/center/defense" element={<DefenseCenter />} />
+                  <Route path="/center/defense/:module" element={<DefenseCenter />} />
+                  <Route path="/center/:centerId" element={<HubCenters />} />
+                  <Route path="/center/:centerId/:module" element={<HubCenters />} />
+                  {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
+                  <Route path="/community/*" element={<CommunityFrame />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </CoreAuthProvider>
       </TooltipProvider>

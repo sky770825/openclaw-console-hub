@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { C, Btn, Card, Sec, Badge, RiskBadge, RiskStamp, RISK_COLORS } from "../uiPrimitives";
 import { searchMemory, getMemoryStats, addMemory, recordInsight, recordDailyReport, exportMemory } from "@/services/aiMemoryStore";
-import { AI_STRATEGIES } from "@/hooks/useOpenClawBoard";
+import { AI_STRATEGIES } from "@/hooks/openclawBoardUtils";
 
 const LS_COLLAPSED = "openclaw_ai_ws_collapsed";
 const LS_REPORTS = "openclaw_ai_reports";
