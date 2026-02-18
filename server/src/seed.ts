@@ -2,8 +2,11 @@
  * 種子資料：預設為空，只保留你真正要用的任務
  * （原先 T-01..T-15 為專案示範用，已移除）
  */
+import { createLogger } from './logger.js';
 import { tasks, runs, alerts } from './store.js';
 import type { Task, Run, Alert } from './types.js';
+
+const log = createLogger('seed');
 
 const now = () => new Date().toISOString();
 
@@ -20,5 +23,5 @@ export function runSeed() {
   tasks.push(...seedTasks);
   runs.push(...seedRuns);
   alerts.push(...seedAlerts);
-  console.log('[seed] tasks=%d runs=%d alerts=%d', tasks.length, runs.length, alerts.length);
+  log.info('[seed] tasks=%d runs=%d alerts=%d', tasks.length, runs.length, alerts.length);
 }

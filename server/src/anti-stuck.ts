@@ -6,6 +6,7 @@
  * - Telegram 通知
  */
 
+import { createLogger } from './logger.js';
 import {
   notifyTaskTimeout,
   notifyTaskRetry,
@@ -13,6 +14,8 @@ import {
   notifyTaskFailure,
   notifyTaskSuccess,
 } from './utils/telegram.js';
+
+const log = createLogger('anti-stuck');
 import type { Run, Task, RunStatus, TimeoutMonitor, TelegramNotification, ModelFallbackStrategy } from './types.js';
 import { updateOpenClawRun } from './openclawSupabase.js';
 
@@ -97,7 +100,7 @@ export class AntiStuckManager {
    * 處理超時
    */
   private async handleTimeout(runId: string, task: Task): Promise<void> {
-    console.log(`[AntiStuck] Run ${runId} timed out, attempting retry...`);
+    log.info(`[AntiStuck] Run ${runId} timed out, attempting retry...`);
 
     // 停止監控
     this.stopMonitoring(runId);
@@ -125,7 +128,7 @@ export class AntiStuckManager {
     const maxRetries = task.timeoutConfig?.maxRetries || this.config.maxRetries;
 
     if (currentRetries >= maxRetries) {
-      console.log(`[AntiStuck] Run ${runId} has exhausted all ${maxRetries} retries`);
+      log.info(`[AntiStuck] Run ${runId} has exhausted all ${maxRetries} retries`);
       return false;
     }
 
@@ -133,7 +136,7 @@ export class AntiStuckManager {
     this.retryCounts.set(runId, currentRetries + 1);
     const newRetryCount = currentRetries + 1;
 
-    console.log(`[AntiStuck] Retrying run ${runId} (attempt ${newRetryCount}/${maxRetries})`);
+    log.info(`[AntiStuck] Retrying run ${runId} (attempt ${newRetryCount}/${maxRetries})`);
 
     // 發送重試通知
     await this.sendRetryNotification(runId, task, newRetryCount, maxRetries, reason);
@@ -160,7 +163,7 @@ export class AntiStuckManager {
     task: Task,
     strategy: ModelFallbackStrategy
   ): Promise<void> {
-    console.log(`[AntiStuck] Applying model fallback for run ${runId}: ${strategy}`);
+    log.info(`[AntiStuck] Applying model fallback for run ${runId}: ${strategy}`);
 
     let fallbackInfo: { from: string; to: string };
 
@@ -173,7 +176,7 @@ export class AntiStuckManager {
         fallbackInfo = { from: 'Claude', to: 'Gemini Flash' };
         break;
       default:
-        console.log(`[AntiStuck] Unknown fallback strategy: ${strategy}`);
+        log.info(`[AntiStuck] Unknown fallback strategy: ${strategy}`);
         return;
     }
 
@@ -188,7 +191,7 @@ export class AntiStuckManager {
    * 標記 Run 狀態
    */
   private async markRunStatus(runId: string, status: RunStatus, message: string): Promise<void> {
-    console.log(`[AntiStuck] Marking run ${runId} as ${status}: ${message}`);
+    log.info(`[AntiStuck] Marking run ${runId} as ${status}: ${message}`);
 
     // Persist to Supabase (when available). If Supabase is not configured, this is a no-op.
     const terminal = status === 'success' || status === 'failed' || status === 'cancelled' || status === 'timeout';
@@ -216,7 +219,7 @@ export class AntiStuckManager {
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`[AntiStuck] Fallback recorded for run ${runId}:`, fallbackRecord);
+    log.info({ fallbackRecord }, `[AntiStuck] Fallback recorded for run ${runId}`);
 
     // TODO: 實作資料庫更新
     // await updateRunInDatabase(runId, { 
@@ -336,7 +339,7 @@ export class AntiStuckManager {
   cleanup(): void {
     for (const [runId, monitor] of this.timeoutMonitors) {
       clearInterval(monitor.checkInterval);
-      console.log(`[AntiStuck] Cleaned up monitor for run ${runId}`);
+      log.info(`[AntiStuck] Cleaned up monitor for run ${runId}`);
     }
     this.timeoutMonitors.clear();
     this.retryCounts.clear();

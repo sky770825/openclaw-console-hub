@@ -3,9 +3,12 @@
  * 支援 Agent 類型：Cursor / CoDEX / OpenClaw / Auto
  */
 
+import { createLogger } from './logger.js';
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import type { AgentType, Task, Run, AgentExecutorConfig } from './types.js';
+
+const log = createLogger('executor-agents');
 
 const execAsync = promisify(exec);
 const SUBSCRIPTION_ONLY_MODE = process.env.OPENCLAW_SUBSCRIPTION_ONLY !== 'false';
@@ -364,7 +367,7 @@ echo "✅ 封存檢查完成"`;
 
     // 檢查是否為零 Token 維護任務
     if (this.isZeroTokenTask(task)) {
-      console.log(`[Zero-Token] 執行零 Token 任務: ${task.name}`);
+      log.info(`[Zero-Token] 執行零 Token 任務: ${task.name}`);
       const zeroTokenResult = await this.executeZeroTokenTask(task, timeout);
       return {
         ...zeroTokenResult,

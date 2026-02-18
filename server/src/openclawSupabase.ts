@@ -3,6 +3,9 @@
  * 表：openclaw_tasks, openclaw_reviews, openclaw_automations
  */
 import { supabase, hasSupabase } from './supabase.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('supabase');
 
 // 與 openclaw-cursor.jsx 一致的型別
 export interface OpenClawTask {
@@ -102,7 +105,7 @@ export async function fetchOpenClawTasks(): Promise<OpenClawTask[]> {
   if (!hasSupabase() || !supabase) return [];
   const { data, error } = await supabase.from('openclaw_tasks').select('*').order('updated_at', { ascending: false });
   if (error) {
-    console.error('[OpenClaw] fetch tasks error:', error.message);
+    log.error('[OpenClaw] fetch tasks error:', error.message);
     return [];
   }
   return (data ?? []).map(mapTask);
@@ -136,7 +139,7 @@ export async function upsertOpenClawTask(task: Partial<OpenClawTask> & { id: str
   };
   const { data, error } = await supabase.from('openclaw_tasks').upsert(row, { onConflict: 'id' }).select().single();
   if (error) {
-    console.error('[OpenClaw] upsert task error:', error.message);
+    log.error('[OpenClaw] upsert task error:', error.message);
     return null;
   }
   return mapTask(data as Record<string, unknown>);
@@ -146,7 +149,7 @@ export async function fetchOpenClawReviews(): Promise<OpenClawReview[]> {
   if (!hasSupabase() || !supabase) return [];
   const { data, error } = await supabase.from('openclaw_reviews').select('*').order('updated_at', { ascending: false });
   if (error) {
-    console.error('[OpenClaw] fetch reviews error:', error.message);
+    log.error('[OpenClaw] fetch reviews error:', error.message);
     return [];
   }
   return (data ?? []).map(mapReview);
@@ -167,7 +170,7 @@ export async function upsertOpenClawReview(review: Partial<OpenClawReview> & { i
   };
   const { data, error } = await supabase.from('openclaw_reviews').upsert(row, { onConflict: 'id' }).select().single();
   if (error) {
-    console.error('[OpenClaw] upsert review error:', error.message);
+    log.error('[OpenClaw] upsert review error:', error.message);
     return null;
   }
   return mapReview(data as Record<string, unknown>);
@@ -178,7 +181,7 @@ export async function deleteOpenClawReview(reviewId: string): Promise<boolean> {
   if (!hasSupabase() || !supabase) return false;
   const { error } = await supabase.from('openclaw_reviews').delete().eq('id', reviewId);
   if (error) {
-    console.error('[OpenClaw] delete review error:', error.message);
+    log.error('[OpenClaw] delete review error:', error.message);
     return false;
   }
   return true;
@@ -193,7 +196,7 @@ export async function fetchOpenClawTasksByFromReviewId(reviewId: string): Promis
     .eq('from_review_id', reviewId)
     .order('updated_at', { ascending: false });
   if (error) {
-    console.error('[OpenClaw] fetch tasks by from_review_id error:', error.message);
+    log.error('[OpenClaw] fetch tasks by from_review_id error:', error.message);
     return [];
   }
   return (data ?? []).map(mapTask);
@@ -203,7 +206,7 @@ export async function fetchOpenClawAutomations(): Promise<OpenClawAutomation[]> 
   if (!hasSupabase() || !supabase) return [];
   const { data, error } = await supabase.from('openclaw_automations').select('*').order('name');
   if (error) {
-    console.error('[OpenClaw] fetch automations error:', error.message);
+    log.error('[OpenClaw] fetch automations error:', error.message);
     return [];
   }
   return (data ?? []).map(mapAutomation);
@@ -224,7 +227,7 @@ export async function upsertOpenClawAutomation(a: Partial<OpenClawAutomation> & 
   };
   const { data, error } = await supabase.from('openclaw_automations').upsert(row, { onConflict: 'id' }).select().single();
   if (error) {
-    console.error('[OpenClaw] upsert automation error:', error.message);
+    log.error('[OpenClaw] upsert automation error:', error.message);
     return null;
   }
   return mapAutomation(data as Record<string, unknown>);
@@ -244,10 +247,10 @@ export async function seedOpenClawAutomationsIfEmpty(): Promise<boolean> {
   for (const a of SEED_AUTOMATIONS) {
     const ok = await upsertOpenClawAutomation(a);
     if (!ok) {
-      console.warn('[OpenClaw] seed automation failed:', a.id);
+      log.warn('[OpenClaw] seed automation failed:', a.id);
     }
   }
-  console.log('[OpenClaw] seeded automations:', SEED_AUTOMATIONS.length);
+  log.info('[OpenClaw] seeded automations:', SEED_AUTOMATIONS.length);
   return true;
 }
 
@@ -269,7 +272,7 @@ export async function fetchOpenClawEvolutionLog(): Promise<EvolutionLogRow[]> {
   if (!hasSupabase() || !supabase) return [];
   const { data, error } = await supabase.from('openclaw_evolution_log').select('id, t, x, c, tag, tc, created_at').order('created_at', { ascending: false }).limit(100);
   if (error) {
-    console.error('[OpenClaw] fetch evolution_log error:', error.message);
+    log.error('[OpenClaw] fetch evolution_log error:', error.message);
     return [];
   }
   return (data ?? []).map((row: Record<string, unknown>) => ({
@@ -293,7 +296,7 @@ export async function insertOpenClawEvolutionLog(e: OpenClawEvolutionLog): Promi
     tc: e.tc ?? null,
   });
   if (error) {
-    console.error('[OpenClaw] insert evolution_log error:', error.message);
+    log.error('[OpenClaw] insert evolution_log error:', error.message);
     return false;
   }
   return true;
@@ -349,7 +352,7 @@ export async function insertOpenClawRun(payload: {
     .select('id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at')
     .single();
   if (error) {
-    console.error('[OpenClaw] insert openclaw_runs error:', error.message);
+    log.error('[OpenClaw] insert openclaw_runs error:', error.message);
     return null;
   }
   const row = data as Record<string, unknown>;
@@ -382,7 +385,7 @@ export async function updateOpenClawRun(
   if (updates.steps != null) body.steps = updates.steps;
   const { error } = await supabase.from('openclaw_runs').update(body).eq('id', runId);
   if (error) {
-    console.error('[OpenClaw] update openclaw_runs error:', error.message);
+    log.error('[OpenClaw] update openclaw_runs error:', error.message);
     return false;
   }
   return true;
@@ -398,7 +401,7 @@ export async function fetchOpenClawRuns(limit = 100, taskId?: string): Promise<O
   if (taskId) q = q.eq('task_id', taskId);
   const { data, error } = await q;
   if (error) {
-    console.error('[OpenClaw] fetch openclaw_runs error:', error.message);
+    log.error('[OpenClaw] fetch openclaw_runs error:', error.message);
     return [];
   }
   return (data ?? []).map((row: Record<string, unknown>) => mapOpenClawRunRow(row));
@@ -445,7 +448,7 @@ export async function fetchOpenClawAuditLogs(): Promise<{ id: string; action: st
   if (!hasSupabase() || !supabase) return [];
   const { data, error } = await supabase.from('openclaw_audit_logs').select('id, action, resource, resource_id, user_id, created_at, diff').order('created_at', { ascending: false }).limit(100);
   if (error) {
-    console.error('[OpenClaw] fetch audit_logs error:', error.message);
+    log.error('[OpenClaw] fetch audit_logs error:', error.message);
     return [];
   }
   return (data ?? []).map((row: Record<string, unknown>) => ({
@@ -476,10 +479,10 @@ export async function seedOpenClawReviewsIfEmpty(): Promise<boolean> {
   for (const r of SEED_REVIEWS) {
     const ok = await upsertOpenClawReview(r);
     if (!ok) {
-      console.warn('[OpenClaw] seed review failed:', r.id);
+      log.warn('[OpenClaw] seed review failed:', r.id);
     }
   }
-  console.log('[OpenClaw] seeded reviews:', SEED_REVIEWS.length);
+  log.info('[OpenClaw] seeded reviews:', SEED_REVIEWS.length);
   return true;
 }
 
@@ -487,7 +490,7 @@ export async function fetchOpenClawUIActions(): Promise<OpenClawUIAction[]> {
   if (!hasSupabase() || !supabase) return [];
   const { data, error } = await supabase.from('openclaw_ui_actions').select('*').order('action_code');
   if (error) {
-    console.error('[OpenClaw] fetch ui_actions error:', error.message);
+    log.error('[OpenClaw] fetch ui_actions error:', error.message);
     return [];
   }
   return (data ?? []).map((row: Record<string, unknown>) => ({
@@ -536,7 +539,7 @@ export async function fetchOpenClawProjects(): Promise<OpenClawProject[]> {
     .select('*')
     .order('updated_at', { ascending: false });
   if (error) {
-    console.error('[OpenClaw] fetch projects error:', error.message);
+    log.error('[OpenClaw] fetch projects error:', error.message);
     return [];
   }
   // 同時讀取 phases
@@ -545,7 +548,7 @@ export async function fetchOpenClawProjects(): Promise<OpenClawProject[]> {
     .select('*')
     .order('sort_order', { ascending: true });
   if (phasesError) {
-    console.error('[OpenClaw] fetch phases error:', phasesError.message);
+    log.error('[OpenClaw] fetch phases error:', phasesError.message);
   }
   const phasesByProject = new Map<string, OpenClawProjectPhase[]>();
   for (const ph of (phases ?? [])) {
@@ -591,7 +594,7 @@ export async function upsertOpenClawProject(project: Partial<OpenClawProject> & 
   if (project.createdAt !== undefined) payload.created_at = project.createdAt;
   const { data, error } = await supabase.from('openclaw_projects').upsert(payload).select().single();
   if (error) {
-    console.error('[OpenClaw] upsert project error:', error.message);
+    log.error('[OpenClaw] upsert project error:', error.message);
     return null;
   }
   // 處理 phases
@@ -611,7 +614,7 @@ export async function upsertOpenClawProject(project: Partial<OpenClawProject> & 
     }));
     const { error: phError } = await supabase.from('openclaw_project_phases').insert(phaseRows);
     if (phError) {
-      console.error('[OpenClaw] insert phases error:', phError.message);
+      log.error('[OpenClaw] insert phases error:', phError.message);
     }
   }
   return fetchOpenClawProjects().then(list => list.find(p => p.id === project.id) ?? null);
@@ -621,7 +624,7 @@ export async function deleteOpenClawProject(id: string): Promise<boolean> {
   if (!hasSupabase() || !supabase) return false;
   const { error } = await supabase.from('openclaw_projects').delete().eq('id', id);
   if (error) {
-    console.error('[OpenClaw] delete project error:', error.message);
+    log.error('[OpenClaw] delete project error:', error.message);
     return false;
   }
   return true;
@@ -664,7 +667,7 @@ export async function fetchXiaoCaiIdeas(): Promise<XiaoCaiIdea[]> {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) {
-    console.error('[OpenClaw] fetch xiaocai ideas error:', error.message);
+    log.error('[OpenClaw] fetch xiaocai ideas error:', error.message);
     return [];
   }
   return (data ?? []).map(mapXiaoCaiIdea);
@@ -699,7 +702,7 @@ export async function upsertXiaoCaiIdea(idea: Partial<XiaoCaiIdea> & { id: strin
     .select()
     .single();
   if (error) {
-    console.error('[OpenClaw] upsert xiaocai idea error:', error.message);
+    log.error('[OpenClaw] upsert xiaocai idea error:', error.message);
     return null;
   }
   return mapXiaoCaiIdea(data as Record<string, unknown>);
@@ -711,7 +714,7 @@ export async function seedXiaoCaiIdeasIfEmpty(): Promise<void> {
     .from('xiaocai_ideas')
     .select('*', { count: 'exact', head: true });
   if (error) {
-    console.error('[OpenClaw] check xiaocai ideas error:', error.message);
+    log.error('[OpenClaw] check xiaocai ideas error:', error.message);
     return;
   }
   if (count && count > 0) return;
@@ -732,5 +735,5 @@ export async function seedXiaoCaiIdeasIfEmpty(): Promise<void> {
   for (const idea of defaultIdeas) {
     await upsertXiaoCaiIdea(idea as XiaoCaiIdea & { id: string });
   }
-  console.log('[OpenClaw] seeded default xiaocai ideas');
+  log.info('[OpenClaw] seeded default xiaocai ideas');
 }

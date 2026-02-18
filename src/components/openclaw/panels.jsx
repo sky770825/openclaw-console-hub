@@ -348,7 +348,7 @@ export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz,b
   const filtered = hideDone ? tasks.filter(t => t.status !== "done") : tasks;
 
   // === 網格視圖：auto-fill 多欄，每張卡片最小 200px ===
-  const gridView = <div className="oc-task-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:4}}>
+  const gridView = <div className="oc-task-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(200px,100%),1fr))",gap:4}}>
     {filtered.map(t=><CompactTaskCard
       key={t.id} t={t} cc={resolveCat(t.cat)}
       onView={onView} onProg={onProg} onRun={onRun} onDelete={onDelete} onMove={onMove}
@@ -382,7 +382,7 @@ export function TaskBoard({tasks,onProg,onView,onRun,onDelete,onMove,onAddQuiz,b
   const handleDrop = (e, colKey) => { e.preventDefault(); setDragOverCol(null); const id = e.dataTransfer.getData(DRAG_TYPE) || e.dataTransfer.getData("text/plain"); if (id && onMove) onMove(id, colKey); };
   const kanbanCols=[{k:"queued",l:"排隊中",i:"📋",c:C.t3},{k:"in_progress",l:"進行中",i:"🔄",c:C.indigo},{k:"done",l:"完成",i:"✅",c:C.green}];
   const displayKanbanCols = hideDone ? kanbanCols.filter(c=>c.k!=="done") : kanbanCols;
-  const kanbanView = <div className="oc-task-cols" style={{display:"grid",gridTemplateColumns:`repeat(${displayKanbanCols.length},minmax(100px,1fr))`,gap:6}}>
+  const kanbanView = <div className="oc-task-cols" style={{display:"grid",gridTemplateColumns:`repeat(${displayKanbanCols.length},minmax(220px,1fr))`,gap:6,overflowX:"auto",WebkitOverflowScrolling:"touch",minWidth:0}}>
     {displayKanbanCols.map(col=>{const ct=tasks.filter(t=>t.status===col.k);
       const isDropTarget = dragOverCol === col.k;
       return <div key={col.k} onDragOver={e=>handleDragOver(e,col.k)} onDragLeave={handleDragLeave} onDrop={e=>handleDrop(e,col.k)}
@@ -752,7 +752,7 @@ export function SecurityPanel({ layers, rbacMatrix }){
   const secList = layers && layers.length ? layers : FALLBACK_SECURITY;
   const rbacList = rbacMatrix && rbacMatrix.length ? rbacMatrix : FALLBACK_RBAC;
   return <Sec icon="🛡️" title="安全防護" count={secList.length+" 層"} right={<Badge c={C.green} bg={C.greenG}>全層啟用</Badge>}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))",gap:6,marginBottom:14}}>
       {secList.map(s=><Card key={s.id} glow={C.green}>
         <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
           <span style={{fontSize:16,flexShrink:0}}>{s.icon}</span>
@@ -784,7 +784,7 @@ export function PluginPanel({ plugins }){
   const stC={active:C.green,inactive:C.t3,template:C.amber};
   const list = plugins && plugins.length ? plugins : FALLBACK_PLUGINS;
   return <Sec icon="🧩" title="Plugin 市集" count={list.length} right={<Badge c={C.amber} bg={C.amberG}>可擴充架構</Badge>}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))",gap:6}}>
       {list.map(p=><Card key={p.id} glow={p.status==="active"?C.green:p.status==="template"?C.amber:undefined} style={p.status==="template"?{borderStyle:"dashed"}:{}}>
         <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
           <span style={{fontSize:20,flexShrink:0}}>{p.icon}</span>

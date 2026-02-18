@@ -3,8 +3,11 @@
  * 提供即時進度推播功能
  */
 
+import { createLogger } from './logger.js';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
+
+const log = createLogger('websocket');
 
 // 連線類型
 interface ClientConnection {
@@ -25,7 +28,7 @@ class WebSocketManager {
     this.wss = new WebSocketServer({ server, path: '/ws' });
 
     this.wss.on('connection', (ws) => {
-      console.log('[WebSocket] 新客戶端連線');
+      log.info('[WebSocket] 新客戶端連線');
       
       const client: ClientConnection = {
         ws,
@@ -61,13 +64,13 @@ class WebSocketManager {
 
       // 處理關閉
       ws.on('close', () => {
-        console.log('[WebSocket] 客戶端斷線');
+        log.info('[WebSocket] 客戶端斷線');
         this.clients.delete(ws);
       });
 
       // 處理錯誤
       ws.on('error', (error) => {
-        console.error('[WebSocket] 錯誤:', error);
+        log.error({ err: error }, '[WebSocket] 錯誤');
         this.clients.delete(ws);
       });
     });
@@ -75,7 +78,7 @@ class WebSocketManager {
     // 啟動心跳檢查
     this.startHeartbeat();
 
-    console.log('[WebSocket] 伺服器已啟動於 /ws');
+    log.info('[WebSocket] 伺服器已啟動於 /ws');
   }
 
   /**
@@ -303,7 +306,7 @@ class WebSocketManager {
       this.wss = null;
     }
 
-    console.log('[WebSocket] 伺服器已關閉');
+    log.info('[WebSocket] 伺服器已關閉');
   }
 
   /**

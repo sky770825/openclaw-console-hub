@@ -3,6 +3,10 @@
  * 提供 /stop 指令功能，立即停止當前執行中的任務
  */
 
+import { createLogger } from './logger.js';
+
+const log = createLogger('emergency');
+
 // 全域執行狀態追蹤
 interface RunningTask {
   taskId: string;
@@ -35,7 +39,7 @@ export function registerRunningTask(
     pid
   });
   
-  console.log(`[EmergencyStop] 任務已註冊: ${taskId} (${taskName})`);
+  log.info(`[EmergencyStop] 任務已註冊: ${taskId} (${taskName})`);
 }
 
 /**
@@ -43,7 +47,7 @@ export function registerRunningTask(
  */
 export function unregisterRunningTask(taskId: string): void {
   runningTasks.delete(taskId);
-  console.log(`[EmergencyStop] 任務已取消註冊: ${taskId}`);
+  log.info(`[EmergencyStop] 任務已取消註冊: ${taskId}`);
 }
 
 /**
@@ -64,7 +68,7 @@ export async function emergencyStopTask(taskId: string, reason: string = '用戶
   }
   
   try {
-    console.log(`[EmergencyStop] 🚨 緊急終止任務: ${taskId} (${task.taskName})`);
+    log.info(`[EmergencyStop] 🚨 緊急終止任務: ${taskId} (${task.taskName})`);
     
     // 1. 發送中止信號
     task.abortController.abort();
@@ -81,18 +85,18 @@ export async function emergencyStopTask(taskId: string, reason: string = '用戶
           }
         }, 2000);
       } catch (e) {
-        console.log(`[EmergencyStop] 進程 ${task.pid} 可能已終止`);
+        log.info(`[EmergencyStop] 進程 ${task.pid} 可能已終止`);
       }
     }
     
     // 3. 從執行列表移除
     runningTasks.delete(taskId);
     
-    console.log(`[EmergencyStop] ✅ 任務已終止: ${taskId}`);
+    log.info(`[EmergencyStop] ✅ 任務已終止: ${taskId}`);
     
     return { success: true, message: `任務 "${task.taskName}" 已緊急終止` };
   } catch (error) {
-    console.error('[EmergencyStop] 終止任務失敗:', error);
+    log.error({ err: error }, '[EmergencyStop] 終止任務失敗');
     return { success: false, message: `終止失敗: ${error}` };
   }
 }
@@ -105,7 +109,7 @@ export async function emergencyStopAll(reason: string = '用戶緊急終止全�
   let stopped = 0;
   let failed = 0;
   
-  console.log(`[EmergencyStop] 🚨 緊急終止所有任務 (${tasks.length} 個)`);
+  log.info(`[EmergencyStop] 🚨 緊急終止所有任務 (${tasks.length} 個)`);
   
   for (const task of tasks) {
     const result = await emergencyStopTask(task.taskId, reason);
@@ -149,7 +153,7 @@ export function createTimeoutController(timeoutMs: number = 300000): AbortContro
   const controller = new AbortController();
   
   const timeoutId = setTimeout(() => {
-    console.log(`[EmergencyStop] ⏱️ 任務超時，自動終止`);
+    log.info(`[EmergencyStop] ⏱️ 任務超時，自動終止`);
     controller.abort();
   }, timeoutMs);
   

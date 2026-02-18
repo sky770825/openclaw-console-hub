@@ -3,7 +3,10 @@
  * 根據錯誤類型自動創建除錯任務並指派給對應的 Agent
  */
 
+import { createLogger } from './logger.js';
 import type { AgentType } from './types.js';
+
+const log = createLogger('error-handler');
 
 // 錯誤類型定義
 export type ErrorType = 
@@ -223,7 +226,7 @@ export function handleExecutionError(
 } {
   const err = error instanceof Error ? error : new Error(String(error));
   
-  console.error(`[ErrorHandler] ❌ 任務執行錯誤: ${taskId}`, err.message);
+  log.error({ taskId, errMsg: err.message }, '[ErrorHandler] 任務執行錯誤');
   
   // 分析錯誤類型
   const classification = classifyError(err);
@@ -238,7 +241,7 @@ export function handleExecutionError(
     options?.context
   );
   
-  console.log(`[ErrorHandler] 🐛 建議創建除錯任務，指派給 ${classification.agent}`);
+  log.info(`[ErrorHandler] 建議創建除錯任務，指派給 ${classification.agent}`);
   
   return {
     shouldCreateDebugTask: true,

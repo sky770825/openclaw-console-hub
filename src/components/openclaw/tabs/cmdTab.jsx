@@ -11,6 +11,7 @@ const COMMANDS = [
       { id: "auto-stop", name: "停止自動執行器", desc: "暫停任務自動執行", icon: "⏸", method: "POST", path: "/api/openclaw/auto-executor/stop", confirm: true },
       { id: "dispatch-toggle", name: "切換派工模式", desc: "開啟或關閉自動派工", icon: "🟣", method: "POST", path: "/api/openclaw/dispatch/toggle", confirm: true },
       { id: "deputy-toggle", name: "暫代模式", desc: "開啟/關閉 Claude Code 自動暫代執行", icon: "🤖", method: "POST", path: "/api/openclaw/deputy/toggle", confirm: true },
+      { id: "deputy-run-now", name: "立即暫代", desc: "一鍵觸發暫代執行（不用等排程）", icon: "🚀", method: "POST", path: "/api/openclaw/deputy/run-now", confirm: true },
       { id: "deputy-status", name: "暫代狀態", desc: "查看暫代模式狀態與上次執行結果", icon: "📋", method: "GET", path: "/api/openclaw/deputy/status" },
       { id: "emergency-stop", name: "緊急停止", desc: "立即停止所有執行中任務", icon: "🛑", method: "POST", path: "/api/emergency/stop-all", confirm: true, danger: true },
     ],

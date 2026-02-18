@@ -4,6 +4,10 @@
  * 若未設定 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID，會自動略過發送。
  */
 
+import { createLogger } from '../logger.js';
+
+const log = createLogger('telegram-util');
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim();
 
@@ -17,7 +21,7 @@ function logTelegramConfigOnce(): void {
   if (telegramConfigLogged) return;
   telegramConfigLogged = true;
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn('[Telegram] 未設定 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_ID，通知將不發送。請在 .env 設定。');
+    log.warn('[Telegram] 未設定 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_ID，通知將不發送。請在 .env 設定。');
   }
 }
 
@@ -49,10 +53,10 @@ export async function sendTelegramMessage(
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
-      console.error('[Telegram] send failed:', res.status, detail);
+      log.error({ status: res.status, detail }, '[Telegram] send failed');
     }
   } catch (error) {
-    console.error('[Telegram] Failed to send message:', error);
+    log.error({ err: error }, '[Telegram] Failed to send message');
   }
 }
 
@@ -88,10 +92,10 @@ export async function sendTelegramMessageToChat(
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
-      console.error('[TelegramControl] send failed:', res.status, detail.slice(0, 400));
+      log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] send failed');
     }
   } catch (error) {
-    console.error('[TelegramControl] Failed to send message:', error);
+    log.error({ err: error }, '[TelegramControl] Failed to send message');
   }
 }
 

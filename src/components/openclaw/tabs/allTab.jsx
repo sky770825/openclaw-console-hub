@@ -21,7 +21,7 @@ export function renderAllTab(data, actions) {
     <TaskBoard tasks={tasks} onProg={progT} onView={setDrawer} onRun={runT} onDelete={delT} onMove={moveT} onAddQuiz={addQuiz} />
 
     {/* 自動化 + 審核：雙欄 */}
-    <div className="oc-grid-all" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 20 }}>
+    <div className="oc-grid-all" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(340px,100%),1fr))", gap: 20 }}>
       <div style={{ minWidth: 0, overflowX: "hidden", overflowWrap: "break-word" }}>
         <AutoPanel autos={autos} onTog={togA} onRun={runA} onView={setDrawer} />
       </div>

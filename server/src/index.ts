@@ -4,6 +4,7 @@
  * OpenClaw v4 板：/api/openclaw/* 寫入 Supabase
  */
 import './preload-dotenv.js';
+import { createLogger } from './logger.js';
 import { startTelegramStopPoll } from './telegram-stop-poll.js';
 import path from 'path';
 import fs from 'fs';
@@ -127,6 +128,8 @@ import { DOMAINS, applyDomainTagging } from './domains.js';
 import { loadFeatures, patchFeatures, saveFeatures, type FeatureFlags } from './features.js';
 
 runSeed();
+
+const log = createLogger('server');
 
 const app = express();
 
@@ -992,7 +995,7 @@ async function executeTaskWithAntiStuck(runId: string, task: Task): Promise<void
       {
         maxRetries: run.maxRetries || DEFAULT_CONFIG.maxRetries,
         onRetry: async (attempt, error) => {
-          console.log(`[Execute] Retry ${attempt} for run ${runId}: ${error.message}`);
+          log.info(`[Execute] Retry ${attempt} for run ${runId}: ${error.message}`);
           run.retryCount = attempt;
           run.status = 'retrying';
           
@@ -1438,7 +1441,7 @@ async function executeNextQueuedTask(): Promise<
 app.get('/api/openclaw/tasks', async (_req, res) => {
   try {
     if (!hasSupabase()) {
-      console.error('[OpenClaw] GET /api/openclaw/tasks: Supabase not connected');
+      log.error('[OpenClaw] GET /api/openclaw/tasks: Supabase not connected');
       return res.status(503).json({ message: 'Supabase not connected' });
     }
     let data = await fetchOpenClawTasks();
@@ -1470,7 +1473,7 @@ app.get('/api/openclaw/tasks', async (_req, res) => {
     }));
     res.json(mapped);
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/tasks error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to fetch tasks' });
   }
 });
@@ -1478,7 +1481,7 @@ app.get('/api/openclaw/tasks', async (_req, res) => {
 app.post('/api/openclaw/tasks', async (req, res) => {
   try {
     if (!hasSupabase()) {
-      console.error('[OpenClaw] POST /api/openclaw/tasks: Supabase not connected');
+      log.error('[OpenClaw] POST /api/openclaw/tasks: Supabase not connected');
       return res.status(503).json({ message: 'Supabase not connected' });
     }
     // 前端送來 Task 格式，可帶 subs/title（看板用）
@@ -1544,7 +1547,7 @@ app.post('/api/openclaw/tasks', async (req, res) => {
     };
     const task = await upsertOpenClawTask(ocPayload);
     if (!task) {
-      console.error('[OpenClaw] POST /api/openclaw/tasks: upsert failed');
+      log.error('[OpenClaw] POST /api/openclaw/tasks: upsert failed');
       return res.status(500).json({ message: 'Failed to save task' });
     }
     res.status(201).json({
@@ -1557,7 +1560,7 @@ app.post('/api/openclaw/tasks', async (req, res) => {
       from_review_id: task.fromR ?? null,
     });
   } catch (e) {
-    console.error('[OpenClaw] POST /api/openclaw/tasks error:', e);
+    log.error('[OpenClaw] POST /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to save task' });
   }
 });
@@ -1565,7 +1568,7 @@ app.post('/api/openclaw/tasks', async (req, res) => {
 app.patch('/api/openclaw/tasks/:id', async (req, res) => {
   try {
     if (!hasSupabase()) {
-      console.error('[OpenClaw] PATCH /api/openclaw/tasks: Supabase not connected');
+      log.error('[OpenClaw] PATCH /api/openclaw/tasks: Supabase not connected');
       return res.status(503).json({ message: 'Supabase not connected' });
     }
     // 先取得現有任務
@@ -1588,7 +1591,7 @@ app.patch('/api/openclaw/tasks/:id', async (req, res) => {
     };
     const task = await upsertOpenClawTask(ocPayload);
     if (!task) {
-      console.error('[OpenClaw] PATCH /api/openclaw/tasks: upsert failed');
+      log.error('[OpenClaw] PATCH /api/openclaw/tasks: upsert failed');
       return res.status(500).json({ message: 'Failed to update task' });
     }
     res.json({
@@ -1601,7 +1604,7 @@ app.patch('/api/openclaw/tasks/:id', async (req, res) => {
       from_review_id: task.fromR ?? null,
     });
   } catch (e) {
-    console.error('[OpenClaw] PATCH /api/openclaw/tasks error:', e);
+    log.error('[OpenClaw] PATCH /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to update task' });
   }
 });
@@ -1610,17 +1613,17 @@ app.patch('/api/openclaw/tasks/:id', async (req, res) => {
 app.delete('/api/openclaw/tasks/:id', async (req, res) => {
   try {
     if (!hasSupabase() || !supabase) {
-      console.error('[OpenClaw] DELETE /api/openclaw/tasks: Supabase not connected');
+      log.error('[OpenClaw] DELETE /api/openclaw/tasks: Supabase not connected');
       return res.status(503).json({ message: 'Supabase not connected' });
     }
     const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
     if (error) {
-      console.error('[OpenClaw] DELETE /api/openclaw/tasks error:', error.message);
+      log.error('[OpenClaw] DELETE /api/openclaw/tasks error:', error.message);
       return res.status(500).json({ message: 'Failed to delete task' });
     }
     return res.status(204).send();
   } catch (e) {
-    console.error('[OpenClaw] DELETE /api/openclaw/tasks error:', e);
+    log.error('[OpenClaw] DELETE /api/openclaw/tasks error:', e);
     res.status(500).json({ message: 'Failed to delete task' });
   }
 });
@@ -1820,7 +1823,7 @@ app.post('/api/openclaw/red-alert', async (req, res) => {
 
     res.status(201).json({ ok: true, reviewId });
   } catch (e) {
-    console.error('[RedAlert] trigger error:', e);
+    log.error('[RedAlert] trigger error:', e);
     res.status(500).json({ message: 'Failed to trigger red alert' });
   }
 });
@@ -1856,7 +1859,7 @@ app.post('/api/openclaw/red-alert/:reviewId/resolve', async (req, res) => {
 
     res.json({ ok: true, message: 'Alert resolved, task unblocked' });
   } catch (e) {
-    console.error('[RedAlert] resolve error:', e);
+    log.error('[RedAlert] resolve error:', e);
     res.status(500).json({ message: 'Failed to resolve alert' });
   }
 });
@@ -1931,7 +1934,7 @@ app.post('/api/openclaw/proposal', async (req, res) => {
 
     res.status(201).json({ ok: true, reviewId });
   } catch (e) {
-    console.error('[Proposal] submit error:', e);
+    log.error('[Proposal] submit error:', e);
     res.status(500).json({ message: 'Failed to submit proposal' });
   }
 });
@@ -2030,7 +2033,7 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
 
     res.json({ ok: true, decision, taskId });
   } catch (e) {
-    console.error('[Proposal] decide error:', e);
+    log.error('[Proposal] decide error:', e);
     res.status(500).json({ message: 'Failed to decide proposal' });
   }
 });
@@ -2131,7 +2134,7 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
             });
             if (row) createdRunId = row.id;
           } catch (e) {
-            console.warn('[OpenClaw] insert automation run trace failed:', e);
+            log.warn('[OpenClaw] insert automation run trace failed:', e);
           }
         }
       } catch (e) {
@@ -2178,7 +2181,7 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
               ],
             });
           } catch (err) {
-            console.warn('[OpenClaw] insert failed automation run trace failed:', err);
+            log.warn('[OpenClaw] insert failed automation run trace failed:', err);
           }
         }
         return res.status(502).json({
@@ -2372,7 +2375,7 @@ app.post('/api/openclaw/command', async (req, res) => {
 
     res.json({ ok: true, next });
   } catch (e) {
-    console.error('[OpenClaw] POST /api/openclaw/command error:', e);
+    log.error('[OpenClaw] POST /api/openclaw/command error:', e);
     res.status(500).json({ ok: false, message: 'Failed to process command' });
   }
 });
@@ -2462,7 +2465,7 @@ app.post('/api/openclaw/interrupt', async (req, res) => {
 
     res.status(201).json({ ok: true, interruptId, deadline, options });
   } catch (e) {
-    console.error('[OpenClaw] POST /api/openclaw/interrupt error:', e);
+    log.error('[OpenClaw] POST /api/openclaw/interrupt error:', e);
     res.status(500).json({ ok: false, message: 'Failed to create interrupt' });
   }
 });
@@ -2553,7 +2556,7 @@ app.post('/api/openclaw/resume', async (req, res) => {
       },
     });
   } catch (e) {
-    console.error('[OpenClaw] POST /api/openclaw/resume error:', e);
+    log.error('[OpenClaw] POST /api/openclaw/resume error:', e);
     res.status(500).json({ ok: false, message: 'Failed to resume session' });
   }
 });
@@ -2592,7 +2595,7 @@ app.get('/api/openclaw/sessions/:id', async (req, res) => {
       meta,
     });
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/sessions/:id error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/sessions/:id error:', e);
     res.status(500).json({ ok: false, message: 'Failed to fetch session' });
   }
 });
@@ -2609,7 +2612,7 @@ app.get('/api/openclaw/sessions/:id/commands', async (req, res) => {
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) {
-        console.error('[OpenClaw] fetch openclaw_commands error:', error.message);
+        log.error('[OpenClaw] fetch openclaw_commands error:', error.message);
         return res.status(500).json({ ok: false, message: 'Failed to fetch commands' });
       }
       return res.json(
@@ -2628,7 +2631,7 @@ app.get('/api/openclaw/sessions/:id/commands', async (req, res) => {
     // 無 Supabase 時僅回空陣列（Command 僅寫入 DB）
     return res.json([]);
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/sessions/:id/commands error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/sessions/:id/commands error:', e);
     res.status(500).json({ ok: false, message: 'Failed to fetch commands' });
   }
 });
@@ -2645,7 +2648,7 @@ app.get('/api/openclaw/sessions/:id/interrupts', async (req, res) => {
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) {
-        console.error('[OpenClaw] fetch openclaw_interrupts error:', error.message);
+        log.error('[OpenClaw] fetch openclaw_interrupts error:', error.message);
         return res.status(500).json({ ok: false, message: 'Failed to fetch interrupts' });
       }
       return res.json(
@@ -2690,7 +2693,7 @@ app.get('/api/openclaw/sessions/:id/interrupts', async (req, res) => {
     }
     return res.json(rows);
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/sessions/:id/interrupts error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/sessions/:id/interrupts error:', e);
     res.status(500).json({ ok: false, message: 'Failed to fetch interrupts' });
   }
 });
@@ -2775,7 +2778,7 @@ app.get('/api/openclaw/board-config', async (_req, res) => {
       plugins: BOARD_CONFIG.plugins,
     });
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/board-config error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/board-config error:', e);
     res.status(500).json({ message: 'Failed to fetch board config' });
   }
 });
@@ -2825,7 +2828,7 @@ app.get('/api/openclaw/board-health', async (_req, res) => {
       notes,
     });
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/board-health error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/board-health error:', e);
     res.status(500).json({ ok: false, message: 'Failed to fetch board health' });
   }
 });
@@ -2880,11 +2883,11 @@ app.post('/api/openclaw/wake-report', async (req, res) => {
           resolved: false,
         });
       } catch (dbErr) {
-        console.warn('[OpenClaw] wake-report Supabase insert failed (in-memory OK):', dbErr);
+        log.warn('[OpenClaw] wake-report Supabase insert failed (in-memory OK):', dbErr);
       }
     }
 
-    console.log(`[OpenClaw] 🚨 Wake Report received: ${report.level} — ${report.totalErrors} errors`);
+    log.info(`[OpenClaw] 🚨 Wake Report received: ${report.level} — ${report.totalErrors} errors`);
 
     // ── 通知管道 ──
 
@@ -2912,10 +2915,10 @@ app.post('/api/openclaw/wake-report', async (req, res) => {
 
     if (report.level === 'escalate') {
       notifyRedAlert(report.id, report.id, 'AI 甦醒警報', tgMsg, 'critical').catch(err =>
-        console.warn('[OpenClaw] wake Telegram (escalate) failed:', err));
+        log.warn('[OpenClaw] wake Telegram (escalate) failed:', err));
     } else {
       sendTelegramMessage(tgMsg, { parseMode: 'HTML' }).catch(err =>
-        console.warn('[OpenClaw] wake Telegram failed:', err));
+        log.warn('[OpenClaw] wake Telegram failed:', err));
     }
 
     // 2) n8n webhook（如有設定 N8N_WEBHOOK_WAKE_REPORT 環境變數）
@@ -2923,12 +2926,12 @@ app.post('/api/openclaw/wake-report', async (req, res) => {
       triggerWebhook(process.env.N8N_WEBHOOK_WAKE_REPORT, {
         source: 'openclaw-wake',
         ...report,
-      }).catch(err => console.warn('[OpenClaw] wake n8n webhook failed:', err));
+      }).catch(err => log.warn('[OpenClaw] wake n8n webhook failed:', err));
     }
 
     res.json({ ok: true, id: report.id });
   } catch (e) {
-    console.error('[OpenClaw] POST /api/openclaw/wake-report error:', e);
+    log.error('[OpenClaw] POST /api/openclaw/wake-report error:', e);
     res.status(500).json({ ok: false, message: 'Failed to save wake report' });
   }
 });
@@ -2951,7 +2954,7 @@ app.get('/api/openclaw/wake-report', async (_req, res) => {
     }
     res.json({ ok: true, source: 'memory', reports: wakeReports.slice(0, 20) });
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/wake-report error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/wake-report error:', e);
     res.status(500).json({ ok: false, reports: [] });
   }
 });
@@ -3056,12 +3059,12 @@ app.get('/api/openclaw/daily-report', async (req, res) => {
         `<b>運行</b>：${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`,
       ].join('\n');
       sendTelegramMessage(tgText, { parseMode: 'HTML' }).catch(e =>
-        console.warn('[DailyReport] Telegram send failed:', e));
+        log.warn('[DailyReport] Telegram send failed:', e));
     }
 
     res.json({ ok: true, report });
   } catch (e) {
-    console.error('[OpenClaw] daily-report error:', e);
+    log.error('[OpenClaw] daily-report error:', e);
     res.status(500).json({ ok: false, message: 'Failed to generate daily report' });
   }
 });
@@ -3116,8 +3119,46 @@ app.post('/api/openclaw/deputy/toggle', async (req, res) => {
 
     res.json({ ok: true, enabled: newEnabled, message: newEnabled ? '暫代模式已開啟' : '暫代模式已關閉' });
   } catch (e) {
-    console.error('[OpenClaw] deputy toggle error:', e);
+    log.error('[OpenClaw] deputy toggle error:', e);
     res.status(500).json({ ok: false, message: 'Failed to toggle deputy mode' });
+  }
+});
+
+app.post('/api/openclaw/deputy/run-now', async (_req, res) => {
+  try {
+    const scriptPath = path.join(repoRootPath(), 'scripts', 'openclaw-deputy.sh');
+    if (!fs.existsSync(scriptPath)) {
+      res.status(404).json({ ok: false, message: 'deputy script not found' });
+      return;
+    }
+
+    // Ensure deputy mode is on (auto-enable if triggering run-now)
+    const state = readDeputyState();
+    if (!state.enabled) {
+      writeDeputyState({ ...state, enabled: true, enabledAt: new Date().toISOString(), enabledBy: 'run-now' });
+    }
+
+    const logDir = path.join(repoRootPath(), 'logs');
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const logFile = path.join(logDir, `deputy-run-now-${ts}.log`);
+    const fd = fs.openSync(logFile, 'w');
+
+    const child = spawn('/bin/bash', [scriptPath], {
+      cwd: repoRootPath(),
+      detached: true,
+      stdio: ['ignore', fd, fd],
+      env: { ...process.env, PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin' },
+    });
+    child.unref();
+    fs.closeSync(fd);
+
+    sendTelegramMessage(`🚀 <b>暫代即時觸發</b>\n\n正在背景執行 deputy 腳本...\n📝 日誌：logs/deputy-run-now-${ts}.log`, { parseMode: 'HTML' }).catch(() => {});
+
+    res.json({ ok: true, message: '暫代已觸發，背景執行中', pid: child.pid, logFile: `logs/deputy-run-now-${ts}.log` });
+  } catch (e) {
+    log.error('[OpenClaw] deputy run-now error:', e);
+    res.status(500).json({ ok: false, message: `Failed to trigger deputy run: ${e instanceof Error ? e.message : String(e)}` });
   }
 });
 
@@ -3255,7 +3296,7 @@ app.post('/api/openclaw/indexer/rebuild-md', async (_req, res) => {
       jsonlPath,
     });
   } catch (e) {
-    console.error('[Indexer] rebuild-md error:', e);
+    log.error('[Indexer] rebuild-md error:', e);
     res.status(500).json({ ok: false, message: 'Failed to rebuild task index markdown' });
   }
 });
@@ -3281,7 +3322,7 @@ app.post('/api/emergency/stop-all', (_req, res) => {
       },
     });
   } catch (e) {
-    console.error('[Emergency] stop-all failed:', e);
+    log.error('[Emergency] stop-all failed:', e);
     res.status(500).json({ ok: false, message: 'stop-all failed' });
   }
 });
@@ -3483,7 +3524,7 @@ app.get('/api/openclaw/projects', async (_req, res) => {
     const projects = await fetchOpenClawProjects();
     res.json(projects);
   } catch (e) {
-    console.error('[OpenClaw] GET /api/openclaw/projects error:', e);
+    log.error('[OpenClaw] GET /api/openclaw/projects error:', e);
     res.status(500).json({ message: 'Failed to fetch projects' });
   }
 });
@@ -3501,7 +3542,7 @@ app.post('/api/openclaw/projects', async (req, res) => {
     }
     res.status(201).json(project);
   } catch (e) {
-    console.error('[OpenClaw] POST /api/openclaw/projects error:', e);
+    log.error('[OpenClaw] POST /api/openclaw/projects error:', e);
     res.status(500).json({ message: 'Failed to create project' });
   }
 });
@@ -3518,7 +3559,7 @@ app.patch('/api/openclaw/projects/:id', async (req, res) => {
     }
     res.json(project);
   } catch (e) {
-    console.error('[OpenClaw] PATCH /api/openclaw/projects error:', e);
+    log.error('[OpenClaw] PATCH /api/openclaw/projects error:', e);
     res.status(500).json({ message: 'Failed to update project' });
   }
 });
@@ -3534,7 +3575,7 @@ app.delete('/api/openclaw/projects/:id', async (req, res) => {
     }
     res.status(204).send();
   } catch (e) {
-    console.error('[OpenClaw] DELETE /api/openclaw/projects error:', e);
+    log.error('[OpenClaw] DELETE /api/openclaw/projects error:', e);
     res.status(500).json({ message: 'Failed to delete project' });
   }
 });
@@ -3638,7 +3679,7 @@ function loadAutoExecutorDiskState(): AutoExecutorDiskState {
       updatedAt: typeof j.updatedAt === 'string' && j.updatedAt ? j.updatedAt : fallback.updatedAt,
     };
   } catch (e) {
-    console.warn('[AutoExecutor] Failed to load disk state:', e);
+    log.warn('[AutoExecutor] Failed to load disk state:', e);
     return fallback;
   }
 }
@@ -3662,7 +3703,7 @@ function saveAutoExecutorDiskState(patch: Partial<AutoExecutorDiskState>): void 
   try {
     fs.writeFileSync(p, JSON.stringify(next, null, 2) + '\n', 'utf8');
   } catch (e) {
-    console.warn('[AutoExecutor] Failed to save disk state:', e);
+    log.warn('[AutoExecutor] Failed to save disk state:', e);
   }
 }
 
@@ -3670,7 +3711,7 @@ function saveAutoExecutorDiskState(patch: Partial<AutoExecutorDiskState>): void 
 async function executeNextPendingTask(): Promise<void> {
   try {
     if (!hasSupabase() || !supabase) {
-      console.warn('[AutoExecutor] Supabase 未連線，無法執行任務');
+      log.warn('[AutoExecutor] Supabase 未連線，無法執行任務');
       return;
     }
 
@@ -3682,7 +3723,7 @@ async function executeNextPendingTask(): Promise<void> {
         autoExecutorExecHistoryMs.shift();
       }
       if (autoExecutorExecHistoryMs.length >= autoExecutorState.maxTasksPerMinute) {
-        console.log(
+        log.info(
           `[AutoExecutor] Rate limited: ${autoExecutorExecHistoryMs.length}/${autoExecutorState.maxTasksPerMinute} tasks in last 60s`
         );
         return;
@@ -3699,12 +3740,12 @@ async function executeNextPendingTask(): Promise<void> {
       .sort((a, b) => (a.priority || 3) - (b.priority || 3));
 
     if (pendingTasks.length === 0) {
-      console.log('[AutoExecutor] 沒有待執行的任務');
+      log.info('[AutoExecutor] 沒有待執行的任務');
       return;
     }
 
     const task = pendingTasks[0];
-    console.log(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
+    log.info(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
 
     // === 自動派工閘門 ===
     if (autoExecutorState.dispatchMode) {
@@ -3727,7 +3768,7 @@ async function executeNextPendingTask(): Promise<void> {
           `<b>說明：</b>${(task.description || '無').slice(0, 200)}`,
           { parseMode: 'HTML' }
         );
-        console.log(`[AutoDispatch] 🟣 任務「${task.name}」需老蔡審核，已排入待審佇列`);
+        log.info(`[AutoDispatch] 🟣 任務「${task.name}」需老蔡審核，已排入待審佇列`);
         autoExecutorState.recentExecutions.push({
           taskId: task.id,
           taskName: task.name || '',
@@ -3741,11 +3782,11 @@ async function executeNextPendingTask(): Promise<void> {
       }
 
       if (riskLevel === 'medium') {
-        console.log(`[AutoDispatch] 🔴 中風險任務「${task.name}」，Claude 審慎執行`);
+        log.info(`[AutoDispatch] 🔴 中風險任務「${task.name}」，Claude 審慎執行`);
       } else if (riskLevel === 'low') {
-        console.log(`[AutoDispatch] 🟡 低風險任務「${task.name}」，Claude 審核執行`);
+        log.info(`[AutoDispatch] 🟡 低風險任務「${task.name}」，Claude 審核執行`);
       } else {
-        console.log(`[AutoDispatch] 🟢 安全任務「${task.name}」，自動批准`);
+        log.info(`[AutoDispatch] 🟢 安全任務「${task.name}」，自動批准`);
       }
     }
 
@@ -3772,7 +3813,7 @@ async function executeNextPendingTask(): Promise<void> {
       .single();
 
     if (!run) {
-      console.error('[AutoExecutor] 無法建立 run 記錄');
+      log.error('[AutoExecutor] 無法建立 run 記錄');
       return;
     }
 
@@ -3828,7 +3869,7 @@ async function executeNextPendingTask(): Promise<void> {
       // 發送成功通知
       await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
 
-      console.log(`[AutoExecutor] 任務完成: ${task.name}`);
+      log.info(`[AutoExecutor] 任務完成: ${task.name}`);
     } catch (execError) {
       // 更新 run 為失敗
       await supabase
@@ -3848,7 +3889,7 @@ async function executeNextPendingTask(): Promise<void> {
       });
 
       await notifyTaskFailure(task.name, task.id, runId, String(execError), 0);
-      console.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
+      log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
       autoExecutorExecHistoryMs.push(Date.now());
 
       // 記錄到派工執行歷史
@@ -3868,7 +3909,7 @@ async function executeNextPendingTask(): Promise<void> {
       }
     }
   } catch (e) {
-    console.error('[AutoExecutor] 執行任務時發生錯誤:', e);
+    log.error('[AutoExecutor] 執行任務時發生錯誤:', e);
   }
 }
 
@@ -3893,7 +3934,7 @@ function startAutoExecutor(pollIntervalMs: number = 10000, maxTasksPerMinute: nu
     await executeNextPendingTask();
   }, pollIntervalMs);
 
-  console.log(
+  log.info(
     `[AutoExecutor] 已啟動，輪詢間隔: ${pollIntervalMs}ms, maxTasksPerMinute: ${autoExecutorState.maxTasksPerMinute}`
   );
 }
@@ -3906,7 +3947,7 @@ function stopAutoExecutor(): void {
   }
   autoExecutorState.isRunning = false;
   autoExecutorState.nextPollAt = null;
-  console.log('[AutoExecutor] 已停止');
+  log.info('[AutoExecutor] 已停止');
 }
 
 // AutoExecutor API 路由
@@ -4149,7 +4190,7 @@ app.post('/api/openclaw/maintenance/reconcile', async (_req, res) => {
       details,
     });
   } catch (e) {
-    console.error('[Reconcile] error:', e);
+    log.error('[Reconcile] error:', e);
     res.status(500).json({ message: 'Reconcile failed' });
   }
 });
@@ -4241,7 +4282,7 @@ async function fetchOpenClawCronJobs(): Promise<SystemSchedule[]> {
       };
     });
   } catch (error) {
-    console.error('[SystemSchedules] 讀取 OpenClaw cron jobs 失敗:', error);
+    log.error('[SystemSchedules] 讀取 OpenClaw cron jobs 失敗:', error);
     // 如果無法執行 openclaw 命令，返回空陣列
     return [];
   }
@@ -4256,7 +4297,7 @@ app.get('/api/system-schedules', async (_req, res) => {
       data: schedules,
     });
   } catch (e) {
-    console.error('[OpenClaw] GET /api/system-schedules error:', e);
+    log.error('[OpenClaw] GET /api/system-schedules error:', e);
     res.status(500).json({ ok: false, message: 'Failed to fetch system schedules' });
   }
 });
@@ -4270,7 +4311,7 @@ app.post('/api/telegram/test', async (_req, res) => {
     await sendTelegramMessage('🔔 <b>OpenClaw 測試訊息</b>\n\n若你收到這則，代表後端 Telegram 通知已正常。', { parseMode: 'HTML' });
     res.json({ ok: true, message: '已發送測試訊息至 Telegram，請檢查對話。' });
   } catch (e) {
-    console.error('[Telegram] test send error:', e);
+    log.error('[Telegram] test send error:', e);
     res.status(500).json({ ok: false, message: String(e) });
   }
 });
@@ -4337,7 +4378,7 @@ app.post('/api/telegram/force-test', async (_req, res) => {
       nonce,
     });
   } catch (e) {
-    console.error('[Telegram] force-test send error:', e);
+    log.error('[Telegram] force-test send error:', e);
     return res.status(500).json({ ok: false, message: String(e) });
   }
 });
@@ -4496,26 +4537,26 @@ const server = http.createServer(app);
 wsManager.initialize(server);
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`OpenClaw API http://localhost:${PORT}`);
-  console.log(`  WebSocket ws://localhost:${PORT}/ws`);
-  console.log(`  GET  /api/tasks, /api/tasks/:id, PATCH /api/tasks/:id`);
-  console.log(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
-  console.log(`  GET  /api/alerts, PATCH /api/alerts/:id`);
-  console.log(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
-  console.log(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
+  log.info(`OpenClaw API http://localhost:${PORT}`);
+  log.info(`  WebSocket ws://localhost:${PORT}/ws`);
+  log.info(`  GET  /api/tasks, /api/tasks/:id, PATCH /api/tasks/:id`);
+  log.info(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
+  log.info(`  GET  /api/alerts, PATCH /api/alerts/:id`);
+  log.info(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
+  log.info(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
   if (hasSupabase()) {
-    console.log(`  [Supabase] 已連線 (openclaw_tasks / projects 等將正常運作)`);
+    log.info(`  [Supabase] 已連線 (openclaw_tasks / projects 等將正常運作)`);
   } else {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    console.warn(`  [Supabase] 未連線 → /api/openclaw/* 會回 503。請在專案根目錄 .env 設定 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY 後重啟。`);
-    if (!url) console.warn(`    - SUPABASE_URL 未設定`);
-    if (!key) console.warn(`    - SUPABASE_SERVICE_ROLE_KEY 未設定`);
+    log.warn(`  [Supabase] 未連線 → /api/openclaw/* 會回 503。請在專案根目錄 .env 設定 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY 後重啟。`);
+    if (!url) log.warn(`    - SUPABASE_URL 未設定`);
+    if (!key) log.warn(`    - SUPABASE_SERVICE_ROLE_KEY 未設定`);
   }
   if (isTelegramConfigured()) {
-    console.log(`  [Telegram] 已設定，任務開始/完成/失敗/超時通知將發送至 TG`);
+    log.info(`  [Telegram] 已設定，任務開始/完成/失敗/超時通知將發送至 TG`);
   } else {
-    console.warn(`  [Telegram] 未設定 → 不會發送通知。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。`);
+    log.warn(`  [Telegram] 未設定 → 不會發送通知。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。`);
   }
 
   // AutoExecutor bootstrap/self-heal (disk state is the source of truth).
@@ -4531,12 +4572,12 @@ server.listen(PORT, '127.0.0.1', () => {
       autoExecutorState.digestIntervalMs = disk.digestIntervalMs;
     }
     startDispatchDigestTimer();
-    console.log('[AutoDispatch] 從磁碟狀態恢復派工模式');
+    log.info('[AutoDispatch] 從磁碟狀態恢復派工模式');
   }
   setInterval(() => {
     const st = loadAutoExecutorDiskState();
     if (st.enabled && !autoExecutorState.isRunning) {
-      console.warn('[AutoExecutor] detected stopped while enabled; restarting...');
+      log.warn('[AutoExecutor] detected stopped while enabled; restarting...');
       startAutoExecutor(st.pollIntervalMs, st.maxTasksPerMinute);
     }
   }, 15000);
@@ -4544,3 +4585,6 @@ server.listen(PORT, '127.0.0.1', () => {
   // Control bot via getUpdates polling (no webhook; works on localhost).
   startTelegramStopPoll();
 });
+
+// Export for integration tests (supertest)
+export { app };

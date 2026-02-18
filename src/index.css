@@ -249,3 +249,36 @@
     animation: oc-pulse 2s ease-in-out infinite;
   }
 }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 640px) {
+  /* Touch-friendly buttons: min 44px tap target */
+  .oc-task-cols button,
+  .oc-task-grid button {
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  /* Kanban columns scroll hint */
+  .oc-task-cols {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .oc-task-cols > div {
+    scroll-snap-align: start;
+  }
+
+  /* Content padding tighter on mobile */
+  .oc-grid-all {
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .oc-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
+  .oc-stat-value {
+    font-size: 16px;
+  }
+}

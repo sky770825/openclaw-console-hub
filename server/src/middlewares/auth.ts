@@ -3,7 +3,10 @@
  * 支持三层权限: read / write / admin
  */
 
+import { createLogger } from '../logger.js';
 import { Request, Response, NextFunction } from 'express';
+
+const log = createLogger('auth');
 
 // ========== 环境变量配置 ==========
 
@@ -133,7 +136,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   // 检查是否配置了密钥
   if (!hasConfiguredKeys(requiredLevel)) {
-    console.warn(
+    log.warn(
       `[Auth] No ${requiredLevel} key configured, but ${req.method} ${req.path} requires it`
     );
     return res.status(500).json({
@@ -170,7 +173,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 export function requireAuth(level: Exclude<AccessLevel, 'none'>) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!hasConfiguredKeys(level)) {
-      console.warn(
+      log.warn(
         `[Auth] No ${level} key configured, but ${req.method} ${req.path} requires it`
       );
       return res.status(500).json({

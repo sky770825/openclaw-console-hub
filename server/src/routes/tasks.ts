@@ -8,8 +8,11 @@
  * POST   /api/tasks/:taskId/run - 运行任务
  */
 
+import { createLogger } from '../logger.js';
 import { Router } from 'express';
 import { validateBody } from '../middlewares/validate.js';
+
+const log = createLogger('tasks-route');
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -67,7 +70,7 @@ tasksRouter.delete('/batch', async (req, res) => {
       .delete()
       .in('id', ids);
     if (error) {
-      console.error('[BatchDelete] Supabase error:', error);
+      log.error({ err: error }, '[BatchDelete] Supabase error');
       return res.status(500).json({ message: error.message });
     }
     return res.status(204).send();

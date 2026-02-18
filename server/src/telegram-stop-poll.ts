@@ -6,9 +6,12 @@
  * NOTE:
  * Telegram 的 webhook 無法指向 localhost，因此本專案採用 getUpdates 長輪詢。
  */
+import { createLogger } from './logger.js';
 import { sendTelegramMessageToChat } from './utils/telegram.js';
 import { handleStopCommand } from './emergency-stop.js';
 import { spawn } from 'node:child_process';
+
+const log = createLogger('telegram');
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -181,9 +184,9 @@ async function logBotIdentityOnce(): Promise<void> {
   const result = asObj(mobj.result);
   const username = String(result.username ?? '(unknown)');
   const firstName = String(result.first_name ?? '');
-  console.log(`[TelegramControl] bot=@${username} name=${firstName}`.trim());
+  log.info(`[TelegramControl] bot=@${username} name=${firstName}`.trim());
   if (!getAllowChatId() && !TELEGRAM_ALLOW_ANY_CHAT) {
-    console.warn('[TelegramControl] TELEGRAM_CHAT_ID not set: bot commands are LOCKED. Set TELEGRAM_CHAT_ID (recommended) or TELEGRAM_ALLOW_ANY_CHAT=true (dev only).');
+    log.warn('[TelegramControl] TELEGRAM_CHAT_ID not set: bot commands are LOCKED. Set TELEGRAM_CHAT_ID (recommended) or TELEGRAM_ALLOW_ANY_CHAT=true (dev only).');
   }
 }
 
@@ -197,18 +200,18 @@ async function ensureWebhookDisabled(): Promise<void> {
     const res = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
-      console.error('[TelegramControl] deleteWebhook failed:', res.status, detail.slice(0, 400));
+      log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] deleteWebhook failed');
       return;
     }
     const data: unknown = await res.json().catch(() => null);
     const dobj = asObj(data);
     if (dobj.ok !== true) {
-      console.error('[TelegramControl] deleteWebhook unexpected response:', JSON.stringify(dobj ?? data)?.slice(0, 400));
+      log.error({ response: JSON.stringify(dobj ?? data)?.slice(0, 400) }, '[TelegramControl] deleteWebhook unexpected response');
       return;
     }
-    console.log('[TelegramControl] webhook cleared (polling mode)');
+    log.info('[TelegramControl] webhook cleared (polling mode)');
   } catch (e) {
-    console.error('[TelegramControl] deleteWebhook error:', e);
+    log.error({ err: e }, '[TelegramControl] deleteWebhook error');
   }
 }
 
@@ -682,6 +685,21 @@ async function replyDeputy(chatId: number, arg?: string): Promise<void> {
     return;
   }
 
+  if (arg === 'run') {
+    await sendTelegramMessageToChat(chatId, '🚀 正在觸發暫代即時執行...', { token: TOKEN });
+    const result = await fetchJsonWithTimeout(
+      `${TASKBOARD_BASE_URL}/api/openclaw/deputy/run-now`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+      10000
+    );
+    const robj = asObj(result);
+    const text = robj.ok
+      ? `✅ <b>暫代已觸發</b>\n\nPID: ${robj.pid ?? '?'}\n📝 ${String(robj.logFile ?? '')}`
+      : `⚠️ 觸發失敗：${String(robj.message ?? 'unknown')}`;
+    await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+    return;
+  }
+
   // 顯示狀態 + 開關按鈕
   const status = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/status`, {}, 5000);
   const sobj = asObj(status);
@@ -690,6 +708,7 @@ async function replyDeputy(chatId: number, arg?: string): Promise<void> {
     inline_keyboard: [
       [
         { text: on ? '⏸ 關閉暫代' : '🤖 開啟暫代', callback_data: on ? 'deputy:off' : 'deputy:on' },
+        { text: '🚀 立即執行', callback_data: 'deputy:run' },
       ],
       [{ text: '⬅️ 回主菜單', callback_data: '/start' }],
     ],
@@ -729,7 +748,7 @@ async function poll(): Promise<void> {
       const now = Date.now();
       if (now - lastPollHttpErrorLogAt > 60000) {
         lastPollHttpErrorLogAt = now;
-        console.error('[TelegramControl] getUpdates failed:', res.status, detail.slice(0, 400));
+        log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] getUpdates failed');
       }
       if (res.status === 409) {
         await notifyOnce('conflict', detail);
@@ -797,7 +816,7 @@ async function poll(): Promise<void> {
       if (now - lastUpdateLogAt > 3000) {
         lastUpdateLogAt = now;
         const kind = u.callback_query?.data ? 'callback' : 'message';
-        console.log(`[TelegramControl] recv update kind=${kind} chatId=${chatId} cmd=${text.split(/\s+/)[0] ?? ''}`);
+        log.info(`[TelegramControl] recv update kind=${kind} chatId=${chatId} cmd=${text.split(/\s+/)[0] ?? ''}`);
       }
 
       if (text === 'deputy:on') {
@@ -806,6 +825,10 @@ async function poll(): Promise<void> {
       }
       if (text === 'deputy:off') {
         await replyDeputy(chatId, 'off');
+        continue;
+      }
+      if (text === 'deputy:run') {
+        await replyDeputy(chatId, 'run');
         continue;
       }
       if (text === 'run:recover:check') {
@@ -949,7 +972,7 @@ async function poll(): Promise<void> {
         const result = await handleStopCommand(args);
         const reply = result.success ? `🛑 ${result.message}` : `⚠️ ${result.message}`;
         await sendTelegramMessageToChat(chatId, reply, { token: TOKEN, parseMode: 'HTML' });
-        console.log(`[TelegramControl] 已處理 /stop，回覆: ${result.message}`);
+        log.info(`[TelegramControl] 已處理 /stop，回覆: ${result.message}`);
         continue;
       }
 
@@ -1109,7 +1132,7 @@ async function poll(): Promise<void> {
   } catch (e) {
     consecutivePollFailures = Math.min(consecutivePollFailures + 1, 1000);
     nextPollDelayMs = Math.min(15000, POLL_INTERVAL_MS + consecutivePollFailures * 500);
-    console.error('[TelegramControl] poll error:', e);
+    log.error({ err: e }, '[TelegramControl] poll error');
   }
 }
 
@@ -1127,12 +1150,12 @@ export function startTelegramStopPoll(): void {
 
   loadTelegramState();
   const tokenBotId = TOKEN.split(':')[0] || '(unknown)';
-  console.log(`[TelegramControl] token bot_id=${tokenBotId}`);
-  console.log('[TelegramControl] 啟動中（getUpdates 輪詢）...');
+  log.info(`[TelegramControl] token bot_id=${tokenBotId}`);
+  log.info('[TelegramControl] 啟動中（getUpdates 輪詢）...');
   ensureWebhookDisabled()
     .finally(() => logBotIdentityOnce())
     .finally(() => {
-      console.log('[TelegramControl] 已啟動（getUpdates 輪詢），支援 /start /status /tasks /health /dispatch /report /reconcile /wake /cmd /recover /codex-triage /stop ...');
+      log.info('[TelegramControl] 已啟動（getUpdates 輪詢），支援 /start /status /tasks /health /dispatch /report /reconcile /wake /cmd /recover /codex-triage /stop ...');
       loop();
     });
 }

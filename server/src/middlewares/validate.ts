@@ -3,8 +3,11 @@
  * 使用 Zod schemas 验证请求参数、查询字符串和 body
  */
 
+import { createLogger } from '../logger.js';
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError } from 'zod';
+
+const log = createLogger('validate');
 
 /**
  * 验证请求的中间件工厂函数
@@ -51,7 +54,7 @@ export function validate<T extends z.ZodTypeAny>(
       }
 
       // 其他未知错误
-      console.error('Validation middleware error:', error);
+      log.error({ err: error }, 'Validation middleware error');
       return res.status(500).json({
         ok: false,
         error: 'Internal server error',
