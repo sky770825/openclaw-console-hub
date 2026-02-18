@@ -823,41 +823,6 @@ app.post('/api/tasks', validateBody(createTaskSchema), async (req, res) => {
   res.status(201).json(newTask);
 });
 
-// 批次刪除（須在 /:id 之前註冊）
-app.delete('/api/tasks/batch', async (req, res) => {
-  const body = req.body as { ids?: string[] };
-  const ids = Array.isArray(body?.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : [];
-  if (ids.length === 0) {
-    return res.status(400).json({ message: 'ids must be a non-empty array' });
-  }
-  if (hasSupabase() && supabase) {
-    const { error } = await supabase.from('openclaw_tasks').delete().in('id', ids);
-    if (error) return res.status(500).json({ message: 'Failed to delete tasks', error: error.message });
-    return res.status(204).send();
-  }
-  for (const id of ids) {
-    const idx = tasks.findIndex((x) => x.id === id);
-    if (idx !== -1) tasks.splice(idx, 1);
-  }
-  res.status(204).send();
-});
-
-app.delete('/api/tasks/:id', async (req, res) => {
-  // ID 参数已在路由中提供,无需额外验证
-  if (hasSupabase() && supabase) {
-    const ocTasks = await fetchOpenClawTasks();
-    const oc = ocTasks.find((x) => x.id === req.params.id);
-    if (!oc) return res.status(404).json({ message: 'Task not found' });
-    const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
-    if (error) return res.status(500).json({ message: 'Failed to delete task' });
-    return res.status(204).send();
-  }
-  const idx = tasks.findIndex((x) => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ message: 'Task not found' });
-  tasks.splice(idx, 1);
-  res.status(204).send();
-});
-
 // ---- Runs ----
 app.get('/api/runs', async (req, res) => {
   if (hasSupabase()) {

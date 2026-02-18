@@ -85,7 +85,22 @@ tasksRouter.delete('/batch', async (req, res) => {
   return res.status(204).send();
 });
 
-// Note: POST, PATCH, DELETE 等其他路由将在后续逐步迁移
-// 目前这些路由仍在 index.ts 中,避免一次性改动过大
+// DELETE /api/tasks/:id - 刪除單個任務
+tasksRouter.delete('/:id', async (req, res) => {
+  if (hasSupabase() && supabase) {
+    const ocTasks = await fetchOpenClawTasks();
+    const oc = ocTasks.find((x) => x.id === req.params.id);
+    if (!oc) return res.status(404).json({ message: 'Task not found' });
+    const { error } = await supabase.from('openclaw_tasks').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ message: 'Failed to delete task' });
+    return res.status(204).send();
+  }
+  const idx = tasks.findIndex((x) => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ message: 'Task not found' });
+  tasks.splice(idx, 1);
+  res.status(204).send();
+});
+
+// Note: POST, PATCH, /progress 等路由仍在 index.ts 中（依賴 domain tagging、gate validation 等）
 
 export default tasksRouter;
