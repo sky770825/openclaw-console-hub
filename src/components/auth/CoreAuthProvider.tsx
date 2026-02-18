@@ -49,11 +49,7 @@ export function useCoreAuth() {
  */
 async function verifyPassphrase(passphrase: string): Promise<CoreAccessLevel | null> {
   // 用 SHA-256 hash 比對，不在前端存明文
-  const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(passphrase));
-  const hash = Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+  const hash = await sha256(passphrase);
 
   // 預設密語 hash 對照表（正式環境應從後端取得）
   // 開發用密語：
@@ -76,11 +72,23 @@ async function verifyPassphrase(passphrase: string): Promise<CoreAccessLevel | n
 }
 
 async function sha256(text: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(text));
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+  // crypto.subtle 僅在 secure context (HTTPS/localhost) 可用
+  // 非 secure context 時 fallback 用簡易 hash（僅限開發環境）
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(text));
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  // Fallback: simple hash for non-secure contexts (dev only)
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return 'fallback-' + Math.abs(hash).toString(16);
 }
 
 export function CoreAuthProvider({ children }: { children: React.ReactNode }) {

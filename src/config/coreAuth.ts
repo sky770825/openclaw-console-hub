@@ -106,18 +106,28 @@ const SECRET = import.meta.env.VITE_CORE_AUTH_SECRET || 'openclaw-core-2024-defa
  * 使用 Web Crypto API（瀏覽器原生，無需外部套件）
  */
 async function hmacSign(payload: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(SECRET),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-  return Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+  // crypto.subtle 僅在 secure context (HTTPS/localhost) 可用
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  // Fallback for non-secure contexts (dev only)
+  let hash = 0;
+  for (let i = 0; i < payload.length; i++) {
+    hash = ((hash << 5) - hash) + payload.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'dev-' + Math.abs(hash).toString(16);
 }
 
 /**

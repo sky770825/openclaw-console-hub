@@ -103,7 +103,7 @@ export async function fetchOpenClaw<T>(path: string, signal?: AbortSignal): Prom
 
 export async function persistTask(task: Partial<OpenClawTask> & { id: string }): Promise<void> {
   try {
-    const r = await fetch(apiUrl("/api/openclaw/tasks"), {
+    const r = await fetch(apiUrl("/api/openclaw/tasks?allowStub=1"), {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({ ...task, fromR: task.fromR }),
@@ -244,7 +244,7 @@ export async function createTask(
   payload: Partial<OpenClawTask> & { name?: string; tags?: string[]; status?: string; fromR?: string }
 ): Promise<OpenClawApiResult<Partial<OpenClawTask> & { id: string }>> {
   try {
-    const r = await fetch(apiUrl("/api/openclaw/tasks"), {
+    const r = await fetch(apiUrl("/api/openclaw/tasks?allowStub=1"), {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify(payload),
