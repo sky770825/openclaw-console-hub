@@ -82,7 +82,11 @@ const App = () => (
                 <Route path="/center/defense" element={<DefenseCenter />} />
                 <Route path="/center/defense/:module" element={<DefenseCenter />} />
                 <Route path="/center/infra" element={<HubCenters />} />
+                <Route path="/center/infra/:module" element={<HubCenters />} />
                 <Route path="/center/commerce" element={<HubCenters />} />
+                <Route path="/center/commerce/:module" element={<HubCenters />} />
+                <Route path="/center/tech" element={<HubCenters />} />
+                <Route path="/center/tech/:module" element={<HubCenters />} />
                 {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
                 <Route path="/community/*" element={<CommunityFrame />} />
                 <Route path="/settings" element={<Settings />} />

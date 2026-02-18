@@ -2,7 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AppSidebar, SidebarProvider } from './AppSidebar';
 import { Topbar } from './Topbar';
 import { cn } from '@/lib/utils';
-import { CoreGatekeeper, CoreAuthBar } from '@/components/auth';
+import { CoreGatekeeper, CoreAuthBar, DataExportGuard } from '@/components/auth';
 
 export function AppLayout() {
   const location = useLocation();
@@ -37,7 +37,9 @@ export function AppLayout() {
             <CoreAuthBar />
             {!isOpenClawPage && <Topbar />}
             <main className={cn('flex-1 overflow-auto', !isOpenClawPage && 'oc-main', isOpenClawPage && 'overflow-x-hidden')}>
-              <Outlet />
+              <DataExportGuard dataType="all" showWarning={false}>
+                <Outlet />
+              </DataExportGuard>
             </main>
           </div>
         </div>

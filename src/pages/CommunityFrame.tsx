@@ -171,38 +171,21 @@ export default function CommunityFrame() {
 
   const currentLayer = useMemo(() => resolveLayer(subPath || ''), [subPath]);
 
-  // 總覽模式 — 無 iframe
-  if (!currentLayer) {
-    return <LayerOverview />;
-  }
-
-  // 該層未啟用
-  if (!currentLayer.enabled) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <Lock className="h-10 w-10 text-muted-foreground mx-auto" />
-          <p className="text-lg font-medium">{currentLayer.icon} {currentLayer.label}</p>
-          <p className="text-sm text-muted-foreground">此空間尚未開放，需經審核後啟用</p>
-        </div>
-      </div>
-    );
-  }
-
-  const sandbox = getSandboxForLevel(currentLayer.level);
+  const sandbox = currentLayer ? getSandboxForLevel(currentLayer.level) : '';
   const communityPath = subPath || '';
-  const iframeSrc = `${GATEWAY_CONFIG.communityOrigin}/${communityPath}${location.search}`;
+  const iframeSrc = currentLayer
+    ? `${GATEWAY_CONFIG.communityOrigin}/${communityPath}${location.search}`
+    : '';
 
-  // postMessage 安全通道 — 按層級過濾
+  // postMessage 安全通道 — 按層級過濾（hooks must be before any early return）
   useEffect(() => {
+    if (!currentLayer) return;
     function handleMessage(event: MessageEvent) {
-      // 防火牆第一道：驗證來源
       if (event.origin !== GATEWAY_CONFIG.communityOrigin) return;
 
       const { type, payload } = event.data || {};
       if (!type) return;
 
-      // 防火牆第二道：按層級白名單過濾
       if (!isEventAllowed(currentLayer.id, type)) {
         console.warn(`[Gateway L${currentLayer.level}] 拒絕事件:`, type);
         return;
@@ -222,11 +205,30 @@ export default function CommunityFrame() {
 
   // 心跳偵測
   useEffect(() => {
+    if (!currentLayer) return;
     heartbeatTimer.current = setInterval(() => {
       setConnected(false);
     }, GATEWAY_CONFIG.heartbeatTimeout);
     return () => clearInterval(heartbeatTimer.current);
-  }, []);
+  }, [currentLayer]);
+
+  // 總覽模式 — 無 iframe
+  if (!currentLayer) {
+    return <LayerOverview />;
+  }
+
+  // 該層未啟用
+  if (!currentLayer.enabled) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Lock className="h-10 w-10 text-muted-foreground mx-auto" />
+          <p className="text-lg font-medium">{currentLayer.icon} {currentLayer.label}</p>
+          <p className="text-sm text-muted-foreground">此空間尚未開放，需經審核後啟用</p>
+        </div>
+      </div>
+    );
+  }
 
   const reload = () => {
     setLoadError(false);
