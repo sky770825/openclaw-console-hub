@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#06060a"/>
+  
+  <!-- Gear shape -->
+  <circle cx="256" cy="192" r="112.64" fill="none" stroke="#7c3aed" stroke-width="8.192"/>
+  <circle cx="256" cy="192" r="34.56" fill="#7c3aed"/>
+  <!-- Claw marks -->
+  <line x1="194.56" y1="158.72" x2="225.28" y2="225.28" stroke="#7c3aed" stroke-width="6.144" stroke-linecap="round"/>
+  <line x1="256" y1="148.48" x2="256" y2="225.28" stroke="#7c3aed" stroke-width="6.144" stroke-linecap="round"/>
+  <line x1="317.44" y1="158.72" x2="286.72" y2="225.28" stroke="#7c3aed" stroke-width="6.144" stroke-linecap="round"/>
+  <!-- Text -->
+  <text x="256" y="320" font-family="system-ui,-apple-system,sans-serif" font-size="46.08" font-weight="700" fill="#e2e8f0" text-anchor="middle">OPENCLAW</text>
+  <text x="256" y="363.52" font-family="system-ui,-apple-system,sans-serif" font-size="25.6" fill="#7c3aed" text-anchor="middle">指揮中心</text>
+</svg>

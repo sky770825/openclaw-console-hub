@@ -3387,6 +3387,27 @@ app.post('/api/telegram/force-test', async (_req, res) => {
   }
 });
 
+// ─── Activity Log ───
+app.get('/api/openclaw/activity-log', (req, res) => {
+  const lines = Math.min(Number(req.query.lines) || 20, 100);
+  const logPath = path.join(
+    process.env.HOME || '/Users/caijunchang',
+    'Desktop/小蔡/🧠核心文件/shared-activity.log',
+  );
+  try {
+    if (!fs.existsSync(logPath)) {
+      return res.json({ ok: true, lines: [], total: 0 });
+    }
+    const content = fs.readFileSync(logPath, 'utf-8');
+    const allLines = content.split('\n').filter((l) => l.startsWith('['));
+    const result = allLines.slice(-lines);
+    res.json({ ok: true, lines: result, total: allLines.length });
+  } catch (e) {
+    log.error('[ActivityLog] read error:', e);
+    res.status(500).json({ ok: false, message: String(e) });
+  }
+});
+
 // Health
 // Back-compat: some scripts (and older docs) probe /health.
 app.get('/health', async (_req, res) => {

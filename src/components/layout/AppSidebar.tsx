@@ -24,6 +24,7 @@ import {
   Castle,
   HardHat,
   Briefcase,
+  Terminal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -77,6 +78,7 @@ const communityItems = [
 
 // ─── 系統 ───
 const systemItems = [
+  { path: '/control', label: '控制台', icon: Terminal },
   { path: '/logs', label: '日誌', icon: FileText },
   { path: '/alerts', label: '警報', icon: Bell },
   { path: '/settings', label: '設定', icon: Settings },

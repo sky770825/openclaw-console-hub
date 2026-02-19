@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 // GitHub Pages 部署時請設 VITE_BASE_PATH=/你的repo名稱/（或留空則用 /）
@@ -40,7 +41,40 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.ico", "icons/*.svg"],
+      manifest: {
+        name: "Openclaw 指揮中心",
+        short_name: "Openclaw",
+        description: "Openclaw 任務自動化管理面板",
+        theme_color: "#06060a",
+        background_color: "#06060a",
+        display: "standalone",
+        orientation: "portrait-primary",
+        start_url: "/",
+        icons: [
+          { src: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+          { src: "/icons/icon-512x512.svg", sizes: "512x512", type: "image/svg+xml" },
+          { src: "/icons/icon-maskable-192x192.svg", sizes: "192x192", type: "image/svg+xml", purpose: "maskable" },
+          { src: "/icons/icon-maskable-512x512.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https?:\/\/localhost:\d+\/api\//,
+            handler: "NetworkFirst",
+            options: { cacheName: "api-cache", expiration: { maxEntries: 50, maxAgeSeconds: 300 } },
+          },
+        ],
+        navigateFallback: "index.html",
+      },
+    }),
+  ].filter(Boolean),
   build: {
     rollupOptions: {
       output: {

@@ -27,6 +27,7 @@ const CommunityFrame = lazy(() => import("./pages/CommunityFrame"));
 const HubCenters = lazy(() => import("./pages/HubCenters"));
 const DefenseCenter = lazy(() => import("./pages/DefenseCenter"));
 const ProtectionCenter = lazy(() => import("./pages/ProtectionCenter"));
+const ControlCenter = lazy(() => import("./pages/ControlCenter"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +89,7 @@ const App = () => (
                   <Route path="/center/:centerId/:module" element={<HubCenters />} />
                   {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
                   <Route path="/community/*" element={<CommunityFrame />} />
+                  <Route path="/control" element={<ControlCenter />} />
                   <Route path="/settings" element={<Settings />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
