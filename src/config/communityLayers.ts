@@ -98,7 +98,7 @@ export const COMMUNITY_LAYERS: CommunityLayer[] = [
       'community:resource-request',
       'community:bridge-sync',
     ],
-    enabled: false, // 預搭，尚未開放
+    enabled: true, // v0.7 啟用：需滿足 trustPromotion.ts 升級條件
   },
 ];
 

@@ -2728,16 +2728,28 @@ app.post('/api/openclaw/deputy/toggle', async (req, res) => {
       ...state,
       enabled: newEnabled,
       enabledAt: newEnabled ? new Date().toISOString() : (state.enabledAt || null),
+      disabledAt: !newEnabled ? new Date().toISOString() : (state.disabledAt || null),
       enabledBy: body.source || 'api',
       maxTasksPerRun: body.maxTasksPerRun || state.maxTasksPerRun || 3,
       allowedTags: body.allowedTags || state.allowedTags || ['auto-ok'],
       excludeTags: body.excludeTags || state.excludeTags || [],
+      // 委派模式：暫代期間可派工給小蔡
+      delegateToXiaoji: body.delegateToXiaoji ?? state.delegateToXiaoji ?? true,
     };
     writeDeputyState(newState);
 
-    const msg = newEnabled
-      ? '🤖 <b>暫代模式已開啟</b>\n\nClaude Code 將在每次巡檢時自動執行可處理的任務。\n規則：最多每輪 ' + (newState.maxTasksPerRun) + ' 個任務、只處理 auto-ok 標記的任務。\n\n關閉：/deputy off'
-      : '⏸ <b>暫代模式已關閉</b>\n\nClaude Code 不再自動執行任務，僅巡檢報告。';
+    let msg: string;
+    if (newEnabled) {
+      msg = '🤖 <b>暫代模式已開啟</b>\n\n' +
+        'Claude Code 將在每次巡檢時自動執行可處理的任務。\n' +
+        `規則：最多每輪 ${newState.maxTasksPerRun} 個任務、只處理 auto-ok 標記的任務。\n\n` +
+        (newState.delegateToXiaoji ? '📋 小蔡：暫代期間你會收到任務指令，請依照指示執行。\n\n' : '') +
+        '關閉：/deputy off';
+    } else if (body.source === 'boss-return') {
+      msg = '👑 <b>老蔡已接手</b>\n\n暫代模式已自動關閉。\n小蔡：老蔡回來了，指揮權交還。';
+    } else {
+      msg = '⏸ <b>暫代模式已關閉</b>\n\nClaude Code 不再自動執行任務，僅巡檢報告。';
+    }
     sendTelegramMessage(msg, { parseMode: 'HTML' }).catch(() => {});
 
     res.json({ ok: true, enabled: newEnabled, message: newEnabled ? '暫代模式已開啟' : '暫代模式已關閉' });

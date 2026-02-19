@@ -30,6 +30,18 @@ import {
   notifyTaskSuccess,
   notifyTaskFailure,
 } from '../utils/telegram.js';
+import {
+  circuitBreakerCheck,
+  circuitBreakerSuccess,
+  circuitBreakerFailure,
+  circuitBreakerReset,
+  configureCircuitBreaker,
+  getGovernanceStatus,
+  attemptAutoRollback,
+  validateAcceptanceCriteria,
+  recordAgentSuccess,
+  recordAgentFailure,
+} from '../governanceEngine.js';
 
 const log = createLogger('auto-executor');
 
@@ -234,6 +246,13 @@ async function executeNextPendingTask(): Promise<void> {
       return;
     }
 
+    // Circuit Breaker gate
+    const cbCheck = circuitBreakerCheck();
+    if (!cbCheck.allowed) {
+      log.info(`[AutoExecutor] 斷路器阻擋: ${cbCheck.reason}`);
+      return;
+    }
+
     // Rate-limit
     {
       const now = Date.now();
@@ -345,7 +364,30 @@ async function executeNextPendingTask(): Promise<void> {
         })
         .eq('id', runId);
 
+      // Acceptance validation
+      const acceptance = await validateAcceptanceCriteria(task, result.output || '');
+      if (acceptance.validated && !acceptance.passed) {
+        // 驗收未通過 → 不標記完成，改回 queued
+        await supabase
+          .from('openclaw_runs')
+          .update({
+            status: 'failed',
+            ended_at: new Date().toISOString(),
+            error: { message: '驗收條件未通過', code: 'ACCEPTANCE_FAILED' },
+          })
+          .eq('id', runId);
+        await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
+        recordAgentFailure(agentType || 'auto', false);
+        await circuitBreakerFailure();
+        log.warn(`[AutoExecutor] 任務驗收未通過: ${task.name}`);
+        return;
+      }
+
       await upsertOpenClawTask({ id: task.id, status: 'done', progress: 100 });
+
+      // Governance: success tracking
+      circuitBreakerSuccess();
+      recordAgentSuccess(agentType || 'auto');
 
       autoExecutorExecHistoryMs.push(Date.now());
       autoExecutorState.totalExecutedToday++;
@@ -370,18 +412,33 @@ async function executeNextPendingTask(): Promise<void> {
       await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
       log.info(`[AutoExecutor] 任務完成: ${task.name}`);
     } catch (execError) {
+      const errorMsg = String(execError);
+
+      // Governance: attempt auto-rollback
+      const rollback = await attemptAutoRollback(task, errorMsg);
+
       await supabase
         .from('openclaw_runs')
         .update({
           status: 'failed',
           ended_at: new Date().toISOString(),
-          error: { message: String(execError), code: 'EXECUTION_FAILED' },
+          error: {
+            message: errorMsg,
+            code: 'EXECUTION_FAILED',
+            rollbackAttempted: rollback.attempted,
+            rollbackSuccess: rollback.success,
+          },
         })
         .eq('id', runId);
 
       await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
-      await notifyTaskFailure(task.name, task.id, runId, String(execError), 0);
+      await notifyTaskFailure(task.name, task.id, runId, errorMsg, 0);
       log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
+
+      // Governance: failure tracking
+      recordAgentFailure(agentType || 'auto', rollback.attempted);
+      await circuitBreakerFailure();
+
       autoExecutorExecHistoryMs.push(Date.now());
 
       if (autoExecutorState.dispatchMode) {
@@ -392,7 +449,7 @@ async function executeNextPendingTask(): Promise<void> {
           status: 'failed',
           executedAt: new Date().toISOString(),
           agentType: agentType || 'auto',
-          summary: String(execError).slice(0, 300),
+          summary: errorMsg.slice(0, 300),
         });
         if (autoExecutorState.recentExecutions.length > 100) {
           autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-100);
@@ -561,6 +618,27 @@ autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
     { parseMode: 'HTML' }
   );
   res.json({ ok: true, taskId, decision: 'rejected' });
+});
+
+// ─── Governance API ───
+
+autoExecutorRouter.get('/governance/status', (_req, res) => {
+  res.json({ ok: true, ...getGovernanceStatus() });
+});
+
+autoExecutorRouter.post('/governance/circuit-breaker/reset', (_req, res) => {
+  circuitBreakerReset();
+  res.json({ ok: true, message: '斷路器已重置', ...getGovernanceStatus() });
+});
+
+autoExecutorRouter.post('/governance/circuit-breaker/config', (req, res) => {
+  const { failureThreshold, cooldownMs, halfOpenAllowance } = req.body || {};
+  const patch: Record<string, number> = {};
+  if (typeof failureThreshold === 'number' && failureThreshold >= 1) patch.failureThreshold = failureThreshold;
+  if (typeof cooldownMs === 'number' && cooldownMs >= 10000) patch.cooldownMs = cooldownMs;
+  if (typeof halfOpenAllowance === 'number' && halfOpenAllowance >= 1) patch.halfOpenAllowance = halfOpenAllowance;
+  configureCircuitBreaker(patch);
+  res.json({ ok: true, message: '斷路器配置已更新', ...getGovernanceStatus() });
 });
 
 // ─── Exports for server bootstrap ───

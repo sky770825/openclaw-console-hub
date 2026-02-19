@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from "react";
-import { C, Card, Btn, Badge, Sec } from "../uiPrimitives";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { C, Card, Btn, Badge, Sec, Pulse, Ring } from "../uiPrimitives";
 import { apiUrl, apiHeaders } from "@/services/openclawBoardApi";
 import { useConfirmDialog } from "../ConfirmDialog";
 
@@ -32,6 +32,13 @@ const COMMANDS = [
       { id: "reconcile", name: "修復孤立任務", desc: "修正卡住或孤立的任務狀態", icon: "🔧", method: "POST", path: "/api/openclaw/maintenance/reconcile", confirm: true },
       { id: "rebuild-index", name: "重建索引", desc: "重建 Markdown 文件索引", icon: "📂", method: "POST", path: "/api/openclaw/indexer/rebuild-md", confirm: true },
       { id: "restart-gateway", name: "重啟 Gateway", desc: "重新啟動 API Gateway", icon: "🔄", method: "POST", path: "/api/openclaw/restart-gateway", confirm: true },
+    ],
+  },
+  {
+    cat: "governance", label: "治理", icon: "🏛️",
+    cmds: [
+      { id: "gov-status", name: "治理狀態", desc: "查看斷路器、信任分、驗收統計", icon: "📊", method: "GET", path: "/api/openclaw/governance/status" },
+      { id: "cb-reset", name: "重置斷路器", desc: "手動重置斷路器為正常狀態", icon: "🔄", method: "POST", path: "/api/openclaw/governance/circuit-breaker/reset", confirm: true },
     ],
   },
   {
@@ -207,6 +214,137 @@ function InsightForm() {
   );
 }
 
+// ── 治理儀表板 ──
+
+const CB_STATE_LABEL = {
+  closed: { text: "正常", c: C.green, bg: C.greenG },
+  open: { text: "已斷路", c: C.red, bg: C.redG },
+  "half-open": { text: "測試中", c: C.amber, bg: C.amberG },
+};
+
+function GovernanceDashboard({ onExec, confirmDialog }) {
+  const [gov, setGov] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(apiUrl("/api/openclaw/governance/status"), { headers: apiHeaders(false) });
+      setGov(await r.json());
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const resetCB = async () => {
+    const ok = await confirmDialog({
+      title: "重置斷路器",
+      desc: "將斷路器重置為正常狀態，允許執行器繼續執行任務。",
+      okText: "重置",
+      variant: "warning",
+    });
+    if (!ok) return;
+    await fetch(apiUrl("/api/openclaw/governance/circuit-breaker/reset"), {
+      method: "POST", headers: apiHeaders(true),
+    });
+    load();
+  };
+
+  if (!gov || !gov.ok) {
+    return (
+      <Card style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 11, color: C.t3 }}>{loading ? "載入中..." : "無法載入治理狀態"}</span>
+        <Btn v="gh" sm onClick={load}>重新載入</Btn>
+      </Card>
+    );
+  }
+
+  const cb = gov.circuitBreaker;
+  const cbLabel = CB_STATE_LABEL[cb.state] || CB_STATE_LABEL.closed;
+  const profiles = gov.trustProfiles || [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Circuit Breaker */}
+      <Card style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 16 }}>⚡</span>
+          <span style={{ fontSize: 13, fontWeight: 650, color: C.t1 }}>斷路器</span>
+          <Badge c={cbLabel.c} bg={cbLabel.bg}>{cbLabel.text}</Badge>
+          {cb.state !== "closed" && (
+            <span style={{ fontSize: 10, color: C.t3, marginLeft: "auto" }}>
+              連續失敗 {cb.consecutiveFailures} 次
+            </span>
+          )}
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+          gap: 8,
+        }}>
+          <div style={{ fontSize: 11, color: C.t3 }}>
+            狀態：<span style={{ color: cbLabel.c, fontWeight: 600 }}>{cbLabel.text}</span>
+          </div>
+          <div style={{ fontSize: 11, color: C.t3 }}>
+            累計觸發：<span style={{ color: C.t1, fontWeight: 600 }}>{cb.totalTrips} 次</span>
+          </div>
+          {cb.cooldownEndsAt && (
+            <div style={{ fontSize: 11, color: C.t3 }}>
+              冷卻至：<span style={{ color: C.amber, fontWeight: 600 }}>
+                {new Date(cb.cooldownEndsAt).toLocaleTimeString("zh-TW")}
+              </span>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {cb.state !== "closed" && <Btn v="pri" sm onClick={resetCB}>重置斷路器</Btn>}
+          <Btn v="gh" sm onClick={load}>{loading ? "..." : "刷新"}</Btn>
+        </div>
+      </Card>
+
+      {/* Agent Trust Profiles */}
+      {profiles.length > 0 && (
+        <Card style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>🤖</span>
+            <span style={{ fontSize: 13, fontWeight: 650, color: C.t1 }}>Agent 信任分</span>
+          </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            gap: 8,
+          }}>
+            {profiles.map((p) => {
+              const scoreColor = p.trustScore >= 70 ? C.green : p.trustScore >= 40 ? C.amber : C.red;
+              return (
+                <div key={p.agentType} style={{
+                  padding: "8px 10px", borderRadius: 8,
+                  background: "rgba(255,255,255,0.02)",
+                  border: `1px solid ${C.border}`,
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <Ring pct={p.trustScore} size={32} stroke={3} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 650, color: C.t1 }}>{p.agentType}</div>
+                    <div style={{ fontSize: 10, color: C.t3 }}>
+                      {p.successCount}/{p.totalExecutions} 成功
+                      {p.consecutiveSuccesses > 0 && ` (連續 ${p.consecutiveSuccesses})`}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: scoreColor }}>
+                    {p.trustScore}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export function renderCmdTab(data, actions) {
   return <CmdTabInner cleanOrphans={actions?.cleanOrphans} />;
 }
@@ -278,6 +416,9 @@ function CmdTabInner({ cleanOrphans }) {
           </div>
         </Sec>
       ))}
+      <Sec icon="🏛️" title="治理引擎" count={null}>
+        <GovernanceDashboard onExec={exec} confirmDialog={confirmDialog} />
+      </Sec>
       <Sec icon="💡" title="構想記錄" count={null}>
         <InsightForm />
       </Sec>

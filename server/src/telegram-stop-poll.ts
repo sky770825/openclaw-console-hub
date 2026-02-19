@@ -663,6 +663,115 @@ async function replyCmdMenu(chatId: number): Promise<void> {
   });
 }
 
+// ── 小蔡任務派發 ──
+
+async function sendXiaojiTaskAssignment(
+  chatId: number,
+  taskName: string,
+  taskDesc: string,
+  taskId: string,
+  priority: string
+): Promise<void> {
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: '✅ 接收任務', callback_data: `xiaoji:accept:${taskId}` },
+        { text: '❌ 無法執行', callback_data: `xiaoji:reject:${taskId}` },
+      ],
+      [
+        { text: '📋 回報完成', callback_data: `xiaoji:done:${taskId}` },
+      ],
+    ],
+  };
+  await sendTelegramMessageToChat(chatId,
+    `📋 <b>【小蔡任務指派】</b>\n\n` +
+    `<b>任務：</b>${taskName}\n` +
+    `<b>優先級：</b>${priority}\n` +
+    `<b>ID：</b><code>${taskId}</code>\n\n` +
+    `<b>說明：</b>\n${(taskDesc || '無').slice(0, 500)}\n\n` +
+    `<i>暫代模式中，Claude 已分配此任務。\n請接收後執行，完成後點「回報完成」。</i>`,
+    { token: TOKEN, parseMode: 'HTML', replyMarkup: keyboard }
+  );
+}
+
+async function handleXiaojiCallback(chatId: number, action: string, taskId: string): Promise<void> {
+  if (action === 'accept') {
+    await fetchJsonWithTimeout(
+      `${TASKBOARD_BASE_URL}/api/openclaw/tasks/${taskId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'in_progress', assignee: 'xiaoji' }),
+      },
+      5000
+    );
+    await sendTelegramMessageToChat(chatId,
+      `✅ <b>小蔡已接收任務</b>\n\n任務 <code>${taskId}</code> 已開始執行。`,
+      { token: TOKEN, parseMode: 'HTML' }
+    );
+  } else if (action === 'reject') {
+    await sendTelegramMessageToChat(chatId,
+      `⚠️ <b>小蔡無法執行</b>\n\n任務 <code>${taskId}</code> 保持佇列中，等老蔡回來處理。`,
+      { token: TOKEN, parseMode: 'HTML' }
+    );
+  } else if (action === 'done') {
+    await fetchJsonWithTimeout(
+      `${TASKBOARD_BASE_URL}/api/openclaw/tasks/${taskId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'done', progress: 100 }),
+      },
+      5000
+    );
+    await sendTelegramMessageToChat(chatId,
+      `🎉 <b>任務完成</b>\n\n小蔡已完成任務 <code>${taskId}</code>`,
+      { token: TOKEN, parseMode: 'HTML' }
+    );
+  }
+}
+
+async function replyDelegate(chatId: number): Promise<void> {
+  // 查詢目前暫代狀態 + 待執行任務
+  const deputyState = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/status`, {}, 5000);
+  const dobj = asObj(deputyState);
+  const on = dobj.enabled === true;
+
+  if (!on) {
+    await sendTelegramMessageToChat(chatId,
+      `⚠️ 暫代模式未開啟，無法派發任務。\n\n開啟：/deputy on`,
+      { token: TOKEN, parseMode: 'HTML' }
+    );
+    return;
+  }
+
+  // 取待執行任務
+  const tasks = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/list-tasks`, {}, 5000);
+  if (!tasks || !Array.isArray(tasks)) {
+    await sendTelegramMessageToChat(chatId, '⚠️ 無法取得任務列表', { token: TOKEN });
+    return;
+  }
+  const queued = (tasks as Array<Record<string, unknown>>).filter(
+    (t) => t.status === 'queued' || t.status === 'ready'
+  ).slice(0, 5);
+
+  if (queued.length === 0) {
+    await sendTelegramMessageToChat(chatId, '✅ 目前沒有待執行的任務', { token: TOKEN });
+    return;
+  }
+
+  // 逐一派發給群組（小蔡會看到）
+  for (const t of queued) {
+    await sendXiaojiTaskAssignment(
+      chatId,
+      String(t.name || '未命名'),
+      String(t.description || ''),
+      String(t.id || ''),
+      `P${t.priority || 3}`
+    );
+  }
+}
+
 async function replyDeputy(chatId: number, arg?: string): Promise<void> {
   if (arg === 'on' || arg === 'off') {
     const enabled = arg === 'on';
@@ -710,6 +819,7 @@ async function replyDeputy(chatId: number, arg?: string): Promise<void> {
         { text: on ? '⏸ 關閉暫代' : '🤖 開啟暫代', callback_data: on ? 'deputy:off' : 'deputy:on' },
         { text: '🚀 立即執行', callback_data: 'deputy:run' },
       ],
+      ...(on ? [[{ text: '📋 派工給小蔡', callback_data: 'deputy:delegate' }]] : []),
       [{ text: '⬅️ 回主菜單', callback_data: '/start' }],
     ],
   };
@@ -819,6 +929,39 @@ async function poll(): Promise<void> {
         log.info(`[TelegramControl] recv update kind=${kind} chatId=${chatId} cmd=${text.split(/\s+/)[0] ?? ''}`);
       }
 
+      // ── 老蔡回來自動停止暫代 ──
+      // 偵測到「人類訊息」（非 callback、非 /deputy 指令本身）
+      // 且暫代模式開啟中 → 自動關閉暫代 + 通知群組
+      const isCallback = !!u.callback_query?.data;
+      const isDeputyCmd = text.startsWith('/deputy') || text.startsWith('deputy:');
+      if (!isCallback && !isDeputyCmd && text.length > 0) {
+        try {
+          const deputyState = await fetchJsonWithTimeout(
+            `${TASKBOARD_BASE_URL}/api/openclaw/deputy/status`, {}, 3000
+          );
+          const dobj = asObj(deputyState);
+          if (dobj.enabled === true) {
+            await fetchJsonWithTimeout(
+              `${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: false, source: 'boss-return' }),
+              },
+              5000
+            );
+            await sendTelegramMessageToChat(chatId,
+              `👑 <b>老蔡已接手</b>\n\n` +
+              `偵測到老蔡活動，暫代模式已自動關閉。\n` +
+              `小蔡：老蔡回來了，指揮權交還。\n\n` +
+              `如需重新開啟：/deputy on`,
+              { token: TOKEN, parseMode: 'HTML' }
+            );
+            log.info('[Deputy] 老蔡回來 → 暫代模式自動關閉');
+          }
+        } catch { /* ignore — don't block message processing */ }
+      }
+
       if (text === 'deputy:on') {
         await replyDeputy(chatId, 'on');
         continue;
@@ -829,6 +972,20 @@ async function poll(): Promise<void> {
       }
       if (text === 'deputy:run') {
         await replyDeputy(chatId, 'run');
+        continue;
+      }
+      if (text === 'deputy:delegate') {
+        await replyDelegate(chatId);
+        continue;
+      }
+      // 小蔡任務回應 callback
+      if (text.startsWith('xiaoji:')) {
+        const parts = text.split(':');
+        const action = parts[1] ?? '';
+        const taskId = parts[2] ?? '';
+        if (taskId && ['accept', 'reject', 'done'].includes(action)) {
+          await handleXiaojiCallback(chatId, action, taskId);
+        }
         continue;
       }
       if (text === 'run:recover:check') {
@@ -1088,6 +1245,10 @@ async function poll(): Promise<void> {
       }
       if (cmd === '/cmd') {
         await replyCmdMenu(chatId);
+        continue;
+      }
+      if (cmd === '/delegate') {
+        await replyDelegate(chatId);
         continue;
       }
       if (cmd === '/deputy') {

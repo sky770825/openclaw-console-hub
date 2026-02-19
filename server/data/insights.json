@@ -25,5 +25,23 @@
     "insight": "用 useConfirmDialog() hook 回傳 Promise<boolean>，讓 async/await 流程中可以優雅地等待用戶確認。比 window.confirm() 更美觀，比 Redux modal state 更簡潔。",
     "value": "通用的 React 模式，適用於任何需要用戶確認的破壞性操作。一個 hook 解決所有場景。",
     "sent": false
+  },
+  {
+    "id": "ins-004",
+    "date": "2026-02-19",
+    "title": "AI Agent 治理引擎：斷路器 + 自動回滾 + 驗收驗證 + 信任分",
+    "category": "architecture",
+    "insight": "為 AI agent 執行器加入 4 層治理機制：(1) Circuit Breaker 斷路器 — 連續 N 次失敗自動停機，冷卻後 half-open 放行測試任務；(2) Auto-Rollback — 失敗時解析 rollbackPlan（支援 markdown code block、$ 前綴、CLI 指令），自動執行回滾；(3) Acceptance Validation — 任務完成後自動驗證 acceptanceCriteria（支援 file: 檔案存在、http: 健康檢查、cmd: 指令執行）；(4) Agent Trust Score — 根據成功率 + 回滾率 + 連續成功獎勵計算信任分 0-100。",
+    "value": "大多數 AI agent 框架只關注 execution，忽略了 failure recovery。這個治理引擎把 reliability engineering 的最佳實踐（circuit breaker, rollback, acceptance testing）引入 AI agent 管理，讓自動化系統具備自我修復能力。",
+    "sent": false
+  },
+  {
+    "id": "ins-005",
+    "date": "2026-02-19",
+    "title": "動態信任等級晉升制：量化條件 + 自動/人工混合審核",
+    "category": "workflow",
+    "insight": "社區成員的信任等級（L0-L3）可根據協作歷史自動調整。升級條件量化：活躍天數、完成任務數、成功率、無違規天數、提案通過數。L0→L1 自動升級，L1→L2 自動升級（滿足門檻），L2→L3 需人工審核。降級觸發：違規降 1 級、60 天不活動降 1 級、成功率低於 30% 降 1 級。",
+    "value": "把抽象的「信任」量化為可追蹤的指標，讓社區治理有據可查。自動升級減輕管理負擔，人工審核保留關鍵決策權。這種漸進式信任機制可適用於任何社區平台。",
+    "sent": false
   }
 ]
