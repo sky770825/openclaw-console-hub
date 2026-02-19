@@ -35,8 +35,6 @@ jobs:
           git commit -m "sync: mirror from openclaw-console-hub @ $(git log main -1 --pretty=%h)" --allow-empty
           git remote add xiaoji git@xiaoji-github:andy825lay-tech/openclaw-workspace.git || true
           git push xiaoji sync-temp:main --force
-          git checkout main
-          git branch -D sync-temp
 
       - name: Notify Telegram
         if: always()
