@@ -1,6 +1,7 @@
-# Logs
+# Logs & runtime output (may contain tokens in HTTP logs)
 logs
 *.log
+nohup.out
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
