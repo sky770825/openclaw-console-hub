@@ -56,6 +56,7 @@ import memoryRouter from './routes/memory.js';
 import openclawTasksRouter from './routes/openclaw-tasks.js';
 import openclawReviewsRouter from './routes/openclaw-reviews.js';
 import openclawDataRouter from './routes/openclaw-data.js';
+import insightsRouter from './routes/insights.js';
 import autoExecutorRouter, {
   autoExecutorState,
   startAutoExecutor,
@@ -474,6 +475,7 @@ app.use('/api/openclaw', memoryRouter);
 app.use('/api/openclaw/tasks', openclawTasksRouter);
 app.use('/api/openclaw/reviews', openclawReviewsRouter);
 app.use('/api/openclaw', openclawDataRouter);
+app.use('/api/openclaw/insights', insightsRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;

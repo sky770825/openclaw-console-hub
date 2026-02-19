@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ins-001",
+    "date": "2026-02-19",
+    "title": "AI 治理分層架構 (L0-L4 Firewall Model)",
+    "category": "architecture",
+    "insight": "建立 5 層信任分級的 AI-人機協作框架：L0 公開展示（最低權限 sandbox）→ L1 基礎接觸 → L2 協作空間 → L3 信任區 → 防火牆 → L4 核心指揮中心。每層有不同的 iframe sandbox 權限和 postMessage 事件白名單。核心不暴露 origin 給外層，用 outbound proxy 過濾。",
+    "value": "大多數 AI 平台只有「登入/未登入」兩層。這個模型把信任當作漸進式光譜，每層的安全邊界是明確且可驗證的。可應用於任何 AI agent 與外部用戶互動的場景。",
+    "sent": false
+  },
+  {
+    "id": "ins-002",
+    "date": "2026-02-19",
+    "title": "構想審核制：AI 提案 → 人類蓋章 → 自動派工",
+    "category": "workflow",
+    "insight": "AI agent 不直接執行任務，而是先提出「構想」(proposal)，人類審核通過後才轉為正式任務並自動派工執行。包含批量審核、風險標記、AI 自動過篩等機制。",
+    "value": "解決 AI agent 自主性與人類控制之間的平衡問題。AI 有創造力但不獨斷，人類有最終決定權但不需要微管理每個細節。",
+    "sent": false
+  },
+  {
+    "id": "ins-003",
+    "date": "2026-02-19",
+    "title": "Promise-based 確認彈窗取代同步 confirm()",
+    "category": "pattern",
+    "insight": "用 useConfirmDialog() hook 回傳 Promise<boolean>，讓 async/await 流程中可以優雅地等待用戶確認。比 window.confirm() 更美觀，比 Redux modal state 更簡潔。",
+    "value": "通用的 React 模式，適用於任何需要用戶確認的破壞性操作。一個 hook 解決所有場景。",
+    "sent": false
+  }
+]

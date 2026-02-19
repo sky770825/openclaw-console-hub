@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { C, Card, Btn, Badge, Sec } from "../uiPrimitives";
 import { apiUrl, apiHeaders } from "@/services/openclawBoardApi";
 import { useConfirmDialog } from "../ConfirmDialog";
@@ -94,6 +94,119 @@ function CommandCard({ cmd, state, onExec }) {
   );
 }
 
+const CATEGORIES = [
+  { value: "architecture", label: "架構設計" },
+  { value: "workflow", label: "流程機制" },
+  { value: "pattern", label: "程式模式" },
+  { value: "security", label: "安全策略" },
+  { value: "ai-collab", label: "AI 協作" },
+  { value: "general", label: "一般" },
+];
+
+function InsightForm() {
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("general");
+  const [insight, setInsight] = useState("");
+  const [value, setValue] = useState("");
+  const [status, setStatus] = useState(null); // { type, msg }
+  const [list, setList] = useState([]);
+  const [showList, setShowList] = useState(false);
+
+  const submit = async () => {
+    if (!title.trim() || !insight.trim()) {
+      setStatus({ type: "error", msg: "標題和構想內容必填" });
+      return;
+    }
+    setStatus({ type: "loading", msg: "儲存中..." });
+    try {
+      const r = await fetch(apiUrl("/api/openclaw/insights"), {
+        method: "POST",
+        headers: apiHeaders(true),
+        body: JSON.stringify({ title, category, insight, value }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        setStatus({ type: "success", msg: `已記錄：${data.entry.id}` });
+        setTitle(""); setInsight(""); setValue("");
+      } else {
+        setStatus({ type: "error", msg: data.error || "儲存失敗" });
+      }
+    } catch (e) {
+      setStatus({ type: "error", msg: String(e) });
+    }
+  };
+
+  const loadList = async () => {
+    try {
+      const r = await fetch(apiUrl("/api/openclaw/insights"), { headers: apiHeaders(false) });
+      setList(await r.json());
+      setShowList(true);
+    } catch { /* ignore */ }
+  };
+
+  const inputStyle = {
+    width: "100%", padding: "8px 10px", borderRadius: 8,
+    border: `1px solid ${C.border}`, background: "rgba(255,255,255,0.04)",
+    color: C.t1, fontSize: 12, fontFamily: "inherit", outline: "none",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <Card style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 16 }}>💡</span>
+        <span style={{ fontSize: 13, fontWeight: 650, color: C.t1 }}>記錄構想</span>
+        <span style={{ fontSize: 10, color: C.t3, marginLeft: "auto" }}>每週一自動整理並通知</span>
+      </div>
+      <input style={inputStyle} placeholder="構想標題" value={title} onChange={e => setTitle(e.target.value)} />
+      <select
+        style={{ ...inputStyle, cursor: "pointer" }}
+        value={category} onChange={e => setCategory(e.target.value)}
+      >
+        {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+      </select>
+      <textarea
+        style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
+        placeholder="構想描述（詳細說明概念和做法）"
+        value={insight} onChange={e => setInsight(e.target.value)}
+      />
+      <textarea
+        style={{ ...inputStyle, minHeight: 40, resize: "vertical" }}
+        placeholder="價值說明（為什麼有參考價值，選填）"
+        value={value} onChange={e => setValue(e.target.value)}
+      />
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <Btn v="pri" sm onClick={submit}>儲存構想</Btn>
+        <Btn v="gh" sm onClick={loadList}>{showList ? "重新載入" : "查看歷史"}</Btn>
+        {status && (
+          <span style={{
+            fontSize: 11,
+            color: status.type === "success" ? C.green : status.type === "error" ? C.red : C.amber,
+          }}>
+            {status.msg}
+          </span>
+        )}
+      </div>
+      {showList && list.length > 0 && (
+        <div style={{ marginTop: 6, maxHeight: 200, overflow: "auto" }}>
+          {list.slice().reverse().map(ins => (
+            <div key={ins.id} style={{
+              padding: "6px 8px", borderBottom: `1px solid ${C.border}`,
+              fontSize: 11, color: C.t2, display: "flex", gap: 8, alignItems: "center",
+            }}>
+              <span style={{ color: C.t3, flexShrink: 0, width: 65 }}>{ins.date}</span>
+              <span style={{ flex: 1, color: C.t1, fontWeight: 600 }}>{ins.title}</span>
+              <Badge c={ins.sent ? C.green : C.amber} bg={ins.sent ? C.greenG : C.amberG}>
+                {ins.sent ? "已發送" : "待發送"}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function renderCmdTab(data, actions) {
   return <CmdTabInner cleanOrphans={actions?.cleanOrphans} />;
 }
@@ -165,6 +278,9 @@ function CmdTabInner({ cleanOrphans }) {
           </div>
         </Sec>
       ))}
+      <Sec icon="💡" title="構想記錄" count={null}>
+        <InsightForm />
+      </Sec>
       {CmdConfirm}
     </div>
   );
