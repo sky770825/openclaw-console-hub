@@ -3,6 +3,7 @@ name: Sync to 小蔡 Repo
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -25,20 +26,15 @@ jobs:
             StrictHostKeyChecking no
           SSHEOF
 
-      - name: Push to xiaoji repo
+      - name: Push to xiaoji repo (exclude workflows)
         run: |
+          git checkout -b sync-temp
+          git rm -r --cached .github/workflows/ 2>/dev/null || true
+          git commit -m "sync: mirror from openclaw-console-hub @ $(git log main -1 --pretty=%h)" --allow-empty
           git remote add xiaoji git@xiaoji-github:andy825lay-tech/openclaw-workspace.git || true
-          # 先嘗試正常 push；若 workflow scope 被拒，改用過濾方式
-          if ! git push xiaoji main --force 2>&1; then
-            echo "Direct push failed, filtering .github/workflows and retrying..."
-            # 建立臨時分支，移除 workflow 檔案後推送
-            git checkout -b sync-temp
-            git rm -r --cached .github/workflows/ 2>/dev/null || true
-            git commit -m "sync: exclude workflows for xiaoji push" --allow-empty
-            git push xiaoji sync-temp:main --force
-            git checkout main
-            git branch -D sync-temp
-          fi
+          git push xiaoji sync-temp:main --force
+          git checkout main
+          git branch -D sync-temp
 
       - name: Notify Telegram
         if: always()
