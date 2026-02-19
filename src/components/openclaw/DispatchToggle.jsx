@@ -53,6 +53,9 @@ export function DispatchToggle() {
     setLoading(false);
   };
 
+  const onColor = "#4caf50";
+  const offColor = "#ef5350";
+
   return (
     <button
       data-oc-action="BTN_DISPATCH_TOGGLE"
@@ -61,22 +64,40 @@ export function DispatchToggle() {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 6,
-        padding: "4px 12px",
-        borderRadius: 8,
-        border: `1px solid ${on ? C.purple + "40" : C.border}`,
-        background: on ? C.purpleG : "transparent",
-        color: on ? C.purple : C.t3,
-        fontSize: 10,
-        fontWeight: 600,
+        gap: 7,
+        padding: "5px 14px",
+        borderRadius: 20,
+        border: `1.5px solid ${on ? onColor + "60" : offColor + "40"}`,
+        background: on
+          ? `linear-gradient(135deg, rgba(76,175,80,0.15), rgba(76,175,80,0.06))`
+          : `linear-gradient(135deg, rgba(239,83,80,0.1), rgba(239,83,80,0.03))`,
+        color: on ? onColor : offColor,
+        fontSize: 11,
+        fontWeight: 700,
         cursor: loading ? "wait" : "pointer",
         fontFamily: "inherit",
-        transition: "all .2s",
+        transition: "all .3s ease",
+        boxShadow: on
+          ? `0 0 12px rgba(76,175,80,0.25), inset 0 0 8px rgba(76,175,80,0.08)`
+          : `0 0 8px rgba(239,83,80,0.12)`,
       }}
       title={on ? `自動派工中 — Claude 指揮（已執行 ${execCount} 個）` : "點擊開啟自動派工模式"}
     >
-      {on && <Pulse c={C.purple} s={5} />}
-      <span>{loading ? "切換中…" : on ? "自動派工" : "派工關閉"}</span>
+      {/* Status indicator dot */}
+      {on ? (
+        <Pulse c={onColor} s={6} />
+      ) : (
+        <span style={{
+          display: "inline-block",
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: offColor,
+          flexShrink: 0,
+          opacity: 0.7,
+        }} />
+      )}
+      <span>{loading ? "切換中…" : on ? "派工中" : "已關閉"}</span>
       {on && pendingCount > 0 && (
         <Badge c="#fff" bg={C.red} style={{ marginLeft: 2, padding: "1px 5px", fontSize: 9 }}>
           {pendingCount}

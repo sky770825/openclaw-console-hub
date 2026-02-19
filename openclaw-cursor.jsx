@@ -50,6 +50,8 @@ export default function OpenClawV4() {
     wakePanel,
     dismissWake,
     createFixTasks,
+    cleanOrphans,
+    ConfirmDialogRoot,
   } = useOpenClawBoard();
 
   const [tab, setTab] = useState("all");
@@ -100,10 +102,11 @@ export default function OpenClawV4() {
       {renderTabContent(
         tab,
         { autos, reviews, tasks, boardConfig, evo },
-        { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz, submitIdea, approveRiskItems, commentR, autoReviewByRisk, bossApproveReview, bossRejectReview, batchProgTasks, activateQueuedTasks, aiStrategy, setAiStrategy, errorAccum, wakePanel, dismissWake, createFixTasks }
+        { setDrawer, togA, runA, okR, noR, archiveR, okRAndCreateTask, progT, runT, delT, moveT, addQuiz, submitIdea, approveRiskItems, commentR, autoReviewByRisk, bossApproveReview, bossRejectReview, batchProgTasks, activateQueuedTasks, aiStrategy, setAiStrategy, errorAccum, wakePanel, dismissWake, createFixTasks, cleanOrphans }
       )}
     </div>
 
     {drawer && <Drawer item={drawer} onClose={() => setDrawer(null)} onSave={handleDrawerSave} />}
+    {ConfirmDialogRoot}
   </div>;
 }

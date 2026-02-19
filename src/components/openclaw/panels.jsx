@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useConfirmDialog } from "./ConfirmDialog";
 import { Link } from "react-router-dom";
 import {
   C,
@@ -114,6 +115,7 @@ function ReviewCommentDialog({ review, onClose, onSubmit, onDirectApprove }) {
 
 export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchive,onApproveRiskItems,onComment,onAutoReview}){
   const [commentTarget, setCommentTarget] = useState(null);
+  const { confirm: confirmDialog, ConfirmDialogRoot: ReviewConfirm } = useConfirmDialog();
   const pending=reviews.filter(r=>r.status==="pending"), approved=reviews.filter(r=>r.status==="approved"), archived=reviews.filter(r=>r.status==="archived");
   const priCfg={critical:{l:"極高",c:C.purple,bg:C.purpleG},high:{l:"高",c:C.red,bg:C.redG},medium:{l:"中",c:C.amber,bg:C.amberG},low:{l:"低",c:"#a3e635",bg:"rgba(163,230,53,0.08)"}};
   const typI={tool:"⚙️",skill:"🧠",issue:"🔧",learn:"📚",proposal:"💡",red_alert:"🚨"};
@@ -123,11 +125,11 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchiv
   const riskApproved = approved.filter(r => r._riskLevel && r._riskLevel !== "none");
 
   // 全部通過處理函數
-  const handleApproveAll = () => {
-    if (!confirm(`確定要一次通過全部 ${pending.length} 個發想嗎？`)) return;
+  const handleApproveAll = async () => {
+    if (!(await confirmDialog({ title: "全部通過", desc: `確定要一次通過全部 ${pending.length} 個發想嗎？`, okText: "全部通過", variant: "warning" }))) return;
     pending.forEach(r => onOk?.(r.id));
   };
-  
+
   const approveAllBtn = pending.length > 0 ? (
     <Btn v="ok" sm onClick={handleApproveAll} oc="REVIEW_APPROVE_ALL">
       ✅ 全部通過 ({pending.length})
@@ -141,7 +143,7 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchiv
   // 批量 AI 蓋章：低/中風險自動通過轉任務，高風險送老蔡
   const autoReviewBtn = pending.length > 0 && onAutoReview ? (
     <Btn sm v="pri" onClick={async () => {
-      if (!confirm(`AI 將自動蓋章審核 ${pending.length} 個項目：\n・低/中風險 → 自動通過+轉任務\n・高/極高風險 → 送老蔡簽核\n\n確定？`)) return;
+      if (!(await confirmDialog({ title: "AI 批量蓋章", desc: `AI 將自動蓋章審核 ${pending.length} 個項目：\n・低/中風險 → 自動通過+轉任務\n・高/極高風險 → 送老蔡簽核`, okText: "開始蓋章", variant: "info" }))) return;
       for (const r of pending) await onAutoReview(r.id);
     }} oc="REVIEW_AI_STAMP_ALL">
       🔖 AI 批量蓋章 ({pending.length})
@@ -286,6 +288,7 @@ export function ReviewPanel({reviews,onOk,onNo,onView,onOkAndCreateTask,onArchiv
     onSubmit={handleCommentSubmit}
     onDirectApprove={handleDirectApprove}
   />
+  {ReviewConfirm}
   </>;
 }
 
@@ -924,6 +927,7 @@ export function DispatchReviewPanel() {
   const [dispatchStatus, setDispatchStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const { confirm: confirmDialog, ConfirmDialogRoot: DispatchConfirm } = useConfirmDialog();
 
   const poll = useCallback(async () => {
     try {
@@ -960,7 +964,7 @@ export function DispatchReviewPanel() {
 
   const handleApproveAll = async () => {
     if (!dispatchStatus?.pendingReviews?.length) return;
-    if (!confirm(`確定要批准全部 ${dispatchStatus.pendingReviews.length} 個待審任務嗎？`)) return;
+    if (!(await confirmDialog({ title: "批准全部派工", desc: `確定要批准全部 ${dispatchStatus.pendingReviews.length} 個待審任務嗎？`, okText: "全部批准", variant: "warning" }))) return;
     for (const r of dispatchStatus.pendingReviews) {
       await handleReview(r.taskId, "approved");
     }
@@ -1088,6 +1092,7 @@ export function DispatchReviewPanel() {
     </Sec>}
 
     <TelegramNotifySection />
+    {DispatchConfirm}
   </>;
 }
 
@@ -1104,7 +1109,8 @@ function TelegramNotifySection() {
         const r = await fetch(apiUrl("/api/health"), { headers: apiHeaders(false) });
         if (r.ok) {
           const data = await r.json();
-          setTgStatus(!!data.telegram);
+          const tg = data.services?.telegram || data.telegram;
+          setTgStatus(tg ? !!tg.configured : false);
         } else {
           setTgStatus(false);
         }

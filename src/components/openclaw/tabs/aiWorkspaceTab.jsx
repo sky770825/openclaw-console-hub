@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { C, Btn, Card, Sec, Badge, RiskBadge, RiskStamp, RISK_COLORS } from "../uiPrimitives";
+import { useConfirmDialog } from "../ConfirmDialog";
 import { searchMemory, getMemoryStats, addMemory, recordInsight, recordDailyReport, exportMemory } from "@/services/aiMemoryStore";
 import { AI_STRATEGIES } from "@/hooks/openclawBoardUtils";
 
@@ -312,6 +313,7 @@ function AiWorkspace({ data, actions }) {
   const { reviews = [], tasks = [], evo = [] } = data || {};
   const { autoReviewByRisk, setDrawer, okR, noR, okRAndCreateTask, progT, batchProgTasks, activateQueuedTasks, aiStrategy, setAiStrategy, errorAccum, wakePanel, dismissWake, createFixTasks } = actions || {};
 
+  const { confirm: confirmDialog, ConfirmDialogRoot: AiConfirm } = useConfirmDialog();
   const [colMap, setColMap] = useState(() => readLS(LS_COLLAPSED, {}));
   const toggle = (id) => setColMap(p => { const n = { ...p, [id]: !p[id] }; writeLS(LS_COLLAPSED, n); return n; });
 
@@ -527,7 +529,7 @@ function AiWorkspace({ data, actions }) {
           {/* 批量過篩 */}
           {inbox.length > 0 && autoReviewByRisk && <div style={{ marginBottom: 8 }}>
             <Btn sm v="pri" onClick={async () => {
-              if (!confirm(`AI 將自動過篩 ${inbox.length} 個進件：\n・低/中風險 → 直接過 + 轉任務\n・高風險 → 送老蔡\n\n確定？`)) return;
+              if (!(await confirmDialog({ title: "AI 自動過篩", desc: `AI 將自動過篩 ${inbox.length} 個進件：\n・低/中風險 → 直接過 + 轉任務\n・高風險 → 送老蔡`, okText: "開始過篩", variant: "info" }))) return;
               for (const r of inbox) await autoReviewByRisk(r.id);
             }} style={{ width: "100%", justifyContent: "center" }}>
               🔖 全部過篩 ({inbox.length})
@@ -700,5 +702,6 @@ function AiWorkspace({ data, actions }) {
     <div style={{ marginTop: 16 }}>
       <MemoryCenter colMap={colMap} toggle={toggle} />
     </div>
+    {AiConfirm}
   </div>;
 }

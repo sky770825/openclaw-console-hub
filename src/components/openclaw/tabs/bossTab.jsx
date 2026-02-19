@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { C, Btn, Card, Sec, Badge, RiskBadge, RiskStamp } from "../uiPrimitives";
+import { useConfirmDialog } from "../ConfirmDialog";
 
 const LS_KEY = "openclaw_boss_decisions";
 const LS_NOTES_KEY = "openclaw_boss_notes";
@@ -59,6 +60,7 @@ export function renderBossTab(data, actions) {
 function BossZone({ data, actions }) {
   const { reviews = [] } = data || {};
   const { bossApproveReview, bossRejectReview, setDrawer } = actions || {};
+  const { confirm: confirmDialog, ConfirmDialogRoot: BossConfirm } = useConfirmDialog();
 
   // ── 高風險待老蔡審核 ──
   const highRiskPending = reviews.filter(r =>
@@ -218,7 +220,7 @@ function BossZone({ data, actions }) {
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {setDrawer && <Btn sm v="def" onClick={() => setDrawer(r)} style={{ fontSize: 9 }}>🔍 詳情</Btn>}
             <span style={{ flex: 1 }} />
-            {bossRejectReview && <Btn sm v="no" onClick={() => { if (confirm(`駁回「${r.title}」？`)) bossRejectReview(r.id); }} style={{ fontSize: 9 }}>❌ 駁回</Btn>}
+            {bossRejectReview && <Btn sm v="no" onClick={async () => { if (await confirmDialog({ title: "駁回發想", desc: `確定要駁回「${r.title}」？`, okText: "駁回", variant: "danger" })) bossRejectReview(r.id); }} style={{ fontSize: 9 }}>❌ 駁回</Btn>}
             {bossApproveReview && <Btn sm v="ok" onClick={() => bossApproveReview(r.id)} style={{ fontSize: 9 }}>✅ 核准發布</Btn>}
           </div>
         </Card>)}
@@ -321,5 +323,6 @@ function BossZone({ data, actions }) {
         <div>5. 個人事項 / 營運決策在兩欄分開管理</div>
       </div>
     </CollapsibleSec>
+    {BossConfirm}
   </div>;
 }

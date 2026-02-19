@@ -16,6 +16,7 @@ import {
   postWakeReport,
 } from "@/services/openclawBoardApi";
 import { C } from "@/components/openclaw/uiPrimitives";
+import { useConfirmDialog } from "@/components/openclaw/ConfirmDialog";
 import { recordReviewDecision, recordTaskCompletion, recordStrategySwitch, recordError } from "@/services/aiMemoryStore";
 import {
   detectRiskLevel,
@@ -49,6 +50,7 @@ export function useOpenClawBoard() {
     plugins: [],
   });
   const [evo, setEvo] = useState([]);
+  const { confirm: confirmDialog, ConfirmDialogRoot } = useConfirmDialog();
 
   // ─── 錯誤累積器狀態 ───
   const [errorAccum, setErrorAccum] = useState(() => loadErrorLog());
@@ -529,7 +531,7 @@ export function useOpenClawBoard() {
   };
 
   const delT = async (id) => {
-    if (!confirm("確定要刪除此任務？刪除後無法回復。")) return;
+    if (!(await confirmDialog({ title: "刪除任務", desc: "刪除後無法回復，確定要刪除此任務？", okText: "刪除", variant: "danger" }))) return;
     try {
       const { ok, status } = await deleteTask(id);
       if (!ok) {
@@ -753,7 +755,7 @@ export function useOpenClawBoard() {
   };
 
   // ─── 風險項目一鍵批准 ───
-  const approveRiskItems = (riskLevel) => {
+  const approveRiskItems = async (riskLevel) => {
     const targets = reviews.filter(r =>
       r.status === "pending" && r._riskLevel === riskLevel
     );
@@ -761,7 +763,8 @@ export function useOpenClawBoard() {
       showInfo(`沒有 ${riskLevel} 風險的待審項目`);
       return;
     }
-    if (!confirm(`確定要一次批准全部 ${targets.length} 個「${riskLevel === "high" ? "高" : riskLevel === "medium" ? "中" : "低"}風險」項目嗎？`)) return;
+    const riskLabel = riskLevel === "high" ? "高" : riskLevel === "medium" ? "中" : "低";
+    if (!(await confirmDialog({ title: "批量批准風險項目", desc: `確定要一次批准全部 ${targets.length} 個「${riskLabel}風險」項目嗎？`, okText: "全部批准", variant: "warning" }))) return;
     targets.forEach(r => {
       const upd = { ...r, status: "approved" };
       setReviews((p) => p.map((item) => (item.id === r.id ? upd : item)));
@@ -822,6 +825,34 @@ export function useOpenClawBoard() {
     showInfo(`已啟動 ${targets.length} 個任務`);
   };
 
+  // ─── 清理殘留孤兒任務 ───
+  const cleanOrphans = async () => {
+    const orphans = tasks.filter(t =>
+      t.status === "in_progress" &&
+      (t.name?.includes("未命名") || t.title?.includes("未命名") || !t.name)
+    );
+    if (orphans.length === 0) {
+      showInfo("沒有殘留的孤兒任務");
+      return;
+    }
+    if (!(await confirmDialog({
+      title: "清除殘留任務",
+      desc: `找到 ${orphans.length} 個殘留孤兒任務：\n${orphans.map(t => `· ${t.title || t.name || t.id}`).join("\n")}\n\n刪除後無法回復。`,
+      okText: `刪除 ${orphans.length} 個`,
+      variant: "danger",
+    }))) return;
+    let deleted = 0;
+    for (const t of orphans) {
+      try {
+        const { ok } = await deleteTask(t.id);
+        if (ok) deleted++;
+      } catch { /* ignore */ }
+    }
+    setTasks(p => p.filter(t => !orphans.some(o => o.id === t.id)));
+    addE(`已清除 ${deleted} 個殘留任務`, C.t3, "清理", C.t3);
+    showInfo(`已清除 ${deleted} 個殘留任務`);
+  };
+
   return {
     autos,
     reviews,
@@ -859,5 +890,7 @@ export function useOpenClawBoard() {
     trackError,
     dismissWake,
     createFixTasks,
+    cleanOrphans,
+    ConfirmDialogRoot,
   };
 }

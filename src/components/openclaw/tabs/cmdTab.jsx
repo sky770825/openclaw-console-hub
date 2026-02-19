@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { C, Card, Btn, Badge, Sec } from "../uiPrimitives";
 import { apiUrl, apiHeaders } from "@/services/openclawBoardApi";
+import { useConfirmDialog } from "../ConfirmDialog";
 
 // ── 指令註冊表 ──
 const COMMANDS = [
@@ -93,15 +94,24 @@ function CommandCard({ cmd, state, onExec }) {
   );
 }
 
-export function renderCmdTab() {
-  return <CmdTabInner />;
+export function renderCmdTab(data, actions) {
+  return <CmdTabInner cleanOrphans={actions?.cleanOrphans} />;
 }
 
-function CmdTabInner() {
+function CmdTabInner({ cleanOrphans }) {
   const [states, setStates] = useState({});
+  const { confirm: confirmDialog, ConfirmDialogRoot: CmdConfirm } = useConfirmDialog();
 
   const exec = useCallback(async (cmd) => {
-    if (cmd.confirm && !window.confirm(`確定要執行「${cmd.name}」？`)) return;
+    if (cmd.confirm) {
+      const ok = await confirmDialog({
+        title: `執行「${cmd.name}」`,
+        desc: `${cmd.desc}\n\n確定要執行？`,
+        okText: "執行",
+        variant: cmd.danger ? "danger" : "warning",
+      });
+      if (!ok) return;
+    }
 
     setStates((p) => ({ ...p, [cmd.id]: { status: "loading" } }));
     try {
@@ -123,7 +133,7 @@ function CmdTabInner() {
         [cmd.id]: { status: "error", result: String(e), ts: Date.now() },
       }));
     }
-  }, []);
+  }, [confirmDialog]);
 
   return (
     <div style={{ maxWidth: 960 }}>
@@ -131,7 +141,7 @@ function CmdTabInner() {
         系統管理指令中心。點擊「執行」呼叫對應 API，危險操作會要求確認。
       </div>
       {COMMANDS.map((group) => (
-        <Sec key={group.cat} icon={group.icon} title={group.label} count={group.cmds.length}>
+        <Sec key={group.cat} icon={group.icon} title={group.label} count={group.cmds.length + (group.cat === "maintenance" && cleanOrphans ? 1 : 0)}>
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
@@ -140,9 +150,22 @@ function CmdTabInner() {
             {group.cmds.map((cmd) => (
               <CommandCard key={cmd.id} cmd={cmd} state={states[cmd.id]} onExec={exec} />
             ))}
+            {group.cat === "maintenance" && cleanOrphans && (
+              <Card style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>🧹</span>
+                  <span style={{ fontSize: 13, fontWeight: 650, color: C.t1, flex: 1 }}>清除殘留</span>
+                </div>
+                <div style={{ fontSize: 11, color: C.t3, lineHeight: 1.4 }}>清除卡住的殘留垃圾任務（未命名 / 孤兒任務）</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                  <Btn v="no" sm onClick={cleanOrphans}>執行</Btn>
+                </div>
+              </Card>
+            )}
           </div>
         </Sec>
       ))}
+      {CmdConfirm}
     </div>
   );
 }
