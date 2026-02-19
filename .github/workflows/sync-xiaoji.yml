@@ -28,6 +28,8 @@ jobs:
 
       - name: Push to xiaoji repo (exclude workflows)
         run: |
+          git config user.name "openclaw-bot"
+          git config user.email "bot@openclaw.dev"
           git checkout -b sync-temp
           git rm -r --cached .github/workflows/ 2>/dev/null || true
           git commit -m "sync: mirror from openclaw-console-hub @ $(git log main -1 --pretty=%h)" --allow-empty
