@@ -1,0 +1,40 @@
+name: Sync to 小蔡 Repo
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to xiaoji repo
+        run: |
+          git remote add xiaoji https://x-access-token:${{ secrets.XIAOJI_REPO_TOKEN }}@github.com/andy825lay-tech/openclaw-workspace.git || true
+          git push xiaoji main --force
+        env:
+          XIAOJI_REPO_TOKEN: ${{ secrets.XIAOJI_REPO_TOKEN }}
+
+      - name: Notify Telegram
+        if: always()
+        run: |
+          STATUS=${{ job.status }}
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          COMMIT_SHA=$(git log -1 --pretty=%h)
+          if [ "$STATUS" = "success" ]; then
+            EMOJI="✅"
+            TEXT="已同步到小蔡 repo"
+          else
+            EMOJI="❌"
+            TEXT="同步失敗"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d parse_mode=Markdown \
+            -d text="${EMOJI} *Git Sync* | ${TEXT}
+
+          \`${COMMIT_SHA}\` ${COMMIT_MSG}"
