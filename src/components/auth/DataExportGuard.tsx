@@ -38,7 +38,7 @@ export function DataExportGuard({
   const handleCopy = useCallback((e: ClipboardEvent) => {
     if (canExport) return; // 有權限就放行
     e.preventDefault();
-    e.clipboardData?.setData('text/plain', '[Openclaw] 無權限外帶此資料');
+    e.clipboardData?.setData('text/plain', '[星艦指揮中心] 無權限外帶此資料');
   }, [canExport]);
 
   // 攔截右鍵
