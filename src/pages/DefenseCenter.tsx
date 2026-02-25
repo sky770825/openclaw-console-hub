@@ -1,5 +1,5 @@
 /**
- * 防衛中心 — Defense Center
+ * 防禦甲板 — Defense Center
  *
  * 防火牆管理、威脅偵測、存取記錄、入侵防禦
  * 這是核心系統的第二道防火牆控制台。
@@ -103,7 +103,7 @@ export default function DefenseCenter() {
       <div>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Shield className="h-6 w-6 text-red-500" />
-          防衛中心
+          防禦甲板
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           防火牆管理、威脅偵測、存取記錄、入侵防禦

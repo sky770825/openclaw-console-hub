@@ -9,10 +9,7 @@ import {
   FileText,
   Bell,
   Settings,
-  Menu,
-  X,
   ChevronLeft,
-  Cog,
   Bot,
   FolderKanban,
   Lightbulb,
@@ -25,9 +22,14 @@ import {
   HardHat,
   Briefcase,
   Terminal,
+  Rocket,
+  Radar,
+  Factory,
+  Brain,
+  Workflow,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useFeatures } from '@/hooks/useFeatures';
 
@@ -46,28 +48,33 @@ export function useSidebarContext() {
   return context;
 }
 
-// ─── 核心指揮中心（我們這邊 = 最後一站）───
+// ─── 星艦艦橋（核心指揮）───
 const hubItems = [
-  { path: '/', label: '儀表板', icon: LayoutDashboard },
-  { path: '/cursor', label: 'Agent 指揮板', icon: Bot },
-  { path: '/projects', label: '專案製作', icon: FolderKanban },
-  { path: '/tasks', label: '任務看板', icon: Kanban },
+  { path: '/', label: '艦橋總覽', icon: LayoutDashboard },
+  { path: '/cursor', label: '艦長指揮', icon: Bot },
+  { path: '/projects', label: '任務艙', icon: FolderKanban },
+  { path: '/tasks', label: '任務排程', icon: Kanban },
   { path: '/tasks/list', label: '任務列表', icon: List },
-  { path: '/runs', label: '執行紀錄', icon: Play },
-  { path: '/review', label: '發想審核', icon: Lightbulb },
-  { path: '/domains', label: '領域分類', icon: Tags },
+  { path: '/runs', label: '航行日誌', icon: Play },
+  { path: '/review', label: '構想艙', icon: Lightbulb },
+  { path: '/domains', label: '星域標記', icon: Tags },
 ];
 
-// ─── 研究中心（大型基建）───
+// ─── 科技甲板（研究 + 星艦科技）───
 const centerItems = [
-  { path: '/center', label: '中心總覽', icon: Building2 },
-  { path: '/center/protection', label: '防護中心', icon: Shield },
-  { path: '/center/defense', label: '防衛中心', icon: Castle },
-  { path: '/center/infra', label: '基建區', icon: HardHat },
-  { path: '/center/commerce', label: '商業中心', icon: Briefcase },
+  { path: '/center', label: '甲板總覽', icon: Building2 },
+  { path: '/center/protection', label: '護盾甲板', icon: Shield },
+  { path: '/center/defense', label: '防禦甲板', icon: Castle },
+  { path: '/center/ai', label: 'AI 甲板', icon: Brain },
+  { path: '/center/infra', label: '工程甲板', icon: HardHat },
+  { path: '/center/commerce', label: '後勤甲板', icon: Briefcase },
+  { path: '/center/automation', label: '自動化甲板', icon: Workflow },
+  { path: '/starship/mdci', label: 'MDCI 儀表', icon: Radar },
+  { path: '/starship/frameworks', label: '防線框架', icon: Shield },
+  { path: '/starship/manufacturing', label: '製造路線', icon: Factory },
 ];
 
-// ─── 社區多層空間（小蔡那邊 = 對外大門，多層防護）───
+// ─── 通訊甲板（社區）───
 const communityItems = [
   { path: '/community', label: '多層空間總覽', icon: LayoutDashboard },
   { path: '/community/showcase', label: 'L0 公開展示', icon: LayoutDashboard },
@@ -76,46 +83,50 @@ const communityItems = [
   { path: '/community/ollama', label: 'Ollama 任務板', icon: Cpu },
 ];
 
-// ─── 系統 ───
+// ─── 輪機系統 ───
 const systemItems = [
-  { path: '/control', label: '控制台', icon: Terminal },
-  { path: '/logs', label: '日誌', icon: FileText },
-  { path: '/alerts', label: '警報', icon: Bell },
+  { path: '/control', label: '輪機室', icon: Terminal },
+  { path: '/logs', label: '艦載日誌', icon: FileText },
+  { path: '/alerts', label: '紅色警報', icon: Bell },
   { path: '/settings', label: '設定', icon: Settings },
 ];
 
-// 相容舊 navItems（feature flag 過濾用）
-const navItems = [...hubItems, ...centerItems, ...communityItems, ...systemItems];
-
-function NavItem({ 
-  path, 
-  label, 
-  icon: Icon, 
+function NavItem({
+  path,
+  label,
+  icon: Icon,
   collapsed,
-  onClick 
-}: { 
-  path: string; 
-  label: string; 
+  onClick
+}: {
+  path: string;
+  label: string;
   icon: typeof LayoutDashboard;
   collapsed?: boolean;
   onClick?: () => void;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isActive = location.pathname === path || 
+  const isActive = location.pathname === path ||
     (path !== '/' && location.pathname.startsWith(path));
 
-  const handleClick = (e: React.MouseEvent) => {
+  const doNavigate = () => {
     onClick?.();
-    navigate(path);
+    if ('startViewTransition' in document) {
+      (document as any).startViewTransition(() => navigate(path));
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    doNavigate();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick?.();
-      navigate(path);
+      doNavigate();
     }
   };
 
@@ -128,8 +139,8 @@ function NavItem({
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
         'hover:bg-sidebar-accent',
-        isActive 
-          ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
+        isActive
+          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
           : 'text-sidebar-foreground/70 hover:text-sidebar-foreground',
         collapsed && 'justify-center px-2'
       )}
@@ -155,6 +166,8 @@ function useVisibleItems(items: typeof hubItems) {
     if (item.path === '/domains') return true;
     // center routes always visible
     if (item.path.startsWith('/center')) return true;
+    // starship routes always visible
+    if (item.path.startsWith('/starship')) return true;
     // community routes always visible
     if (item.path.startsWith('/community')) return true;
     return true;
@@ -190,36 +203,36 @@ function SidebarContent({ collapsed, onItemClick }: { collapsed?: boolean; onIte
       )}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg gradient-accent flex items-center justify-center">
-            <Cog className="h-4 w-4 text-white" />
+            <Rocket className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
-            <span className="font-semibold text-sidebar-foreground">Openclaw</span>
+            <span className="font-semibold text-sidebar-foreground">星艦指揮中心</span>
           )}
         </div>
       </div>
 
       {/* Navigation — 四區分流 */}
       <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-        {/* 指揮中心 */}
-        <SectionHeader label="指揮中心" icon={Bot} collapsed={collapsed} />
+        {/* 星艦艦橋 */}
+        <SectionHeader label="星艦艦橋" icon={Rocket} collapsed={collapsed} />
         {visibleHub.map((item) => (
           <NavItem key={item.path} {...item} collapsed={collapsed} onClick={onItemClick} />
         ))}
 
-        {/* 研究中心 */}
-        <SectionHeader label="研究中心" icon={Building2} collapsed={collapsed} />
+        {/* 科技甲板 */}
+        <SectionHeader label="科技甲板" icon={Building2} collapsed={collapsed} />
         {visibleCenters.map((item) => (
           <NavItem key={item.path} {...item} collapsed={collapsed} onClick={onItemClick} />
         ))}
 
-        {/* 社區延伸 */}
-        <SectionHeader label="社區" icon={Users} collapsed={collapsed} />
+        {/* 通訊甲板 */}
+        <SectionHeader label="通訊甲板" icon={Users} collapsed={collapsed} />
         {visibleCommunity.map((item) => (
           <NavItem key={item.path} {...item} collapsed={collapsed} onClick={onItemClick} />
         ))}
 
-        {/* 系統 */}
-        <SectionHeader label="系統" icon={Settings} collapsed={collapsed} />
+        {/* 輪機系統 */}
+        <SectionHeader label="輪機系統" icon={Settings} collapsed={collapsed} />
         {visibleSystem.map((item) => (
           <NavItem key={item.path} {...item} collapsed={collapsed} onClick={onItemClick} />
         ))}
@@ -228,8 +241,8 @@ function SidebarContent({ collapsed, onItemClick }: { collapsed?: boolean; onIte
       {/* Footer */}
       {!collapsed && (
         <div className="px-4 py-4 border-t border-sidebar-border">
-          <p className="text-xs text-sidebar-muted">Openclaw 指揮中心</p>
-          <p className="text-xs text-sidebar-muted">v1.1.0</p>
+          <p className="text-xs text-sidebar-muted">星艦指揮中心</p>
+          <p className="text-xs text-sidebar-muted">v2.0.0</p>
         </div>
       )}
     </div>

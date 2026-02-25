@@ -1,8 +1,11 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AppSidebar, SidebarProvider } from './AppSidebar';
 import { Topbar } from './Topbar';
 import { cn } from '@/lib/utils';
 import { CoreGatekeeper, CoreAuthBar, DataExportGuard } from '@/components/auth';
+
+const WarpStarfield = lazy(() => import('@/components/starship/fx/WarpStarfield'));
 
 export function AppLayout() {
   const location = useLocation();
@@ -10,13 +13,20 @@ export function AppLayout() {
   // 社區路由在防火牆外，不需要核心認證
   const isCommunityRoute = location.pathname.startsWith('/community');
 
+  const starfield = (
+    <Suspense fallback={null}>
+      <WarpStarfield count={90} speed={1.2} />
+    </Suspense>
+  );
+
   // 社區路由 — 不經過核心防線
   if (isCommunityRoute) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex w-full relative">
+          {starfield}
           <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 relative z-10">
             <Topbar />
             <main className="flex-1 overflow-auto oc-main">
               <Outlet />
@@ -31,9 +41,10 @@ export function AppLayout() {
   return (
     <CoreGatekeeper>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex w-full relative">
+          {starfield}
           <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 relative z-10">
             <CoreAuthBar />
             {!isOpenClawPage && <Topbar />}
             <main className={cn('flex-1 overflow-auto', !isOpenClawPage && 'oc-main', isOpenClawPage && 'overflow-x-hidden')}>

@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/common";
 import { CoreAuthProvider } from "@/components/auth";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
+import { useSpeculationRules, STARSHIP_PRERENDER_URLS } from "@/hooks/useSpeculationRules";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +29,9 @@ const HubCenters = lazy(() => import("./pages/HubCenters"));
 const DefenseCenter = lazy(() => import("./pages/DefenseCenter"));
 const ProtectionCenter = lazy(() => import("./pages/ProtectionCenter"));
 const ControlCenter = lazy(() => import("./pages/ControlCenter"));
+const MDCIDashboard = lazy(() => import("./pages/starship/MDCIDashboard"));
+const FrameworksOverview = lazy(() => import("./pages/starship/FrameworksOverview"));
+const ManufacturingRoadmap = lazy(() => import("./pages/starship/ManufacturingRoadmap"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,9 +57,16 @@ function PerformanceMonitor() {
   return null;
 }
 
+// Speculation Rules — 預渲染近鄰頁面（Chrome 121+）
+function SpeculationPrerender() {
+  useSpeculationRules(STARSHIP_PRERENDER_URLS);
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <PerformanceMonitor />
+    <SpeculationPrerender />
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -79,7 +90,7 @@ const App = () => (
                   <Route path="/projects" element={<Projects />} />
                   <Route path="/domains" element={<Domains />} />
                   <Route path="/review" element={<ReviewCenter />} />
-                  {/* ─── 研究中心（核心基建）─── */}
+                  {/* ─── 科技甲板（核心基建）─── */}
                   <Route path="/center" element={<HubCenters />} />
                   <Route path="/center/protection" element={<ProtectionCenter />} />
                   <Route path="/center/protection/:module" element={<ProtectionCenter />} />
@@ -87,6 +98,10 @@ const App = () => (
                   <Route path="/center/defense/:module" element={<DefenseCenter />} />
                   <Route path="/center/:centerId" element={<HubCenters />} />
                   <Route path="/center/:centerId/:module" element={<HubCenters />} />
+                  {/* ─── 星艦科技頁面 ─── */}
+                  <Route path="/starship/mdci" element={<MDCIDashboard />} />
+                  <Route path="/starship/frameworks" element={<FrameworksOverview />} />
+                  <Route path="/starship/manufacturing" element={<ManufacturingRoadmap />} />
                   {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
                   <Route path="/community/*" element={<CommunityFrame />} />
                   <Route path="/control" element={<ControlCenter />} />

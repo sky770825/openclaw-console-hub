@@ -1,8 +1,8 @@
 /**
- * 中心總覽 — Hub Centers Overview
+ * 甲板總覽 — Starship Deck Overview
  *
- * /center         → 五大中心概覽
- * /center/:id     → 單一中心模組列表
+ * /center         → 七大甲板概覽
+ * /center/:id     → 單一甲板模組列表
  * /center/:id/:module → 模組詳情頁
  */
 
@@ -61,7 +61,7 @@ function CenterDetail({ center, level }: { center: HubCenter; level: string | nu
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
         >
           <ArrowLeft className="h-3 w-3" />
-          返回中心總覽
+          返回甲板總覽
         </Link>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <span className="text-2xl">{center.icon}</span>
@@ -99,7 +99,7 @@ function CenterDetail({ center, level }: { center: HubCenter; level: string | nu
   );
 }
 
-// ─── 五大中心總覽（/center） ───
+// ─── 七大甲板總覽（/center） ───
 export default function HubCenters() {
   const { level } = useCoreAuth();
   const location = useLocation();
@@ -116,7 +116,7 @@ export default function HubCenters() {
       return (
         <div className="p-6 text-center text-muted-foreground">
           <p>找不到中心：{centerId}</p>
-          <Link to="/center" className="text-xs underline mt-2 block">返回中心總覽</Link>
+          <Link to="/center" className="text-xs underline mt-2 block">返回甲板總覽</Link>
         </div>
       );
     }
@@ -135,16 +135,16 @@ export default function HubCenters() {
     return <CenterDetail center={center} level={level} />;
   }
 
-  // 五大中心總覽
+  // 七大甲板總覽
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Building2 className="h-6 w-6" />
-          研究中心
+          甲板總覽
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Openclaw 核心基建：五大中心統一管理
+          星艦核心基建：七大甲板統一管理
         </p>
       </div>
 

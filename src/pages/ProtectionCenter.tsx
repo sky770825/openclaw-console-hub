@@ -1,5 +1,5 @@
 /**
- * 防護中心 — Protection Center
+ * 護盾甲板 — Protection Center
  *
  * 掃描掃毒、客戶防護、個資安全、客戶安全上線流程
  *
@@ -64,7 +64,7 @@ export default function ProtectionCenter() {
       <div>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Shield className="h-6 w-6 text-green-500" />
-          防護中心
+          護盾甲板
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           掃描掃毒、個資安全、客戶防護、安全上線流程

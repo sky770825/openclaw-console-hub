@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   Activity,
   CheckCircle,
@@ -26,6 +27,8 @@ import { StatusBadge } from '@/components/common/Badges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+const TelemetryChart = lazy(() => import('@/components/starship/fx/TelemetryChart'));
 import {
   Dialog,
   DialogContent,
@@ -227,7 +230,7 @@ export default function Dashboard() {
   return (
     <PageContainer>
       <SectionHeader
-        title="儀表板"
+        title="艦橋總覽"
         description="任務自動化系統總覽 · 與 OpenClaw Agent 板同步"
         icon="📊"
         action={
@@ -282,43 +285,32 @@ export default function Dashboard() {
         }
       />
 
-      {/* KPI Cards — OpenClaw Stats 風格 */}
-      <div className="oc-stats-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <StatCard
-          title="今日執行"
-          value={stats.todayRuns}
-          icon={Activity}
-        />
-        <StatCard
-          title="成功率"
-          value={`${stats.successRate}%`}
-          icon={CheckCircle}
-          variant="success"
-        />
-        <StatCard
-          title="失敗執行"
-          value={stats.failedRuns}
-          icon={XCircle}
-          variant={stats.failedRuns > 0 ? 'destructive' : 'default'}
-        />
-        <StatCard
-          title="平均耗時"
-          value={formatDuration(stats.avgDuration)}
-          icon={Clock}
-        />
-        <StatCard
-          title="佇列深度"
-          value={stats.queueDepth}
-          icon={Layers}
-          variant={stats.queueDepth > 10 ? 'warning' : 'default'}
-        />
-        <StatCard
-          title="活躍任務"
-          value={stats.activeTasks}
-          icon={Zap}
-          variant="accent"
-        />
-      </div>
+      {/* KPI Cards — 帶 stagger 動畫 */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+        className="oc-stats-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6"
+      >
+        {[
+          { title: "今日執行", value: stats.todayRuns, icon: Activity, variant: 'default' as const },
+          { title: "成功率", value: `${stats.successRate}%`, icon: CheckCircle, variant: 'success' as const },
+          { title: "失敗執行", value: stats.failedRuns, icon: XCircle, variant: (stats.failedRuns > 0 ? 'destructive' : 'default') as any },
+          { title: "平均耗時", value: formatDuration(stats.avgDuration), icon: Clock, variant: 'default' as const },
+          { title: "佇列深度", value: stats.queueDepth, icon: Layers, variant: (stats.queueDepth > 10 ? 'warning' : 'default') as any },
+          { title: "活躍任務", value: stats.activeTasks, icon: Zap, variant: 'accent' as const },
+        ].map((s) => (
+          <motion.div
+            key={s.title}
+            variants={{
+              hidden: { opacity: 0, y: 16, scale: 0.96 },
+              visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4 } },
+            }}
+          >
+            <StatCard title={s.title} value={s.value} icon={s.icon} variant={s.variant} />
+          </motion.div>
+        ))}
+      </motion.div>
 
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -344,9 +336,26 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Agent Usage Stats */}
+          {/* 即時遙測 — ECharts + Scroll-Driven */}
+          <Card className="sc-scroll-reveal">
+            <CardContent className="pt-4">
+              <Suspense fallback={<div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground">載入圖表…</div>}>
+                <TelemetryChart
+                  title="系統即時遙測"
+                  height={220}
+                  series={[
+                    { name: "CPU 負載", color: "#22d3ee" },
+                    { name: "記憶體", color: "#fbbf24" },
+                    { name: "佇列速率", color: "#a78bfa" },
+                  ]}
+                />
+              </Suspense>
+            </CardContent>
+          </Card>
+
+          {/* Agent Usage Stats — Scroll-Driven */}
           {stats.agentStats && stats.agentStats.length > 0 && (
-            <Card>
+            <Card className="sc-scroll-reveal">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-medium">Agent 使用統計</CardTitle>
               </CardHeader>
@@ -395,8 +404,8 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* Recent Failed Runs */}
-          <Card>
+          {/* Recent Failed Runs — Scroll-Driven */}
+          <Card className="sc-scroll-reveal">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-medium">近期失敗執行</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => navigate('/runs?status=failed')}>
@@ -458,8 +467,8 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Right Column - Alerts + Audit */}
-        <div className="space-y-6">
+        {/* Right Column — Container Query panel */}
+        <div className="space-y-6 sc-cq-panel">
           {/* WebSocket Status */}
           <Card>
             <CardHeader className="pb-2">

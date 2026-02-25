@@ -250,6 +250,262 @@
   }
 }
 
+/* ── 星艦指揮中心 — OKLCH 進階色彩 ── */
+:root {
+  --sc-cyan: oklch(0.82 0.15 192);
+  --sc-gold: oklch(0.83 0.16 85);
+  --sc-violet: oklch(0.72 0.17 290);
+  --sc-red: oklch(0.70 0.19 25);
+  --sc-green: oklch(0.78 0.15 155);
+}
+
+/* ── 全息卡片 ── */
+.sc-holo-card {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.04) 0%, rgba(129, 140, 248, 0.04) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 0 12px -4px rgba(34, 211, 238, 0.12);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  container-type: inline-size;
+}
+
+.sc-holo-card:hover {
+  border-color: rgba(34, 211, 238, 0.3);
+  box-shadow: 0 0 20px -4px rgba(34, 211, 238, 0.2);
+}
+
+/* ── Container Queries ── */
+@container (max-width: 280px) {
+  .sc-holo-card .sc-compact-hide { display: none; }
+  .sc-holo-card .sc-compact-small { font-size: 0.7rem; }
+}
+
+/* ── 漸層動畫 ── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* ── 掃描線動畫 ── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.sc-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.03) 50%,
+    transparent 100%
+  );
+  height: 30%;
+  animation: scanline 6s linear infinite;
+  pointer-events: none;
+}
+
+/* ── 全息文字光暈 ── */
+.sc-glow-text {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4), 0 0 40px rgba(34, 211, 238, 0.1);
+}
+
+/* ── 脈搏指示燈 ── */
+@keyframes beacon {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 211, 238, 0); }
+}
+
+.sc-beacon {
+  animation: beacon 2s ease-in-out infinite;
+}
+
+/* ── View Transitions ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+
+::view-transition-old(root) {
+  animation: fade-out 0.3s ease-out;
+}
+
+::view-transition-new(root) {
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── CSS Scroll-Driven Animations ── */
+@supports (animation-timeline: view()) {
+  .sc-scroll-reveal {
+    animation: sc-scroll-fade-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 100%;
+  }
+
+  @keyframes sc-scroll-fade-in {
+    0% { opacity: 0; transform: translateY(30px) scale(0.96); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  .sc-scroll-slide-right {
+    animation: sc-scroll-slide-r linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+
+  @keyframes sc-scroll-slide-r {
+    0% { opacity: 0; transform: translateX(-40px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+
+  .sc-scroll-progress {
+    animation: sc-progress-fill linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 60%;
+  }
+
+  @keyframes sc-progress-fill {
+    0% { width: 0%; }
+    100% { width: var(--sc-progress-target, 100%); }
+  }
+
+  .sc-scroll-counter {
+    animation: sc-counter-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 10% entry 70%;
+  }
+
+  @keyframes sc-counter-reveal {
+    0% { opacity: 0; transform: scale(0.8) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+}
+
+@supports not (animation-timeline: view()) {
+  .sc-scroll-reveal,
+  .sc-scroll-slide-right,
+  .sc-scroll-counter {
+    opacity: 1;
+    transform: none;
+  }
+  .sc-scroll-progress {
+    width: var(--sc-progress-target, 100%);
+  }
+}
+
+/* ── CSS Subgrid — 卡片網格完美對齊 ── */
+@supports (grid-template-rows: subgrid) {
+  .sc-subgrid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .sc-subgrid-cards > * {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3;
+  }
+}
+
+@supports not (grid-template-rows: subgrid) {
+  .sc-subgrid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* ── CSS Anchor Positioning ── */
+@supports (anchor-name: --sc-anchor) {
+  .sc-anchor {
+    anchor-name: --sc-anchor;
+  }
+  .sc-anchor-tooltip {
+    position: fixed;
+    position-anchor: --sc-anchor;
+    inset-area: top;
+    margin-bottom: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sc-anchor:hover + .sc-anchor-tooltip,
+  .sc-anchor:focus + .sc-anchor-tooltip {
+    opacity: 1;
+  }
+}
+
+/* ── Native Popover 增強 ── */
+[popover] {
+  background: var(--oc-s2);
+  border: 1px solid var(--oc-border-h);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--oc-t1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  max-width: 360px;
+}
+
+[popover]::backdrop {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+@supports (transition-behavior: allow-discrete) {
+  [popover]:popover-open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  [popover] {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s, display 0.2s, overlay 0.2s;
+    transition-behavior: allow-discrete;
+  }
+  @starting-style {
+    [popover]:popover-open {
+      opacity: 0;
+      transform: scale(0.95) translateY(-8px);
+    }
+  }
+}
+
+/* ── 擴展 Container Queries ── */
+.sc-cq-panel {
+  container-type: inline-size;
+}
+
+@container (min-width: 400px) {
+  .sc-cq-panel .sc-cq-2col { grid-template-columns: 1fr 1fr; }
+}
+
+@container (min-width: 600px) {
+  .sc-cq-panel .sc-cq-3col { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+@container (max-width: 300px) {
+  .sc-cq-panel .sc-cq-compact { font-size: 0.75rem; }
+  .sc-cq-panel .sc-cq-hide-narrow { display: none; }
+}
+
 /* ── Mobile Responsive ── */
 @media (max-width: 640px) {
   /* Touch-friendly buttons: min 44px tap target */
