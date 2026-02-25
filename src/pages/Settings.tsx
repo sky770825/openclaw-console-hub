@@ -161,7 +161,7 @@ export default function Settings() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="system-name">系統名稱</Label>
-                  <Input id="system-name" defaultValue="Openclaw 正式環境" />
+                  <Input id="system-name" defaultValue="星艦指揮中心 正式環境" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">時區</Label>
