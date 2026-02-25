@@ -47,12 +47,20 @@ function useInfraStatus() {
   ];
 
   const tables: DBTable[] = [
-    { name: 'tasks', rows: 1482, size: '4.2 MB', lastVacuum: '2h ago' },
+    { name: 'tasks', rows: 1482 + tick, size: '4.2 MB', lastVacuum: '2h ago' },
     { name: 'users', rows: 38, size: '0.1 MB', lastVacuum: '6h ago' },
     { name: 'idea_logs', rows: 312, size: '1.8 MB', lastVacuum: '4h ago' },
-    { name: 'activity_logs', rows: 9431, size: '22.1 MB', lastVacuum: '30m ago' },
-    { name: 'executions', rows: 2847, size: '8.7 MB', lastVacuum: '1h ago' },
+    { name: 'activity_logs', rows: 9431 + tick * 3, size: '22.1 MB', lastVacuum: '30m ago' },
+    { name: 'executions', rows: 2847 + tick, size: '8.7 MB', lastVacuum: '1h ago' },
     { name: 'workflows', rows: 61, size: '3.4 MB', lastVacuum: '3h ago' },
+    { name: 'agents', rows: 14, size: '0.2 MB', lastVacuum: '1d ago' },
+    { name: 'memory_entries', rows: 1847, size: '6.1 MB', lastVacuum: '30m ago' },
+    { name: 'patrol_logs', rows: 4219, size: '9.8 MB', lastVacuum: '15m ago' },
+    { name: 'proposals', rows: 23, size: '0.5 MB', lastVacuum: '4h ago' },
+    { name: 'deployments', rows: 89, size: '1.2 MB', lastVacuum: '2h ago' },
+    { name: 'checkpoints', rows: 312, size: '7.4 MB', lastVacuum: '1h ago' },
+    { name: 'sessions', rows: 47, size: '0.3 MB', lastVacuum: '5m ago' },
+    { name: 'knowledge_base', rows: 131, size: '4.8 MB', lastVacuum: '3h ago' },
   ];
 
   const netInterfaces: NetInterface[] = [
@@ -152,11 +160,14 @@ const ArchitecturePage: React.FC = () => {
 // ── Deployment ─────────────────────────────────────────────────────────────
 const DeploymentPage: React.FC = () => {
   const deploys = [
-    { id: 'd001', env: 'production', branch: 'main', commit: '70c737d', by: 'openclaw-owner', time: '2h ago', status: 'success', duration: '1m 42s' },
-    { id: 'd002', env: 'production', branch: 'main', commit: 'ce9278d', by: 'openclaw-owner', time: '1d ago', status: 'success', duration: '1m 38s' },
-    { id: 'd003', env: 'staging', branch: 'feat/ai-deck', commit: 'a3f9c12', by: 'deputy-bot', time: '3d ago', status: 'success', duration: '2m 05s' },
-    { id: 'd004', env: 'production', branch: 'main', commit: 'adf6dc8', by: 'openclaw-owner', time: '4d ago', status: 'success', duration: '1m 55s' },
-    { id: 'd005', env: 'staging', branch: 'feat/holoGlobe', commit: 'b1e8f34', by: 'deputy-bot', time: '5d ago', status: 'failed', duration: '0m 28s' },
+    { id: 'd001', env: 'production', branch: 'main', commit: '5d80e2d', by: 'openclaw-owner', time: '剛才', status: 'success', duration: '1m 38s', msg: 'fix: post-push-sync 改用 --rebase' },
+    { id: 'd002', env: 'production', branch: 'main', commit: '8d46011', by: 'openclaw-owner', time: '1h前', status: 'success', duration: '1m 44s', msg: 'feat: 即時同步 + 每日版本遞增機制' },
+    { id: 'd003', env: 'production', branch: 'main', commit: '70c737d', by: 'openclaw-owner', time: '1d前', status: 'success', duration: '2m 01s', msg: 'feat: 星艦指揮中心 + 13項先進網頁技術' },
+    { id: 'd004', env: 'production', branch: 'main', commit: 'ce9278d', by: 'openclaw-owner', time: '2d前', status: 'success', duration: '1m 52s', msg: 'feat: PWA 化 + 控制台頁面 + activity-log API' },
+    { id: 'd005', env: 'production', branch: 'main', commit: 'adf6dc8', by: 'openclaw-owner', time: '3d前', status: 'success', duration: '1m 47s', msg: 'feat: 治理引擎 + 暫代派工小蔡' },
+    { id: 'd006', env: 'production', branch: 'main', commit: 'b699bf0', by: 'openclaw-owner', time: '4d前', status: 'success', duration: '1m 33s', msg: 'feat: 構想記錄系統 — API + 前端表單' },
+    { id: 'd007', env: 'staging', branch: 'feat/infra-deck', commit: 'a3f9c12', by: 'deputy-bot', time: '5d前', status: 'success', duration: '2m 05s', msg: 'feat: InfraDeck + AutomationDeck 初版' },
+    { id: 'd008', env: 'staging', branch: 'feat/holoGlobe', commit: 'b1e8f34', by: 'deputy-bot', time: '6d前', status: 'failed', duration: '0m 28s', msg: 'fix: HoloGlobe render crash — rollback' },
   ];
 
   const statusColor = (s: string) => s === 'success' ? '#10b981' : s === 'failed' ? '#ef4444' : '#f59e0b';
@@ -176,7 +187,7 @@ const DeploymentPage: React.FC = () => {
               <span style={{ color: statusColor(d.status), fontWeight: 700, textTransform: 'uppercase' }}>{d.status}</span>
               <span style={{ color: '#f59e0b', background: '#1a1000', padding: '2px 8px', borderRadius: 4 }}>{d.env}</span>
               <span style={{ color: '#94a3b8' }}>{d.branch} · <code style={{ color: '#38bdf8' }}>{d.commit}</code></span>
-              <span style={{ color: '#64748b' }}>by {d.by}</span>
+              <span style={{ color: '#94a3b8', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{('msg' in d) ? String(d.msg) : ''}</span>
               <span style={{ color: '#64748b' }}>{d.duration}</span>
               <span style={{ color: '#475569' }}>{d.time}</span>
             </div>
@@ -221,7 +232,7 @@ const DatabasePage: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
           { label: 'Total Tables', value: '14', color: '#38bdf8' },
-          { label: 'Total Rows', value: '18.2K', color: '#10b981' },
+          { label: 'Total Rows', value: `${(18200 + tick * 5).toLocaleString()}`, color: '#10b981' },
           { label: 'DB Size', value: '412 MB', color: '#a855f7' },
           { label: 'Active Conn', value: '7 / 100', color: '#f59e0b' },
         ].map(s => (
@@ -460,9 +471,14 @@ const MonitoringPage: React.FC = () => {
   const ts = new Date().toLocaleTimeString('en', { hour12: false });
 
   const alerts = [
-    { level: 'warn', msg: 'minio-storage CPU > 40% for 5min', time: '8m ago' },
-    { level: 'info', msg: 'Scheduled backup completed successfully', time: '6h ago' },
-    { level: 'info', msg: 'SSL certificate renewed (90d)', time: '15d ago' },
+    { level: 'warn', msg: 'minio-storage CPU > 40% for 5min', time: '8m前' },
+    { level: 'info', msg: 'v2.2.0 post-push-sync 自動觸發 — 小蔡同步完成', time: '剛才' },
+    { level: 'info', msg: '每日版本遞增任務 launchd 已載入', time: '1h前' },
+    { level: 'info', msg: 'n8n 週報 workflow 執行完成 (6m 12s)', time: '3h前' },
+    { level: 'warn', msg: 'activity_logs 表超過 9000 rows — 建議清理', time: '4h前' },
+    { level: 'info', msg: 'Scheduled backup completed (45s, 412MB)', time: '6h前' },
+    { level: 'info', msg: 'Ollama qwen3:8b 模型熱機完成', time: '8h前' },
+    { level: 'info', msg: 'SSL certificate renewed (90d)', time: '15d前' },
   ];
 
   return (

@@ -3445,7 +3445,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.1.0',
+    version: '2.2.0',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
