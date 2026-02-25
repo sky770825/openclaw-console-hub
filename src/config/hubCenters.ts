@@ -243,12 +243,12 @@ export const HUB_CENTERS: HubCenter[] = [
     requiredLevel: 'admin',
     enabled: true,
     modules: [
-      { id: 'n8n-flows', label: 'n8n 工作流', icon: '🔗', description: '5 個預建工作流（排程/Webhook/審核/通知）', route: '/center/automation/n8n-flows', enabled: true },
-      { id: 'auto-executor', label: '自動執行器', icon: '▶️', description: '自動任務派發 + 批次執行', route: '/center/automation/auto-executor', enabled: true },
-      { id: 'auto-patrol', label: '自動巡邏', icon: '🚁', description: '持續健康監控（openclaw-auto-patrol）', route: '/center/automation/auto-patrol', enabled: true },
-      { id: 'control-scripts', label: '控制腳本', icon: '🎮', description: '安全子程序執行 + 逾時處理（control_scripts）', route: '/center/automation/control-scripts', enabled: true },
-      { id: 'backup-restore', label: '備份還原', icon: '💾', description: '自動專案備份 + 記憶體同步', route: '/center/automation/backup-restore', enabled: true },
-      { id: 'telegram-control', label: 'Telegram 控制', icon: '📱', description: 'Telegram 審核/狀態/停止指令（4 個 workflow）', route: '/center/automation/telegram-control', enabled: true },
+      { id: 'n8n', label: 'n8n 工作流', icon: '🔗', description: '5 個預建工作流（排程/Webhook/審核/通知）', route: '/center/automation/n8n', enabled: true },
+      { id: 'executor', label: '自動執行器', icon: '▶️', description: '自動任務派發 + 批次執行', route: '/center/automation/executor', enabled: true },
+      { id: 'patrol', label: '自動巡邏', icon: '🚁', description: '持續健康監控（openclaw-auto-patrol）', route: '/center/automation/patrol', enabled: true },
+      { id: 'scripts', label: '控制腳本', icon: '🎮', description: '安全子程序執行 + 逾時處理（control_scripts）', route: '/center/automation/scripts', enabled: true },
+      { id: 'backup', label: '備份還原', icon: '💾', description: '自動專案備份 + 記憶體同步', route: '/center/automation/backup', enabled: true },
+      { id: 'telegram', label: 'Telegram 控制', icon: '📱', description: 'Telegram 審核/狀態/停止指令（4 個 workflow）', route: '/center/automation/telegram', enabled: true },
     ],
   },
 ];
