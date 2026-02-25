@@ -111,6 +111,9 @@ const autoExecutorState: AutoExecutorState = {
 };
 
 let autoExecutorInterval: NodeJS.Timeout | null = null;
+
+// 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
+const approvedCriticalTaskIds = new Set<string>();
 const autoExecutorExecHistoryMs: number[] = [];
 let dispatchDigestTimer: NodeJS.Timeout | null = null;
 
@@ -290,37 +293,48 @@ async function executeNextPendingTask(): Promise<void> {
     // Dispatch gate
     if (autoExecutorState.dispatchMode) {
       const riskLevel = classifyTaskRisk(task);
+      const bossApproved = approvedCriticalTaskIds.has(task.id);
 
-      if (riskLevel === 'critical') {
-        autoExecutorState.pendingReviews.push({
-          taskId: task.id,
-          taskName: task.name || '未命名任務',
-          riskLevel,
-          reason: '高風險任務需要老蔡審核',
-          queuedAt: new Date().toISOString(),
-        });
-        await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
-        await sendTelegramMessage(
-          `🟣 <b>高風險任務等待審核</b>\n\n` +
-          `<b>任務：</b>${task.name}\n` +
-          `<b>風險：</b>critical（需老蔡親自確認）\n` +
-          `<b>說明：</b>${(task.description || '無').slice(0, 200)}`,
-          { parseMode: 'HTML' }
-        );
-        log.info(`[AutoDispatch] 🟣 任務「${task.name}」需老蔡審核，已排入待審佇列`);
-        autoExecutorState.recentExecutions.push({
-          taskId: task.id,
-          taskName: task.name || '',
-          riskLevel,
-          status: 'pending_review',
-          executedAt: new Date().toISOString(),
-          agentType: 'pending',
-          summary: '等待老蔡審核',
-        });
+      if (riskLevel === 'critical' && !bossApproved) {
+        // 尚未被老蔡批准 → 加入待審佇列（避免重複加入）
+        const alreadyPending = autoExecutorState.pendingReviews.some((r) => r.taskId === task.id);
+        if (!alreadyPending) {
+          autoExecutorState.pendingReviews.push({
+            taskId: task.id,
+            taskName: task.name || '未命名任務',
+            riskLevel,
+            reason: '高風險任務需要老蔡審核',
+            queuedAt: new Date().toISOString(),
+          });
+          await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
+          await sendTelegramMessage(
+            `🟣 <b>高風險任務等待審核</b>\n\n` +
+            `<b>任務：</b>${task.name}\n` +
+            `<b>風險：</b>critical（需老蔡親自確認）\n` +
+            `<b>說明：</b>${(task.description || '無').slice(0, 200)}`,
+            { parseMode: 'HTML' }
+          );
+          log.info(`[AutoDispatch] 🟣 任務「${task.name}」需老蔡審核，已排入待審佇列`);
+          autoExecutorState.recentExecutions.push({
+            taskId: task.id,
+            taskName: task.name || '',
+            riskLevel,
+            status: 'pending_review',
+            executedAt: new Date().toISOString(),
+            agentType: 'pending',
+            summary: '等待老蔡審核',
+          });
+        } else {
+          log.info(`[AutoDispatch] 🟣 任務「${task.name}」已在待審佇列，跳過`);
+        }
         return;
       }
 
-      if (riskLevel === 'medium') {
+      if (bossApproved) {
+        log.info(`[AutoDispatch] ✅ 任務「${task.name}」已獲老蔡批准，跳過風險派工，直接執行`);
+        // 注意：不在這裡 delete，等到 upsertOpenClawTask('in_progress') 完成後再 delete
+        // 避免競爭條件：delete 後但 upsert 前，另一個 poll 又把它加回 pendingReviews
+      } else if (riskLevel === 'medium') {
         log.info(`[AutoDispatch] 🔴 中風險任務「${task.name}」，Claude 審慎執行`);
       } else if (riskLevel === 'low') {
         log.info(`[AutoDispatch] 🟡 低風險任務「${task.name}」，Claude 審核執行`);
@@ -332,6 +346,8 @@ async function executeNextPendingTask(): Promise<void> {
     const agentType = AgentSelector.selectAgent(task);
 
     await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
+    // 確保 Supabase 已設為 in_progress 後，才從批准 set 移除（避免競爭條件）
+    approvedCriticalTaskIds.delete(task.id);
 
     const { data: run } = await supabase
       .from('openclaw_runs')
@@ -606,10 +622,12 @@ autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
   const review = autoExecutorState.pendingReviews[idx];
 
   if (decision === 'approved') {
+    // 記錄為老蔡已批准，下一次 poll 時跳過 critical 派工閘，直接執行
+    approvedCriticalTaskIds.add(taskId);
     await upsertOpenClawTask({ id: taskId, status: 'queued' });
     autoExecutorState.pendingReviews.splice(idx, 1);
     await sendTelegramMessage(
-      `✅ 老蔡已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 執行`,
+      `✅ 老蔡已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 直接執行`,
       { parseMode: 'HTML' }
     );
     return res.json({ ok: true, taskId, decision: 'approved' });
