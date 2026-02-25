@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "enabledAt": "2026-02-19T02:46:51.792Z",
+  "enabledBy": "boss-return",
+  "maxTasksPerRun": 3,
+  "allowedTags": [
+    "auto-ok"
+  ],
+  "excludeTags": [],
+  "disabledAt": "2026-02-19T02:47:36.235Z",
+  "delegateToXiaoji": true
+}

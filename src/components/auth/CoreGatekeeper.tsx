@@ -122,7 +122,7 @@ function GatekeeperLogin() {
         </form>
 
         <p className="text-center text-[10px] text-muted-foreground/50 mt-6">
-          Openclaw Core Auth — 未授權存取將被記錄
+          Starship Core Auth — 未授權存取將被記錄
         </p>
       </div>
     </div>

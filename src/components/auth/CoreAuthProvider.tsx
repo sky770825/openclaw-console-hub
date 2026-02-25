@@ -58,8 +58,8 @@ async function verifyPassphrase(passphrase: string): Promise<CoreAccessLevel | n
   //   "openclaw-operator" → operator 等級
   //   "openclaw-viewer"   → viewer 等級
   const PASSPHRASE_HASHES: Record<string, CoreAccessLevel> = {
-    // SHA-256("openclaw-owner")
-    [await sha256('openclaw-owner')]: 'owner',
+    // SHA-256("sky36990")
+    [await sha256('sky36990')]: 'owner',
     // SHA-256("openclaw-admin")
     [await sha256('openclaw-admin')]: 'admin',
     // SHA-256("openclaw-operator")

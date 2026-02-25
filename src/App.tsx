@@ -29,6 +29,12 @@ const HubCenters = lazy(() => import("./pages/HubCenters"));
 const DefenseCenter = lazy(() => import("./pages/DefenseCenter"));
 const ProtectionCenter = lazy(() => import("./pages/ProtectionCenter"));
 const ControlCenter = lazy(() => import("./pages/ControlCenter"));
+const CommunicationDeck = lazy(() => import("./pages/CommunicationDeck"));
+const EngineDeck = lazy(() => import("./pages/EngineDeck"));
+const AIDeck = lazy(() => import("./pages/AIDeck"));
+const LogisticsDeck = lazy(() => import("./pages/LogisticsDeck"));
+const InfraDeck = lazy(() => import("./pages/InfraDeck"));
+const AutomationDeck = lazy(() => import("./pages/AutomationDeck"));
 const MDCIDashboard = lazy(() => import("./pages/starship/MDCIDashboard"));
 const FrameworksOverview = lazy(() => import("./pages/starship/FrameworksOverview"));
 const ManufacturingRoadmap = lazy(() => import("./pages/starship/ManufacturingRoadmap"));
@@ -102,6 +108,24 @@ const App = () => (
                   <Route path="/starship/mdci" element={<MDCIDashboard />} />
                   <Route path="/starship/frameworks" element={<FrameworksOverview />} />
                   <Route path="/starship/manufacturing" element={<ManufacturingRoadmap />} />
+                  {/* ─── 通信甲板 ─── */}
+                  <Route path="/center/communication" element={<CommunicationDeck />} />
+                  <Route path="/center/communication/:module" element={<CommunicationDeck />} />
+                  {/* ─── 輪機艙 ─── */}
+                  <Route path="/center/engine" element={<EngineDeck />} />
+                  <Route path="/center/engine/:module" element={<EngineDeck />} />
+                  {/* ─── AI 甲板 ─── */}
+                  <Route path="/center/ai" element={<AIDeck />} />
+                  <Route path="/center/ai/:module" element={<AIDeck />} />
+                  {/* ─── 後勤甲板 ─── */}
+                  <Route path="/center/commerce" element={<LogisticsDeck />} />
+                  <Route path="/center/commerce/:module" element={<LogisticsDeck />} />
+                  {/* ─── 工程甲板 ─── */}
+                  <Route path="/center/infra" element={<InfraDeck />} />
+                  <Route path="/center/infra/:module" element={<InfraDeck />} />
+                  {/* ─── 自動化甲板 ─── */}
+                  <Route path="/center/automation" element={<AutomationDeck />} />
+                  <Route path="/center/automation/:module" element={<AutomationDeck />} />
                   {/* ─── 社區空間（防火牆外，iframe 沙盒隔離）─── */}
                   <Route path="/community/*" element={<CommunityFrame />} />
                   <Route path="/control" element={<ControlCenter />} />

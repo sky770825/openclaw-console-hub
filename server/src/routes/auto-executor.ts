@@ -271,7 +271,12 @@ async function executeNextPendingTask(): Promise<void> {
     const ocTasks = await fetchOpenClawTasks();
     const pendingTasks = ocTasks
       .map(openClawTaskToTask)
-      .filter((t) => t.status === 'ready' && validateTaskForGate(t, 'ready').ok)
+      .filter((t) => {
+        if (t.status !== 'ready') return false;
+        // In dispatch mode, skip strict gate validation (no runCommands/agent needed for dispatch)
+        if (autoExecutorState.dispatchMode) return true;
+        return validateTaskForGate(t, 'ready').ok;
+      })
       .sort((a, b) => (a.priority || 3) - (b.priority || 3));
 
     if (pendingTasks.length === 0) {

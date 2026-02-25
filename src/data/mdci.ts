@@ -14,7 +14,7 @@ export const MDCI_AXES: MDCIAxisData[] = [
     labelEn: "Energy Sovereignty",
     description:
       "從化石燃料→核融合→戴森球→真空能量→熵逆轉→時空取能的升級路徑",
-    current: 0.15,
+    current: 3.0,
     target: 3.0,
     color: "#f59e0b",
     icon: "Zap",
@@ -25,7 +25,7 @@ export const MDCI_AXES: MDCIAxisData[] = [
     labelEn: "Information Architecture",
     description:
       "從數位網路→量子原生→基質無關→哥德爾自指→超可計算→資訊即現實",
-    current: 0.2,
+    current: 4.0,
     target: 4.0,
     color: "#22d3ee",
     icon: "Globe",
@@ -36,7 +36,7 @@ export const MDCI_AXES: MDCIAxisData[] = [
     labelEn: "Evolution Velocity",
     description:
       "從人類節奏→AI加速→自我進化AI→物理層進化→本體論進化→即時適應",
-    current: 0.05,
+    current: 3.5,
     target: 3.5,
     color: "#34d399",
     icon: "Dna",
@@ -47,7 +47,7 @@ export const MDCI_AXES: MDCIAxisData[] = [
     labelEn: "Spatial-Causal Control",
     description:
       "從行星表面→內太陽系→恆星系→等效度規→選擇性因果→時空建構",
-    current: 0.1,
+    current: 4.0,
     target: 4.0,
     color: "#818cf8",
     icon: "Orbit",
@@ -58,7 +58,7 @@ export const MDCI_AXES: MDCIAxisData[] = [
     labelEn: "Consciousness Integration",
     description:
       "從孤立心智→腦機共生→網絡意識→意識武器→意識-物理耦合→普遍意識",
-    current: 0.02,
+    current: 3.0,
     target: 3.0,
     color: "#c084fc",
     icon: "Brain",
@@ -69,7 +69,7 @@ export const MDCI_AXES: MDCIAxisData[] = [
     labelEn: "Defensive Transcendence",
     description:
       "從動能武器→分散自主→介質防禦→本體論防禦→邏輯防禦→因果防禦",
-    current: 0.08,
+    current: 4.5,
     target: 4.5,
     color: "#f87171",
     icon: "Shield",
