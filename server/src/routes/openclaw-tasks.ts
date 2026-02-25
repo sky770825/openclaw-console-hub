@@ -26,11 +26,20 @@ const log = createLogger('openclaw-tasks-route');
 
 export const openclawTasksRouter = Router();
 
+/** OpenClaw raw status → 前端看板 status 映射 */
+const OC_STATUS_TO_BOARD: Record<string, string> = {
+  queued: 'ready',       // 待執行
+  in_progress: 'running', // 執行中
+  done: 'done',           // 完成
+};
+
 /** 映射 OpenClaw task 到前端看板格式 */
 function mapToBoard(oc: any) {
+  const mapped = openClawTaskToTask(oc);
   return {
-    ...openClawTaskToTask(oc),
-    status: oc.status ?? 'queued',
+    ...mapped,
+    // 用映射後的 status（ready/running/done），讓 Kanban 欄位正確對應
+    status: OC_STATUS_TO_BOARD[oc.status] ?? mapped.status,
     title: oc.title,
     subs: oc.subs ?? [],
     progress: oc.progress,
