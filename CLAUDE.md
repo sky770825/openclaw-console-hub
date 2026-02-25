@@ -72,17 +72,44 @@ git push xiaoji main
 
 ---
 
+## 🔑 API Key（已解鎖）
+
+`.env` 已設定，可直接使用：
+
+```
+VITE_API_BASE_URL=http://localhost:3011
+VITE_OPENCLAW_API_KEY=oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1
+```
+
+**呼叫 API 時加上 Header：**
+```
+Authorization: Bearer oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1
+```
+
+**新增任務範例：**
+```bash
+curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1" \
+  -d '{"name":"任務名稱","status":"pending","priority":2,"owner":"小蔡"}'
+```
+
+---
+
 ## ⚡ 版本規則
 
-- 目前版本：**v2.1.0**
-- 每次重大功能更新，版本號 patch +1（如 v2.1.1、v2.1.2）
+- 目前版本：**v2.2.0**
+- 每次重大功能更新，版本號 patch +1（如 v2.2.1、v2.2.2）
 - 需同時更新：`package.json`、`server/package.json`、`server/src/index.ts`
+- 每天 00:01 老蔡 launchd 自動遞增 patch 版本號
 
 ---
 
 ## 📡 目前系統狀態（2026-02-26 更新）
 
 - 9 個甲板全部建立完成（AI/後勤/工程/自動化/通信/輪機/防禦/保護/科技）
+- 五大看板資料已補滿 100%（通信/後勤/工程/公開展示/協作空間）
 - MDCI 文明指數：100%（6軸全滿）
-- Server：v2.1.0，port 3011，autoExecutor 運行中
+- Server：v2.2.0，port 3011，autoExecutor 運行中
 - Owner 密碼：sky36990
+- API Key 已寫入 `.env`，小蔡可直接寫入任務
