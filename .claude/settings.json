@@ -2,23 +2,23 @@
   "permissions": {
     "allow": [
       "Bash(curl:*)",
-      "Bash(git pull origin main*)",
-      "Bash(git push origin main*)",
-      "Bash(git push xiaoji main*)",
-      "Bash(git status*)",
-      "Bash(git log*)",
-      "Bash(git add*)",
-      "Bash(git commit*)"
+      "Bash(git *)",
+      "Bash(npm run build*)",
+      "Bash(node *)",
+      "Bash(lsof *)",
+      "Bash(kill *)",
+      "Bash(nohup *)",
+      "Bash(bash /Users/caijunchang/openclaw任務面版設計/scripts/*)"
     ]
   },
   "hooks": {
-    "PreToolUse": [
+    "PostToolUse": [
       {
-        "matcher": ".*",
+        "matcher": "Bash(git push*)",
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/session-sync.sh"
+            "command": "bash /Users/caijunchang/openclaw任務面版設計/scripts/post-push-sync.sh"
           }
         ]
       }
