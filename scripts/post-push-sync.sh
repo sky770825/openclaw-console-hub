@@ -17,7 +17,7 @@ cd "$XIAOJI_DIR" 2>/dev/null || {
 }
 
 # 同步 origin → 小蔡本地
-result=$(git pull origin main 2>&1)
+result=$(git pull origin main --rebase 2>&1)
 code=$?
 
 echo "[$timestamp] post-push-sync: exit=$code | $result" >> "$LOG"
