@@ -23,6 +23,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Projects = lazy(() => import("./pages/Projects"));
 const ReviewCenter = lazy(() => import("./pages/ReviewCenter"));
 const Domains = lazy(() => import("./pages/Domains"));
+const CaseStudies = lazy(() => import("./pages/CaseStudies"));
 const OpenClawV4 = lazy(() => import("../openclaw-cursor.jsx"));
 const CommunityFrame = lazy(() => import("./pages/CommunityFrame"));
 const HubCenters = lazy(() => import("./pages/HubCenters"));
@@ -96,6 +97,7 @@ const App = () => (
                   <Route path="/projects" element={<Projects />} />
                   <Route path="/domains" element={<Domains />} />
                   <Route path="/review" element={<ReviewCenter />} />
+                  <Route path="/case-studies" element={<CaseStudies />} />
                   {/* ─── 科技甲板（核心基建）─── */}
                   <Route path="/center" element={<HubCenters />} />
                   <Route path="/center/protection" element={<ProtectionCenter />} />
