@@ -71,7 +71,26 @@ PY
 )"
 fi
 
-# ── 7. 小蔡（副手）是否在線 ──
+# ── 7. API 額度快速檢測 ──
+GOOGLE_KEY="AIzaSyD0KfLJji1sgTK4anrL5VSnvc1GA2pN1Gk"
+check_model() {
+  local model="$1"
+  local code
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
+    -X POST "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_KEY}" \
+    -H "Content-Type: application/json" \
+    -d '{"contents":[{"parts":[{"text":"1"}]}]}' 2>/dev/null)
+  if [[ "$code" == "200" ]]; then echo "✅ 有配額"
+  elif [[ "$code" == "429" ]]; then echo "❌ 額度用盡"
+  else echo "🟡 未知($code)"
+  fi
+}
+QUOTA_25FLASH="$(check_model 'gemini-2.5-flash')"
+QUOTA_3FLASH="$(check_model 'gemini-3-flash-preview')"
+QUOTA_25PRO="$(check_model 'gemini-2.5-pro')"
+CURRENT_MODEL="$(python3 -c "import json; d=json.load(open('$HOME/.openclaw/openclaw.json')); print(d['agents']['defaults']['model']['primary'])" 2>/dev/null || echo '未知')"
+
+# ── 8. 小蔡（副手）是否在線 ──
 XIAOJI_ALIVE=false
 XIAOJI_PROJECTS_DIR="$HOME/Downloads/openclaw-console-hub-main"
 if [[ -d "$XIAOJI_PROJECTS_DIR" ]]; then
@@ -89,6 +108,21 @@ cat <<HEADER
 # ⚡ WAKE_STATUS — Claude Code 醒來時讀這裡
 > 同步時間：$TS
 > 每次 Claude Code 啟動自動更新
+
+## 🔋 API 額度表（自動檢測）
+
+| Provider | 模型 | 免費配額 | 狀態 |
+|----------|------|---------|------|
+| Google | gemini-2.5-flash | 1500 req/day | ${QUOTA_25FLASH} |
+| Google | gemini-3-flash-preview | 1000 req/day | ${QUOTA_3FLASH} |
+| Google | gemini-2.5-pro | 50 req/day | ${QUOTA_25PRO} |
+| Kimi | kimi-k2.5 | 免費無限 | ✅ 備援 |
+| Ollama | qwen3:8b | 本地無限 | ✅ 本地 |
+
+> 🤖 **NEUXA 目前主模型**：\`${CURRENT_MODEL}\`
+> ⚠️ 如果 NEUXA 不回應 → 改 openclaw.json \`agents.defaults.model.primary\` 再 kill -HUP \$(pgrep openclaw-gateway)
+
+---
 
 ## 🟢 系統狀態
 - **後端 Server (3011)**：$( $SERVER_OK && echo "✅ 在線" || echo "❌ 離線（請重啟：nohup node server/dist/index.js > /tmp/openclaw-server.log 2>&1 &）")
