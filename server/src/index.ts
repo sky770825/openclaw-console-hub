@@ -72,6 +72,8 @@ import autoExecutorRouter, {
   saveAutoExecutorDiskState,
   startDispatchDigestTimer,
 } from './routes/auto-executor.js';
+// === 新增：房源文案 API 路由 (P3 任務) ===
+import propertyApiRouter from './routes/property-api.js';
 import {
   hasN8n,
   listWorkflows,
@@ -507,6 +509,8 @@ app.use('/api/openclaw/tasks', openclawTasksRouter);
 app.use('/api/openclaw/reviews', openclawReviewsRouter);
 app.use('/api/openclaw', openclawDataRouter);
 app.use('/api/openclaw/insights', insightsRouter);
+// === 新增：房源文案 API 路由 (P3 任務) ===
+app.use('/api/tools', propertyApiRouter);
 // FADP 聯盟協防協議路由（/api/federation/*，部分端點不需 auth，內部使用 x-fadp-key）
 app.use('/api/federation', federationRouter);
 
