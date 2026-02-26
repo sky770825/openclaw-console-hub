@@ -419,6 +419,23 @@ async function executeNextPendingTask(): Promise<void> {
         return;
       }
 
+      // P3 auto-executor 防呆: 任務 result 必填驗證
+      if (!result.output || result.output.trim() === '') {
+        log.warn(`[AutoExecutor] 任務「${task.name}」完成但無 result 輸出，改標記為 needs_review`);
+        await supabase
+          .from('openclaw_runs')
+          .update({
+            status: 'failed',
+            ended_at: new Date().toISOString(),
+            error: { message: '任務完成但無 result 輸出', code: 'NO_RESULT_OUTPUT' },
+          })
+          .eq('id', runId);
+        await upsertOpenClawTask({ id: task.id, status: 'needs_review' as never, progress: 99 });
+        recordAgentFailure(agentType || 'auto', false); // 算失敗，因為沒交作業
+        await circuitBreakerFailure();
+        return;
+      }
+
       await upsertOpenClawTask({ id: task.id, status: 'done', progress: 100 });
 
       // Governance: success tracking
