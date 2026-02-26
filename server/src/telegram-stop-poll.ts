@@ -1339,6 +1339,68 @@ async function groupPoll(): Promise<void> {
         continue;
       }
 
+      // ── 群組選單 (/start /menu /help) ──
+      if (text === '/start' || text === '/menu' || text === 'menu' || text === '/help' || text === 'group:menu') {
+        const keyboard = {
+          inline_keyboard: [
+            [
+              { text: '📊 系統狀態', callback_data: 'group:status' },
+              { text: '🎯 任務板', callback_data: 'group:tasks' },
+            ],
+            [
+              { text: '🤖 小蔡暫代 ON', callback_data: 'group:deputy_on' },
+              { text: '🛑 小蔡暫代 OFF', callback_data: 'group:deputy_off' },
+            ],
+            [
+              { text: '📋 派工給小蔡', callback_data: 'deputy:delegate' },
+              { text: '🔄 甦醒報告', callback_data: 'group:wake' },
+            ],
+          ],
+        };
+        await sendTelegramMessageToChat(
+          chatId,
+          `🚀 <b>超級救援家 指揮中心</b>\n\n請選擇操作：`,
+          { token: GROUP_TOKEN, parseMode: 'HTML', replyMarkup: keyboard }
+        );
+        continue;
+      }
+
+      // ── 群組狀態 ──
+      if (text === 'group:status' || text === '/status') {
+        await replyStatus(chatId);
+        continue;
+      }
+
+      // ── 群組任務板 ──
+      if (text === 'group:tasks' || text === '/tasks') {
+        await replyTasks(chatId);
+        continue;
+      }
+
+      // ── 群組甦醒報告 ──
+      if (text === 'group:wake' || text === '/wake') {
+        await replyWake(chatId);
+        continue;
+      }
+
+      // ── 群組開啟暫代 ──
+      if (text === 'group:deputy_on' || text === '/deputy on') {
+        const enabled = true;
+        const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled, source: 'telegram-group' }) }, 8000);
+        const robj = asObj(result);
+        await sendTelegramMessageToChat(chatId, robj.ok ? '🤖 <b>暫代模式已開啟</b>\n\nClaude Code 將自動執行可處理的任務。\n關閉：/deputy off' : `⚠️ 操作失敗：${String(robj.message ?? 'unknown')}`, { token: GROUP_TOKEN, parseMode: 'HTML' });
+        continue;
+      }
+
+      // ── 群組關閉暫代 ──
+      if (text === 'group:deputy_off' || text === '/deputy off') {
+        const enabled = false;
+        const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled, source: 'telegram-group' }) }, 8000);
+        const robj = asObj(result);
+        await sendTelegramMessageToChat(chatId, robj.ok ? '⏸ <b>暫代模式已關閉</b>' : `⚠️ 操作失敗：${String(robj.message ?? 'unknown')}`, { token: GROUP_TOKEN, parseMode: 'HTML' });
+        continue;
+      }
+
       // ── 老蔡回來自動停止暫代 ──
       const isCallback = !!cbData;
       const isDeputyCmd = text.startsWith('/deputy') || text.startsWith('deputy:');
