@@ -4,6 +4,54 @@
 
 ---
 
+## Gemini-2.5-Pro-重複回覆後無反應-排查
+
+# Gemini 2.5 Pro 切換後重複回覆、接著無反應 — 原因與處理
+> **說明：** 目前 OpenClaw 已移除 Gemini／Claude，僅使用 Kimi + Ollama。此文件為當時排查紀錄，供參考。見 [OPENCLAW-模型變更-僅Kimi與Ollama.md](./OPENCLAW-模型變更-僅Kimi與Ollama.md)。
+## 現象
+
+---
+
+## OPENCLAW-Telegram與模型傳輸-深度檢查-2026-02-12
+
+# Telegram 與 OpenClaw 模型傳輸 — 深度檢查報告（2026-02-12）
+## 1. 檢查總覽
+| 項目 | 狀態 | 說明 |
+
+---
+
+## OPENCLAW-排查報告-2026-02-12
+
+# OpenClaw 可疑項目完整排查報告
+檢查時間：2026-02-12  
+範圍：`~/.openclaw/`、專案 `.env`、Gateway 日誌、agent 層設定。
+
+---
+
+## OPENCLAW-模型代碼檢查-2026-02-12
+
+# OpenClaw 模型代碼檢查報告（2026-02-12）
+## 1. 設定檔 `~/.openclaw/openclaw.json`
+### 結構檢查：通過
+
+---
+
+## OPENCLAW-模型變更-僅Kimi與Ollama
+
+# OpenClaw 模型變更說明（2026-02）
+## 目前設定
+**已移除：** Google Gemini、Anthropic Claude 的 provider 與金鑰。
+
+---
+
+## Ollama-Telegram回覆速度-實測與優化
+
+# Ollama Telegram 回覆速度 — 實測與優化
+## 實測結果（優化前）
+- **System context**：約 32K tokens（knowledge_auto 過大）
+
+---
+
 ## Ollama-加速回覆
 
 # 讓 Ollama 回覆速度加快
@@ -25,6 +73,14 @@
 # OpenClaw 17K Token 來源明細
 OpenClaw Gateway 會把 **workspace 的 7 個 bootstrap 檔案**整份讀進 system prompt。目前這 7 個檔的**字數加總 ≈ 17,125 字元**；中文為主的內容大約 **1 字元 ≈ 1 token**，所以整體約 **~17K token** 就是來自這裡。
 ---
+
+---
+
+## OpenClaw-API-Key與模型切換-讀取來源
+
+# OpenClaw API Key 與模型切換：寫在哪、從哪讀
+## 一、API Key 寫在哪裡／從哪裡讀
+OpenClaw 會從以下來源解析各 provider 的 API key（優先順序依實作，通常 **config 內 key > 環境變數 > auth-profiles**）：
 
 ---
 
@@ -52,11 +108,27 @@ OpenClaw Gateway 會把 **workspace 的 7 個 bootstrap 檔案**整份讀進 sys
 
 ---
 
+## OpenClaw-成本優化配置-Gemini主力
+
+# OpenClaw 成本優化配置（Gemini 主力）
+## 目前結構
+| 層級   | 模型               | 用途                 |
+
+---
+
 ## OpenClaw-瀏覽器自動化安全指令
 
 # OpenClaw 核心指令 v2（防護強化版）
 > 身份：**小蔡**，瀏覽器自動化助手。  
 > 優先序：**安全 > 老蔡指令 > 任務**。
+
+---
+
+## OpenClaw-還原檔與備份位置
+
+# OpenClaw 還原檔／備份檔位置
+## 會影響設定的備份（建議刪除以免被還原）
+| 路徑 | 說明 |
 
 ---
 
@@ -81,6 +153,14 @@ OpenClaw Gateway 會把 **workspace 的 7 個 bootstrap 檔案**整份讀進 sys
 # OpenClaw 接 Ollama 模型 — 檢查清單
 你目前的設定**已經接好** OpenClaw ↔ Ollama，預設使用 **ollama/mistral**。
 **重要**：Ollama、Google、OpenAI、Antigravity 等模型**都會保留**在設定裡，不會刪除；切換時只要改「預設模型（primary）」即可，其它模型仍可當 fallback 或手動切換。
+
+---
+
+## OpenClaw沒反應與Telegram排查
+
+# OpenClaw 沒反應 / Telegram 沒訊息 — 排查說明
+## 一、OpenClaw 任務板「沒反應」
+通常代表：**前端打不到後端 API**，畫面空白或按鈕無效。
 
 ---
 
@@ -148,11 +228,35 @@ QMD 是 OpenClaw 的**選用記憶後端**（memory backend）。預設為 `buil
 
 ---
 
+## Telegram-設定排查
+
+# Telegram 設定排查
+針對 `~/.openclaw/openclaw.json` 與相關檔案的 Telegram 設定檢查。
+---
+
+---
+
 ## Telegram傳給OpenClaw沒有反應-排查
 
 # Telegram 傳給 OpenClaw 沒有反應 — 排查說明
 ## 可能原因總覽
 | 情況 | 說明 | 對應做法 |
+
+---
+
+## Telegram與OpenClaw-穩定性建議
+
+# Telegram 與 OpenClaw 穩定性建議
+> 目標：減少因代碼或設定變動導致整個系統掛掉，讓 Telegram 與 OpenClaw 更穩定。
+---
+
+---
+
+## Telegram與點擊延遲排查
+
+# Telegram 與點擊功能延遲排查
+## 一、Telegram ↔ OpenClaw 回應慢
+### 流程概述
 
 ---
 
@@ -188,6 +292,14 @@ QMD 是 OpenClaw 的**選用記憶後端**（memory backend）。預設為 `buil
 
 ---
 
+## openclaw-json-ollama-fix
+
+# 修復 openclaw.json 的 Ollama「Invalid input」錯誤
+錯誤訊息：
+Config invalid
+
+---
+
 ## 任務執行中斷與沒有回應-排查說明
 
 # 任務執行中斷與沒有回應 — 排查說明
@@ -220,136 +332,16 @@ QMD 是 OpenClaw 的**選用記憶後端**（memory backend）。預設為 `buil
 
 ---
 
+## 模型不回話-排查步驟
+
+# 模型不回話 — 排查步驟
+當 OpenClaw 2.9 的模型沒有回話時（任務板執行沒輸出、或 Telegram/WhatsApp 沒回覆），依下面順序檢查。
+---
+
+---
+
 ## 測試結果-目前跑的是哪一個OpenClaw
 
 # 測試結果 — 目前跑的是哪一個 OpenClaw
 > 已用指令實際檢查，結論如下。
----
-
----
-
-## 瀏覽器控制經常失敗-排查說明
-
-# 瀏覽器控制經常失敗 — 排查說明
-控制瀏覽器（Chrome 擴充 / openclaw 內建瀏覽器）時若**經常失敗**，多半是下列幾類原因之一。依序檢查可縮小範圍。
----
-
----
-
-## 開機自動啟動Ollama
-
-# 開機自動啟動 Ollama（macOS）
-已幫你建立 **LaunchAgent**，登入後會自動執行 `ollama serve`，不需手動開 Ollama app。
----
-
----
-
-## 需要注意而容易忽略的檢查清單
-
-# OpenClaw — 需要注意而容易忽略的檢查清單
-依你目前環境整理：**安全、通道、Gateway、模型、日常** 幾類，方便定期看一眼、避免事後才發現問題。
----
-
----
-
-## Gateway-外部連線-bind設定說明
-
-# Gateway 改 bind 後機器人沒反應 — 原因與正確設定
-## 為什麼改成 0.0.0.0 後 Bot 會失效？
-有兩個常見原因：
-
----
-
-## Gemini未知錯誤與英文回覆-說明
-
-# Gemini 2.5 Flash：「An unknown error occurred」與只傳英文
-## 你的模型都有保留
-目前 **agents.defaults.models** 裡的模型全部保留，沒有刪除：
-
----
-
-## RAG-定時更新說明
-
-# RAG 定時更新說明
-## 機制
-- **consolidate_knowledge.py**：掃描 `docs/*.md`，萃取各檔摘要，寫入 `knowledge/knowledge_auto.md`
-
----
-
-## Telegram任務指令-parser與webhook驗簽規格
-
-# Telegram 任務指令 Parser 與 Webhook 驗簽規格
-## 1) 目標
-- 讓使用者在 Telegram 以單行指令交辦任務。
-
----
-
-## Telegram任務橋接-Express範例啟動說明
-
-# Telegram 任務橋接 Express 範例啟動說明
-範例檔：
-- `scripts/telegram-task-bridge-example.js`
-
----
-
-## Token優化-更新紀錄
-
-# Token 優化 — 更新紀錄
-> 若你測出來還是約 18K，請先對照本紀錄：**你實際跑的是不是這份程式**、以及**是否用「純招呼」觸發輕量模式**。
----
-
----
-
-## Token優化與後續建議
-
-# Token 優化總覽與後續建議
-> 目前已做的自動調節（一般聊天輕量、索引對齊、主題與比例）已經能把一般招呼壓到約 0.5K、任務時約 18～19K。以下是**還可再優化**與**你可能沒想到**的幾點建議。
----
-
----
-
-## 不用API的本機模型-openclaw
-
-# OpenClaw 不用 API 的本機模型方案
-以下都是**本機運行、不需任何雲端 API key**的用法（Telegram bot token 仍需要，那是通道不是 LLM）。
----
-
----
-
-## 動態載入與按需記憶-可行做法
-
-# 動態載入上下文與按需記憶 — 有辦法解決嗎？
-> 訴求：不要每輪都把 23K 上下文全送進去；改為「當前對話 + 必要系統指令 + 當前任務相關記憶」動態載入，且只有提到關鍵字、需要從 MEMORY 讀取時才把該部分記憶加入。  
-> 結論：**部分已有、部分可做、部分需架構改動。**
-
----
-
-## 同視窗上下文過長-處理方式
-
-# 同視窗上下文過長 — 處理方式
-同一視窗聊久了會累積很多上下文，五段、十段後常常已經換話題，舊內容仍佔用 Token。可以這樣處理：
----
-
----
-
-## 回覆很慢與洩漏個人資訊-說明
-
-# 回覆很慢 + 回覆裡出現一堆你的資訊
-## 原因
-1. **很慢**
-
----
-
-## 執行延續性-主動恢復與完成流程
-
-# 執行延續性 — 主動恢復與完成流程
-**問題**：Agent 說「要去看網站」或「我去查一下」之後就沒有後續，必須等使用者再回一句，它才會繼續執行。執行缺乏延續性。
-**目標**：讓 Agent 在**同一輪（或同一 run）內**把說要做
-...(已截斷)
-
-## 小蔡用網頁版AI省Token-子代理與瀏覽器控制
-
-# 小蔡用網頁版 AI 省 Token — 子代理與瀏覽器控制
-## 架構原則（老蔡要求）
-- **OpenClaw 由小蔡負責**。小蔡是**主代理**（main agent），不是
 ...(已截斷)

@@ -892,6 +892,244 @@ router.post('/webhook', async (req, res) => {
   res.json({ ok: true, message: '廣播已接收並套用' });
 });
 
+// ─── Group G：心跳監控 ───
+
+/**
+ * POST /api/federation/heartbeat
+ * 橋接代理心跳 Ping（每分鐘由各成員呼叫）
+ * Header: x-fadp-key: fadp_...
+ * Body: { load?, tasks_running?, version? }
+ */
+router.post('/heartbeat', async (req, res) => {
+  if (!requireSupabase(res)) return;
+
+  const member = await verifyFederationApiKey(req);
+  if (!member) {
+    res.status(401).json({ ok: false, message: '需要有效的聯盟 API Key (x-fadp-key)' });
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const { load, tasks_running, version } = req.body as {
+    load?: number;
+    tasks_running?: number;
+    version?: string;
+  };
+
+  // 更新 last_seen_at
+  await supabase!
+    .from('fadp_members')
+    .update({ last_seen_at: now })
+    .eq('node_id', member.node_id);
+
+  // 記錄心跳到 handshake_log（複用現有表，step = 'heartbeat'）
+  await supabase!.from('fadp_handshake_log').insert({
+    node_id: member.node_id,
+    step: 'heartbeat',
+    challenge: JSON.stringify({ load: load ?? null, tasks_running: tasks_running ?? null, version: version ?? null }),
+    ip: extractClientIp(req),
+  });
+
+  // WebSocket 廣播心跳狀態
+  wsManager.broadcast({
+    type: 'fadp:heartbeat',
+    nodeId: member.node_id,
+    label: member.label,
+    load: load ?? null,
+    tasks_running: tasks_running ?? null,
+    timestamp: now,
+  });
+
+  log.debug(`[FADP] 💓 心跳: ${member.label || member.node_id} (load=${load}, tasks=${tasks_running})`);
+  res.json({ ok: true, ts: now, interval_hint: 60 });
+});
+
+/**
+ * GET /api/federation/heartbeat/status
+ * 查詢各成員最後心跳時間與離線狀態（超過 5 分鐘 = 離線）
+ */
+router.get('/heartbeat/status', async (req, res) => {
+  if (!requireSupabase(res)) return;
+
+  const { data, error } = await supabase!
+    .from('fadp_members')
+    .select('node_id, label, node_type, status, last_seen_at, trust_score')
+    .eq('status', 'active')
+    .order('last_seen_at', { ascending: false });
+
+  if (error) {
+    res.status(500).json({ ok: false, message: error.message });
+    return;
+  }
+
+  const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;
+  const now = Date.now();
+
+  const nodes = (data || []).map((m: {
+    node_id: string; label: string | null; node_type: string;
+    status: string; last_seen_at: string | null; trust_score: number;
+  }) => {
+    const lastSeen = m.last_seen_at ? new Date(m.last_seen_at).getTime() : 0;
+    const msAgo = now - lastSeen;
+    return {
+      node_id: m.node_id,
+      label: m.label,
+      node_type: m.node_type,
+      trust_score: m.trust_score,
+      last_seen_at: m.last_seen_at,
+      online: lastSeen > 0 && msAgo < OFFLINE_THRESHOLD_MS,
+      ms_since_heartbeat: lastSeen > 0 ? msAgo : null,
+    };
+  });
+
+  res.json({ ok: true, nodes, checked_at: new Date().toISOString() });
+});
+
+// ─── Group H：L3 信任區升級審核 ───
+
+/**
+ * POST /api/federation/trust/request-upgrade
+ * 成員申請升入 L3 信任區（需達到信任分數門檻）
+ * Header: x-fadp-key: fadp_...
+ * Body: { reason? }
+ */
+router.post('/trust/request-upgrade', async (req, res) => {
+  if (!requireSupabase(res)) return;
+
+  const member = await verifyFederationApiKey(req);
+  if (!member) {
+    res.status(401).json({ ok: false, message: '需要有效的聯盟 API Key (x-fadp-key)' });
+    return;
+  }
+
+  const L3_TRUST_THRESHOLD = 80;
+  const { reason } = req.body as { reason?: string };
+
+  if (member.trust_score < L3_TRUST_THRESHOLD) {
+    res.status(403).json({
+      ok: false,
+      message: `信任分數不足（當前 ${member.trust_score}，需達 ${L3_TRUST_THRESHOLD}）`,
+      current_score: member.trust_score,
+      required_score: L3_TRUST_THRESHOLD,
+    });
+    return;
+  }
+
+  const approveUrl = `${process.env.OPENCLAW_API_BASE || 'http://localhost:3011'}/api/federation/trust/approve/${member.node_id}?token=${process.env.FADP_ADMIN_TOKEN || 'change-me'}`;
+  const rejectUrl = `${process.env.OPENCLAW_API_BASE || 'http://localhost:3011'}/api/federation/trust/reject/${member.node_id}?token=${process.env.FADP_ADMIN_TOKEN || 'change-me'}`;
+
+  await sendTelegramMessage(
+    `🌟 <b>L3 信任區升級申請</b>\n\n` +
+    `<b>節點：</b>${member.label || member.node_id}\n` +
+    `<b>類型：</b>${member.node_type}\n` +
+    `<b>信任分數：</b>${member.trust_score}/100\n` +
+    `<b>理由：</b>${reason || '(未填寫)'}\n\n` +
+    `✅ 批准：<a href="${approveUrl}">點此升級至 L3</a>\n` +
+    `❌ 拒絕：<a href="${rejectUrl}">點此拒絕</a>`,
+    { parseMode: 'HTML' }
+  );
+
+  await supabase!.from('fadp_handshake_log').insert({
+    node_id: member.node_id,
+    step: 'l3_upgrade_requested',
+    challenge: JSON.stringify({ trust_score: member.trust_score, reason: reason || null }),
+  });
+
+  log.info(`[FADP] 🌟 節點 ${member.node_id} 申請 L3 升級（分數: ${member.trust_score}）`);
+  res.json({ ok: true, message: 'L3 升級申請已送出，等待老蔡審核' });
+});
+
+/**
+ * GET /api/federation/trust/approve/:nodeId
+ * 老蔡批准 L3 升級（Telegram 連結觸發）
+ * 批准後信任分數設為 100，並記錄
+ */
+router.get('/trust/approve/:nodeId', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  const { nodeId } = req.params;
+  const { token } = req.query as { token?: string };
+
+  const adminToken = process.env.FADP_ADMIN_TOKEN || 'change-me';
+  if (token !== adminToken) {
+    res.status(403).json({ ok: false, message: '無效的管理員 token' });
+    return;
+  }
+
+  const { data: member } = await supabase!
+    .from('fadp_members')
+    .select('node_id, label, trust_score')
+    .eq('node_id', nodeId)
+    .maybeSingle();
+
+  if (!member) {
+    res.status(404).json({ ok: false, message: '成員不存在' });
+    return;
+  }
+
+  await supabase!
+    .from('fadp_members')
+    .update({ trust_score: 100 })
+    .eq('node_id', nodeId);
+
+  await supabase!.from('fadp_handshake_log').insert({
+    node_id: nodeId,
+    step: 'l3_upgrade_approved',
+  });
+
+  wsManager.broadcast({
+    type: 'fadp:trust_upgraded',
+    nodeId,
+    label: member.label,
+    newTrustScore: 100,
+    timestamp: new Date().toISOString(),
+  });
+
+  await sendTelegramMessage(
+    `✅ <b>L3 升級批准</b>：${member.label || nodeId} 已升入 L3 信任區（分數重置至 100）`,
+    { parseMode: 'HTML' }
+  );
+
+  log.info(`[FADP] ✅ 節點 ${nodeId} 已升入 L3 信任區`);
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`
+    <html><body style="font-family:sans-serif;padding:2rem;background:#0a0a0a;color:#00ff88">
+      <h2>✅ 節點 ${nodeId} 已升入 L3 信任區</h2>
+      <p>信任分數已重置至 100</p>
+    </body></html>
+  `);
+});
+
+/**
+ * GET /api/federation/trust/reject/:nodeId
+ * 老蔡拒絕 L3 升級申請
+ */
+router.get('/trust/reject/:nodeId', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  const { nodeId } = req.params;
+  const { token } = req.query as { token?: string };
+
+  const adminToken = process.env.FADP_ADMIN_TOKEN || 'change-me';
+  if (token !== adminToken) {
+    res.status(403).json({ ok: false, message: '無效的管理員 token' });
+    return;
+  }
+
+  await supabase!.from('fadp_handshake_log').insert({
+    node_id: nodeId,
+    step: 'l3_upgrade_rejected',
+  });
+
+  log.info(`[FADP] ❌ 節點 ${nodeId} L3 升級申請被拒`);
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`
+    <html><body style="font-family:sans-serif;padding:2rem;background:#0a0a0a;color:#ff4444">
+      <h2>❌ L3 升級申請已拒絕</h2>
+    </body></html>
+  `);
+});
+
 // ─── 其他端點 ───
 
 /**

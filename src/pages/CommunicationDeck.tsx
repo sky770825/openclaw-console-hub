@@ -6,7 +6,8 @@
  * 防火牆隔離，安全橋接代理
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useFederationPostMessageGuard } from '../hooks/useFederationPostMessageGuard';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Radio, Globe, Handshake, Settings2, Shield,
@@ -536,8 +537,50 @@ function L3TrustedPage() {
 
 // ─── 子頁面：防火牆閘道 ───────────────────────────────────
 
+// ─── 預設允許的 origin 白名單 ───────────────────────────────
+const DEFAULT_ALLOWED_ORIGINS = [
+  window.location.origin,  // 自身（localhost 或部署域名）
+];
+
 function FirewallGate() {
   const stats = useLayerStats();
+
+  // postMessage 白名單（可即時編輯）
+  const [allowedOrigins, setAllowedOrigins] = useState<string[]>(DEFAULT_ALLOWED_ORIGINS);
+  const [newOrigin, setNewOrigin] = useState('');
+  // 攻擊日誌（真實資料）
+  const [attackLog, setAttackLog] = useState<Array<{
+    time: string; origin: string; reason: string;
+  }>>([]);
+  const attackLogRef = useRef(attackLog);
+  attackLogRef.current = attackLog;
+
+  const handleAttack = useCallback((origin: string, reason: string) => {
+    const entry = {
+      time: new Date().toLocaleTimeString('zh-TW'),
+      origin: origin || '(unknown)',
+      reason,
+    };
+    setAttackLog(prev => [entry, ...prev].slice(0, 20));
+  }, []);
+
+  const { blockedCount } = useFederationPostMessageGuard({
+    allowedOrigins,
+    enabled: true,
+    onAttack: handleAttack,
+  });
+
+  function addOrigin() {
+    const trimmed = newOrigin.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      setAllowedOrigins(prev => [...prev, trimmed]);
+    }
+    setNewOrigin('');
+  }
+
+  function removeOrigin(origin: string) {
+    setAllowedOrigins(prev => prev.filter(o => o !== origin));
+  }
 
   const rules = [
     { dir: 'IN', event: 'community:heartbeat', action: 'ALLOW', layer: 'ALL' },
@@ -549,12 +592,6 @@ function FirewallGate() {
     { dir: 'OUT', event: 'hub:review-result', action: 'ALLOW', layer: 'L2+' },
     { dir: 'OUT', event: 'hub:status-update', action: 'ALLOW', layer: 'L1+' },
     { dir: 'OUT', event: '*', action: 'BLOCK', layer: 'ALL' },
-  ];
-
-  const recentBlocks = [
-    { time: '20:47:12', ip: '185.xxx.xxx.8', event: 'resource-request', layer: 'L1', reason: '層級不足' },
-    { time: '20:35:44', ip: '91.xxx.xxx.22', event: 'bridge-sync', layer: 'L0', reason: '未授權事件' },
-    { time: '20:21:09', ip: '103.xxx.xxx.67', event: 'admin-access', layer: 'ALL', reason: '黑名單事件' },
   ];
 
   return (
@@ -576,7 +613,7 @@ function FirewallGate() {
         {[
           { label: '入站訊息', value: stats.messagesIn, icon: Activity, color: '#22d3ee' },
           { label: '出站訊息', value: stats.messagesOut, icon: MessageSquare, color: '#10b981' },
-          { label: '攔截嘗試', value: stats.blockedAttempts, icon: AlertTriangle, color: '#f87171' },
+          { label: '攔截嘗試', value: blockedCount, icon: AlertTriangle, color: '#f87171' },
         ].map(s => {
           const Icon = s.icon;
           return (
@@ -622,19 +659,62 @@ function FirewallGate() {
         </div>
       </div>
 
-      {/* 最近攔截紀錄 */}
+      {/* Origin 白名單管理 */}
       <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-4 py-2 border-b bg-muted/30">
-          <p className="text-xs font-medium">最近攔截紀錄</p>
+        <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
+          <p className="text-xs font-medium">postMessage Origin 白名單</p>
+          <span className="text-[10px] text-muted-foreground">{allowedOrigins.length} 個允許來源</span>
         </div>
-        <div className="divide-y">
-          {recentBlocks.map((b, i) => (
-            <div key={i} className="px-4 py-2.5 flex items-center gap-3 text-xs">
-              <span className="text-muted-foreground font-mono">{b.time}</span>
-              <span className="text-red-400 font-mono">{b.ip}</span>
-              <span className="flex-1 text-foreground/80 font-mono">{b.event}</span>
-              <span className="text-muted-foreground">{b.layer}</span>
-              <span className="text-red-400 text-[10px]">{b.reason}</span>
+        <div className="p-3 space-y-2">
+          <div className="flex gap-2">
+            <input
+              value={newOrigin}
+              onChange={e => setNewOrigin(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addOrigin()}
+              placeholder="https://example.com"
+              className="flex-1 text-xs bg-background border rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
+            <button
+              onClick={addOrigin}
+              className="px-3 py-1 text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition-colors"
+            >
+              加入
+            </button>
+          </div>
+          <div className="space-y-1">
+            {allowedOrigins.map(origin => (
+              <div key={origin} className="flex items-center gap-2 text-xs">
+                <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
+                <span className="flex-1 font-mono text-foreground/80">{origin}</span>
+                <button
+                  onClick={() => removeOrigin(origin)}
+                  className="text-red-400/60 hover:text-red-400 text-[10px] transition-colors"
+                >
+                  移除
+                </button>
+              </div>
+            ))}
+            {allowedOrigins.length === 0 && (
+              <p className="text-[10px] text-red-400 px-1">⚠ 白名單為空，所有 postMessage 將被攔截</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 即時攔截日誌 */}
+      <div className="rounded-lg border bg-card overflow-hidden">
+        <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
+          <p className="text-xs font-medium">即時攔截日誌</p>
+          <span className="text-[10px] text-muted-foreground">本次會話 {blockedCount} 次</span>
+        </div>
+        <div className="divide-y max-h-40 overflow-y-auto">
+          {attackLog.length === 0 ? (
+            <p className="px-4 py-3 text-xs text-muted-foreground">目前無攔截記錄 ✅</p>
+          ) : attackLog.map((b, i) => (
+            <div key={i} className="px-4 py-2 flex items-start gap-2 text-xs">
+              <span className="text-muted-foreground font-mono shrink-0">{b.time}</span>
+              <span className="text-red-400 font-mono shrink-0 max-w-[120px] truncate">{b.origin}</span>
+              <span className="flex-1 text-foreground/70">{b.reason}</span>
             </div>
           ))}
         </div>

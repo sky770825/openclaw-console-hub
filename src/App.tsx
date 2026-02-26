@@ -10,6 +10,7 @@ import { CoreAuthProvider } from "@/components/auth";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
 import { useSpeculationRules, STARSHIP_PRERENDER_URLS } from "@/hooks/useSpeculationRules";
+import { useFederationPostMessageGuard } from "@/hooks/useFederationPostMessageGuard";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -70,10 +71,29 @@ function SpeculationPrerender() {
   return null;
 }
 
+// FADP postMessage 白名單防護（掛在 App 頂層，全局生效）
+const ALLOWED_ORIGINS = [
+  window.location.origin,
+  'http://localhost:5173',
+  'http://localhost:3011',
+  ...(import.meta.env.VITE_ALLOWED_ORIGINS
+    ? String(import.meta.env.VITE_ALLOWED_ORIGINS).split(',').map((s: string) => s.trim())
+    : []),
+];
+
+function PostMessageGuard() {
+  useFederationPostMessageGuard({
+    allowedOrigins: ALLOWED_ORIGINS,
+    fadpKey: import.meta.env.VITE_FADP_KEY as string | undefined,
+  });
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <PerformanceMonitor />
     <SpeculationPrerender />
+    <PostMessageGuard />
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
