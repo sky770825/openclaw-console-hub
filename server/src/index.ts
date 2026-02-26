@@ -62,6 +62,8 @@ import {
   federationBlockerMiddleware,
   loadBlocklistFromSupabase,
 } from './middlewares/federationBlocker.js';
+// === 新增：postMessage 防火牆中介層 (P1 任務) ===
+import { postMessageFirewall } from './middlewares/firewall.js';
 import autoExecutorRouter, {
   autoExecutorState,
   startAutoExecutor,
@@ -471,6 +473,10 @@ app.use(express.json({ limit: '200kb' }));
 
 // FADP 聯盟協防封鎖中介層（必須在 authMiddleware 之前，封鎖優先）
 app.use(federationBlockerMiddleware);
+
+// === 新增：postMessage 防火牆中介層 (P1 任務) ===
+// 只允許 GATEWAY_CONFIG.allowedOutbound 清單內的事件通過
+app.use(postMessageFirewall());
 
 // 小蔡完成任務後呼叫此端點通知老蔡（localhost only，不需 API key）
 app.post('/internal/notify', async (req, res) => {
