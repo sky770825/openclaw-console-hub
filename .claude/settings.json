@@ -12,6 +12,16 @@
     ]
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/caijunchang/openclaw任務面版設計/scripts/wake-sync.sh 2>/dev/null; exit 0"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Bash(git push*)",
