@@ -57,6 +57,11 @@ import openclawTasksRouter from './routes/openclaw-tasks.js';
 import openclawReviewsRouter from './routes/openclaw-reviews.js';
 import openclawDataRouter from './routes/openclaw-data.js';
 import insightsRouter from './routes/insights.js';
+import federationRouter from './routes/federation.js';
+import {
+  federationBlockerMiddleware,
+  loadBlocklistFromSupabase,
+} from './middlewares/federationBlocker.js';
 import autoExecutorRouter, {
   autoExecutorState,
   startAutoExecutor,
@@ -464,6 +469,9 @@ app.use(limiter);
 
 app.use(express.json({ limit: '200kb' }));
 
+// FADP 聯盟協防封鎖中介層（必須在 authMiddleware 之前，封鎖優先）
+app.use(federationBlockerMiddleware);
+
 // 使用新的认证中间件
 app.use('/api', authMiddleware);
 
@@ -476,6 +484,8 @@ app.use('/api/openclaw/tasks', openclawTasksRouter);
 app.use('/api/openclaw/reviews', openclawReviewsRouter);
 app.use('/api/openclaw', openclawDataRouter);
 app.use('/api/openclaw/insights', insightsRouter);
+// FADP 聯盟協防協議路由（/api/federation/*，部分端點不需 auth，內部使用 x-fadp-key）
+app.use('/api/federation', federationRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
@@ -3561,6 +3571,9 @@ const server = http.createServer(app);
 // 初始化 WebSocket
 wsManager.initialize(server);
 
+// 啟動時載入 FADP 封鎖清單到記憶體
+loadBlocklistFromSupabase().catch(() => {});
+
 server.listen(PORT, '127.0.0.1', () => {
   log.info(`OpenClaw API http://localhost:${PORT}`);
   log.info(`  WebSocket ws://localhost:${PORT}/ws`);
@@ -3569,6 +3582,7 @@ server.listen(PORT, '127.0.0.1', () => {
   log.info(`  GET  /api/alerts, PATCH /api/alerts/:id`);
   log.info(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
   log.info(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
+  log.info(`  FADP: GET /api/federation/status|members|attack/events|blocklist`);
   if (hasSupabase()) {
     log.info(`  [Supabase] 已連線 (openclaw_tasks / projects 等將正常運作)`);
   } else {

@@ -22,6 +22,7 @@ import {
   insertOpenClawRun,
 } from '../openclawSupabase.js';
 import { openClawTaskToTask } from '../openclawMapper.js';
+import { fadpScanTask } from './federation.js';
 import { validateTaskForGate } from '../taskCompliance.js';
 import { classifyTaskRisk, type DispatchRiskLevel } from '../riskClassifier.js';
 import { AgentSelector, AgentExecutor } from '../executor-agents.js';
@@ -343,6 +344,18 @@ async function executeNextPendingTask(): Promise<void> {
       } else {
         log.info(`[AutoDispatch] 🟢 安全任務「${task.name}」，自動批准`);
       }
+    }
+
+    // FADP 惡意任務注入掃描（在執行前檢查）
+    try {
+      const fadpResult = await fadpScanTask(task);
+      if (fadpResult.isMalicious) {
+        log.warn(`[AutoExecutor] 🚫 FADP 阻擋惡意任務「${task.name}」: ${fadpResult.reason}`);
+        await upsertOpenClawTask({ id: task.id, status: 'blocked' as never });
+        return;
+      }
+    } catch {
+      // FADP 掃描失敗不阻塞正常任務執行
     }
 
     const agentType = AgentSelector.selectAgent(task);

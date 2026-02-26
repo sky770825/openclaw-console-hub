@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { Shield, Flame, Activity, Eye, Lock, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { FederationPanel } from '@/components/federation/FederationPanel';
 
 // ─── 模擬資料（未來接後端 API）───
 
@@ -85,7 +86,7 @@ const RESULT_STYLE: Record<string, string> = {
   flagged: 'text-yellow-500',
 };
 
-type Tab = 'firewall' | 'threats' | 'access' | 'intrusion';
+type Tab = 'firewall' | 'threats' | 'access' | 'intrusion' | 'federation';
 
 export default function DefenseCenter() {
   const [tab, setTab] = useState<Tab>('firewall');
@@ -95,6 +96,7 @@ export default function DefenseCenter() {
     { id: 'threats', label: '威脅偵測', icon: Eye },
     { id: 'access', label: '存取記錄', icon: Activity },
     { id: 'intrusion', label: '入侵防禦', icon: Lock },
+    { id: 'federation', label: '聯盟協防', icon: Shield },
   ];
 
   return (
@@ -141,6 +143,7 @@ export default function DefenseCenter() {
       {tab === 'threats' && <ThreatPanel />}
       {tab === 'access' && <AccessPanel />}
       {tab === 'intrusion' && <IntrusionPanel />}
+      {tab === 'federation' && <FederationPanel />}
     </div>
   );
 }
