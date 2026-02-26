@@ -472,6 +472,23 @@ app.use(express.json({ limit: '200kb' }));
 // FADP 聯盟協防封鎖中介層（必須在 authMiddleware 之前，封鎖優先）
 app.use(federationBlockerMiddleware);
 
+// 小蔡完成任務後呼叫此端點通知老蔡（localhost only，不需 API key）
+app.post('/internal/notify', async (req, res) => {
+  const clientIp = req.ip || req.socket.remoteAddress || '';
+  if (!clientIp.includes('127.0.0.1') && !clientIp.includes('::1') && !clientIp.includes('localhost')) {
+    return res.status(403).json({ ok: false, message: 'localhost only' });
+  }
+  if (!isTelegramConfigured()) return res.status(503).json({ ok: false, message: 'Telegram 未設定' });
+  const { message, parseMode } = req.body as { message?: string; parseMode?: string };
+  if (!message) return res.status(400).json({ ok: false, message: '缺少 message' });
+  try {
+    await sendTelegramMessage(message, { parseMode: (parseMode as 'HTML' | 'Markdown') ?? 'HTML' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: String(e) });
+  }
+});
+
 // 使用新的认证中间件
 app.use('/api', authMiddleware);
 
@@ -3316,7 +3333,6 @@ app.get('/api/system-schedules', async (_req, res) => {
   }
 });
 
-// Telegram 測試（發送一則測試訊息，用於確認 Bot Token / Chat ID 是否正確）
 app.post('/api/telegram/test', async (_req, res) => {
   if (!isTelegramConfigured()) {
     return res.status(503).json({ ok: false, message: 'Telegram 未設定。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。' });

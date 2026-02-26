@@ -1312,15 +1312,21 @@ async function groupPoll(): Promise<void> {
       const uid = uu.update_id as number;
       if (uid >= groupOffset) groupOffset = uid + 1;
 
+      // DEBUG: log raw update keys
+      log.info(`[GroupBot] update keys=${Object.keys(uu).join(',')} update_id=${uid}`);
+
       const msg = (uu.message ?? uu.callback_query?.message) as Record<string, unknown> | undefined;
-      if (!msg) continue;
+      if (!msg) { log.info(`[GroupBot] skip: no msg`); continue; }
       const chat = msg.chat as Record<string, unknown> | undefined;
       const chatId = chat?.id as number | undefined;
-      if (!chatId) continue;
+      if (!chatId) { log.info(`[GroupBot] skip: no chatId`); continue; }
 
       // callback data（小蔡 inline keyboard）
       const cbData = uu.callback_query?.data as string | undefined;
       const text = cbData || (msg.text as string | undefined) || '';
+
+      // DEBUG：log 每一則收到的訊息
+      log.info(`[GroupBot] recv chatId=${chatId} text="${text.slice(0, 80)}" has_text=${!!msg.text} cbData=${cbData ?? 'none'}`);
 
       // ── 小蔡任務回應 ──
       if (text.startsWith('xiaoji:')) {
@@ -1340,7 +1346,8 @@ async function groupPoll(): Promise<void> {
       }
 
       // ── 群組選單 (/start /menu /help) ──
-      if (text === '/start' || text === '/menu' || text === 'menu' || text === '/help' || text === 'group:menu') {
+      const normalText = text.replace(/@\w+$/, '').trim(); // 去除 /start@botname
+      if (normalText === '/start' || normalText === '/menu' || normalText === 'menu' || normalText === '/help' || normalText === 'group:menu') {
         const keyboard = {
           inline_keyboard: [
             [
