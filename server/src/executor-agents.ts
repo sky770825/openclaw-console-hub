@@ -288,7 +288,7 @@ export class AgentExecutor {
       '任務板執行統計',
       '技能庫整理',
       '舊任務自動封存',
-      '磁碟', 'disk', 'ollama', '統計', '整理', '封存'
+      '磁碟', 'disk', 'ollama',
     ];
     const taskName = task.name.toLowerCase();
     return zeroTokenKeywords.some(kw => taskName.includes(kw.toLowerCase()));
