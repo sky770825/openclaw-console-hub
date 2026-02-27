@@ -68,10 +68,10 @@ type TaskThoughtMeta = Partial<Pick<
   | 'allowPaid'
   | 'executionProvider'
   | 'modelConfig'
->>;
+>> & { agentType?: string };
 
 function parseAgentType(raw: unknown): Task['agent'] | undefined {
-  if (raw !== 'cursor' && raw !== 'codex' && raw !== 'openclaw' && raw !== 'auto') {
+  if (raw !== 'cursor' && raw !== 'codex' && raw !== 'openclaw' && raw !== 'claude' && raw !== 'auto') {
     return undefined;
   }
   return { type: raw };
@@ -142,7 +142,7 @@ export function openClawTaskToTask(oc: OpenClawTask): Task {
     deliverables: meta.deliverables,
     runCommands: meta.runCommands,
     modelPolicy: meta.modelPolicy,
-    agent: parseAgentType((meta as Record<string, unknown>).agentType),
+    agent: parseAgentType(meta.agentType),
     modelConfig: meta.modelConfig,
     allowPaid: meta.allowPaid,
     executionProvider: meta.executionProvider,
@@ -288,7 +288,7 @@ export function openClawRunToRun(row: OpenClawRunRow): Run {
     const modelCandidate = (parsed as Record<string, unknown>)?.modelUsed;
     const tokenCandidate = (parsed as Record<string, unknown>)?.tokenUsage as Record<string, unknown> | undefined;
     const costCandidate = (parsed as Record<string, unknown>)?.costUsd;
-    if (candidate === 'cursor' || candidate === 'codex' || candidate === 'openclaw' || candidate === 'auto') {
+    if (candidate === 'cursor' || candidate === 'codex' || candidate === 'openclaw' || candidate === 'claude' || candidate === 'auto') {
       agentType = candidate;
     }
     if (typeof modelCandidate === 'string' && modelCandidate.trim()) {

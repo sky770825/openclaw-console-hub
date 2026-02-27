@@ -90,6 +90,7 @@ import {
   agentExecutor,
   type AgentExecutionResult,
 } from './executor-agents.js';
+import { getPromptGuardStats, getPromptGuardRules } from './promptGuard.js';
 
 // === 新增：工作流程引擎 ===
 import {
@@ -3928,6 +3929,15 @@ app.get('/api/security/status', (_req, res) => {
     cors: {
       allowedOriginsCount: allowedOrigins.length,
     },
+  });
+});
+
+// 提示詞防護統計（供 AI 甲板 / 提示詞防護頁使用）
+app.get('/api/security/prompt-guard-stats', (_req, res) => {
+  res.json({
+    ok: true,
+    ...getPromptGuardStats(),
+    rules: getPromptGuardRules(),
   });
 });
 

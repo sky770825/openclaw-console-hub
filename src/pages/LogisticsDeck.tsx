@@ -529,13 +529,81 @@ function DocsPage() {
 // ─── 後勤甲板總覽 ─────────────────────────────────────────
 function LogisticsOverview() {
   const modules = [
-    { id: 'clients', label: '客戶管理', icon: Users, color: '#8b5cf6', desc: '6 位協作者 · 信任分 · 專案追蹤', route: '/center/commerce/clients', stat: '6 位協作者' },
-    { id: 'hr', label: '人力開發', icon: UserPlus, color: '#3b82f6', desc: '招募中職位 · 申請審核', route: '/center/commerce/hr', stat: '3 開放職位' },
-    { id: 'revenue', label: '營收分析', icon: DollarSign, color: '#10b981', desc: '月度趨勢 · 收入來源 · 專案', route: '/center/commerce/revenue', stat: 'NT$89,000/月' },
-    { id: 'partnerships', label: '合作夥伴', icon: Handshake, color: '#f59e0b', desc: '6 個夥伴 · 技術生態', route: '/center/commerce/partnerships', stat: '6 個夥伴' },
-    { id: 'knowledge', label: '知識庫', icon: BookOpen, color: '#f97316', desc: '131 篇知識文件 · 分類索引', route: '/center/commerce/knowledge', stat: '131 篇' },
-    { id: 'docs', label: '文件中心', icon: FileText, color: '#0ea5e9', desc: '7 份文件 · API · 手冊 · 報告', route: '/center/commerce/docs', stat: '7 份文件' },
+    {
+      id: 'clients',
+      label: '客戶管理',
+      icon: Users,
+      color: '#8b5cf6',
+      desc: '6 位協作者 · 信任分 · 專案追蹤',
+      route: '/center/commerce/clients',
+      stat: '6 位協作者',
+      primary: '查看待跟進清單',
+      secondary: '新增協作者',
+      alert: '3 位協作者需要跟進',
+    },
+    {
+      id: 'hr',
+      label: '人力開發',
+      icon: UserPlus,
+      color: '#3b82f6',
+      desc: '招募中職位 · 申請審核',
+      route: '/center/commerce/hr',
+      stat: '3 開放職位',
+      primary: '查看招募中職位',
+      secondary: '建立新職缺',
+      alert: '5 份申請待審核',
+    },
+    {
+      id: 'revenue',
+      label: '營收分析',
+      icon: DollarSign,
+      color: '#10b981',
+      desc: '月度趨勢 · 收入來源 · 專案',
+      route: '/center/commerce/revenue',
+      stat: 'NT$89,000/月',
+      primary: '打開本月報表',
+      secondary: '查看異常波動',
+      alert: '本月營收低於目標 20%',
+    },
+    {
+      id: 'partnerships',
+      label: '合作夥伴',
+      icon: Handshake,
+      color: '#f59e0b',
+      desc: '6 個夥伴 · 技術生態',
+      route: '/center/commerce/partnerships',
+      stat: '6 個夥伴',
+      primary: '查看進行中合作',
+      secondary: '新增合作夥伴',
+      alert: '2 個新合作提案待評估',
+    },
+    {
+      id: 'knowledge',
+      label: '知識庫',
+      icon: BookOpen,
+      color: '#f97316',
+      desc: '131 篇知識文件 · 分類索引',
+      route: '/center/commerce/knowledge',
+      stat: '131 篇',
+      primary: '搜尋知識文件',
+      secondary: '建立新知識頁',
+      alert: '4 篇知識回饋待處理',
+    },
+    {
+      id: 'docs',
+      label: '文件中心',
+      icon: FileText,
+      color: '#0ea5e9',
+      desc: '7 份文件 · API · 手冊 · 報告',
+      route: '/center/commerce/docs',
+      stat: '7 份文件',
+      primary: '查看最新更新',
+      secondary: '上傳新文件',
+      alert: '2 份文件等待審閱',
+    },
   ];
+
+  const pendingModules = modules.filter(mod => mod.alert);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -564,16 +632,72 @@ function LogisticsOverview() {
         })}
       </div>
 
+      {pendingModules.length > 0 && (
+        <div className="rounded-lg border bg-card p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className="text-xs font-medium">待處理事項</p>
+            <span className="text-[10px] text-muted-foreground">
+              共 {pendingModules.length} 個模組有提醒
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {pendingModules.map(mod => (
+              <Link
+                key={mod.id}
+                to={mod.route}
+                className="flex items-center justify-between gap-2 text-[11px] rounded-md px-2 py-1 hover:bg-accent/40 transition-colors"
+              >
+                <span className="truncate">
+                  <span className="font-medium" style={{ color: mod.color }}>
+                    {mod.label}
+                  </span>
+                  <span className="text-muted-foreground"> · {mod.alert}</span>
+                </span>
+                <span className="shrink-0 text-[10px] text-muted-foreground flex items-center gap-0.5">
+                  詳細 <ArrowLeft className="h-3 w-3 rotate-180" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map(mod => {
           const Icon = mod.icon;
           return (
             <Link key={mod.id} to={mod.route} className="rounded-lg border bg-card p-4 hover:bg-accent/50 hover:border-foreground/20 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: mod.color + '20', border: `1px solid ${mod.color}30` }}><Icon className="h-4 w-4" style={{ color: mod.color }} /></div>
-                <div><p className="font-medium text-sm">{mod.label}</p><p className="text-[10px] text-muted-foreground">{mod.stat}</p></div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{mod.label}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{mod.desc}</p>
+                </div>
+                <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ color: mod.color, background: mod.color + '15' }}>
+                  {mod.stat}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">{mod.desc}</p>
+              {(mod.primary || mod.secondary || mod.alert) && (
+                <div className="mt-3 border-t border-border/60 pt-2 flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                    {mod.primary && (
+                      <span className="text-foreground hover:underline underline-offset-2">
+                        {mod.primary}
+                      </span>
+                    )}
+                    {mod.secondary && (
+                      <span className="text-muted-foreground hover:text-foreground hover:underline underline-offset-2">
+                        {mod.secondary}
+                      </span>
+                    )}
+                  </div>
+                  {mod.alert && (
+                    <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
+                      {mod.alert}
+                    </span>
+                  )}
+                </div>
+              )}
             </Link>
           );
         })}

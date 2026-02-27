@@ -24,7 +24,7 @@ export type RunStatus =
 export type LastRunStatus = RunStatus | 'none';
 
 /** Agent 類型 */
-export type AgentType = 'cursor' | 'codex' | 'openclaw' | 'auto';
+export type AgentType = 'cursor' | 'codex' | 'openclaw' | 'claude' | 'auto';
 
 /** 執行模式 */
 export type ExecutionMode = 'parallel' | 'sequential';

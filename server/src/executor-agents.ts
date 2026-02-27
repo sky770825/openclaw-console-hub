@@ -75,6 +75,16 @@ const AGENT_CONFIGS: Record<AgentType, AgentExecutorConfig> = {
       workingDir: process.cwd(),
     },
   },
+  claude: {
+    type: 'claude',
+    name: 'Claude Code CLI (Subscription)',
+    enabled: true,
+    config: {
+      timeout: 120000,  // 2 分鐘
+      maxRetries: 1,
+      workingDir: SANDBOX_WORKDIR,
+    },
+  },
   auto: {
     type: 'auto',
     name: 'Auto Selector',
@@ -262,8 +272,8 @@ export class AgentExecutor {
       };
     }
     return {
-      primary: 'google/gemini-2.5-flash',
-      fallbacks: ['anthropic/claude-haiku-4-5-20251001', 'kimi/kimi-k2.5'],
+      primary: 'google/gemini-3-flash-preview',
+      fallbacks: ['google/gemini-2.5-flash', 'anthropic/claude-haiku-4-5-20251001'],
     };
   }
 
@@ -444,6 +454,9 @@ echo "✅ 封存檢查完成"`;
           break;
         case 'openclaw':
           result = await this.executeOpenClaw(task, timeout, modelPlan.primary, options?.onProgress);
+          break;
+        case 'claude':
+          result = await this.executeWithClaudeCLI(task, timeout, options?.onProgress);
           break;
         default:
           throw new Error(`Unknown agent type: ${agentType}`);
@@ -720,7 +733,7 @@ echo "✅ 封存檢查完成"`;
     errorFeedback?: string
   ): Promise<string> {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
-    const MODEL = 'gemini-2.5-flash';
+    const MODEL = 'gemini-3-flash-preview';
 
     const outputDir = path.join(SANDBOX_WORKDIR, 'output');
     let prompt = `You are a task executor. Generate a COMPLETE, EXECUTABLE bash script that accomplishes the following task.
@@ -931,7 +944,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
           script: lastScript,
           durationMs: Date.now() - totalStart,
           retryCount,
-          modelUsed: 'gemini-2.5-flash',
+          modelUsed: 'gemini-3-flash-preview',
         };
       }
 
@@ -949,8 +962,116 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
       script: lastScript,
       durationMs: Date.now() - totalStart,
       retryCount,
-      modelUsed: 'gemini-2.5-flash',
+      modelUsed: 'gemini-3-flash-preview',
     };
+  }
+
+  /**
+   * 用 Claude Code CLI（訂閱版）執行任務
+   * 走 Max 訂閱額度，不走 API key
+   */
+  private static async executeWithClaudeCLI(
+    task: Task,
+    timeout: number,
+    onProgress?: (progress: string) => void
+  ): Promise<AgentExecutionResult> {
+    const startTime = Date.now();
+    const agentType: AgentType = 'claude';
+    onProgress?.(`[Claude CLI] 訂閱版執行任務: ${task.name}\n`);
+
+    const outputDir = path.join(SANDBOX_WORKDIR, 'output');
+    if (fs.existsSync(outputDir)) {
+      fs.rmSync(outputDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    const prompt = [
+      `你是任務執行器。直接執行以下任務，所有產出物放到 ${outputDir}/`,
+      `任務：${task.name}`,
+      `描述：${task.description || '無'}`,
+      `限制：不動 .env、不 push git、不刪除外部檔案。`,
+      `完成後列出所有產出的檔案路徑。`,
+    ].join('\n');
+
+    try {
+      const result = await new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve) => {
+        let stdout = '';
+        let stderr = '';
+        const child = spawn('claude', [
+          '-p',
+          '--model', 'sonnet',
+          '--dangerously-skip-permissions',
+          prompt,
+        ], {
+          env: CLAUDE_ENV,
+          cwd: SANDBOX_WORKDIR,
+          timeout,
+          stdio: ['ignore', 'pipe', 'pipe'],  // stdin=/dev/null, stdout=pipe, stderr=pipe
+        });
+
+        child.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+        child.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+
+        const timer = setTimeout(() => {
+          child.kill('SIGTERM');
+          resolve({ stdout, stderr: stderr + '\n[TIMEOUT]', exitCode: 124 });
+        }, timeout);
+
+        child.on('close', (code) => {
+          clearTimeout(timer);
+          resolve({ stdout, stderr, exitCode: code ?? 1 });
+        });
+
+        child.on('error', (err) => {
+          clearTimeout(timer);
+          resolve({ stdout, stderr: err.message, exitCode: 1 });
+        });
+      });
+
+      const artifacts = this.scanArtifacts();
+
+      const quality = this.gradeExecution(
+        task.name,
+        task.description,
+        result.exitCode,
+        result.stdout,
+        result.stderr,
+        artifacts,
+        ''
+      );
+      log.info(`[QualityGate] ${task.name}: ${quality.grade} (${quality.score}分) — ${quality.reason}`);
+
+      const outputParts: string[] = [];
+      if (result.stdout) outputParts.push(result.stdout.slice(0, 3000));
+      if (artifacts.length > 0) {
+        outputParts.push(`\n=== Artifacts (${artifacts.length}) ===`);
+        outputParts.push(artifacts.join('\n'));
+      }
+      outputParts.push(`\n=== Quality: ${quality.grade} (${quality.score}/100) ===`);
+      const output = outputParts.join('\n');
+
+      onProgress?.(output);
+      return {
+        success: quality.passed,
+        output,
+        error: !quality.passed ? `品質不及格: ${quality.reason}` : undefined,
+        exitCode: quality.passed ? 0 : -2,
+        durationMs: Date.now() - startTime,
+        agentType,
+        modelUsed: 'claude-sonnet-subscription',
+        quality,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        output: '',
+        error: error instanceof Error ? error.message : String(error),
+        exitCode: -1,
+        durationMs: Date.now() - startTime,
+        agentType,
+        modelUsed: 'claude-sonnet-subscription',
+      };
+    }
   }
 
   /**
@@ -991,6 +1112,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
         cursor: 'which cursor || command -v cursor',
         codex: 'which codex || command -v codex',
         openclaw: 'which openclaw || command -v openclaw',
+        claude: 'which claude || command -v claude',
         auto: 'echo "auto"',
       };
 
@@ -1005,7 +1127,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
    * 獲取所有已安裝的 Agent
    */
   static async getInstalledAgents(): Promise<AgentType[]> {
-    const agents: AgentType[] = ['cursor', 'codex', 'openclaw'];
+    const agents: AgentType[] = ['cursor', 'codex', 'openclaw', 'claude'];
     const results = await Promise.all(
       agents.map(async (agent) => ({
         agent,

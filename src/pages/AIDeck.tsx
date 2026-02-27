@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 
 const OLLAMA_BASE = 'http://localhost:11434';
+const API_BASE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
+  ? String(import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+  : 'http://localhost:3011';
 
 // ─── 真實 Ollama API ───────────────────────────────────────
 
@@ -433,19 +436,65 @@ function AIMemoryPage() {
   );
 }
 
-// ─── 提示詞防護 ───────────────────────────────────────────
+// ─── 提示詞防護（接後端真實掃描與統計）────────────────────
+
+const PROMPT_GUARD_PATTERNS: Record<string, string> = {
+  'PG-001': 'ignore previous instructions / disregard',
+  'PG-002': 'pretend you are / DAN / jailbreak',
+  'PG-003': 'API key / token / secret',
+  'PG-004': 'rm -rf / sudo / DROP TABLE',
+  'PG-005': 'I am the admin / boss',
+  'PG-006': 'eval() / subprocess / os.system',
+};
 
 function PromptGuardPage() {
-  const rules = [
-    { id: 'PG-001', name: '注入攻擊偵測', pattern: 'ignore previous instructions', action: 'BLOCK', hits: 2 },
-    { id: 'PG-002', name: '角色扮演越獄', pattern: 'pretend you are / DAN', action: 'BLOCK', hits: 1 },
-    { id: 'PG-003', name: '機密資料滲漏', pattern: 'API key / token / secret', action: 'REDACT', hits: 0 },
-    { id: 'PG-004', name: '惡意指令執行', pattern: 'rm -rf / sudo / DROP TABLE', action: 'BLOCK', hits: 0 },
-    { id: 'PG-005', name: '身份偽冒', pattern: 'I am the admin / boss', action: 'FLAG', hits: 0 },
-    { id: 'PG-006', name: 'FADP 惡意任務注入', pattern: 'eval() / subprocess / os.system', action: 'BLOCK', hits: 0 },
-  ];
+  const [stats, setStats] = useState<{
+    blockedToday: number;
+    blockedTotal: number;
+    rulesCount: number;
+    rules: { id: string; name: string; action: string }[];
+    lastBlocks: { ruleId: string; ruleName: string; at: string }[];
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const blocked = rules.reduce((s, r) => s + r.hits, 0);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/api/security/prompt-guard-stats`, {
+      headers: { 'x-api-key': import.meta.env.VITE_OPENCLAW_API_KEY || '' },
+    })
+      .then(r => r.json())
+      .then((data: { ok?: boolean; blockedToday?: number; blockedTotal?: number; rulesCount?: number; rules?: { id: string; name: string; action: string }[]; lastBlocks?: { ruleId: string; ruleName: string; at: string }[] }) => {
+        if (cancelled) return;
+        setStats({
+          blockedToday: data.blockedToday ?? 0,
+          blockedTotal: data.blockedTotal ?? 0,
+          rulesCount: data.rulesCount ?? 6,
+          rules: data.rules ?? [],
+          lastBlocks: data.lastBlocks ?? [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const rules = (stats?.rules?.length ? stats.rules : [
+    { id: 'PG-001', name: '注入攻擊偵測', action: 'BLOCK' },
+    { id: 'PG-002', name: '角色扮演越獄', action: 'BLOCK' },
+    { id: 'PG-003', name: '機密資料滲漏', action: 'REDACT' },
+    { id: 'PG-004', name: '惡意指令執行', action: 'BLOCK' },
+    { id: 'PG-005', name: '身份偽冒', action: 'FLAG' },
+    { id: 'PG-006', name: 'FADP 惡意任務注入', action: 'BLOCK' },
+  ]).map(r => ({
+    ...r,
+    pattern: PROMPT_GUARD_PATTERNS[r.id] ?? '',
+    hits: (stats?.lastBlocks ?? []).filter(b => b.ruleId === r.id).length,
+  }));
+  const blockedToday = stats?.blockedToday ?? 0;
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -456,40 +505,65 @@ function PromptGuardPage() {
         <Lock className="h-7 w-7 text-red-400" />
         <div>
           <h1 className="text-xl font-semibold">提示詞防護</h1>
-          <p className="text-sm text-muted-foreground">子 Agent 提示詞清洗 · 注入攻擊防護 · FADP 整合</p>
+          <p className="text-sm text-muted-foreground">子 Agent 提示詞清洗 · 注入攻擊防護 · FADP 整合 · 已接後端執行</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/5 p-3">
-        <CheckCircle className="h-5 w-5 text-green-400" />
-        <div>
-          <p className="text-sm font-medium text-green-400">防護系統運行中</p>
-          <p className="text-xs text-muted-foreground">今日攔截 {blocked} 次可疑提示詞 · FADP 惡意任務掃描已啟用</p>
-        </div>
-      </div>
+      {loading ? (
+        <div className="rounded-lg border bg-card p-4 text-center text-sm text-muted-foreground">載入防護統計...</div>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/5 p-3">
+            <CheckCircle className="h-5 w-5 text-green-400" />
+            <div>
+              <p className="text-sm font-medium text-green-400">防護系統運行中</p>
+              <p className="text-xs text-muted-foreground">
+                今日攔截 {blockedToday} 次可疑提示詞 · 累計 {stats?.blockedTotal ?? 0} 次 · FADP 惡意任務掃描已啟用
+              </p>
+            </div>
+          </div>
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-4 py-2 border-b bg-muted/30">
-          <p className="text-xs font-medium">防護規則（{rules.length} 條）</p>
-        </div>
-        <div className="divide-y">
-          {rules.map(rule => (
-            <div key={rule.id} className="px-4 py-3 flex items-start gap-3">
-              <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{rule.id}</span>
-              <div className="flex-1">
-                <p className="text-xs font-medium">{rule.name}</p>
-                <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{rule.pattern}</p>
+          <div className="rounded-lg border bg-card overflow-hidden">
+            <div className="px-4 py-2 border-b bg-muted/30">
+              <p className="text-xs font-medium">防護規則（{rules.length} 條）</p>
+            </div>
+            <div className="divide-y">
+              {rules.map(rule => (
+                <div key={rule.id} className="px-4 py-3 flex items-start gap-3">
+                  <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{rule.id}</span>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium">{rule.name}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{rule.pattern}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${rule.action === 'BLOCK' ? 'bg-red-500/10 text-red-400' : rule.action === 'REDACT' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                      {rule.action}
+                    </span>
+                    {rule.hits > 0 && <span className="text-[10px] text-red-400">{rule.hits}次</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {stats?.lastBlocks && stats.lastBlocks.length > 0 && (
+            <div className="rounded-lg border bg-card overflow-hidden">
+              <div className="px-4 py-2 border-b bg-muted/30">
+                <p className="text-xs font-medium">最近攔截記錄</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${rule.action === 'BLOCK' ? 'bg-red-500/10 text-red-400' : rule.action === 'REDACT' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                  {rule.action}
-                </span>
-                {rule.hits > 0 && <span className="text-[10px] text-red-400">{rule.hits}次</span>}
+              <div className="divide-y max-h-40 overflow-auto">
+                {stats.lastBlocks.slice(0, 10).map((b, i) => (
+                  <div key={i} className="px-4 py-2 flex items-center justify-between text-[10px]">
+                    <span className="font-mono text-red-400">{b.ruleId}</span>
+                    <span className="text-muted-foreground">{b.ruleName}</span>
+                    <span className="text-muted-foreground/70">{new Date(b.at).toLocaleString('zh-TW')}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

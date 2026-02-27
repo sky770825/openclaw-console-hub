@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { apiClient } from '@/services/apiClient';
+import { fetchBoardHealth } from '@/services/openclawBoardApi';
 
 // ── Shared types ────────────────────────────────────────────────────────────
 interface ServiceNode {
@@ -26,12 +28,84 @@ interface NetInterface {
   status: 'up' | 'down';
 }
 
+interface InfraMetrics {
+  servicesUp: number;
+  servicesTotal: number;
+  deploymentsToday: number;
+  dbTables: number;
+  openAlerts: number;
+}
+
 // ── Hook ─────────────────────────────────────────────────────────────────────
 function useInfraStatus() {
   const [tick, setTick] = useState(0);
+  const [metrics, setMetrics] = useState<InfraMetrics>({
+    servicesUp: 0,
+    servicesTotal: 0,
+    deploymentsToday: 0,
+    dbTables: 14,
+    openAlerts: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const t = setInterval(() => setTick(p => p + 1), 3000);
     return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInfraMetrics() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [health, stats, alerts] = await Promise.all([
+          fetchBoardHealth(),
+          apiClient.getStats().catch(() => null),
+          apiClient.listAlerts().catch(() => []),
+        ]);
+
+        if (cancelled) return;
+
+        const supabaseConnected = health?.backend?.supabaseConnected ?? false;
+        const n8nConfigured = health?.backend?.n8nConfigured ?? false;
+        const servicesTotal = 2;
+        const servicesUp =
+          (supabaseConnected ? 1 : 0) +
+          (n8nConfigured ? 1 : 0);
+
+        const deploymentsToday = stats?.todayRuns ?? 0;
+        const openAlerts =
+          (alerts ?? []).filter((a) => a.status === 'open').length ||
+          (alerts ?? []).length;
+
+        setMetrics({
+          servicesUp,
+          servicesTotal,
+          deploymentsToday,
+          dbTables: 14,
+          openAlerts,
+        });
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInfraMetrics();
+    const interval = setInterval(loadInfraMetrics, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const jitter = (base: number, range: number) =>
@@ -69,7 +143,7 @@ function useInfraStatus() {
     { name: 'docker0', ip: '172.17.0.1', rx: jitter(45, 15), tx: jitter(38, 12), status: 'up' },
   ];
 
-  return { services, tables, netInterfaces, tick };
+  return { services, tables, netInterfaces, tick, metrics, loading, error };
 }
 
 // ── Architecture ─────────────────────────────────────────────────────────────
@@ -224,14 +298,14 @@ const DeploymentPage: React.FC = () => {
 
 // ── Database ─────────────────────────────────────────────────────────────────
 const DatabasePage: React.FC = () => {
-  const { tables } = useInfraStatus();
+  const { tables, tick } = useInfraStatus();
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
-          { label: 'Total Tables', value: '14', color: '#38bdf8' },
+          { label: 'Total Tables', value: String(tables.length), color: '#38bdf8' },
           { label: 'Total Rows', value: `${(18200 + tick * 5).toLocaleString()}`, color: '#10b981' },
           { label: 'DB Size', value: '412 MB', color: '#a855f7' },
           { label: 'Active Conn', value: '7 / 100', color: '#f59e0b' },
@@ -538,8 +612,7 @@ const MonitoringPage: React.FC = () => {
 
 // ── Overview ──────────────────────────────────────────────────────────────────
 const InfraOverview: React.FC = () => {
-  const { services } = useInfraStatus();
-  const healthyCount = services.filter(s => s.status === 'healthy').length;
+  const { services, metrics, loading } = useInfraStatus();
 
   const modules = [
     { id: 'architecture', name: '系統架構', icon: '🏗️', desc: '服務拓撲與節點狀態', path: '/center/infra/architecture' },
@@ -554,10 +627,28 @@ const InfraOverview: React.FC = () => {
     <div style={{ display: 'grid', gap: 20 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
-          { label: 'Services Up', value: `${healthyCount}/${services.length}`, color: '#10b981' },
-          { label: 'Deployments Today', value: '3', color: '#38bdf8' },
-          { label: 'DB Tables', value: '14', color: '#a855f7' },
-          { label: 'Open Alerts', value: '1', color: '#f59e0b' },
+          {
+            label: 'Services Up',
+            value: loading
+              ? '...'
+              : `${metrics.servicesUp}/${metrics.servicesTotal || services.length || 0}`,
+            color: '#10b981',
+          },
+          {
+            label: 'Deployments Today',
+            value: loading ? '...' : String(metrics.deploymentsToday),
+            color: '#38bdf8',
+          },
+          {
+            label: 'DB Tables',
+            value: loading ? '...' : String(metrics.dbTables),
+            color: '#a855f7',
+          },
+          {
+            label: 'Open Alerts',
+            value: loading ? '...' : String(metrics.openAlerts),
+            color: '#f59e0b',
+          },
         ].map(s => (
           <div key={s.label} style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: 16, textAlign: 'center' }}>
             <div style={{ color: s.color, fontSize: 26, fontWeight: 700, fontFamily: 'monospace' }}>{s.value}</div>

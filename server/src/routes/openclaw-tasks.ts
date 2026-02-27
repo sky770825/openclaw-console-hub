@@ -21,6 +21,7 @@ import {
 } from '../openclawMapper.js';
 import { tasks } from '../store.js';
 import type { Task } from '../types.js';
+import { scanTaskPayload } from '../promptGuard.js';
 
 const log = createLogger('openclaw-tasks-route');
 
@@ -126,6 +127,22 @@ openclawTasksRouter.post('/', async (req, res) => {
       });
     }
 
+    // 提示詞防護：掃描任務內容，命中 BLOCK 規則則拒絕建立
+    const promptGuardHit = scanTaskPayload({
+      name: maybeTitle,
+      title: body.title as string | undefined,
+      description: maybeDesc,
+      runCommands: Array.isArray(body.runCommands) ? body.runCommands : undefined,
+    });
+    if (promptGuardHit?.action === 'BLOCK') {
+      log.warn({ ruleId: promptGuardHit.ruleId, ruleName: promptGuardHit.ruleName }, 'Task rejected by prompt guard');
+      return res.status(400).json({
+        message: `提示詞防護攔截：${promptGuardHit.ruleName}（${promptGuardHit.ruleId}）`,
+        code: 'PROMPT_GUARD_BLOCK',
+        ruleId: promptGuardHit.ruleId,
+      });
+    }
+
     const id = body.id ?? `t${Date.now()}`;
     const fromR = body.fromR ?? body.from_review_id ?? null;
     const ocPayload = {
@@ -133,8 +150,20 @@ openclawTasksRouter.post('/', async (req, res) => {
         id,
         name: body.name ?? body.title ?? '新任務',
         description: body.description ?? '',
-        status: body.status ?? 'draft',
+        status: (body.status ?? 'draft') as Task['status'],
         tags: body.tags ?? ['feature'],
+        agent: body.agent,
+        owner: body.owner,
+        priority: body.priority,
+        projectPath: body.projectPath,
+        rollbackPlan: body.rollbackPlan,
+        acceptanceCriteria: body.acceptanceCriteria,
+        deliverables: body.deliverables,
+        runCommands: body.runCommands,
+        modelPolicy: body.modelPolicy,
+        executionProvider: body.executionProvider,
+        allowPaid: body.allowPaid,
+        riskLevel: body.riskLevel,
       }),
       title: body.title ?? body.name ?? '新任務',
       subs: Array.isArray(body.subs) ? body.subs : [],
