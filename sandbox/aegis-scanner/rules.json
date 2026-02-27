@@ -1,0 +1,21 @@
+[
+  {
+    "id": "RULE-001",
+    "description": "Potential system wipe attempt",
+    "severity": "Critical",
+    "pattern": "rm -rf /"
+  },
+  {
+    "id": "RULE-002",
+    "description": "Potential data exfiltration",
+    "severity": "High",
+    "pattern": "curl evil.com"
+  },
+  {
+    "id": "RULE-003",
+    "description": "Potential obfuscated malicious code",
+    "severity": "High",
+    "patterns": ["base64 ", "eval("],
+    "match_all": true
+  }
+]

@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  sandbox:
+    image: ubuntu:latest
+    container_name: aegis_sandbox
+    command: tail -f /dev/null # Keep the container running
+    volumes:
+      - ./skills_to_scan:/app/skills_to_scan # Mount a directory for skills

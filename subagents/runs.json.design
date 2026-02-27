@@ -1,0 +1,15 @@
+[
+  {
+    "run_id": "string",
+    "session_id": "string",
+    "agent_id": "string",
+    "task": "string",
+    "status": "pending" | "in_progress" | "completed" | "failed",
+    "started_at": "ISO_8601_DATETIME",
+    "completed_at": "ISO_8601_DATETIME" | null,
+    "duration_ms": "number" | null,
+    "result": "string" | null,
+    "error": "string" | null,
+    "model_used": "string" | null
+  }
+]

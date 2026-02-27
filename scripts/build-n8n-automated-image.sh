@@ -1,0 +1,297 @@
+#!/bin/bash
+#
+# n8n 100% 全自動化部署 - 預打包 Image 方案
+# 此腳本建立自定義 Docker Image，內含預設設定
+
+set -e
+
+echo "🚀 n8n 100% 全自動化部署 - 預打包方案"
+echo "======================================="
+echo ""
+
+WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
+N8N_PROD_DIR="/Users/caijunchang/n8n-production"
+OPENAI_KEY="${OPENAI_API_KEY:-}"
+
+if [ -z "$OPENAI_KEY" ]; then
+    echo "❌ 錯誤: 找不到 OPENAI_API_KEY"
+    exit 1
+fi
+
+# Step 1: 準備建置目錄
+echo "🔍 Step 1: 準備建置目錄..."
+BUILD_DIR="/tmp/n8n-automated-build"
+rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+# Step 2: 準備 n8n 設定
+echo "🔍 Step 2: 準備 n8n 設定..."
+
+# 複製現有的 n8n 資料（包含加密金鑰）
+docker cp n8n-production-n8n-1:/home/node/.n8n/config "$BUILD_DIR/"
+
+# 匯出現有工作流
+docker exec n8n-production-n8n-1 n8n export:workflow --all --output=/tmp/workflows.json 2>/dev/null || true
+docker cp n8n-production-n8n-1:/tmp/workflows.json "$BUILD_DIR/" 2>/dev/null || echo "[]" > "$BUILD_DIR/workflows.json"
+
+# Step 3: 建立 Dockerfile
+echo "🔍 Step 3: 建立 Dockerfile..."
+cat > Dockerfile << 'DOCKERFILE'
+FROM docker.n8n.io/n8nio/n8n:latest
+
+USER root
+
+# 安裝必要的工具
+RUN apk add --no-cache curl jq
+
+# 複製預設設定
+COPY config /home/node/.n8n/config
+COPY init-scripts/ /init-scripts/
+
+# 建立啟動腳本
+RUN cat > /entrypoint.sh << 'ENTRYPOINT'
+#!/bin/sh
+set -e
+
+# 等待資料庫就緒
+echo "等待資料庫就緒..."
+sleep 5
+
+# 啟動 n8n 背景執行
+echo "啟動 n8n..."
+n8n start &
+N8N_PID=$!
+
+# 等待 n8n 就緒
+echo "等待 n8n 就緒..."
+for i in $(seq 1 60); do
+    if curl -s http://localhost:5678/healthz > /dev/null 2>&1; then
+        echo "n8n 已就緒"
+        break
+    fi
+    echo -n "."
+    sleep 2
+done
+
+# 自動匯入工作流（如果尚未匯入）
+if [ -f /init-scripts/workflows.json ]; then
+    echo "匯入工作流..."
+    n8n import:workflow --input=/init-scripts/workflows.json 2>/dev/null || true
+fi
+
+# 自動啟動工作流
+echo "啟動工作流..."
+n8n update:workflow --all --active=true 2>/dev/null || true
+
+echo "初始化完成"
+
+# 等待 n8n 主程序
+wait $N8N_PID
+ENTRYPOINT
+
+RUN chmod +x /entrypoint.sh
+
+USER node
+
+ENTRYPOINT ["/entrypoint.sh"]
+DOCKERFILE
+
+# Step 4: 建立初始化腳本目錄
+echo "🔍 Step 4: 準備初始化腳本..."
+mkdir -p "$BUILD_DIR/init-scripts"
+cp "$BUILD_DIR/workflows.json" "$BUILD_DIR/init-scripts/" 2>/dev/null || true
+
+# 複製我們建立的工作流
+cp "$WORKSPACE_DIR/n8n-workflows/openclaw-memory-agent.json" "$BUILD_DIR/init-scripts/workflows-new.json"
+
+# Step 5: 建立自定義工作流檔案（移除 credential ID 佔位符）
+echo "🔍 Step 5: 準備工作流檔案..."
+cat > "$BUILD_DIR/init-scripts/workflows-final.json" << 'WORKFLOWJSON'
+[{
+  "name": "OpenClaw 記憶串接 Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "openclaw-memory",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "OpenClaw Webhook",
+      "type": "n8n-nodes-base.chatTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "openclaw-memory"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "你是小蔡的記憶助手。你的任務是：\n1. 理解用戶輸入的內容\n2. 從長期記憶中檢索相關資訊\n3. 結合記憶生成回應\n4. 將重要資訊儲存到長期記憶\n\n記憶檢索工具 'RAG_MEMORY' 可以幫你找到相關的歷史對話和知識。"
+        }
+      },
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {}
+      },
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "RAG_MEMORY",
+        "toolDescription": "檢索長期記憶庫中的相關資訊，包含歷史對話和重要知識",
+        "qdrantCollection": "ltm",
+        "topK": 5,
+        "options": {}
+      },
+      "name": "Vector Store Retriever",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [650, 700]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [850, 700]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": "ltm",
+        "options": {}
+      },
+      "name": "Store to Vector Memory",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsMode": "expression",
+        "jsCode": "const conversation = $input.all()[0].json;\nconst userMessage = conversation.userMessage || conversation.body?.message || JSON.stringify(conversation);\nconst aiResponse = conversation.aiResponse || '回應內容';\n\nconst memoryContent = `用戶: ${userMessage}\nAI: ${aiResponse}\n時間: ${new Date().toISOString()}`;\n\nreturn [{\n  json: {\n    pageContent: memoryContent,\n    metadata: {\n      timestamp: new Date().toISOString(),\n      sessionId: conversation.sessionId || 'default',\n      type: 'conversation'\n    }\n  }\n}];"
+      },
+      "name": "Prepare Memory Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "OpenAI Embeddings Insert",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [1050, 500]
+    }
+  ],
+  "connections": {
+    "OpenClaw Webhook": {
+      "main": [[{"node": "AI Agent", "type": "main", "index": 0}]]
+    },
+    "AI Agent": {
+      "main": [[{"node": "Prepare Memory Data", "type": "main", "index": 0}]],
+      "ai_languageModel": [[{"node": "OpenAI Chat Model", "type": "ai_languageModel", "index": 0}]],
+      "ai_memory": [[{"node": "Window Buffer Memory", "type": "ai_memory", "index": 0}]],
+      "ai_tool": [[{"node": "Vector Store Retriever", "type": "ai_tool", "index": 0}]]
+    },
+    "Vector Store Retriever": {
+      "ai_embedding": [[{"node": "OpenAI Embeddings", "type": "ai_embedding", "index": 0}]]
+    },
+    "Prepare Memory Data": {
+      "main": [[{"node": "Store to Vector Memory", "type": "main", "index": 0}]]
+    },
+    "Store to Vector Memory": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]],
+      "ai_embedding": [[{"node": "OpenAI Embeddings Insert", "type": "ai_embedding", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}]
+WORKFLOWJSON
+
+# Step 6: 建立 docker-compose 覆蓋檔案
+echo "🔍 Step 6: 準備 Docker Compose 覆蓋檔案..."
+cat > "$BUILD_DIR/docker-compose.override.yml" << 'COMPOSE'
+version: "3.8"
+
+services:
+  n8n:
+    image: n8n-automated:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - GENERIC_TIMEZONE=Asia/Taipei
+      - TZ=Asia/Taipei
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-n8n_password}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-min16charskey!}
+      - N8N_RUNNERS_ENABLED=true
+      - EXECUTIONS_MODE=regular
+      - EXECUTIONS_TIMEOUT=300
+      - WEBHOOK_URL=http://localhost:5678/
+      # 自動設定 Credentials 的環境變數
+      - N8N_CREDENTIALS_AUTO_SETUP=true
+      - N8N_DEFAULT_OPENAI_API_KEY=${OPENAI_API_KEY}
+COMPOSE
+
+echo ""
+echo "======================================="
+echo "✅ 建置檔案準備完成！"
+echo ""
+echo "檔案位置: $BUILD_DIR"
+echo ""
+echo "下一步 - 建置 Docker Image:"
+echo "  cd $BUILD_DIR"
+echo "  docker build -t n8n-automated:latest ."
+echo ""
+echo "或使用 Docker Compose:"
+echo "  cd $N8N_PROD_DIR"
+echo "  docker compose -f docker-compose.yml -f $BUILD_DIR/docker-compose.override.yml up -d"
+echo ""
+echo "⚠️  注意：此方案仍需在啟動後設定 Credentials"
+echo "    因為 n8n 加密限制，無法預設 Credentials"
+echo ""

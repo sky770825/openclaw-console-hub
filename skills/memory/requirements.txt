@@ -1,0 +1,14 @@
+# Memory System Requirements
+
+# Core dependencies (always required)
+# Python 3.8+
+
+# For Archival Memory (vector storage)
+lancedb>=0.5.0
+pyarrow>=12.0.0
+
+# Optional: For better embeddings
+# openai>=1.0.0
+
+# Optional: For testing
+# pytest>=7.0.0

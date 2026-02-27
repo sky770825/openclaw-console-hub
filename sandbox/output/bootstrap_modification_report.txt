@@ -1,0 +1,15 @@
+--- Auto-Skill V2 Session Hook Implementation Report ---
+Date: Fri Feb 27 21:27:18 CST 2026
+Working Directory: /Users/caijunchang/.openclaw/workspace/sandbox
+Target file: BOOTSTRAP.md
+Command to add: exec scripts/auto-skill-v2.sh
+------------------------------------------------------
+
+Attempting to add auto-skill V2 session hook to BOOTSTRAP.md.
+Checking for existing command: 'exec scripts/auto-skill-v2.sh'...
+Command not found. Adding 'exec scripts/auto-skill-v2.sh' to BOOTSTRAP.md.
+Successfully added 'exec scripts/auto-skill-v2.sh' to BOOTSTRAP.md.
+Status: Added successfully.
+
+------------------------------------------------------
+Report saved to /Users/caijunchang/.openclaw/workspace/sandbox/output/bootstrap_modification_report.txt

@@ -1,0 +1,136 @@
+#!/bin/bash
+################################################################################
+# contextguard - Context 監控與優化 CLI
+#
+# 用法：
+#   contextguard status              # 顯示目前狀態（純 bash）
+#   contextguard optimize            # 優化建議（TS）
+#   contextguard report --daily      # 日報告（TS）
+#   contextguard report --weekly     # 週報告（TS）
+#   contextguard config              # 配置（TS）
+################################################################################
+
+set -euo pipefail
+
+# 解析 script 所在目錄 → skill 根目錄
+SELF="$0"
+[[ -L "$SELF" ]] && SELF=$(readlink "$SELF" 2>/dev/null || true)
+CONTEXTGUARD_ROOT=$(cd "$(dirname "$SELF")/.." && pwd)
+
+DEFAULT_SESSION="${CONTEXTGUARD_DEFAULT_SESSION:-agent:main:main}"
+CONFIG_FILE="${HOME:-/tmp}/.openclaw/contextguard.json"
+
+# === 依賴 ===
+command -v jq >/dev/null 2>&1 || { echo "❌ 需要 jq，請先安裝" >&2; exit 1; }
+
+# === 取得 context 使用率（與 context-manager.sh 邏輯一致）===
+get_usage() {
+  local json_data
+  json_data=$(openclaw sessions --json 2>/dev/null || echo "{}")
+  if [[ "$json_data" == "{}" ]] || [[ -z "$json_data" ]]; then
+    echo ""
+    return 1
+  fi
+  local pair
+  pair=$(echo "$json_data" | jq -r --arg k "$DEFAULT_SESSION" '
+    .sessions[]? | select(.key == $k) | "\(.totalTokens // 0) \(.contextTokens // 0)"
+  ' 2>/dev/null | head -1)
+  if [[ -z "$pair" ]]; then
+    # 若無 main，取第一個 session
+    pair=$(echo "$json_data" | jq -r '
+      .sessions[0]? | "\(.totalTokens // 0) \(.contextTokens // 0)"
+    ' 2>/dev/null)
+  fi
+  if [[ -z "$pair" ]] || [[ "$pair" == "null null" ]]; then
+    echo ""
+    return 1
+  fi
+  local total ctx
+  total=$(echo "$pair" | awk '{print $1}')
+  ctx=$(echo "$pair" | awk '{print $2}')
+  if [[ "${ctx:-0}" == "0" ]]; then
+    echo ""
+    return 1
+  fi
+  awk "BEGIN {printf \"%.2f\", ($total / $ctx) * 100}"
+}
+
+# === status：純 bash 顯示狀態 ===
+cmd_status() {
+  local usage
+  usage=$(get_usage) || true
+  if [[ -z "$usage" ]]; then
+    echo "❌ 無法獲取 session 資訊 (請確認 openclaw 已啟動且有活躍 session)"
+    exit 1
+  fi
+  local usage_int
+  usage_int=$(echo "$usage" | cut -d. -f1)
+  echo "Context 使用率: ${usage}% (主 session: $DEFAULT_SESSION)"
+  if [[ -f "$CONFIG_FILE" ]]; then
+    local warn critical
+    warn=$(jq -r '.thresholds.warn // 70' "$CONFIG_FILE" 2>/dev/null)
+    critical=$(jq -r '.thresholds.critical // 85' "$CONFIG_FILE" 2>/dev/null)
+    if [[ "$usage_int" -ge "${critical:-85}" ]]; then
+      echo "狀態: 🔴 超過嚴重閾值 (${critical}%)，建議執行 checkpoint 或 /new"
+    elif [[ "$usage_int" -ge "${warn:-70}" ]]; then
+      echo "狀態: ⚠️  超過建議閾值 (${warn}%)，可執行 checkpoint 或 /new"
+    else
+      echo "狀態: ✅ 正常"
+    fi
+  else
+    if [[ "$usage_int" -ge 85 ]]; then
+      echo "狀態: 🔴 建議執行 checkpoint 或 /new"
+    elif [[ "$usage_int" -ge 70 ]]; then
+      echo "狀態: ⚠️  建議適時 compact"
+    else
+      echo "狀態: ✅ 正常"
+    fi
+  fi
+}
+
+# === 呼叫 Node CLI（優先 dist，否則 tsx）===
+run_node_cli() {
+  local cmd="$1"
+  shift
+  if [[ -f "$CONTEXTGUARD_ROOT/dist/cli.js" ]]; then
+    node "$CONTEXTGUARD_ROOT/dist/cli.js" "$cmd" "$@"
+  elif command -v tsx >/dev/null 2>&1; then
+    node --import tsx "$CONTEXTGUARD_ROOT/src/cli.ts" "$cmd" "$@"
+  else
+    echo "❌ 請在 skill 目錄執行 pnpm build 或安裝 tsx 以使用 $cmd 命令" >&2
+    exit 1
+  fi
+}
+
+# === 主程式 ===
+main() {
+  case "${1:-}" in
+    status)
+      cmd_status
+      ;;
+    optimize)
+      run_node_cli optimize
+      ;;
+    report)
+      run_node_cli report "${2:-}"
+      ;;
+    config)
+      run_node_cli config
+      ;;
+    "")
+      echo "用法: contextguard { status | optimize | report | config }" >&2
+      echo "  status              顯示目前 context 使用率與狀態" >&2
+      echo "  optimize            手動觸發優化建議" >&2
+      echo "  report --daily      生成日報告" >&2
+      echo "  report --weekly     生成週報告" >&2
+      echo "  config              檢視配置" >&2
+      exit 1
+      ;;
+    *)
+      echo "未知命令: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

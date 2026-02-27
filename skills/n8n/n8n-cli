@@ -1,0 +1,281 @@
+#!/bin/bash
+set -e
+
+# n8n CLI - OpenClaw n8n Integration
+# Usage: n8n-cli <command> [args]
+
+CONFIG_FILE="${HOME}/.openclaw/config/n8n.json"
+DEFAULT_BASE_URL="http://localhost:5678"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Load config
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        BASE_URL=$(jq -r '.baseUrl // empty' "$CONFIG_FILE" 2>/dev/null || echo "")
+        API_KEY=$(jq -r '.apiKey // empty' "$CONFIG_FILE" 2>/dev/null || echo "")
+        BASIC_AUTH=$(jq -r '.basicAuth // empty' "$CONFIG_FILE" 2>/dev/null || echo "")
+    fi
+    BASE_URL="${BASE_URL:-$DEFAULT_BASE_URL}"
+    
+    if [[ -z "$API_KEY" && -z "$BASIC_AUTH" ]]; then
+        echo -e "${YELLOW}⚠️  未設定認證，請先執行: n8n-cli auth${NC}"
+    fi
+}
+
+# API Call helper
+api_call() {
+    local method="${1:-GET}"
+    local endpoint="$2"
+    local data="${3:-}"
+    
+    local curl_opts=(
+        -s
+        -X "$method"
+        -H "Content-Type: application/json"
+    )
+    
+    # Try API Key first, then Basic Auth
+    if [[ -n "$API_KEY" ]]; then
+        curl_opts+=(-H "X-N8N-API-KEY: $API_KEY")
+    elif [[ -n "$BASIC_AUTH" ]]; then
+        curl_opts+=(-u "$BASIC_AUTH")
+    fi
+    
+    if [[ -n "$data" ]]; then
+        curl_opts+=(-d "$data")
+    fi
+    
+    curl "${curl_opts[@]}" "${BASE_URL}${endpoint}"
+}
+
+# Commands
+cmd_status() {
+    echo -e "${GREEN}檢查 n8n 狀態...${NC}"
+    
+    # Check health
+    local health
+    health=$(curl -s "${BASE_URL}/healthz" 2>/dev/null || echo '{"status":"error"}')
+    
+    if echo "$health" | jq -e '.status == "ok"' >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ n8n 服務正常${NC}"
+        echo "  URL: $BASE_URL"
+    else
+        echo -e "${RED}❌ n8n 服務異常${NC}"
+        echo "  URL: $BASE_URL"
+        return 1
+    fi
+    
+    # Check API auth
+    if [[ -n "$API_KEY" || -n "$BASIC_AUTH" ]]; then
+        local api_test
+        api_test=$(api_call GET "/rest/workflows" 2>/dev/null | jq -r '.data // "[]"' | head -c 100)
+        if [[ "$api_test" != "null" && -n "$api_test" ]]; then
+            echo -e "${GREEN}✅ API 認證成功${NC}"
+        else
+            echo -e "${RED}❌ API 認證失敗，請檢查認證設定${NC}"
+        fi
+    fi
+}
+
+cmd_auth() {
+    echo "設定 n8n 認證"
+    echo ""
+    echo "選擇認證方式:"
+    echo "  1) API Key (推薦 - 從 n8n UI Settings → n8n API 取得)"
+    echo "  2) Basic Auth (使用者名稱/密碼)"
+    read -rp "選項 [1-2]: " auth_type
+    
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    
+    read -rp "n8n Base URL [$DEFAULT_BASE_URL]: " input_url
+    local url="${input_url:-$DEFAULT_BASE_URL}"
+    
+    if [[ "$auth_type" == "2" ]]; then
+        # Basic Auth
+        read -rp "使用者名稱 [admin]: " input_user
+        read -rsp "密碼: " input_pass
+        echo
+        
+        local user="${input_user:-admin}"
+        local auth="${user}:${input_pass}"
+        
+        # Test connection
+        echo "測試連線..."
+        local test_result
+        test_result=$(curl -s -u "$auth" "${url}/rest/workflows" 2>/dev/null || echo '{"status":"error"}')
+        
+        if echo "$test_result" | jq -e '.data' >/dev/null 2>&1; then
+            jq -n \
+                --arg baseUrl "$url" \
+                --arg basicAuth "$auth" \
+                '{baseUrl: $baseUrl, basicAuth: $basicAuth}' > "$CONFIG_FILE"
+            chmod 600 "$CONFIG_FILE"
+            echo -e "${GREEN}✅ Basic Auth 設定已儲存${NC}"
+        else
+            echo -e "${RED}❌ 連線測試失敗，請檢查 URL 和密碼${NC}"
+            return 1
+        fi
+    else
+        # API Key
+        read -rsp "n8n API Key: " input_key
+        echo
+        
+        # Test connection
+        echo "測試連線..."
+        local test_result
+        test_result=$(curl -s -H "X-N8N-API-KEY: $input_key" "${url}/rest/workflows" 2>/dev/null || echo '{"status":"error"}')
+        
+        if echo "$test_result" | jq -e '.data' >/dev/null 2>&1; then
+            jq -n \
+                --arg baseUrl "$url" \
+                --arg apiKey "$input_key" \
+                '{baseUrl: $baseUrl, apiKey: $apiKey}' > "$CONFIG_FILE"
+            chmod 600 "$CONFIG_FILE"
+            echo -e "${GREEN}✅ API Key 設定已儲存${NC}"
+        else
+            echo -e "${RED}❌ 連線測試失敗，請檢查 URL 和 API Key${NC}"
+            return 1
+        fi
+    fi
+}
+
+cmd_workflows_list() {
+    echo -e "${GREEN}📋 Workflows 列表${NC}"
+    local result
+    result=$(api_call GET "/rest/workflows")
+    
+    if echo "$result" | jq -e '.data' >/dev/null 2>&1; then
+        echo "$result" | jq -r '.data[] | "\(.id) | \(.name) | \(.active)"' | 
+        while IFS='|' read -r id name active; do
+            local status="⏸️"
+            [[ "$(echo "$active" | xargs)" == "true" ]] && status="▶️"
+            printf "%-40s %s %s\n" "$(echo "$name" | xargs)" "$status" "$(echo "$id" | xargs)"
+        done
+    else
+        echo -e "${RED}❌ 無法取得 workflows${NC}"
+        echo "$result" | jq . 2>/dev/null || echo "$result"
+    fi
+}
+
+cmd_workflow_execute() {
+    local workflow_id="$1"
+    local data="${2:-{}}"
+    
+    if [[ -z "$workflow_id" ]]; then
+        echo "Usage: n8n-cli workflow execute <workflow-id> [--data '{...}']"
+        return 1
+    fi
+    
+    echo -e "${GREEN}▶️ 觸發 Workflow: $workflow_id${NC}"
+    
+    local result
+    result=$(api_call POST "/rest/workflows/$workflow_id/execute" "$data")
+    
+    if echo "$result" | jq -e '.executionId' >/dev/null 2>&1; then
+        local exec_id
+        exec_id=$(echo "$result" | jq -r '.executionId')
+        echo -e "${GREEN}✅ 執行已開始${NC}"
+        echo "Execution ID: $exec_id"
+        echo "查看結果: n8n-cli executions get $exec_id"
+    else
+        echo -e "${RED}❌ 執行失敗${NC}"
+        echo "$result" | jq . 2>/dev/null || echo "$result"
+    fi
+}
+
+cmd_executions_list() {
+    local limit="${1:-20}"
+    echo -e "${GREEN}📜 最近 $limit 筆執行紀錄${NC}"
+    
+    local result
+    result=$(api_call GET "/rest/executions?limit=$limit")
+    
+    if echo "$result" | jq -e '.data' >/dev/null 2>&1; then
+        echo "$result" | jq -r '.data[] | "\(.id) | \(.workflowId) | \(.status) | \(.startedAt)"' |
+        while IFS='|' read -r id wf_id status started; do
+            local icon="⏳"
+            [[ "$(echo "$status" | xargs)" == "success" ]] && icon="✅"
+            [[ "$(echo "$status" | xargs)" == "error" ]] && icon="❌"
+            printf "%s %-12s %-10s %s\n" "$icon" "$(echo "$id" | xargs)" "$(echo "$status" | xargs)" "$(echo "$started" | xargs)"
+        done
+    else
+        echo -e "${RED}❌ 無法取得執行紀錄${NC}"
+    fi
+}
+
+cmd_executions_get() {
+    local exec_id="$1"
+    if [[ -z "$exec_id" ]]; then
+        echo "Usage: n8n-cli executions get <execution-id>"
+        return 1
+    fi
+    
+    echo -e "${GREEN}📄 執行詳情: $exec_id${NC}"
+    local result
+    result=$(api_call GET "/rest/executions/$exec_id")
+    
+    echo "$result" | jq . 2>/dev/null || echo "$result"
+}
+
+cmd_webhooks_list() {
+    echo -e "${YELLOW}⚠️ 使用 Webhook 節點的 Workflows:${NC}"
+    cmd_workflows_list | grep -i webhook || echo "無法直接列出，請在 n8n UI 查看"
+}
+
+# Main
+case "${1:-}" in
+    status)
+        load_config
+        cmd_status
+        ;;
+    auth)
+        cmd_auth
+        ;;
+    workflows|workflow)
+        load_config
+        case "${2:-}" in
+            list|"") cmd_workflows_list ;;
+            execute) cmd_workflow_execute "${3:-}" "${4:-}" ;;
+            *) echo "Unknown workflow command: $2" ; exit 1 ;;
+        esac
+        ;;
+    executions|execution)
+        load_config
+        case "${2:-}" in
+            list|"") cmd_executions_list "${3:-20}" ;;
+            get) cmd_executions_get "${3:-}" ;;
+            *) echo "Unknown execution command: $2" ; exit 1 ;;
+        esac
+        ;;
+    webhooks|webhook)
+        load_config
+        cmd_webhooks_list
+        ;;
+    help|--help|-h|"")
+        echo "n8n CLI - OpenClaw n8n Integration"
+        echo ""
+        echo "Commands:"
+        echo "  status              檢查 n8n 服務狀態"
+        echo "  auth                設定 API 認證"
+        echo "  workflows list      列出所有 workflows"
+        echo "  workflow execute <id> [--data '{...}']  觸發 workflow"
+        echo "  executions list [limit]  列出執行紀錄"
+        echo "  executions get <id>      取得執行詳情"
+        echo "  webhooks list       列出 webhook workflows"
+        echo ""
+        echo "Examples:"
+        echo "  n8n-cli auth"
+        echo "  n8n-cli workflows list"
+        echo "  n8n-cli workflow execute abc123 --data '{\"msg\":\"hello\"}'"
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Use 'n8n-cli help' for usage"
+        exit 1
+        ;;
+esac
