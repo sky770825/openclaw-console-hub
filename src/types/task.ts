@@ -88,4 +88,6 @@ export interface Task {
   createdAt: string;
   /** 來源發想審核 ID（由「通過+轉任務」產生） */
   fromReviewId?: string;
+  /** 執行結果（由 auto-executor 寫入，完整輸出） */
+  result?: string;
 }

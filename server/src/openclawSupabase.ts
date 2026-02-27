@@ -18,6 +18,7 @@ export interface OpenClawTask {
   fromR?: string;
   subs: { t: string; d: boolean }[];
   thought?: string;
+  result?: string;
 }
 
 export interface OpenClawReview {
@@ -67,6 +68,7 @@ function mapTask(row: Record<string, unknown>): OpenClawTask {
     fromR: row.from_review_id ? String(row.from_review_id) : undefined,
     subs: Array.isArray(row.subs) ? (row.subs as { t: string; d: boolean }[]) : [],
     thought: row.thought ? String(row.thought) : undefined,
+    result: row.result ? String(row.result) : undefined,
   };
 }
 
@@ -125,6 +127,7 @@ export async function upsertOpenClawTask(task: Partial<OpenClawTask> & { id: str
   // If we blindly default missing fields to "", we can accidentally wipe existing task data.
   // Merge with existing row first to keep updates safe and idempotent.
   const prev = await fetchOpenClawTaskById(task.id).catch(() => null);
+  // 每次 upsert 必寫入當前時間，避免整批同步覆蓋導致「卡住」任務無法從 updated_at 判斷
   const row = {
     id: task.id,
     title: task.title ?? prev?.title ?? '',

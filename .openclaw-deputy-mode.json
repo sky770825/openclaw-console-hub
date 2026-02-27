@@ -1,7 +1,7 @@
 {
-  "enabled": false,
-  "enabledAt": "2026-02-19T02:46:51.792Z",
-  "enabledBy": "boss-return",
+  "enabled": true,
+  "enabledAt": "2026-02-26T14:55:27.758Z",
+  "enabledBy": "api",
   "maxTasksPerRun": 3,
   "allowedTags": [
     "auto-ok"

@@ -303,10 +303,19 @@ function executeCommand(
   command: string,
   timeoutMs: number
 ): Promise<{ success: boolean; output: string; error?: string }> {
+  // 子進程沙箱環境：只傳入非敏感系統變數
+  const sandboxEnv: Record<string, string> = {
+    PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
+    HOME: process.env.HOME || '',
+    USER: process.env.USER || '',
+    SHELL: process.env.SHELL || '/bin/sh',
+    NODE_ENV: process.env.NODE_ENV || 'production',
+    TMPDIR: process.env.TMPDIR || '/tmp',
+  };
   return new Promise((resolve) => {
     const child = spawn('sh', ['-c', command], {
       cwd: process.cwd(),
-      env: { ...process.env },
+      env: sandboxEnv,
     });
 
     let output = '';

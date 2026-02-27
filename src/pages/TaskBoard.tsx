@@ -148,6 +148,18 @@ const filterConfigs: FilterConfig[] = [
       { value: 'manual', label: '手動' },
     ],
   },
+  {
+    key: 'owner',
+    label: '負責人',
+    options: [
+      { value: 'NEUXA', label: '🤖 NEUXA' },
+      { value: '小蔡', label: '小蔡' },
+      { value: '老蔡', label: '老蔡' },
+      { value: 'OpenClaw', label: 'OpenClaw' },
+      { value: 'Cursor', label: 'Cursor' },
+      { value: 'CoDEX', label: 'CoDEX' },
+    ],
+  },
 ];
 
 function getDomainSlug(tags?: string[]): string | null {
@@ -395,11 +407,15 @@ function TaskCard({ task, onClick, onRun, onEdit, onViewRuns, onDelete, runInfo,
           )}
         </div>
 
-        {latestSummary && (
+        {latestSummary ? (
           <div className="mt-2 text-[11px] text-muted-foreground line-clamp-2 break-words">
             {latestSummary}
           </div>
-        )}
+        ) : task.description ? (
+          <div className="mt-2 text-[11px] text-muted-foreground line-clamp-2 break-words opacity-70">
+            {task.description.split('\n').filter(l => l.trim()).slice(0, 2).join(' · ')}
+          </div>
+        ) : null}
 
         {stateMismatch && (
           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-destructive bg-destructive/5 border border-destructive/20 rounded px-2 py-1">
@@ -675,6 +691,23 @@ function TaskDetailDrawer({ task, open, onClose, initialTab = 'overview', onTask
               </div>
             )}
 
+            {/* 執行結果（由 auto-executor 寫入） */}
+            {task.result && (
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <span>執行結果</span>
+                    {task.lastRunStatus && <StatusBadge status={task.lastRunStatus} />}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm whitespace-pre-wrap break-words text-muted-foreground line-clamp-10">
+                    {task.result}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* 串接：把「內容」放回任務卡，讓後續執行有抓手（索引級，避免爆卡） */}
             {(task.summary || (task.nextSteps && task.nextSteps.length > 0) || (task.evidenceLinks && task.evidenceLinks.length > 0)) && (
               <Card>
@@ -702,9 +735,18 @@ function TaskDetailDrawer({ task, open, onClose, initialTab = 'overview', onTask
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">來源連結</p>
                       <ul className="text-sm list-disc pl-5 space-y-1">
-                        {task.evidenceLinks.slice(0, 6).map((s, i) => (
-                          <li key={i} className="break-all">{s}</li>
-                        ))}
+                        {task.evidenceLinks.slice(0, 6).map((s, i) => {
+                          const isUrl = /^https?:\/\//.test(s);
+                          return (
+                            <li key={i} className="break-all">
+                              {isUrl ? (
+                                <a href={s} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:opacity-80">
+                                  {s}
+                                </a>
+                              ) : s}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
@@ -1676,7 +1718,7 @@ function NewTaskSheet({ open, onClose, onCreated }: { open: boolean; onClose: ()
               <Select
                 value={form.modelConfig?.provider ?? 'default'}
                 onValueChange={(v: TaskModelProvider) => setForm((f) => {
-                  const list = MODEL_OPTIONS[v];
+                  const list = dynamicModelOptions[v];
                   return {
                     ...f,
                     modelConfig: {
@@ -1696,7 +1738,7 @@ function NewTaskSheet({ open, onClose, onCreated }: { open: boolean; onClose: ()
             <div className="grid gap-2">
               <Label>主模型</Label>
               <Select
-                value={form.modelConfig?.primary ?? MODEL_OPTIONS.default[0]}
+                value={form.modelConfig?.primary ?? dynamicModelOptions.default[0]}
                 onValueChange={(v) => setForm((f) => ({
                   ...f,
                   modelConfig: {
@@ -1708,7 +1750,7 @@ function NewTaskSheet({ open, onClose, onCreated }: { open: boolean; onClose: ()
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(MODEL_OPTIONS[form.modelConfig?.provider ?? 'default'] ?? MODEL_OPTIONS.default).map((m) => (
+                  {(dynamicModelOptions[form.modelConfig?.provider ?? 'default'] ?? dynamicModelOptions.default).map((m) => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1723,7 +1765,7 @@ function NewTaskSheet({ open, onClose, onCreated }: { open: boolean; onClose: ()
                 ...f,
                 modelConfig: {
                   provider: f.modelConfig?.provider ?? 'default',
-                  primary: f.modelConfig?.primary ?? MODEL_OPTIONS.default[0],
+                  primary: f.modelConfig?.primary ?? dynamicModelOptions.default[0],
                   fallbacks: parseListInput(e.target.value),
                 },
               }))}
@@ -1887,7 +1929,25 @@ export default function TaskBoard() {
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [showSchedules, setShowSchedules] = useState(false);
   const [kanbanSelectedIds, setKanbanSelectedIds] = useState<Set<string>>(new Set());
-  
+
+  // 動態 Ollama 模型列表
+  const [ollamaModels, setOllamaModels] = useState<string[]>(MODEL_OPTIONS.ollama);
+  useEffect(() => {
+    fetch('http://localhost:11434/api/tags')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.models?.length) {
+          setOllamaModels(data.models.map((m: { name: string }) => `ollama/${m.name}`));
+        }
+      })
+      .catch(() => {/* Ollama 離線時沿用預設值 */});
+  }, []);
+  // 合併動態模型列表（主組件內使用這個版本）
+  const dynamicModelOptions = useMemo(() => ({
+    ...MODEL_OPTIONS,
+    ollama: ollamaModels,
+  }), [ollamaModels]);
+
   const refreshTasks = useCallback((force = false) => {
     setTasksLoading(true);
     const fetchPromise = force ? forceRefreshTasks() : getTasks();
@@ -2158,6 +2218,16 @@ export default function TaskBoard() {
       if (activeFilters.scheduleType && task.scheduleType !== activeFilters.scheduleType) {
         return false;
       }
+      if (activeFilters.owner) {
+        const ownerFilter = activeFilters.owner as string;
+        // NEUXA 包含 ollama/bot 相關的 owner
+        if (ownerFilter === 'NEUXA') {
+          const o = (task.owner || '').toLowerCase();
+          if (!o.includes('neuxa') && !o.includes('ollama') && !o.includes('bot')) return false;
+        } else {
+          if (task.owner !== ownerFilter) return false;
+        }
+      }
       return true;
     });
   }, [tasks, debouncedSearchQuery, activeFilters, fromReviewId]);
@@ -2401,6 +2471,49 @@ export default function TaskBoard() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3 mb-6">
+        {/* 快速過濾捷徑 */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={activeFilters.owner === 'NEUXA' ? 'default' : 'outline'}
+            className="h-7 px-3 text-xs gap-1"
+            onClick={() => {
+              if (activeFilters.owner === 'NEUXA') {
+                const { owner, ...rest } = activeFilters as Record<string, string>;
+                void owner;
+                setActiveFilters(rest);
+              } else {
+                setActiveFilters(f => ({ ...f, owner: 'NEUXA' }));
+              }
+            }}
+          >
+            🤖 NEUXA 任務
+            {activeFilters.owner === 'NEUXA' && (
+              <span className="ml-1 bg-primary-foreground/20 rounded px-1">
+                {tasks.filter(t => {
+                  const o = (t.owner || '').toLowerCase();
+                  return o.includes('neuxa') || o.includes('ollama') || o.includes('bot');
+                }).length}
+              </span>
+            )}
+          </Button>
+          <Button
+            size="sm"
+            variant={activeFilters.status === 'running' ? 'default' : 'outline'}
+            className="h-7 px-3 text-xs gap-1"
+            onClick={() => {
+              if (activeFilters.status === 'running') {
+                const { status, ...rest } = activeFilters as Record<string, string>;
+                void status;
+                setActiveFilters(rest);
+              } else {
+                setActiveFilters(f => ({ ...f, status: 'running' }));
+              }
+            }}
+          >
+            ⚡ 執行中
+          </Button>
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <SearchInput
             value={searchQuery}

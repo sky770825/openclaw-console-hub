@@ -113,9 +113,15 @@ const autoExecutorState: AutoExecutorState = {
 
 let autoExecutorInterval: NodeJS.Timeout | null = null;
 
+// ─── 並發鎖：防止多個 poll 同時執行 executeNextPendingTask ───
+let executorLocked = false;
+
 // 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
 const autoExecutorExecHistoryMs: number[] = [];
+
+// 記錄目前正在執行中的任務 ID（用於 SIGTERM graceful shutdown）
+const activeTaskIds = new Set<string>();
 let dispatchDigestTimer: NodeJS.Timeout | null = null;
 
 // ─── Helpers ───
@@ -244,6 +250,12 @@ async function sendDispatchDigest(): Promise<void> {
 // ─── Core execution logic ───
 
 async function executeNextPendingTask(): Promise<void> {
+  // 並發鎖：如果上一個 poll 仍在執行，跳過這次
+  if (executorLocked) {
+    log.info('[AutoExecutor] 上一個任務仍在執行，跳過本次 poll');
+    return;
+  }
+  executorLocked = true;
   try {
     if (!hasSupabase() || !supabase) {
       log.warn('[AutoExecutor] Supabase 未連線，無法執行任務');
@@ -290,46 +302,69 @@ async function executeNextPendingTask(): Promise<void> {
       return;
     }
 
-    const task = pendingTasks[0];
+    // Dispatch gate: 在 dispatch mode 下，找到第一個「可執行」的任務
+    // critical 且未批准的任務會加入待審佇列後跳過，繼續找下一個
+    let task = pendingTasks[0];
+    if (autoExecutorState.dispatchMode) {
+      for (const candidate of pendingTasks) {
+        const riskLevel = classifyTaskRisk(candidate);
+        const bossApproved = approvedCriticalTaskIds.has(candidate.id);
+        if (riskLevel === 'critical' && !bossApproved) {
+          // 加入待審佇列（避免重複加入），然後跳過
+          const alreadyPending = autoExecutorState.pendingReviews.some((r) => r.taskId === candidate.id);
+          if (!alreadyPending) {
+            autoExecutorState.pendingReviews.push({
+              taskId: candidate.id,
+              taskName: candidate.name || '未命名任務',
+              riskLevel,
+              reason: '高風險任務需要老蔡審核',
+              queuedAt: new Date().toISOString(),
+            });
+            await upsertOpenClawTask({ id: candidate.id, status: 'pending_review' as never });
+            await sendTelegramMessage(
+              `🟣 <b>高風險任務等待審核</b>\n\n` +
+              `<b>任務：</b>${candidate.name}\n` +
+              `<b>風險：</b>critical（需老蔡親自確認）\n` +
+              `<b>說明：</b>${(candidate.description || '無').slice(0, 200)}`,
+              { parseMode: 'HTML' }
+            );
+            log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」需老蔡審核，已排入待審佇列，繼續找下一個`);
+            autoExecutorState.recentExecutions.push({
+              taskId: candidate.id,
+              taskName: candidate.name || '',
+              riskLevel,
+              status: 'pending_review',
+              executedAt: new Date().toISOString(),
+              agentType: 'pending',
+              summary: '等待老蔡審核',
+            });
+          } else {
+            log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」已在待審佇列，跳過繼續找下一個`);
+          }
+          continue; // 跳過這個，繼續找
+        }
+        // 這個任務可以執行，選它
+        task = candidate;
+        break;
+      }
+
+      // 如果所有任務都是 critical 待審，沒有可執行的
+      if (autoExecutorState.pendingReviews.some((r) => r.taskId === task.id) &&
+          classifyTaskRisk(task) === 'critical' && !approvedCriticalTaskIds.has(task.id)) {
+        log.info('[AutoDispatch] 所有任務都在待審佇列，等待老蔡審核');
+        return;
+      }
+    }
+
     log.info(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
 
-    // Dispatch gate
+    // Dispatch gate (remaining risk level handling)
     if (autoExecutorState.dispatchMode) {
       const riskLevel = classifyTaskRisk(task);
       const bossApproved = approvedCriticalTaskIds.has(task.id);
 
       if (riskLevel === 'critical' && !bossApproved) {
-        // 尚未被老蔡批准 → 加入待審佇列（避免重複加入）
-        const alreadyPending = autoExecutorState.pendingReviews.some((r) => r.taskId === task.id);
-        if (!alreadyPending) {
-          autoExecutorState.pendingReviews.push({
-            taskId: task.id,
-            taskName: task.name || '未命名任務',
-            riskLevel,
-            reason: '高風險任務需要老蔡審核',
-            queuedAt: new Date().toISOString(),
-          });
-          await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
-          await sendTelegramMessage(
-            `🟣 <b>高風險任務等待審核</b>\n\n` +
-            `<b>任務：</b>${task.name}\n` +
-            `<b>風險：</b>critical（需老蔡親自確認）\n` +
-            `<b>說明：</b>${(task.description || '無').slice(0, 200)}`,
-            { parseMode: 'HTML' }
-          );
-          log.info(`[AutoDispatch] 🟣 任務「${task.name}」需老蔡審核，已排入待審佇列`);
-          autoExecutorState.recentExecutions.push({
-            taskId: task.id,
-            taskName: task.name || '',
-            riskLevel,
-            status: 'pending_review',
-            executedAt: new Date().toISOString(),
-            agentType: 'pending',
-            summary: '等待老蔡審核',
-          });
-        } else {
-          log.info(`[AutoDispatch] 🟣 任務「${task.name}」已在待審佇列，跳過`);
-        }
+        // 已在上方處理，不應到達此處
         return;
       }
 
@@ -363,6 +398,8 @@ async function executeNextPendingTask(): Promise<void> {
     await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
     // 確保 Supabase 已設為 in_progress 後，才從批准 set 移除（避免競爭條件）
     approvedCriticalTaskIds.delete(task.id);
+    // 記錄為 active，SIGTERM 時可回滾
+    activeTaskIds.add(task.id);
 
     const { data: run } = await supabase
       .from('openclaw_runs')
@@ -392,10 +429,11 @@ async function executeNextPendingTask(): Promise<void> {
           status: 'success',
           ended_at: new Date().toISOString(),
           duration_ms: result.durationMs,
-          output_summary: result.output || '',
+          output_summary: (result.output || '').slice(0, 4000),
+          input_summary: JSON.stringify({ agentType, modelUsed: result.modelUsed, exitCode: result.exitCode }),
           steps: [
-            { name: 'started', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString() },
-            { name: 'execute', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString(), message: result.output },
+            { name: 'generate_script', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString() },
+            { name: 'execute_script', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString(), message: (result.output || '').slice(0, 500) },
           ],
         })
         .eq('id', runId);
@@ -436,6 +474,18 @@ async function executeNextPendingTask(): Promise<void> {
         return;
       }
 
+      // 寫入 result 欄位（結構化執行結果）
+      const structuredResult = {
+        output: (result.output || '').slice(0, 1500),
+        exitCode: result.exitCode,
+        modelUsed: result.modelUsed || 'unknown',
+        hasArtifacts: (result.output || '').includes('=== Artifacts'),
+      };
+      await supabase
+        .from('openclaw_tasks')
+        .update({ result: JSON.stringify(structuredResult).slice(0, 2000) })
+        .eq('id', task.id);
+      activeTaskIds.delete(task.id);
       await upsertOpenClawTask({ id: task.id, status: 'done', progress: 100 });
 
       // Governance: success tracking
@@ -455,10 +505,10 @@ async function executeNextPendingTask(): Promise<void> {
           status: 'success',
           executedAt: new Date().toISOString(),
           agentType: agentType || 'auto',
-          summary: (result.output || '').slice(0, 300),
+          summary: (result.output || '').replace(/\n+/g, ' ').trim().slice(0, 150),
         });
-        if (autoExecutorState.recentExecutions.length > 100) {
-          autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-100);
+        if (autoExecutorState.recentExecutions.length > 20) {
+          autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-20);
         }
       }
 
@@ -484,6 +534,7 @@ async function executeNextPendingTask(): Promise<void> {
         })
         .eq('id', runId);
 
+      activeTaskIds.delete(task.id);
       await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
       await notifyTaskFailure(task.name, task.id, runId, errorMsg, 0);
       log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
@@ -502,15 +553,17 @@ async function executeNextPendingTask(): Promise<void> {
           status: 'failed',
           executedAt: new Date().toISOString(),
           agentType: agentType || 'auto',
-          summary: errorMsg.slice(0, 300),
+          summary: errorMsg.replace(/\n+/g, ' ').trim().slice(0, 150),
         });
-        if (autoExecutorState.recentExecutions.length > 100) {
-          autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-100);
+        if (autoExecutorState.recentExecutions.length > 20) {
+          autoExecutorState.recentExecutions = autoExecutorState.recentExecutions.slice(-20);
         }
       }
     }
   } catch (e) {
     log.error('[AutoExecutor] 執行任務時發生錯誤:', e);
+  } finally {
+    executorLocked = false;
   }
 }
 
@@ -696,10 +749,25 @@ autoExecutorRouter.post('/governance/circuit-breaker/config', (req, res) => {
   res.json({ ok: true, message: '斷路器配置已更新', ...getGovernanceStatus() });
 });
 
+// ─── Recent executions (for frontend dashboard) ───
+
+autoExecutorRouter.get('/auto-executor/recent', (_req, res) => {
+  res.json({
+    ok: true,
+    isRunning: autoExecutorState.isRunning,
+    dispatchMode: autoExecutorState.dispatchMode,
+    totalExecutedToday: autoExecutorState.totalExecutedToday,
+    lastExecutedAt: autoExecutorState.lastExecutedAt,
+    recentExecutions: autoExecutorState.recentExecutions.slice(-10),
+    pendingReviews: autoExecutorState.pendingReviews.slice(-5),
+  });
+});
+
 // ─── Exports for server bootstrap ───
 
 export {
   autoExecutorState,
+  activeTaskIds,
   startAutoExecutor,
   stopAutoExecutor,
   loadAutoExecutorDiskState,

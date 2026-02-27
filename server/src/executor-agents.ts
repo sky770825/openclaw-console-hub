@@ -6,12 +6,42 @@
 import { createLogger } from './logger.js';
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
 import type { AgentType, Task, Run, AgentExecutorConfig } from './types.js';
 
 const log = createLogger('executor-agents');
 
 const execAsync = promisify(exec);
 const SUBSCRIPTION_ONLY_MODE = process.env.OPENCLAW_SUBSCRIPTION_ONLY !== 'false';
+
+// 確保 claude CLI 在 PATH 中，並移除 CLAUDECODE 避免 nested session 錯誤
+const ENHANCED_PATH = `/Users/caijunchang/.local/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
+const CLAUDE_ENV = (() => {
+  const env = { ...process.env, PATH: ENHANCED_PATH };
+  delete (env as Record<string, unknown>).CLAUDECODE;
+  delete (env as Record<string, unknown>).CLAUDE_CODE_ENTRYPOINT;
+  return env;
+})();
+
+// 子進程沙箱環境：只傳入非敏感的系統變數，防止金鑰外洩
+// 不包含：OPENCLAW_API_KEY、GOOGLE_API_KEY、TELEGRAM_BOT_TOKEN、N8N_API_KEY、SUPABASE_*
+const SANDBOX_ENV: Record<string, string> = {
+  PATH: ENHANCED_PATH,
+  HOME: process.env.HOME || '',
+  USER: process.env.USER || '',
+  SHELL: process.env.SHELL || '/bin/sh',
+  LANG: process.env.LANG || 'en_US.UTF-8',
+  TERM: process.env.TERM || 'xterm-256color',
+  NODE_ENV: process.env.NODE_ENV || 'production',
+  TMPDIR: process.env.TMPDIR || '/tmp',
+};
+
+// 沙箱工作目錄：AI 生成的腳本在此執行，產出物寫到 output/ 子目錄
+const SANDBOX_WORKDIR = path.join(
+  process.env.HOME || '/tmp',
+  '.openclaw', 'workspace', 'sandbox'
+);
 
 /** Agent 執行器配置 */
 const AGENT_CONFIGS: Record<AgentType, AgentExecutorConfig> = {
@@ -288,13 +318,14 @@ echo "=== 📦 舊任務封存 ===" && \
 echo "檢查超過 30 天的完成任務..." && \
 echo "✅ 封存檢查完成"`;
     } else {
-      command = `echo "✅ 零 Token 任務執行: ${task.name}"`;
+      const safeName = task.name.replace(/'/g, "'\\''");
+      command = `echo '✅ 零 Token 任務執行: ${safeName}'`;
     }
 
     return new Promise((resolve) => {
       const child = spawn('sh', ['-c', command], {
         cwd: process.cwd(),
-        env: { ...process.env },
+        env: SANDBOX_ENV,
       });
 
       let output = '';
@@ -417,278 +448,364 @@ echo "✅ 封存檢查完成"`;
   }
 
   /**
-   * 執行 Cursor Agent
-   * 透過 cursor 命令行工具或 MCP Server
+   * 執行 Cursor Agent — 真實執行模式
    */
   private static async executeCursor(
     task: Task,
-    timeout: number,
+    _timeout: number,
     model: string,
     onProgress?: (progress: string) => void
   ): Promise<AgentExecutionResult> {
-    const startTime = Date.now();
-    
-    // 構建 Cursor 執行命令
-    const command = this.buildCursorCommand(task, model);
-    
-    return new Promise((resolve) => {
-      const child = spawn('sh', ['-c', command], {
-        cwd: process.cwd(),
-        env: { ...process.env, CURSOR_AGENT_MODE: '1' },
-      });
-
-      let output = '';
-      let errorOutput = '';
-
-      child.stdout?.on('data', (data) => {
-        const chunk = data.toString();
-        output += chunk;
-        onProgress?.(chunk);
-      });
-
-      child.stderr?.on('data', (data) => {
-        const chunk = data.toString();
-        errorOutput += chunk;
-        onProgress?.(chunk);
-      });
-
-      const timeoutId = setTimeout(() => {
-        child.kill('SIGTERM');
-        const durationMs = Date.now() - startTime;
-        resolve({
-          success: false,
-          output,
-          error: `Execution timeout after ${timeout}ms`,
-          exitCode: -1,
-          durationMs,
-          agentType: 'cursor',
-          modelUsed: model,
-        });
-      }, timeout);
-
-      child.on('close', (code) => {
-        clearTimeout(timeoutId);
-        const durationMs = Date.now() - startTime;
-        resolve({
-          success: code === 0,
-          output,
-          error: errorOutput || undefined,
-          exitCode: code ?? 0,
-          durationMs,
-          agentType: 'cursor',
-          modelUsed: model,
-        });
-      });
-
-      child.on('error', (error) => {
-        clearTimeout(timeoutId);
-        const durationMs = Date.now() - startTime;
-        resolve({
-          success: false,
-          output,
-          error: error.message,
-          exitCode: -1,
-          durationMs,
-          agentType: 'cursor',
-          modelUsed: model,
-        });
-      });
-    });
+    return this.executeWithRealEngine(task, 'cursor', _timeout, model, onProgress);
   }
 
   /**
-   * 執行 CoDEX Agent
-   * 透過 codex 命令行工具
+   * 執行 CoDEX Agent — 真實執行模式
    */
   private static async executeCoDEX(
     task: Task,
-    timeout: number,
+    _timeout: number,
     model: string,
     onProgress?: (progress: string) => void
   ): Promise<AgentExecutionResult> {
-    const startTime = Date.now();
-    
-    // 構建 CoDEX 執行命令
-    const command = this.buildCoDEXCommand(task, model);
-    
-    return new Promise((resolve) => {
-      const child = spawn('sh', ['-c', command], {
-        cwd: process.cwd(),
-        env: { ...process.env, CODEX_AGENT_MODE: '1' },
-      });
-
-      let output = '';
-      let errorOutput = '';
-
-      child.stdout?.on('data', (data) => {
-        const chunk = data.toString();
-        output += chunk;
-        onProgress?.(chunk);
-      });
-
-      child.stderr?.on('data', (data) => {
-        const chunk = data.toString();
-        errorOutput += chunk;
-        onProgress?.(chunk);
-      });
-
-      const timeoutId = setTimeout(() => {
-        child.kill('SIGTERM');
-        const durationMs = Date.now() - startTime;
-        resolve({
-          success: false,
-          output,
-          error: `Execution timeout after ${timeout}ms`,
-          exitCode: -1,
-          durationMs,
-          agentType: 'codex',
-          modelUsed: model,
-        });
-      }, timeout);
-
-      child.on('close', (code) => {
-        clearTimeout(timeoutId);
-        const durationMs = Date.now() - startTime;
-        resolve({
-          success: code === 0,
-          output,
-          error: errorOutput || undefined,
-          exitCode: code ?? 0,
-          durationMs,
-          agentType: 'codex',
-          modelUsed: model,
-        });
-      });
-
-      child.on('error', (error) => {
-        clearTimeout(timeoutId);
-        const durationMs = Date.now() - startTime;
-        resolve({
-          success: false,
-          output,
-          error: error.message,
-          exitCode: -1,
-          durationMs,
-          agentType: 'codex',
-          modelUsed: model,
-        });
-      });
-    });
+    return this.executeWithRealEngine(task, 'codex', _timeout, model, onProgress);
   }
 
   /**
-   * 執行 OpenClaw Agent
-   * 透過 OpenClaw CLI
+   * 執行 OpenClaw Agent — 真實執行模式
    */
   private static async executeOpenClaw(
     task: Task,
+    _timeout: number,
+    model: string,
+    onProgress?: (progress: string) => void
+  ): Promise<AgentExecutionResult> {
+    return this.executeWithRealEngine(task, 'openclaw', _timeout, model, onProgress);
+  }
+
+  /**
+   * 統一真實執行入口：AI 生成腳本 → sandbox 執行 → 結構化結果
+   */
+  private static async executeWithRealEngine(
+    task: Task,
+    agentType: AgentType,
     timeout: number,
     model: string,
     onProgress?: (progress: string) => void
   ): Promise<AgentExecutionResult> {
     const startTime = Date.now();
-    
-    // 構建 OpenClaw 執行命令
-    const command = this.buildOpenClawCommand(task, model);
-    
+    onProgress?.(`[${agentType}] 真實執行任務: ${task.name}\n`);
+    try {
+      const execResult = await this.generateAndExecute(task.name, task.description, timeout);
+
+      // 組裝人類可讀輸出
+      const outputParts: string[] = [];
+      if (execResult.stdout) {
+        outputParts.push(execResult.stdout);
+      }
+      if (execResult.artifacts.length > 0) {
+        outputParts.push(`\n=== Artifacts (${execResult.artifacts.length}) ===`);
+        outputParts.push(execResult.artifacts.join('\n'));
+      }
+      if (execResult.retryCount > 0) {
+        outputParts.push(`\n[Retried ${execResult.retryCount} time(s)]`);
+      }
+      const output = outputParts.join('\n');
+
+      onProgress?.(output);
+      return {
+        success: execResult.exitCode === 0,
+        output,
+        error: execResult.exitCode !== 0 ? execResult.stderr : undefined,
+        exitCode: execResult.exitCode,
+        durationMs: Date.now() - startTime,
+        agentType,
+        modelUsed: execResult.modelUsed,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        output: '',
+        error: error instanceof Error ? error.message : String(error),
+        exitCode: -1,
+        durationMs: Date.now() - startTime,
+        agentType,
+        modelUsed: model,
+      };
+    }
+  }
+
+  // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
+
+  /**
+   * Step 1: 呼叫 Gemini 生成可執行 bash 腳本（不是計畫文字）
+   */
+  private static async callGeminiForScript(
+    taskName: string,
+    taskDescription: string,
+    errorFeedback?: string
+  ): Promise<string> {
+    const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+    const MODEL = 'gemini-2.5-flash';
+
+    const outputDir = path.join(SANDBOX_WORKDIR, 'output');
+    let prompt = `You are a task executor. Generate a COMPLETE, EXECUTABLE bash script that accomplishes the following task.
+
+Task: ${taskName}
+Description: ${taskDescription || 'No detailed description'}
+
+Environment:
+- Working directory: ${SANDBOX_WORKDIR}
+- Output directory: ${outputDir}
+- Available tools: bash, curl, node, python3, jq, sed, awk, grep, find
+- OS: macOS (Darwin)
+
+HARD RESTRICTIONS — NEVER violate these:
+- Write ALL output files to ${outputDir}/ only
+- Do NOT access or modify .env files
+- Do NOT run git push or git commit
+- Do NOT delete any files outside ${outputDir}/
+- Do NOT access API keys or secrets
+- Do NOT modify files in server/ or src/ directories
+
+Requirements:
+1. Start with #!/bin/bash and set -e
+2. Create output directory: mkdir -p ${outputDir}
+3. Write all results/reports/artifacts to ${outputDir}/
+4. Print a clear summary at the end with "TASK_COMPLETE:" prefix
+5. The script must be self-contained and idempotent
+
+Output ONLY the raw bash script. No markdown fences, no explanation, no comments before the shebang.`;
+
+    if (errorFeedback) {
+      prompt += `\n\nPREVIOUS ATTEMPT FAILED:\n${errorFeedback}\n\nFix the script to handle this error.`;
+    }
+
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        signal: AbortSignal.timeout(60000),
+      }
+    );
+    if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
+    const data = await resp.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    let script = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Strip markdown code fences if AI wrapped them anyway
+    script = script.replace(/^```(?:bash|sh)?\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+
+    return script;
+  }
+
+  /**
+   * Step 2: 在 sandbox 環境執行生成的腳本
+   */
+  private static async executeSandboxScript(
+    script: string,
+    timeoutMs: number = 120000
+  ): Promise<{ exitCode: number; stdout: string; stderr: string; durationMs: number }> {
+    const startTime = Date.now();
+
+    // 確保 sandbox 目錄存在
+    fs.mkdirSync(SANDBOX_WORKDIR, { recursive: true });
+    fs.mkdirSync(path.join(SANDBOX_WORKDIR, 'output'), { recursive: true });
+
+    // 寫腳本到暫存檔
+    const scriptPath = path.join(SANDBOX_WORKDIR, `task-${Date.now()}.sh`);
+    fs.writeFileSync(scriptPath, script, { mode: 0o755 });
+
     return new Promise((resolve) => {
-      const child = spawn('sh', ['-c', command], {
-        cwd: process.cwd(),
-        env: { ...process.env },
+      const child = spawn('sh', [scriptPath], {
+        cwd: SANDBOX_WORKDIR,
+        env: SANDBOX_ENV,
       });
 
-      let output = '';
-      let errorOutput = '';
+      let stdout = '';
+      let stderr = '';
 
-      child.stdout?.on('data', (data) => {
-        const chunk = data.toString();
-        output += chunk;
-        onProgress?.(chunk);
-      });
+      child.stdout?.on('data', (data: Buffer) => { stdout += data.toString(); });
+      child.stderr?.on('data', (data: Buffer) => { stderr += data.toString(); });
 
-      child.stderr?.on('data', (data) => {
-        const chunk = data.toString();
-        errorOutput += chunk;
-        onProgress?.(chunk);
-      });
-
-      const timeoutId = setTimeout(() => {
+      const timer = setTimeout(() => {
         child.kill('SIGTERM');
-        const durationMs = Date.now() - startTime;
         resolve({
-          success: false,
-          output,
-          error: `Execution timeout after ${timeout}ms`,
           exitCode: -1,
-          durationMs,
-          agentType: 'openclaw',
-          modelUsed: model,
+          stdout,
+          stderr: stderr + '\n[TIMEOUT] Script exceeded timeout',
+          durationMs: Date.now() - startTime,
         });
-      }, timeout);
+      }, timeoutMs);
 
       child.on('close', (code) => {
-        clearTimeout(timeoutId);
-        const durationMs = Date.now() - startTime;
+        clearTimeout(timer);
+        // 清除腳本檔（保留 output 目錄）
+        try { fs.unlinkSync(scriptPath); } catch { /* ignore */ }
         resolve({
-          success: code === 0,
-          output,
-          error: errorOutput || undefined,
-          exitCode: code ?? 0,
-          durationMs,
-          agentType: 'openclaw',
-          modelUsed: model,
+          exitCode: code ?? -1,
+          stdout,
+          stderr,
+          durationMs: Date.now() - startTime,
         });
       });
 
-      child.on('error', (error) => {
-        clearTimeout(timeoutId);
-        const durationMs = Date.now() - startTime;
+      child.on('error', (err) => {
+        clearTimeout(timer);
         resolve({
-          success: false,
-          output,
-          error: error.message,
           exitCode: -1,
-          durationMs,
-          agentType: 'openclaw',
-          modelUsed: model,
+          stdout,
+          stderr: err.message,
+          durationMs: Date.now() - startTime,
         });
       });
     });
   }
 
   /**
-   * 構建 Cursor 執行命令
-   * 使用 Cursor CLI 執行任務
+   * Step 3: 掃描 sandbox/output/ 下的產出物
    */
-  private static buildCursorCommand(task: Task, model: string): string {
-    const prompt = `${task.name}\n${task.description}`;
-    
-    // Cursor CLI 目前無法直接接受 prompt 參數
-    // 使用 echo 記錄任務，並回傳成功
-    return `echo "[Cursor Agent] 任務已接收: ${task.name}" && echo "模型: ${model}" && echo "描述: ${prompt}" && echo "狀態: 已排程執行"`;
+  private static scanArtifacts(): string[] {
+    const outputDir = path.join(SANDBOX_WORKDIR, 'output');
+    if (!fs.existsSync(outputDir)) return [];
+
+    const artifacts: string[] = [];
+    const scan = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scan(fullPath);
+        } else {
+          artifacts.push(fullPath);
+        }
+      }
+    };
+    scan(outputDir);
+    return artifacts;
   }
 
   /**
-   * 構建 CoDEX 執行命令
-   * 使用 CoDEX CLI 執行
+   * 主調度器：AI 生成腳本 → sandbox 執行 → 掃描產出物 → 返回結構化結果
+   * 失敗自動重試（最多 2 次），附帶錯誤反饋讓 AI 修正腳本
    */
-  private static buildCoDEXCommand(task: Task, model: string): string {
-    const prompt = `${task.name}\n${task.description}`;
-    
-    // CoDEX CLI 需要特定設定，這裡使用 echo 記錄
-    return `echo "[CoDEX Agent] 任務已接收: ${task.name}" && echo "模型: ${model}" && echo "描述: ${prompt}" && echo "狀態: 已排程執行"`;
+  private static async generateAndExecute(
+    taskName: string,
+    taskDescription: string,
+    timeoutMs: number = 120000
+  ): Promise<{
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+    artifacts: string[];
+    script: string;
+    durationMs: number;
+    retryCount: number;
+    modelUsed: string;
+  }> {
+    const MAX_RETRIES = 2;
+    let lastError = '';
+    let retryCount = 0;
+    let lastScript = '';
+    const totalStart = Date.now();
+
+    // 每次任務執行前清空 output 目錄
+    const outputDir = path.join(SANDBOX_WORKDIR, 'output');
+    if (fs.existsSync(outputDir)) {
+      fs.rmSync(outputDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      retryCount = attempt;
+
+      // Step 1: 生成腳本
+      try {
+        lastScript = await this.callGeminiForScript(
+          taskName,
+          taskDescription,
+          attempt > 0 ? lastError : undefined
+        );
+      } catch (err) {
+        lastError = `Script generation failed: ${err instanceof Error ? err.message : String(err)}`;
+        log.warn(`[GenerateAndExecute] Attempt ${attempt}: ${lastError}`);
+        continue;
+      }
+
+      if (!lastScript || lastScript.trim().length < 10) {
+        lastError = 'Generated script is empty or too short';
+        log.warn(`[GenerateAndExecute] Attempt ${attempt}: ${lastError}`);
+        continue;
+      }
+
+      log.info(`[GenerateAndExecute] Attempt ${attempt}: script generated (${lastScript.length} chars)`);
+
+      // Step 2: 執行
+      const execResult = await this.executeSandboxScript(lastScript, timeoutMs);
+
+      // Step 3: 掃描產出物
+      const artifacts = this.scanArtifacts();
+
+      // Step 4: 驗證
+      if (execResult.exitCode === 0) {
+        log.info(`[GenerateAndExecute] Success: ${artifacts.length} artifacts, ${execResult.durationMs}ms`);
+        return {
+          exitCode: 0,
+          stdout: execResult.stdout,
+          stderr: execResult.stderr,
+          artifacts,
+          script: lastScript,
+          durationMs: Date.now() - totalStart,
+          retryCount,
+          modelUsed: 'gemini-2.5-flash',
+        };
+      }
+
+      // 失敗 → 準備錯誤反饋給下一次重試
+      lastError = `Exit code: ${execResult.exitCode}\nStderr: ${execResult.stderr.slice(0, 500)}\nStdout tail: ${execResult.stdout.slice(-300)}`;
+      log.warn(`[GenerateAndExecute] Attempt ${attempt} failed: exit ${execResult.exitCode}`);
+    }
+
+    // 所有重試用完
+    return {
+      exitCode: -1,
+      stdout: '',
+      stderr: lastError,
+      artifacts: this.scanArtifacts(),
+      script: lastScript,
+      durationMs: Date.now() - totalStart,
+      retryCount,
+      modelUsed: 'gemini-2.5-flash',
+    };
+  }
+
+  /**
+   * 構建 Cursor 執行命令（現已改用 Gemini API）
+   */
+  private static buildCursorCommand(task: Task, _model: string): string {
+    // 標記：實際執行由 executeCursor 直接呼叫 callGeminiApi，此處僅保留介面相容
+    const safeName = task.name.replace(/'/g, "'\\''");
+    return `echo '[Cursor Agent] 任務：${safeName}'`;
+  }
+
+  /**
+   * 構建 CoDEX 執行命令（現已改用 Gemini API）
+   */
+  private static buildCoDEXCommand(task: Task, _model: string): string {
+    const safeName = task.name.replace(/'/g, "'\\''");
+    return `echo '[CoDEX Agent] 任務：${safeName}'`;
   }
 
   /**
    * 構建 OpenClaw 執行命令
-   * 透過 OpenClaw agent 執行（使用 --agent main --local）
    */
   private static buildOpenClawCommand(task: Task, model: string): string {
-    const prompt = `${task.name}\n${task.description}`;
-    const escapedPrompt = prompt.replace(/"/g, '\\"');
-    
-    // 使用 timeout 限制執行時間，避免卡住
-    return `echo "[OpenClaw Agent] 使用模型: ${model}" && timeout 60 openclaw agent --agent main --local --message "${escapedPrompt}" 2>&1 || echo "[OpenClaw Agent] 任務執行完成: ${task.name}"`;
+    // 使用單引號包裹，並轉義單引號本身（' → '\''），完全防止 shell injection
+    const prompt = `${task.name}\n${task.description ?? ''}`;
+    const singleQuoteEscaped = prompt.replace(/'/g, "'\\''");
+    // 模型名稱也做清理（只允許字母數字/.-:）
+    const safeModel = model.replace(/[^a-zA-Z0-9/._:-]/g, '');
+    return `echo "[OpenClaw Agent] 使用模型: ${safeModel}" && timeout 60 openclaw agent --agent main --local --message '${singleQuoteEscaped}' 2>&1 || echo "[OpenClaw Agent] 任務執行完成"`;
   }
 
   /**

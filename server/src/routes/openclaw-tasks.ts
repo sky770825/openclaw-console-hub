@@ -46,6 +46,7 @@ function mapToBoard(oc: any) {
     cat: oc.cat,
     thought: oc.thought,
     from_review_id: oc.fromR ?? null,
+    result: oc.result ?? undefined,
   };
 }
 

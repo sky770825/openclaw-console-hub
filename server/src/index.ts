@@ -66,6 +66,7 @@ import {
 import { postMessageFirewall } from './middlewares/firewall.js';
 import autoExecutorRouter, {
   autoExecutorState,
+  activeTaskIds,
   startAutoExecutor,
   stopAutoExecutor,
   loadAutoExecutorDiskState,
@@ -2493,6 +2494,400 @@ app.get('/api/openclaw/board-health', async (_req, res) => {
   }
 });
 
+// ---- Shield Deck / Protection summary ----
+// 供「護盾甲板」使用，回傳實際後端與安全設定狀態（避免只顯示假數據）。
+app.get('/api/protection/summary', async (_req, res) => {
+  try {
+    const timestamp = new Date().toISOString();
+    const supabaseConnected = hasSupabase();
+    const n8nConfigured = hasN8n();
+
+    // 從任務板抓任務，用於計算安全相關任務數量
+    let totalTasks = tasks.length;
+    let securityTagged = 0;
+    let highRisk = 0;
+    if (supabaseConnected) {
+      try {
+        const ocTasks = await fetchOpenClawTasks();
+        const mapped = ocTasks.map(openClawTaskToTask);
+        totalTasks = mapped.length;
+        const securityKeywords = ['security', '安全', '防護', 'shield', '防火牆', 'firewall'];
+        for (const t of mapped) {
+          const tags = t.tags || [];
+          const name = (t.name || '').toLowerCase();
+          const desc = (t.description || '').toLowerCase();
+          const isSecurityTagged =
+            tags.some(tag =>
+              securityKeywords.some(kw => tag.toLowerCase().includes(kw))
+            ) ||
+            securityKeywords.some(kw => name.includes(kw) || desc.includes(kw));
+          if (isSecurityTagged) securityTagged += 1;
+          if (t.riskLevel === 'high' || t.riskLevel === 'critical') highRisk += 1;
+        }
+      } catch (e) {
+        log.warn('[Protection] fetch tasks failed, fallback to in-memory:', e);
+        const securityKeywords = ['security', '安全', '防護', 'shield', '防火牆', 'firewall'];
+        for (const t of tasks) {
+          const tags = t.tags || [];
+          const name = (t.name || '').toLowerCase();
+          const desc = (t.description || '').toLowerCase();
+          const isSecurityTagged =
+            tags.some(tag =>
+              securityKeywords.some(kw => tag.toLowerCase().includes(kw))
+            ) ||
+            securityKeywords.some(kw => name.includes(kw) || desc.includes(kw));
+          if (isSecurityTagged) securityTagged += 1;
+          if (t.riskLevel === 'high' || t.riskLevel === 'critical') highRisk += 1;
+        }
+      }
+    }
+
+    // 實際的安全設定檢查（不回傳敏感值，只回傳布林狀態）
+    const apiKey = process.env.OPENCLAW_API_KEY || '';
+    const adminKey = process.env.OPENCLAW_ADMIN_KEY || '';
+    const dashboardUser = process.env.OPENCLAW_DASHBOARD_BASIC_USER || '';
+    const dashboardPass = process.env.OPENCLAW_DASHBOARD_BASIC_PASS || '';
+    const allowedOrigins = process.env.ALLOWED_ORIGINS || '';
+    const enforceWriteAuth = process.env.OPENCLAW_ENFORCE_WRITE_AUTH === 'true';
+
+    const apiKeyStrong =
+      apiKey.length >= 24 &&
+      !apiKey.startsWith('dev-key-') &&
+      !apiKey.includes('123456');
+    const adminKeyStrong = adminKey.length >= 24;
+    const dashboardAuthConfigured = Boolean(dashboardUser && dashboardPass);
+    const corsConfigured = Boolean(allowedOrigins);
+
+    res.json({
+      ok: true,
+      timestamp,
+      backend: {
+        supabaseConnected,
+        n8nConfigured,
+      },
+      configChecks: {
+        apiKeyStrong,
+        adminKeyStrong,
+        dashboardAuthConfigured,
+        corsConfigured,
+        enforceWriteAuth,
+      },
+      taskCounts: {
+        total: totalTasks,
+        securityTagged,
+        highRisk,
+      },
+    });
+  } catch (e) {
+    log.error('[Protection] GET /api/protection/summary error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch protection summary' });
+  }
+});
+
+// ==================== Defense Deck API ====================
+
+// GET /api/defense/status — 防禦總覽（防火牆 + 統計）
+app.get('/api/defense/status', async (_req, res) => {
+  try {
+    // 防火牆白名單規則（from env）
+    const gatewayConfig = process.env.GATEWAY_CONFIG ? (() => {
+      try { return JSON.parse(process.env.GATEWAY_CONFIG); } catch { return null; }
+    })() : null;
+    const allowedEvents: string[] = gatewayConfig?.allowedOutbound ?? [
+      'message','ping','pong','heartbeat','status','task_update','notification',
+    ];
+
+    // firewall_logs 統計（今日）
+    let blockedToday = 0;
+    let recentLogs: Array<{ event_type: string; origin: string; severity: string; blocked_at: string }> = [];
+    if (hasSupabase() && supabase) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const { data: logs } = await supabase
+        .from('firewall_logs')
+        .select('event_type, origin, severity, blocked_at')
+        .gte('blocked_at', today.toISOString())
+        .order('blocked_at', { ascending: false })
+        .limit(50);
+      recentLogs = (logs ?? []) as typeof recentLogs;
+      blockedToday = recentLogs.length;
+    }
+
+    // auto-executor 中目前 running 的任務數（危險指標）
+    let runningTasks = 0;
+    if (hasSupabase() && supabase) {
+      const { data: tasks } = await supabase.from('openclaw_tasks').select('id').eq('status','in_progress');
+      runningTasks = (tasks ?? []).length;
+    }
+
+    res.json({
+      ok: true,
+      firewall: {
+        enabled: true,
+        allowedEvents,
+        blockedToday,
+        recentLogs: recentLogs.slice(0, 20),
+      },
+      executor: {
+        isRunning: autoExecutorState.isRunning,
+        dispatchMode: autoExecutorState.dispatchMode,
+        runningTasks,
+        totalExecutedToday: autoExecutorState.totalExecutedToday,
+      },
+    });
+  } catch (e) {
+    log.error('[Defense] GET /api/defense/status error:', e);
+    res.status(500).json({ ok: false, message: 'Defense status fetch failed' });
+  }
+});
+
+// GET /api/defense/firewall-logs — 防火牆日誌（最近 N 筆）
+app.get('/api/defense/firewall-logs', async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    if (!hasSupabase() || !supabase) {
+      return res.json({ ok: true, logs: [], total: 0, note: 'Supabase not connected' });
+    }
+    const { data: logs, error } = await supabase
+      .from('firewall_logs')
+      .select('*')
+      .order('blocked_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      // firewall_logs 表可能尚未建立，回空陣列
+      return res.json({ ok: true, logs: [], total: 0, note: error.message });
+    }
+    res.json({ ok: true, logs: logs ?? [], total: (logs ?? []).length });
+  } catch (e) {
+    log.error('[Defense] GET /api/defense/firewall-logs error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch firewall logs' });
+  }
+});
+
+// GET /api/defense/deputy — 副手(小蔡)即時狀態
+app.get('/api/defense/deputy', (_req, res) => {
+  try {
+    const deputyState = (() => {
+      try { return JSON.parse(fs.readFileSync(DEPUTY_STATE_FILE, 'utf8')); } catch { return null; }
+    })();
+    const deputyLast = (() => {
+      try { return JSON.parse(fs.readFileSync(DEPUTY_LAST_FILE, 'utf8')); } catch { return null; }
+    })();
+
+    // 讀取 deputy log 最後 20 行
+    let recentLog: string[] = [];
+    try {
+      const logDir = path.join(repoRootPath(), 'server', 'logs');
+      const logFiles = fs.readdirSync(logDir).filter(f => f.startsWith('deputy')).sort().reverse();
+      if (logFiles.length > 0) {
+        const content = fs.readFileSync(path.join(logDir, logFiles[0]), 'utf8');
+        recentLog = content.split('\n').filter(Boolean).slice(-20);
+      }
+    } catch { /* log dir may not exist */ }
+
+    res.json({
+      ok: true,
+      mode: deputyState?.mode ?? 'off',
+      enabled: deputyState?.enabled ?? false,
+      lastRun: deputyLast?.startedAt ?? null,
+      lastRunStatus: deputyLast?.status ?? null,
+      lastRunDurationMs: deputyLast?.durationMs ?? null,
+      recentLog,
+      executor: {
+        isRunning: autoExecutorState.isRunning,
+        dispatchMode: autoExecutorState.dispatchMode,
+        pendingReviews: autoExecutorState.pendingReviews.length,
+        recentExecutions: autoExecutorState.recentExecutions.slice(-5),
+      },
+    });
+  } catch (e) {
+    log.error('[Defense] GET /api/defense/deputy error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch deputy status' });
+  }
+});
+
+// ---- Community contact / collaboration (L1/L2) ----
+type CommunityApplicationStatus = 'pending' | 'approved' | 'rejected' | 'replied';
+
+interface CommunityApplication {
+  id: string;
+  name: string;
+  email?: string | null;
+  channel?: string | null;
+  topic?: string | null;
+  message?: string | null;
+  status: CommunityApplicationStatus;
+  created_at: string;
+}
+
+const inMemoryApplications: CommunityApplication[] = [];
+
+// L1: 基礎接觸 — 提交協作者 / 聯絡申請
+app.post('/api/community/apply', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const name = String(body.name || '').trim();
+    const message = String(body.message || '').trim();
+    if (!name || !message) {
+      return res.status(400).json({ ok: false, message: 'name 與 message 為必填' });
+    }
+    const email = body.email ? String(body.email).trim() : null;
+    const channel = body.channel ? String(body.channel).trim() : null;
+    const topic = body.topic ? String(body.topic).trim() : null;
+    const id = `ca-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const now = new Date().toISOString();
+
+    const appRow: CommunityApplication = {
+      id,
+      name,
+      email,
+      channel,
+      topic,
+      message,
+      status: 'pending',
+      created_at: now,
+    };
+
+    if (hasSupabase() && supabase) {
+      try {
+        await supabase.from('community_applications').insert({
+          id: appRow.id,
+          name: appRow.name,
+          email: appRow.email,
+          channel: appRow.channel,
+          topic: appRow.topic,
+          message: appRow.message,
+          status: appRow.status,
+          created_at: appRow.created_at,
+        });
+      } catch (e) {
+        log.warn('[Community] insert community_applications failed, fallback to memory:', e);
+        inMemoryApplications.unshift(appRow);
+      }
+    } else {
+      inMemoryApplications.unshift(appRow);
+    }
+
+    // Telegram 通知（若已設定）
+    if (isTelegramConfigured()) {
+      const lines = [
+        '🤝 <b>新基礎接觸申請</b>',
+        '',
+        `<b>名稱：</b>${name}`,
+        email ? `<b>Email：</b>${email}` : '',
+        channel ? `<b>來源：</b>${channel}` : '',
+        topic ? `<b>主題：</b>${topic}` : '',
+        '',
+        `<b>訊息：</b>${message.slice(0, 500)}`,
+      ].filter(Boolean);
+      sendTelegramMessage(lines.join('\n'), { parseMode: 'HTML' }).catch((e) => {
+        log.warn('[Community] telegram notify failed:', e);
+      });
+    }
+
+    res.status(201).json({ ok: true, id, status: 'pending' });
+  } catch (e) {
+    log.error('[Community] POST /api/community/apply error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to submit application' });
+  }
+});
+
+// L1: 基礎接觸 — 申請列表（給 CommunicationDeck 用）
+app.get('/api/community/applications', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
+    let rows: CommunityApplication[] = [];
+    if (hasSupabase() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('community_applications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        if (error) {
+          log.warn('[Community] fetch applications from Supabase failed:', error.message);
+        } else if (data) {
+          rows = (data as any[]).map((r) => ({
+            id: String(r.id),
+            name: String(r.name ?? ''),
+            email: r.email ? String(r.email) : null,
+            channel: r.channel ? String(r.channel) : null,
+            topic: r.topic ? String(r.topic) : null,
+            message: r.message ? String(r.message) : null,
+            status: (r.status as CommunityApplicationStatus) || 'pending',
+            created_at: String(r.created_at ?? new Date().toISOString()),
+          }));
+        }
+      } catch (e) {
+        log.warn('[Community] fetch applications threw error, fallback to memory:', e);
+      }
+    }
+    if (!rows.length) {
+      rows = [...inMemoryApplications].slice(0, limit);
+    }
+    res.json({ ok: true, applications: rows });
+  } catch (e) {
+    log.error('[Community] GET /api/community/applications error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch applications' });
+  }
+});
+
+// L1: 基礎接觸 — 簡易統計
+app.get('/api/community/contact-stats', async (_req, res) => {
+  try {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    let rows: CommunityApplication[] = [];
+    if (hasSupabase() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('community_applications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(500);
+        if (error) {
+          log.warn('[Community] fetch contact-stats from Supabase failed:', error.message);
+        } else if (data) {
+          rows = (data as any[]).map((r) => ({
+            id: String(r.id),
+            name: String(r.name ?? ''),
+            email: r.email ? String(r.email) : null,
+            channel: r.channel ? String(r.channel) : null,
+            topic: r.topic ? String(r.topic) : null,
+            message: r.message ? String(r.message) : null,
+            status: (r.status as CommunityApplicationStatus) || 'pending',
+            created_at: String(r.created_at ?? new Date().toISOString()),
+          }));
+        }
+      } catch (e) {
+        log.warn('[Community] fetch contact-stats threw error, fallback to memory:', e);
+      }
+    }
+    if (!rows.length) {
+      rows = [...inMemoryApplications];
+    }
+    let today = 0;
+    let pending = 0;
+    let approvedThisWeek = 0;
+    for (const appRow of rows) {
+      const d = new Date(appRow.created_at);
+      const dayStr = appRow.created_at.slice(0, 10);
+      if (dayStr === todayStr) today += 1;
+      if (appRow.status === 'pending') pending += 1;
+      if (appRow.status === 'approved' && d >= weekAgo) approvedThisWeek += 1;
+    }
+    res.json({
+      ok: true,
+      today,
+      pending,
+      approvedThisWeek,
+    });
+  } catch (e) {
+    log.error('[Community] GET /api/community/contact-stats error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to fetch contact stats' });
+  }
+});
+
 // ---- Wake Report（甦醒報告：前端錯誤累積觸發 → 後端存檔 → CLI 可讀取） ----
 type WakeReport = {
   id: string;
@@ -3216,10 +3611,10 @@ app.post('/api/openclaw/maintenance/reconcile', async (_req, res) => {
     for (const t of ocTasks ?? []) {
       const st = t.status ?? '';
       if ((st === 'running' || st === 'in_progress') && !activeRunTaskIds.has(t.id)) {
-        // running 但沒有 active run → 改成 done（假設已完成）
-        await upsertOpenClawTask({ id: t.id, status: 'done' });
-        details.push({ taskId: t.id, from: st, to: 'done', reason: 'no active run' });
-        fixedToDone++;
+        // running 但沒有 active run → 改回 queued（中斷重試），不能假設已完成
+        await upsertOpenClawTask({ id: t.id, status: 'queued' });
+        details.push({ taskId: t.id, from: st, to: 'queued', reason: 'orphaned in_progress, reset for retry' });
+        fixedToReady++;
       }
     }
     res.json({
@@ -3626,6 +4021,28 @@ server.listen(PORT, '127.0.0.1', () => {
 
   // AutoExecutor bootstrap/self-heal (disk state is the source of truth).
   const disk = loadAutoExecutorDiskState();
+
+  // ─── 啟動時 reconcile：把上次重啟留下的孤立 in_progress 改回 queued ───
+  if (hasSupabase()) {
+    (async () => {
+      try {
+        const ocTasks = await fetchOpenClawTasks();
+        const orphans = (ocTasks ?? []).filter((t) => t.status === 'in_progress');
+        if (orphans.length > 0) {
+          log.warn(`[StartupReconcile] 發現 ${orphans.length} 筆孤立 in_progress 任務，改回 queued`);
+          for (const t of orphans) {
+            await upsertOpenClawTask({ id: t.id, status: 'queued' });
+            log.info(`[StartupReconcile] 重置: ${t.id} (${t.title})`);
+          }
+        } else {
+          log.info('[StartupReconcile] 無孤立任務，狀態乾淨');
+        }
+      } catch (e) {
+        log.error('[StartupReconcile] 失敗:', e);
+      }
+    })();
+  }
+
   if (disk.enabled) {
     startAutoExecutor(disk.pollIntervalMs, disk.maxTasksPerMinute);
   }
@@ -3646,6 +4063,26 @@ server.listen(PORT, '127.0.0.1', () => {
       startAutoExecutor(st.pollIntervalMs, st.maxTasksPerMinute);
     }
   }, 15000);
+
+  // ─── Graceful SIGTERM：把執行中的任務改回 queued 再退出 ───
+  const gracefulShutdown = async (signal: string) => {
+    log.warn(`[Server] 收到 ${signal}，開始 graceful shutdown...`);
+    stopAutoExecutor();
+    if (activeTaskIds.size > 0 && hasSupabase()) {
+      log.warn(`[Server] 回滾 ${activeTaskIds.size} 筆執行中任務 → queued`);
+      for (const taskId of activeTaskIds) {
+        try {
+          await upsertOpenClawTask({ id: taskId, status: 'queued' });
+          log.info(`[Server] 回滾任務 ${taskId} → queued`);
+        } catch (e) {
+          log.error(`[Server] 回滾任務 ${taskId} 失敗:`, e);
+        }
+      }
+    }
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   // Control bot via getUpdates polling (no webhook; works on localhost).
   startTelegramStopPoll();

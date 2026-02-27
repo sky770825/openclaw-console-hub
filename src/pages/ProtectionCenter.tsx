@@ -1,54 +1,65 @@
 /**
  * 護盾甲板 — Protection Center
  *
- * 掃描掃毒、客戶防護、個資安全、客戶安全上線流程
+ * 掃描掃毒、客戶防護、個資安全、客戶安全上線流程。
+ * 本頁會直接讀取後端 /api/protection/summary 的真實安全設定狀態，
+ * 避免只顯示假數據，讓老蔡能一眼看到目前安全等級。
  *
  * 流程：
  *   外部接觸 → 掃描掃毒 → 建立防護 → 個資確認 → 進入社交圈
  */
 
-import { useState } from 'react';
-import { Shield, Search, Lock, UserCheck, CheckCircle, Circle, ArrowRight, AlertTriangle, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Shield, Search, Lock, UserCheck, CheckCircle, Circle, AlertTriangle, Loader2 } from 'lucide-react';
 import { ONBOARDING_STEPS, type OnboardingStep } from '@/config/hubCenters';
+
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3011';
+const AUTH = { 'Authorization': `Bearer ${import.meta.env.VITE_OPENCLAW_API_KEY || ''}`, 'Content-Type': 'application/json' };
 
 type Tab = 'scanner' | 'privacy' | 'clients' | 'onboarding';
 
-// ─── 模擬資料 ───
+// ─── 後端 Protection Summary 型別 ───
 
-interface ScanResult {
-  id: string;
-  target: string;
-  type: 'user' | 'data' | 'connection';
+interface ProtectionSummary {
+  ok: boolean;
   timestamp: string;
-  status: 'clean' | 'threat' | 'scanning';
-  details: string;
+  backend: {
+    supabaseConnected: boolean;
+    n8nConfigured: boolean;
+  };
+  configChecks: {
+    apiKeyStrong: boolean;
+    adminKeyStrong: boolean;
+    dashboardAuthConfigured: boolean;
+    corsConfigured: boolean;
+    enforceWriteAuth: boolean;
+  };
+  taskCounts: {
+    total: number;
+    securityTagged: number;
+    highRisk: number;
+  };
 }
 
-interface ClientRecord {
-  id: string;
+// ─── 任務板型別 ───
+
+interface Task {
+  id?: string;
   name: string;
-  joinDate: string;
-  shieldStatus: 'active' | 'pending' | 'expired';
-  privacyScore: number;
-  layer: string;
+  status: string;
+  priority?: number;
+  tags?: string[];
+  owner?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
-
-const MOCK_SCANS: ScanResult[] = [
-  { id: 's1', target: '新接觸使用者 A', type: 'user', timestamp: '14:35', status: 'clean', details: '掃描完成，無威脅' },
-  { id: 's2', target: '上傳檔案 report.pdf', type: 'data', timestamp: '14:20', status: 'clean', details: '檔案安全，無惡意程式' },
-  { id: 's3', target: '外部 API 連線', type: 'connection', timestamp: '14:10', status: 'scanning', details: '正在掃描連線安全性...' },
-  { id: 's4', target: '新接觸使用者 B', type: 'user', timestamp: '13:45', status: 'threat', details: '偵測到可疑行為模式，需人工審查' },
-];
-
-const MOCK_CLIENTS: ClientRecord[] = [
-  { id: 'c1', name: '協作者 Alpha', joinDate: '2025-01', shieldStatus: 'active', privacyScore: 95, layer: 'L2' },
-  { id: 'c2', name: '協作者 Beta', joinDate: '2025-02', shieldStatus: 'active', privacyScore: 88, layer: 'L1' },
-  { id: 'c3', name: '新申請者 C', joinDate: '2025-02', shieldStatus: 'pending', privacyScore: 0, layer: '申請中' },
-];
 
 // ─── 元件 ───
 
 export default function ProtectionCenter() {
+  const [summary, setSummary] = useState<ProtectionSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('onboarding');
 
   const tabs: { id: Tab; label: string; icon: typeof Shield }[] = [
@@ -57,6 +68,35 @@ export default function ProtectionCenter() {
     { id: 'privacy', label: '個資安全', icon: Lock },
     { id: 'clients', label: '客戶防護', icon: Shield },
   ];
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`${API}/api/protection/summary`, { headers: AUTH });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as ProtectionSummary;
+        if (!cancelled) setSummary(data);
+      } catch (e) {
+        if (!cancelled) setError('無法取得後端安全狀態');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    const t = setInterval(load, 60_000); // 每分鐘刷新一次
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
+
+  const passedChecks = summary
+    ? Object.values(summary.configChecks).filter(Boolean).length
+    : 0;
+  const totalChecks = summary ? Object.values(summary.configChecks).length : 0;
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -67,16 +107,54 @@ export default function ProtectionCenter() {
           護盾甲板
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          掃描掃毒、個資安全、客戶防護、安全上線流程
+          掃描掃毒、個資安全、客戶防護、安全上線流程。此處顯示的指標直接來自後端安全檢查結果。
         </p>
+        {loading && (
+          <p className="text-xs text-muted-foreground mt-1">
+            正在讀取後端安全狀態…
+          </p>
+        )}
+        {error && (
+          <p className="text-xs text-red-500 mt-1">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* 總覽卡片 */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <StatCard label="掃描次數（今日）" value={MOCK_SCANS.length.toString()} color="text-blue-500" />
-        <StatCard label="威脅偵測" value={MOCK_SCANS.filter(s => s.status === 'threat').length.toString()} color="text-red-500" />
-        <StatCard label="受保護客戶" value={MOCK_CLIENTS.filter(c => c.shieldStatus === 'active').length.toString()} color="text-green-500" />
-        <StatCard label="待上線" value={MOCK_CLIENTS.filter(c => c.shieldStatus === 'pending').length.toString()} color="text-yellow-500" />
+        <StatCard
+          label="後端健康狀態"
+          value={
+            summary
+              ? summary.backend.supabaseConnected && summary.backend.n8nConfigured
+                ? '正常'
+                : '需注意'
+              : '--'
+          }
+          color={
+            summary
+              ? summary.backend.supabaseConnected && summary.backend.n8nConfigured
+                ? 'text-green-500'
+                : 'text-yellow-500'
+              : 'text-muted-foreground'
+          }
+        />
+        <StatCard
+          label="安全設定通過項目"
+          value={summary ? `${passedChecks}/${totalChecks}` : '--'}
+          color={passedChecks === totalChecks && totalChecks > 0 ? 'text-green-500' : 'text-yellow-500'}
+        />
+        <StatCard
+          label="安全相關任務數量"
+          value={summary ? summary.taskCounts.securityTagged.toString() : '--'}
+          color="text-blue-500"
+        />
+        <StatCard
+          label="高風險任務數量"
+          value={summary ? summary.taskCounts.highRisk.toString() : '--'}
+          color={summary && summary.taskCounts.highRisk === 0 ? 'text-green-500' : 'text-red-500'}
+        />
       </div>
 
       {/* Tab */}
@@ -98,8 +176,8 @@ export default function ProtectionCenter() {
       </div>
 
       {tab === 'onboarding' && <OnboardingPanel />}
-      {tab === 'scanner' && <ScannerPanel />}
-      {tab === 'privacy' && <PrivacyPanel />}
+      {tab === 'scanner' && <ScannerPanel summary={summary} />}
+      {tab === 'privacy' && <PrivacyPanel summary={summary} />}
       {tab === 'clients' && <ClientsPanel />}
     </div>
   );
@@ -216,43 +294,126 @@ function OnboardingPanel() {
 
 // ─── 掃描掃毒 ───
 
-function ScannerPanel() {
+const SECURITY_OWNERS = new Set(['老蔡', '小蔡', 'system']);
+
+function isSecurityTask(task: Task): boolean {
+  const nameLower = task.name.toLowerCase();
+  const hasSecurityTag = Array.isArray(task.tags) && task.tags.some(t =>
+    t.toLowerCase() === 'security'
+  );
+  const hasSecurityName = /安全|防護|掃描/.test(task.name) || nameLower.includes('security');
+  return hasSecurityTag || hasSecurityName;
+}
+
+function taskStatusToScanStatus(status: string): 'clean' | 'threat' | 'scanning' {
+  const s = status.toLowerCase();
+  if (s === 'done' || s === 'completed') return 'clean';
+  if (s === 'blocked' || s === 'failed' || s === 'error') return 'threat';
+  return 'scanning';
+}
+
+function ScannerPanel({ summary }: { summary: ProtectionSummary | null }) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`${API}/api/openclaw/tasks?limit=200`, { headers: AUTH });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as Task[];
+        if (!cancelled) {
+          const secTasks = (Array.isArray(data) ? data : []).filter(isSecurityTask);
+          setTasks(secTasks);
+        }
+      } catch (e) {
+        if (!cancelled) setError('無法取得任務板資料');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   return (
-    <div className="space-y-3">
-      {MOCK_SCANS.map(scan => (
-        <div key={scan.id} className="flex items-center gap-3 rounded-lg border bg-card p-4">
-          <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-            scan.status === 'clean' ? 'bg-green-500/10' :
-            scan.status === 'threat' ? 'bg-red-500/10' :
-            'bg-yellow-500/10'
-          }`}>
-            {scan.status === 'clean' ? <CheckCircle className="h-4 w-4 text-green-500" /> :
-             scan.status === 'threat' ? <AlertTriangle className="h-4 w-4 text-red-500" /> :
-             <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">{scan.target}</p>
-            <p className="text-xs text-muted-foreground">{scan.details}</p>
-          </div>
-          <div className="text-right">
-            <span className={`text-xs px-2 py-0.5 rounded ${
-              scan.status === 'clean' ? 'bg-green-500/10 text-green-500' :
-              scan.status === 'threat' ? 'bg-red-500/10 text-red-500' :
-              'bg-yellow-500/10 text-yellow-500'
-            }`}>
-              {scan.status === 'clean' ? '安全' : scan.status === 'threat' ? '威脅' : '掃描中'}
-            </span>
-            <p className="text-xs text-muted-foreground mt-1">{scan.timestamp}</p>
-          </div>
+    <div className="space-y-4">
+      {/* 真實安全任務概況 */}
+      <div className="rounded-lg border bg-card p-4">
+        <h3 className="text-sm font-semibold mb-2">任務安全掃描結果（來自任務板）</h3>
+        {summary ? (
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>· 總任務數：{summary.taskCounts.total}</li>
+            <li>· 判定為「安全/防護相關」的任務：{summary.taskCounts.securityTagged}</li>
+            <li className={summary.taskCounts.highRisk === 0 ? 'text-green-600' : 'text-red-500'}>
+              · 高風險任務：{summary.taskCounts.highRisk} 個
+            </li>
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            尚未取得任務板資料。
+          </p>
+        )}
+      </div>
+
+      {/* 掃描列表 */}
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground p-4">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          載入中…
         </div>
-      ))}
+      )}
+      {error && (
+        <p className="text-xs text-red-500 p-4">{error}</p>
+      )}
+      {!loading && !error && tasks.length === 0 && (
+        <p className="text-sm text-muted-foreground p-4">尚無記錄</p>
+      )}
+      <div className="space-y-3">
+        {tasks.map((task, idx) => {
+          const scanStatus = taskStatusToScanStatus(task.status);
+          return (
+            <div key={task.id ?? idx} className="flex items-center gap-3 rounded-lg border bg-card p-4">
+              <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+                scanStatus === 'clean' ? 'bg-green-500/10' :
+                scanStatus === 'threat' ? 'bg-red-500/10' :
+                'bg-yellow-500/10'
+              }`}>
+                {scanStatus === 'clean' ? <CheckCircle className="h-4 w-4 text-green-500" /> :
+                 scanStatus === 'threat' ? <AlertTriangle className="h-4 w-4 text-red-500" /> :
+                 <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{task.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {task.owner ? `負責人：${task.owner}` : ''}
+                  {task.tags && task.tags.length > 0 ? ` · 標籤：${task.tags.join(', ')}` : ''}
+                </p>
+              </div>
+              <div className="text-right">
+                <span className={`text-xs px-2 py-0.5 rounded ${
+                  scanStatus === 'clean' ? 'bg-green-500/10 text-green-500' :
+                  scanStatus === 'threat' ? 'bg-red-500/10 text-red-500' :
+                  'bg-yellow-500/10 text-yellow-500'
+                }`}>
+                  {scanStatus === 'clean' ? '安全' : scanStatus === 'threat' ? '威脅' : '掃描中'}
+                </span>
+                <p className="text-xs text-muted-foreground mt-1">{task.status}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 // ─── 個資安全 ───
 
-function PrivacyPanel() {
+function PrivacyPanel({ summary }: { summary: ProtectionSummary | null }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-card p-6">
@@ -260,14 +421,54 @@ function PrivacyPanel() {
           <Lock className="h-5 w-5 text-green-500" />
           <h3 className="text-sm font-semibold">個資安全閘道</h3>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <SecurityFeature title="資料加密" status="啟用" description="所有個資以 AES-256 加密儲存" ok />
-          <SecurityFeature title="存取控制" status="啟用" description="個資存取需 admin 以上權限" ok />
-          <SecurityFeature title="傳輸加密" status="啟用" description="所有 API 通訊經 TLS 加密" ok />
-          <SecurityFeature title="自動清除" status="啟用" description="過期個資 90 天後自動清除" ok />
-          <SecurityFeature title="資料去識別化" status="啟用" description="匯出資料自動遮蔽敏感欄位" ok />
-          <SecurityFeature title="稽核記錄" status="啟用" description="所有個資存取皆記錄在案" ok />
-        </div>
+        {summary ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <SecurityFeature
+              title="API Key 強度"
+              status={summary.configChecks.apiKeyStrong ? '良好' : '需更換'}
+              description={summary.configChecks.apiKeyStrong
+                ? 'OPENCLAW_API_KEY 為足夠長度的隨機密鑰'
+                : '偵測到可能是 dev-key 或過短字串，建議盡快更新'}
+              ok={summary.configChecks.apiKeyStrong}
+            />
+            <SecurityFeature
+              title="管理者金鑰"
+              status={summary.configChecks.adminKeyStrong ? '良好' : '需更換'}
+              description={summary.configChecks.adminKeyStrong
+                ? 'OPENCLAW_ADMIN_KEY 長度充足'
+                : '建議改為 32+ 字元強隨機密鑰'}
+              ok={summary.configChecks.adminKeyStrong}
+            />
+            <SecurityFeature
+              title="Dashboard 基本認證"
+              status={summary.configChecks.dashboardAuthConfigured ? '已啟用' : '未啟用'}
+              description={summary.configChecks.dashboardAuthConfigured
+                ? '前端儀表板已啟用 Basic Auth 保護'
+                : '公開部署前建議設定 OPENCLAW_DASHBOARD_BASIC_USER/PASS'}
+              ok={summary.configChecks.dashboardAuthConfigured}
+            />
+            <SecurityFeature
+              title="CORS 白名單"
+              status={summary.configChecks.corsConfigured ? '已設定' : '未設定'}
+              description={summary.configChecks.corsConfigured
+                ? 'ALLOWED_ORIGINS 已指定正式網域'
+                : '目前僅預設 localhost，對公開環境建議明確設定'}
+              ok={summary.configChecks.corsConfigured}
+            />
+            <SecurityFeature
+              title="寫入驗證保護"
+              status={summary.configChecks.enforceWriteAuth ? '啟用中' : '關閉'}
+              description={summary.configChecks.enforceWriteAuth
+                ? '所有寫入 API 需帶有效 API Key'
+                : '建議啟用 OPENCLAW_ENFORCE_WRITE_AUTH 以防未授權寫入'}
+              ok={summary.configChecks.enforceWriteAuth}
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            尚未取得後端設定，暫時僅顯示規則標題。
+          </p>
+        )}
       </div>
     </div>
   );
@@ -289,39 +490,77 @@ function SecurityFeature({ title, status, description, ok }: { title: string; st
 
 // ─── 客戶防護 ───
 
+const SYSTEM_OWNERS = new Set(['老蔡', '小蔡', 'system', 'System', '老蔡/小蔡']);
+
 function ClientsPanel() {
+  const [owners, setOwners] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`${API}/api/openclaw/tasks?limit=200`, { headers: AUTH });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as Task[];
+        if (!cancelled) {
+          const allTasks = Array.isArray(data) ? data : [];
+          const uniqueOwners = Array.from(
+            new Set(
+              allTasks
+                .map(t => t.owner ?? '')
+                .filter(o => o && !SYSTEM_OWNERS.has(o))
+            )
+          );
+          setOwners(uniqueOwners);
+        }
+      } catch (e) {
+        if (!cancelled) setError('無法取得任務板資料');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground p-4">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        載入中…
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-xs text-red-500 p-4">{error}</p>;
+  }
+
+  if (owners.length === 0) {
+    return <p className="text-sm text-muted-foreground p-4">尚無記錄</p>;
+  }
+
   return (
     <div className="space-y-3">
-      {MOCK_CLIENTS.map(client => (
-        <div key={client.id} className="flex items-center justify-between rounded-lg border bg-card p-4">
+      {owners.map((owner, idx) => (
+        <div key={idx} className="flex items-center justify-between rounded-lg border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-              client.shieldStatus === 'active' ? 'bg-green-500' :
-              client.shieldStatus === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-            }`}>
-              {client.name.charAt(0)}
+            <div className="h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-bold bg-green-500">
+              {owner.charAt(0)}
             </div>
             <div>
-              <p className="text-sm font-medium">{client.name}</p>
-              <p className="text-xs text-muted-foreground">加入：{client.joinDate} · 層級：{client.layer}</p>
+              <p className="text-sm font-medium">{owner}</p>
+              <p className="text-xs text-muted-foreground">任務板成員</p>
             </div>
           </div>
           <div className="text-right">
             <div className="flex items-center gap-2">
-              <Shield className={`h-4 w-4 ${
-                client.shieldStatus === 'active' ? 'text-green-500' :
-                client.shieldStatus === 'pending' ? 'text-yellow-500' : 'text-red-500'
-              }`} />
-              <span className="text-sm">
-                {client.shieldStatus === 'active' ? '防護中' :
-                 client.shieldStatus === 'pending' ? '待啟動' : '已過期'}
-              </span>
+              <Shield className="h-4 w-4 text-green-500" />
+              <span className="text-sm">防護中</span>
             </div>
-            {client.privacyScore > 0 && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                個資安全分數：{client.privacyScore}/100
-              </p>
-            )}
           </div>
         </div>
       ))}

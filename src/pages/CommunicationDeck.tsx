@@ -53,30 +53,48 @@ const MODULE_ROUTES: Record<string, string> = {
   l0: 'l0', l1: 'l1', l2: 'l2', l3: 'l3', firewall: 'firewall', bridge: 'bridge',
 };
 
-// ─── 模擬即時狀態 ──────────────────────────────────────────
+// ─── API 常數 ───────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3011';
+const API_AUTH = { 'Authorization': `Bearer ${import.meta.env.VITE_OPENCLAW_API_KEY || ''}`, 'Content-Type': 'application/json' };
+
+// ─── 真實系統狀態（從 /api/health + /api/federation/members） ──
 
 function useLayerStats() {
   const [stats, setStats] = useState({
-    activeConnections: 12,
-    heartbeatOk: true,
-    messagesIn: 847,
-    messagesOut: 231,
-    blockedAttempts: 3,
+    activeConnections: 0,
+    heartbeatOk: false,
+    messagesIn: 0,
+    messagesOut: 0,
+    blockedAttempts: 0,
     lastHeartbeat: new Date(),
   });
 
-  useEffect(() => {
-    const t = setInterval(() => {
-      setStats(s => ({
-        ...s,
-        messagesIn: s.messagesIn + Math.floor(Math.random() * 3),
-        messagesOut: s.messagesOut + Math.floor(Math.random() * 2),
+  const load = useCallback(async () => {
+    try {
+      const [healthRes, membersRes] = await Promise.all([
+        fetch(`${API_BASE}/api/health`, { headers: API_AUTH }),
+        fetch(`${API_BASE}/api/federation/members`, { headers: API_AUTH }),
+      ]);
+      const health = await healthRes.json();
+      const members = await membersRes.json();
+      const activeMembers = (members.members || []).filter((m: any) => m.status === 'active').length;
+      const blocklist = await fetch(`${API_BASE}/api/federation/blocklist`, { headers: API_AUTH }).then(r => r.json()).catch(() => ({ blocklist: [] }));
+      setStats({
+        activeConnections: health.services?.websocket?.totalConnections ?? 0,
+        heartbeatOk: health.ok === true,
+        messagesIn: activeMembers,
+        messagesOut: (members.members || []).length,
+        blockedAttempts: (blocklist.blocklist || []).filter((b: any) => b.status === 'active').length,
         lastHeartbeat: new Date(),
-        heartbeatOk: Math.random() > 0.05,
-      }));
-    }, 3000);
-    return () => clearInterval(t);
+      });
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 15000);
+    return () => clearInterval(t);
+  }, [load]);
 
   return stats;
 }
@@ -84,25 +102,20 @@ function useLayerStats() {
 // ─── L0 公開展示詳情 ──────────────────────────────────────
 
 function L0ShowcasePage() {
-  const [visitors] = useState(1247);
-  const [pageViews] = useState(3891);
+  const [health, setHealth] = useState<any>(null);
+  const [activityLines, setActivityLines] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const showcaseItems = [
-    { title: '星艦指揮中心 v2.1', type: '產品展示', views: 892, status: 'live', updated: '今日' },
-    { title: 'MDCI 文明指數系統', type: '功能介紹', views: 634, status: 'live', updated: '2d前' },
-    { title: 'n8n 自動化工作流展示', type: '技術展示', views: 521, status: 'live', updated: '3d前' },
-    { title: 'AI 任務派工演示', type: '演示影片', views: 478, status: 'live', updated: '5d前' },
-    { title: 'Ollama 本地 AI 整合', type: '技術文章', views: 312, status: 'live', updated: '1w前' },
-    { title: '9 甲板架構設計說明', type: '設計文件', views: 267, status: 'draft', updated: '今日' },
-  ];
-
-  const recentVisitors = [
-    { ip: '118.xxx.xxx.12', region: '台北', device: 'Chrome / macOS', time: '剛才', pages: 4 },
-    { ip: '49.xxx.xxx.87', region: '高雄', device: 'Safari / iPhone', time: '3分前', pages: 2 },
-    { ip: '203.xxx.xxx.45', region: '台中', device: 'Firefox / Windows', time: '7分前', pages: 6 },
-    { ip: '1.xxx.xxx.98', region: '新竹', device: 'Chrome / Android', time: '12分前', pages: 3 },
-    { ip: '61.xxx.xxx.134', region: '新加坡', device: 'Edge / Windows', time: '18分前', pages: 1 },
-  ];
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API_BASE}/api/health`, { headers: API_AUTH }).then(r => r.json()).catch(() => null),
+      fetch(`${API_BASE}/api/openclaw/activity-log?limit=10`, { headers: API_AUTH }).then(r => r.json()).catch(() => ({ lines: [] })),
+    ]).then(([h, a]) => {
+      setHealth(h);
+      setActivityLines((a.lines || []).reverse().slice(0, 6));
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -124,13 +137,13 @@ function L0ShowcasePage() {
         </div>
       </div>
 
-      {/* 流量統計 */}
+      {/* 系統狀態統計（真實） */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: '今日訪客', value: visitors.toLocaleString(), icon: Users, color: '#10b981' },
-          { label: '總頁面瀏覽', value: pageViews.toLocaleString(), icon: Eye, color: '#22d3ee' },
-          { label: '展示項目', value: showcaseItems.length, icon: FileText, color: '#f59e0b' },
-          { label: '平均停留', value: '3:24', icon: Clock, color: '#a78bfa' },
+          { label: 'Server 版本', value: loading ? '…' : health ? `v${health.version}` : '離線', icon: Activity, color: health?.ok ? '#10b981' : '#ef4444' },
+          { label: 'Uptime', value: loading ? '…' : health ? `${Math.round((health.uptime || 0) / 60)}m` : '—', icon: Clock, color: '#22d3ee' },
+          { label: 'Heap 使用', value: loading ? '…' : health ? `${health.memory?.heapUsed ?? '?'} MB` : '—', icon: TrendingUp, color: '#f59e0b' },
+          { label: '活動日誌', value: loading ? '…' : String(activityLines.length), icon: FileText, color: '#a78bfa' },
         ].map(s => {
           const Icon = s.icon;
           return (
@@ -143,45 +156,19 @@ function L0ShowcasePage() {
         })}
       </div>
 
-      {/* 展示內容清單 */}
+      {/* 近期活動日誌（真實） */}
       <div className="rounded-lg border bg-card overflow-hidden">
         <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
-          <p className="text-xs font-medium">公開展示內容</p>
-          <span className="text-[10px] text-muted-foreground">sandbox: allow-scripts allow-popups</span>
+          <p className="text-xs font-medium">近期活動日誌</p>
+          <span className="text-[10px] text-muted-foreground">源自 /api/openclaw/activity-log</span>
         </div>
         <div className="divide-y">
-          {showcaseItems.map((item, i) => (
-            <div key={i} className="px-4 py-3 flex items-center gap-3">
-              <div className="flex-1">
-                <p className="text-sm font-medium">{item.title}</p>
-                <p className="text-[10px] text-muted-foreground">{item.type} · {item.views} 次瀏覽 · 更新 {item.updated}</p>
-              </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.status === 'live' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                {item.status === 'live' ? '已發布' : '草稿'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 最近訪客 */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-4 py-2 border-b bg-muted/30">
-          <p className="text-xs font-medium">即時訪客紀錄</p>
-        </div>
-        <div className="divide-y">
-          {recentVisitors.map((v, i) => (
-            <div key={i} className="px-4 py-2.5 flex items-center gap-3 text-xs">
-              <span className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] text-emerald-400 font-bold">{i + 1}</span>
-              <div className="flex-1">
-                <p className="font-mono text-foreground/80">{v.ip}</p>
-                <p className="text-muted-foreground">{v.device}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-muted-foreground">{v.region}</p>
-                <p className="text-muted-foreground/60">{v.pages} 頁 · {v.time}</p>
-              </div>
-            </div>
+          {loading ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">載入中…</div>
+          ) : activityLines.length === 0 ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">尚無活動記錄</div>
+          ) : activityLines.map((line, i) => (
+            <div key={i} className="px-4 py-2.5 text-[11px] font-mono text-foreground/70 break-all">{line}</div>
           ))}
         </div>
       </div>
@@ -205,28 +192,105 @@ function L0ShowcasePage() {
 
 // ─── L1 基礎接觸詳情 ──────────────────────────────────────
 
+interface CommunityApplicationRow {
+  id: string;
+  name: string;
+  topic?: string | null;
+  channel?: string | null;
+  created_at: string;
+  status: 'pending' | 'approved' | 'rejected' | 'replied';
+}
+
+function formatRelativeTime(iso: string): string {
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  if (diffMin < 1) return '剛剛';
+  if (diffMin < 60) return `${diffMin} 分前`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `${diffH} 小時前`;
+  const diffD = Math.round(diffH / 24);
+  return `${diffD} 天前`;
+}
+
 function L1ContactPage() {
-  const contacts = [
-    { name: '未知用戶-A8F2', action: '提交聯絡表單', topic: '合作詢問', time: '5分前', status: 'pending' },
-    { name: '未知用戶-C3D7', action: '瀏覽技術文章', topic: 'Ollama 整合', time: '12分前', status: 'viewing' },
-    { name: '未知用戶-E9B1', action: '申請協作者', topic: 'AI 開發', time: '28分前', status: 'reviewing' },
-    { name: '未知用戶-F4A6', action: '提交表單', topic: '技術支援', time: '1h前', status: 'replied' },
-    { name: '未知用戶-K2M8', action: '申請協作者', topic: 'DevOps 工程', time: '3h前', status: 'approved' },
-  ];
+  const [apps, setApps] = useState<CommunityApplicationRow[]>([]);
+  const [stats, setStats] = useState<{ today: number; pending: number; approvedThisWeek: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const statusCfg: Record<string, { color: string; label: string }> = {
     pending: { color: '#f59e0b', label: '待處理' },
-    viewing: { color: '#22d3ee', label: '瀏覽中' },
-    reviewing: { color: '#a78bfa', label: '審核中' },
-    replied: { color: '#10b981', label: '已回覆' },
     approved: { color: '#10b981', label: '已批准' },
+    replied: { color: '#22c55e', label: '已回覆' },
+    rejected: { color: '#ef4444', label: '已拒絕' },
   };
 
-  const formStats = [
-    { label: '今日提交', value: 8, color: '#22d3ee' },
-    { label: '待審核', value: 3, color: '#f59e0b' },
-    { label: '本週批准', value: 2, color: '#10b981' },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [appsRes, statsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/community/applications?limit=20`, { headers: API_AUTH }),
+          fetch(`${API_BASE}/api/community/contact-stats`, { headers: API_AUTH }),
+        ]);
+        if (!appsRes.ok) throw new Error(`apps HTTP ${appsRes.status}`);
+        if (!statsRes.ok) throw new Error(`stats HTTP ${statsRes.status}`);
+        const appsJson = await appsRes.json();
+        const statsJson = await statsRes.json();
+        if (cancelled) return;
+        setApps(
+          (appsJson.applications || []).map((a: any) => ({
+            id: String(a.id),
+            name: String(a.name || '未知用戶'),
+            topic: a.topic ?? null,
+            channel: a.channel ?? null,
+            created_at: String(a.created_at),
+            status: (a.status as CommunityApplicationRow['status']) || 'pending',
+          }))
+        );
+        setStats({
+          today: statsJson.today ?? 0,
+          pending: statsJson.pending ?? 0,
+          approvedThisWeek: statsJson.approvedThisWeek ?? 0,
+        });
+      } catch (e) {
+        if (!cancelled) {
+          setError('目前尚無真實接觸資料，以下為示意數據');
+          const fallbackApps: CommunityApplicationRow[] = [
+            {
+              id: 'demo-1',
+              name: '未知用戶-A8F2',
+              topic: '合作詢問',
+              channel: '表單',
+              created_at: new Date(Date.now() - 5 * 60000).toISOString(),
+              status: 'pending',
+            },
+            {
+              id: 'demo-2',
+              name: '未知用戶-C3D7',
+              topic: 'Ollama 整合',
+              channel: '網站',
+              created_at: new Date(Date.now() - 12 * 60000).toISOString(),
+              status: 'replied',
+            },
+          ];
+          setApps(fallbackApps);
+          setStats({ today: 8, pending: 3, approvedThisWeek: 2 });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -250,7 +314,11 @@ function L1ContactPage() {
 
       {/* 統計 */}
       <div className="grid grid-cols-3 gap-3">
-        {formStats.map(s => (
+        {[
+          { label: '今日提交', value: stats ? stats.today : 0, color: '#22d3ee' },
+          { label: '待審核', value: stats ? stats.pending : 0, color: '#f59e0b' },
+          { label: '本週批准', value: stats ? stats.approvedThisWeek : 0, color: '#10b981' },
+        ].map((s) => (
           <div key={s.label} className="rounded-lg border bg-card p-3 text-center">
             <p className="text-2xl font-bold tabular-nums" style={{ color: s.color }}>{s.value}</p>
             <p className="text-[10px] text-muted-foreground">{s.label}</p>
@@ -265,22 +333,42 @@ function L1ContactPage() {
           <span className="text-[10px] text-muted-foreground">sandbox: allow-forms</span>
         </div>
         <div className="divide-y">
-          {contacts.map((c, i) => {
-            const cfg = statusCfg[c.status];
-            return (
-              <div key={i} className="px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-[10px] text-cyan-400 font-mono font-bold">{c.name.slice(-2)}</div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{c.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{c.action} · 主題：{c.topic}</p>
+          {loading ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">載入中…</div>
+          ) : apps.length === 0 ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">
+              目前尚無接觸紀錄
+            </div>
+          ) : (
+            apps.map((c, i) => {
+              const cfg = statusCfg[c.status] ?? { color: '#64748b', label: c.status };
+              return (
+                <div key={i} className="px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-[10px] text-cyan-400 font-mono font-bold">
+                    {c.name.slice(-2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {c.topic ? `主題：${c.topic}` : '未填主題'}
+                      {c.channel ? ` · 來源：${c.channel}` : ''}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ color: cfg.color, background: cfg.color + '30' }}
+                    >
+                      {cfg.label}
+                    </span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {formatRelativeTime(c.created_at)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: cfg.color, background: cfg.color + '15' }}>{cfg.label}</span>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{c.time}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -306,23 +394,37 @@ function L1ContactPage() {
 // ─── L2 協作空間詳情 ──────────────────────────────────────
 
 function L2CollabPage() {
-  const [taskStats] = useState({ created: 18, inProgress: 6, completed: 42, blocked: 1 });
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const collaborators = [
-    { id: 'COL-001', name: '協作者 Alpha', level: 'L2', tasks: 14, score: 92, lastActive: '1h前', online: true },
-    { id: 'COL-002', name: '協作者 Beta', level: 'L2', tasks: 8, score: 87, lastActive: '30m前', online: true },
-    { id: 'COL-003', name: '合作夥伴 Delta', level: 'L3', tasks: 31, score: 97, lastActive: '剛才', online: true },
-    { id: 'COL-004', name: '協作者 Gamma', level: 'L2', tasks: 5, score: 81, lastActive: '3h前', online: false },
-    { id: 'COL-005', name: '技術夥伴 Epsilon', level: 'L2', tasks: 9, score: 89, lastActive: '2h前', online: false },
-  ];
+  useEffect(() => {
+    fetch(`${API_BASE}/api/openclaw/tasks?limit=200`, { headers: API_AUTH })
+      .then(r => r.json())
+      .then(d => { setTasks(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
 
-  const recentTasks = [
-    { id: 'T-1482', title: '整合 n8n 週報自動化', assignee: '協作者 Alpha', status: 'completed', priority: 'high' },
-    { id: 'T-1483', title: '修復 Telegram Bot 心跳', assignee: '協作者 Beta', status: 'in-progress', priority: 'high' },
-    { id: 'T-1484', title: 'API 文件更新', assignee: '合作夥伴 Delta', status: 'in-progress', priority: 'medium' },
-    { id: 'T-1485', title: '資料庫索引最佳化', assignee: '協作者 Gamma', status: 'pending', priority: 'medium' },
-    { id: 'T-1486', title: 'Supabase RLS 規則審查', assignee: '技術夥伴 Epsilon', status: 'pending', priority: 'low' },
-  ];
+  const taskStats = {
+    created: tasks.length,
+    inProgress: tasks.filter(t => t.status === 'running' || t.status === 'in_progress').length,
+    completed: tasks.filter(t => t.status === 'done' || t.status === 'completed').length,
+    blocked: tasks.filter(t => t.status === 'blocked' || t.status === 'needs_review').length,
+  };
+
+  // 真實 owner 統計（排除系統 owner）
+  const sysOwners = new Set(['老蔡', '小蔡', 'system', 'System', 'NEUXA', 'auto']);
+  const ownerMap: Record<string, { name: string; tasks: number; statuses: string[] }> = {};
+  tasks.forEach(t => {
+    const owner = t.owner || 'unknown';
+    if (sysOwners.has(owner)) return;
+    if (!ownerMap[owner]) ownerMap[owner] = { name: owner, tasks: 0, statuses: [] };
+    ownerMap[owner].tasks++;
+    ownerMap[owner].statuses.push(t.status);
+  });
+  const collaborators = Object.values(ownerMap).slice(0, 8);
+
+  // 最近 8 個任務
+  const recentTasks = [...tasks].slice(0, 8);
 
   const statusCfg: Record<string, { color: string; label: string }> = {
     completed: { color: '#10b981', label: '完成' },
@@ -391,23 +493,28 @@ function L2CollabPage() {
         </div>
       </div>
 
-      {/* 近期任務 */}
+      {/* 近期任務（真實） */}
       <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-4 py-2 border-b bg-muted/30">
-          <p className="text-xs font-medium">協作任務</p>
+        <div className="px-4 py-2 border-b bg-muted/30 flex justify-between items-center">
+          <p className="text-xs font-medium">最近任務</p>
+          <span className="text-[10px] text-muted-foreground">源自 /api/openclaw/tasks</span>
         </div>
         <div className="divide-y">
-          {recentTasks.map(t => {
-            const cfg = statusCfg[t.status];
+          {loading ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">載入中…</div>
+          ) : recentTasks.length === 0 ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">尚無任務</div>
+          ) : recentTasks.map(t => {
+            const statusColor: Record<string, string> = { done: '#10b981', completed: '#10b981', running: '#f59e0b', in_progress: '#f59e0b', needs_review: '#f87171', blocked: '#f87171', ready: '#6b7280', pending: '#6b7280' };
+            const col = statusColor[t.status] || '#6b7280';
             return (
               <div key={t.id} className="px-4 py-2.5 flex items-center gap-3 text-xs">
-                <span className="font-mono text-muted-foreground w-16">{t.id}</span>
+                <span className="font-mono text-muted-foreground w-24 truncate">{t.id}</span>
                 <div className="flex-1">
-                  <p className="text-sm text-foreground/90">{t.title}</p>
-                  <p className="text-muted-foreground">{t.assignee}</p>
+                  <p className="text-sm text-foreground/90 truncate">{t.name}</p>
+                  <p className="text-muted-foreground">{t.owner || '—'}</p>
                 </div>
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${t.priority === 'high' ? 'text-red-400 bg-red-500/10' : t.priority === 'medium' ? 'text-yellow-400 bg-yellow-500/10' : 'text-gray-400 bg-gray-500/10'}`}>{t.priority}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ color: cfg.color, background: cfg.color + '15' }}>{cfg.label}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ color: col, background: col + '18' }}>{t.status}</span>
               </div>
             );
           })}
@@ -726,34 +833,29 @@ function FirewallGate() {
 // ─── 子頁面：安全橋接代理 ────────────────────────────────
 
 function BridgeProxy() {
-  const [syncLog, setSyncLog] = useState([
-    { time: '20:51:18', dir: '→', event: 'hub:task-assigned', layer: 'L2', ok: true },
-    { time: '20:49:44', dir: '←', event: 'task-updated', layer: 'L2', ok: true },
-    { time: '20:47:31', dir: '←', event: 'resource-request', layer: 'L1', ok: false },
-    { time: '20:45:12', dir: '→', event: 'hub:status-update', layer: 'L1', ok: true },
-    { time: '20:43:08', dir: '←', event: 'bridge-sync', layer: 'L3', ok: true },
-    { time: '20:41:55', dir: '→', event: 'hub:review-result', layer: 'L2', ok: true },
-    { time: '20:39:22', dir: '←', event: 'task-created', layer: 'L2', ok: true },
-    { time: '20:37:04', dir: '→', event: 'hub:task-assigned', layer: 'L2', ok: true },
-  ]);
+  const [activityLines, setActivityLines] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [federationStatus, setFederationStatus] = useState<any>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const [actRes, statusRes] = await Promise.all([
+        fetch(`${API_BASE}/api/openclaw/activity-log?limit=20`, { headers: API_AUTH }),
+        fetch(`${API_BASE}/api/federation/status`, { headers: API_AUTH }),
+      ]);
+      const act = await actRes.json();
+      const status = await statusRes.json().catch(() => null);
+      setActivityLines((act.lines || []).reverse().slice(0, 12));
+      setFederationStatus(status);
+    } catch {}
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      const events = ['hub:task-assigned', 'task-updated', 'hub:status-update', 'hub:review-result'];
-      const layers = ['L1', 'L2', 'L3'];
-      const dirs = ['→', '←'];
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-      setSyncLog(prev => [{
-        time: timeStr,
-        dir: dirs[Math.floor(Math.random() * dirs.length)],
-        event: events[Math.floor(Math.random() * events.length)],
-        layer: layers[Math.floor(Math.random() * layers.length)],
-        ok: Math.random() > 0.1,
-      }, ...prev.slice(0, 9)]);
-    }, 5000);
+    load();
+    const t = setInterval(load, 15000);
     return () => clearInterval(t);
-  }, []);
+  }, [load]);
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -771,9 +873,9 @@ function BridgeProxy() {
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: '今日橋接', value: 284, color: '#10b981', icon: Zap },
-          { label: '成功率', value: '97.2%', color: '#22d3ee', icon: TrendingUp },
-          { label: '平均延遲', value: '12ms', color: '#a78bfa', icon: Activity },
+          { label: '聯盟狀態', value: federationStatus?.ok ? 'OK' : loading ? '…' : '離線', color: federationStatus?.ok ? '#10b981' : '#ef4444', icon: Zap },
+          { label: '成員數', value: loading ? '…' : String(federationStatus?.memberCount ?? 0), color: '#22d3ee', icon: TrendingUp },
+          { label: '活動日誌', value: loading ? '…' : String(activityLines.length), color: '#a78bfa', icon: Activity },
         ].map(s => {
           const Icon = s.icon;
           return (
@@ -788,23 +890,19 @@ function BridgeProxy() {
 
       <div className="rounded-lg border bg-card overflow-hidden">
         <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
-          <p className="text-xs font-medium">橋接日誌</p>
+          <p className="text-xs font-medium">活動日誌（真實）</p>
           <span className="flex items-center gap-1 text-[10px] text-green-400">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            即時監聽中
+            每 15 秒更新
           </span>
         </div>
-        <div className="divide-y">
-          {syncLog.map((log, i) => (
-            <div key={i} className="px-4 py-2.5 flex items-center gap-3 text-xs font-mono">
-              <span className="text-muted-foreground">{log.time}</span>
-              <span className={log.dir === '→' ? 'text-blue-400' : 'text-purple-400'}>{log.dir}</span>
-              <span className="flex-1 text-foreground/80">{log.event}</span>
-              <span className="text-muted-foreground">{log.layer}</span>
-              {log.ok
-                ? <CheckCircle className="h-3.5 w-3.5 text-green-400" />
-                : <AlertTriangle className="h-3.5 w-3.5 text-red-400" />}
-            </div>
+        <div className="divide-y max-h-80 overflow-y-auto">
+          {loading ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">載入中…</div>
+          ) : activityLines.length === 0 ? (
+            <div className="px-4 py-6 text-xs text-muted-foreground text-center">尚無活動記錄</div>
+          ) : activityLines.map((line, i) => (
+            <div key={i} className="px-4 py-2 text-[11px] font-mono text-foreground/70 break-all">{line}</div>
           ))}
         </div>
       </div>
@@ -860,10 +958,10 @@ function CommunicationOverview() {
       {/* 四大層級 */}
       <div className="grid gap-3 sm:grid-cols-2">
         {[
-          { id: 'l0', label: 'L0 公開展示', icon: Globe, color: '#10b981', desc: '外部接觸第一線，純展示沙盒', status: 'active', stat: '1,247 訪客/日', events: ['heartbeat'] },
-          { id: 'l1', label: 'L1 基礎接觸', icon: Handshake, color: '#22d3ee', desc: '可提交表單，低線接觸層級', status: 'active', stat: '8 表單/今日', events: ['heartbeat', 'nav-request'] },
-          { id: 'l2', label: 'L2 協作空間', icon: Settings2, color: '#f59e0b', desc: '可呼叫社區 API，任務協作層', status: 'standby', stat: '5 名協作者', events: ['heartbeat', 'nav-request', 'task-created', 'task-updated'] },
-          { id: 'l3', label: 'L3 信任區', icon: Shield, color: '#a78bfa', desc: '完整社區功能，審核後開放', status: 'locked', stat: '3 信任成員', events: ['heartbeat', 'nav-request', 'task-created', 'task-updated', 'resource-request', 'bridge-sync'] },
+          { id: 'l0', label: 'L0 公開展示', icon: Globe, color: '#10b981', desc: '外部接觸第一線，純展示沙盒', status: 'active', stat: `WS: ${stats.activeConnections} 連線`, events: ['heartbeat'] },
+          { id: 'l1', label: 'L1 基礎接觸', icon: Handshake, color: '#22d3ee', desc: '可提交表單，低線接觸層級', status: 'active', stat: '表單 / 申請', events: ['heartbeat', 'nav-request'] },
+          { id: 'l2', label: 'L2 協作空間', icon: Settings2, color: '#f59e0b', desc: '可呼叫社區 API，任務協作層', status: 'standby', stat: `封鎖: ${stats.blockedAttempts}`, events: ['heartbeat', 'nav-request', 'task-created', 'task-updated'] },
+          { id: 'l3', label: 'L3 信任區', icon: Shield, color: '#a78bfa', desc: '完整社區功能，審核後開放', status: 'locked', stat: `成員: ${stats.messagesOut}`, events: ['heartbeat', 'nav-request', 'task-created', 'task-updated', 'resource-request', 'bridge-sync'] },
         ].map(layer => {
           const Icon = layer.icon;
           const statusColor = layer.status === 'active' ? '#10b981' : layer.status === 'standby' ? '#f59e0b' : '#6b7280';

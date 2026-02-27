@@ -35,7 +35,7 @@ interface PropertyRequest {
 }
 
 // 生成 Prompt
-def generatePrompt(type: string, data: PropertyData, style: string): string {
+function generatePrompt(type: string, data: PropertyData, style: string): string {
   const baseInfo = `
 房源資訊：
 - 地址：${data.address}
