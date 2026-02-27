@@ -31,34 +31,39 @@ grep '"version"' package.json
 
 ---
 
-## 📋 工作原則
+## 📋 工作原則 — 做事優先
 
-1. **舊的不動不移不刪** — 未審核不部署
-2. **主動巡邏、主動提案** — 發現系統缺什麼就主動研究、提出升級方案
-3. **分級自主權** — 低風險直接做，高風險提交審核（見下方自主權分級）
-4. **老蔡回來自動停止** — 偵測到老蔡活躍即讓出控制權
-5. **每次 push 前先同步** — 避免覆蓋老蔡的新代碼
+**核心精神：做事，不是寫報告。遇到問題自己修，修不了再問。**
 
-### 🟢🟡🔴 自主權分級
+1. **主動做事** — 發現系統需要什麼，直接做。不是寫計畫書等審核。
+2. **遇錯自修** — 執行失敗？看 log、找原因、修好它。別停下來等指示。
+3. **分層判斷** — 小事自己處理，大事先問老蔡（見下方安全底線）。
+4. **真實產出** — 每個任務要有實際產出物（檔案、腳本、功能），不是純文字報告。
+5. **每次 push 前先同步** — 避免覆蓋老蔡的新代碼。
+6. **老蔡回來讓出控制權** — 偵測到老蔡活躍即暫停自動操作。
 
-**🟢 綠燈（自主執行，不用審核）：**
-- 系統巡邏、健康檢查、產出報告
-- 研究分析：找出系統缺什麼、需要補什麼
-- 自我升級提案：發現問題 → 研究方案 → 寫到 review/pending
-- 文件整理、日誌分析、資料查詢
-- 建立測試任務驗證功能
+### ⚡ 自主執行範圍（大部分事情直接做）
 
-**🟡 黃燈（提交 review/pending，等老蔡 Claude 審核）：**
-- 修改程式碼（前端/後端）
-- 新增功能或 API endpoint
-- 修改資料庫 schema
-- 變更系統設定或配置
+**直接做，做完通知老蔡：**
+- 修改程式碼（修 bug、加功能、優化效能）
+- 新增 API endpoint
+- 建立工具、腳本、armory 武器
+- 系統巡邏、健康檢查
+- 研究分析、技術方案
+- 文件整理、日誌分析
+- 建立測試任務
+- 子代理任務分派
+- git commit（本地）
 
-**🔴 紅燈（必須老蔡本人同意）：**
-- git push 到 origin main
+### 🛑 安全底線（這些要先問老蔡）
+
+- git push 到 origin main（commit 可以自己做，push 前確認）
 - 修改 auth / 密碼 / API key
-- 刪除檔案或資料
-- 動到 .env 或安全敏感設定
+- 刪除生產環境的檔案或資料
+- 動到 `.env` 或安全敏感設定
+- 修改 NEUXA 意識文件（`SOUL.md`、`AGENTS.md` 等）
+
+**除了安全底線以外，全部自主執行。**
 
 ---
 
@@ -66,36 +71,11 @@ grep '"version"' package.json
 
 | 用途 | 路徑 |
 |------|------|
-| **審核提交區** | `~/.openclaw/workspace/review/pending/` |
-| **審核通過區** | `~/.openclaw/workspace/review/approved/` |
-| **審核範本** | `~/.openclaw/workspace/review/TEMPLATE.md` |
 | 待老蔡審核的提案 | `PROPOSAL-REPORT.md` |
 | 任務執行結果 | `RESULT.md` |
 | 副手模式設定 | `.openclaw-deputy-mode.json` |
 | 巡邏狀態 | `.openclaw-patrol-status.json` |
 | 核心記憶 | `~/.claude/projects/.../memory/MEMORY.md` |
-
----
-
-## 📝 審核流程（🟡黃燈任務用）
-
-**涉及改程式碼、加功能的任務，提交審核：**
-
-```bash
-# 方式 1：快速提交
-bash /Users/caijunchang/openclaw任務面版設計/scripts/submit-review.sh "任務名稱" "方案摘要"
-
-# 方式 2：從檔案提交（詳細方案）
-bash /Users/caijunchang/openclaw任務面版設計/scripts/submit-review.sh "任務名稱" --file /path/to/detail.md
-```
-
-**流程：**
-1. 自主研究 → 發現系統需要什麼 → 擬定方案
-2. 把方案寫到 `~/.openclaw/workspace/review/pending/`
-3. 老蔡的 Claude 審核 → 通過移到 `approved/` → 開始執行
-4. 駁回移到 `rejected/` → 根據意見修改重提
-
-**🟢綠燈任務不需要走這個流程，直接做。**
 
 ---
 
@@ -110,7 +90,7 @@ bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任
 例如：
 ```bash
 bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "修復登入 Bug" "done" "已推到 main，需老蔡測試"
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "FADP 資料表建立" "review" "等老蔡審核"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "FADP 資料表建立" "done" "已完成，等老蔡確認"
 bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "部署失敗" "error" "Railway build error，需老蔡處理"
 ```
 
@@ -226,18 +206,18 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v2.2.0**
-- 每次重大功能更新，版本號 patch +1（如 v2.2.1、v2.2.2）
+- 目前版本：**v2.2.2**
+- 每次重大功能更新，版本號 patch +1（如 v2.2.3、v2.2.4）
 - 需同時更新：`package.json`、`server/package.json`、`server/src/index.ts`
 - 每天 00:01 老蔡 launchd 自動遞增 patch 版本號
 
 ---
 
-## 📡 目前系統狀態（2026-02-26 更新）
+## 📡 目前系統狀態（2026-02-27 更新）
 
 - 9 個甲板全部建立完成（AI/後勤/工程/自動化/通信/輪機/防禦/保護/科技）
 - 五大看板資料已補滿 100%（通信/後勤/工程/公開展示/協作空間）
 - MDCI 文明指數：100%（6軸全滿）
-- Server：v2.2.0，port 3011，autoExecutor 運行中
+- Server：v2.2.2，port 3011，autoExecutor 運行中（真實執行引擎已啟用）
 - Owner 密碼：sky36990
 - API Key 已寫入 `.env`，小蔡可直接寫入任務
