@@ -8,7 +8,27 @@
       "Bash(lsof *)",
       "Bash(kill *)",
       "Bash(nohup *)",
-      "Bash(bash /Users/caijunchang/openclaw任務面版設計/scripts/*)"
+      "Bash(bash /Users/caijunchang/openclaw任務面版設計/scripts/*)",
+      "Bash(# 看 NEUXA 最近有沒有工具呼叫（bash/read/write等） grep -a \"\"tool_call\\\\|bash\\\\|read\\\\|write\\\\|runId\\\\|agent.*start\\\\|agent.*end\"\" /tmp/openclaw/openclaw-2026-02-27.log)",
+      "Bash(# 看最後一次 NEUXA 有活動是什麼時候 grep -a \"\"sendMessage ok\\\\|runId\\\\|thinking\\\\|draining\"\" ~/.openclaw/logs/gateway.log)",
+      "Bash(# 找 sessions_spawn 的錯誤訊息原文 grep -a \"\"sessions_spawn\\\\|agentId is not allowed\\\\|spawn\\\\|subagent\"\" ~/.openclaw/logs/gateway.log)",
+      "Bash(# 看 openclaw 版本，看是否有 sessions_spawn 功能文件 openclaw --version && openclaw help)",
+      "Read(//Users/caijunchang/openclaw任務面版設計/**)",
+      "Bash(# Check the FULL timeline - incoming message to outgoing reply tail -200 /tmp/openclaw/openclaw-2026-02-27.log)",
+      "Bash(# Look at the FULL flow including delivery tail -500 /tmp/openclaw/openclaw-2026-02-27.log)",
+      "Bash(# Check if there''s already a proxy/mirror for Telegram in the config grep -rn \"\"telegram\\\\|proxy\\\\|HTTPS_PROXY\\\\|HTTP_PROXY\"\" /Users/caijunchang/.openclaw/config.json /Users/caijunchang/.openclaw/openclaw.json)",
+      "Bash(# Check if openclaw gateway supports Telegram API base URL override strings /opt/homebrew/lib/node_modules/openclaw/dist/*.js)",
+      "Bash(# Search for proxy configuration for telegram strings /opt/homebrew/lib/node_modules/openclaw/dist/*.js)",
+      "Read(//private/etc/**)",
+      "Bash(sudo tee -a /etc/hosts)",
+      "Bash(# 看小蔡工作目錄最近有沒有新檔案 ls -lt /Users/caijunchang/Downloads/openclaw-console-hub-main/)",
+      "Bash(# 找今天 15:00 之後修改的文件（NEUXA workspace） find /Users/caijunchang/.openclaw/workspace/ -maxdepth 1 -type f -newer /Users/caijunchang/.openclaw/workspace/WAKE_STATUS.md -o -name \"\"*.md\"\" -newer /tmp/openclaw-server.log)",
+      "Bash(# 看 gateway 主 log ls -lt /Users/caijunchang/.openclaw/logs/)",
+      "Bash(# 從進程歷史找啟動路徑 grep -r \"\"openclaw-gateway\"\" /Users/caijunchang/Library/LaunchAgents/)",
+      "Bash(# 看 NEUXA 的 sessions（最近活動） ls -lt /Users/caijunchang/.openclaw/workspace/memory/)"
+    ],
+    "additionalDirectories": [
+      "/Users/caijunchang/openclaw任務面版設計"
     ]
   },
   "hooks": {

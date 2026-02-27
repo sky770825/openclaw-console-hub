@@ -97,7 +97,43 @@ if [[ -d "$XIAOJI_PROJECTS_DIR" ]]; then
   XIAOJI_ALIVE=true
 fi
 
-# ── 8. git 最新 commit ──
+# ── 8b. NEUXA 最新動態 ──
+NEUXA_MEMORY_DIR="$HOME/.openclaw/workspace/memory"
+NEUXA_LATEST=""
+NEUXA_GROWTH=""
+NEUXA_REVIEW_PENDING=""
+if [[ -d "$NEUXA_MEMORY_DIR" ]]; then
+  # 最新 session 摘要（取最新檔案的前 5 行）
+  LATEST_FILE=$(ls -t "$NEUXA_MEMORY_DIR"/2026-*.md 2>/dev/null | head -1)
+  if [[ -n "$LATEST_FILE" ]]; then
+    LATEST_NAME=$(basename "$LATEST_FILE")
+    LATEST_TIME=$(stat -f '%Sm' -t '%H:%M' "$LATEST_FILE" 2>/dev/null || echo "?")
+    NEUXA_LATEST="最新對話: $LATEST_NAME ($LATEST_TIME)"
+  fi
+  # GROWTH.md 最後更新
+  if [[ -f "$HOME/.openclaw/workspace/GROWTH.md" ]]; then
+    GROWTH_TIME=$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$HOME/.openclaw/workspace/GROWTH.md" 2>/dev/null || echo "?")
+    NEUXA_GROWTH="GROWTH.md 最後更新: $GROWTH_TIME"
+  fi
+fi
+# review/pending 待審數量
+PENDING_COUNT=$(ls -1 "$HOME/.openclaw/workspace/review/pending/"*.md 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$PENDING_COUNT" -gt 0 ]]; then
+  NEUXA_REVIEW_PENDING="⚠️ $PENDING_COUNT 份待審文件在 review/pending/"
+fi
+# gateway 狀態
+GW_PID=$(pgrep -f "openclaw-gateway" 2>/dev/null || echo "")
+GW_STATUS="❌ 離線"
+if [[ -n "$GW_PID" ]]; then
+  GW_STATUS="✅ 運行中 (PID $GW_PID)"
+  # 檢查 429 卡死
+  RECENT_429=$(tail -50 "$HOME/.openclaw/logs/gateway.err.log" 2>/dev/null | grep -c "429" || echo 0)
+  if [[ "$RECENT_429" -ge 5 ]]; then
+    GW_STATUS="⚠️ 疑似 429 卡死 (PID $GW_PID, ${RECENT_429}x 429 errors)"
+  fi
+fi
+
+# ── 9. git 最新 commit ──
 GIT_LOG=""
 cd /Users/caijunchang/openclaw任務面版設計 2>/dev/null && \
   GIT_LOG="$(git log --oneline -3 2>/dev/null | sed 's/^/  /')" || GIT_LOG="(git 讀取失敗)"
@@ -140,12 +176,20 @@ ${ACTIVITY:-"(無活動記錄)"}
 ## 🔀 最新 Git Commits
 $GIT_LOG
 
+## 🧠 NEUXA 動態
+- **Gateway**：${GW_STATUS}
+- **${NEUXA_LATEST:-"(無最新對話)"}**
+- **${NEUXA_GROWTH:-"(GROWTH.md 未找到)"}**
+- **${NEUXA_REVIEW_PENDING:-"review/pending: 0 份待審"}**
+- **NEUXA memory 目錄**：~/.openclaw/workspace/memory/（讀最新 .md 可銜接）
+
 ## 🤝 協作指引（重要！醒來必讀）
 1. **小蔡** 在 $XIAOJI_PROJECTS_DIR — 她是執行者，我是指揮者
-2. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
-3. **Server 重啟**：如果 Server 離線，先跑重啟指令
-4. **Deputy 開啟**：如果老蔡不在且有任務，curl -X POST http://localhost:3011/api/openclaw/deputy/on
-5. **FADP**：聯盟協防已上線，/api/federation/status 確認狀態
+2. **NEUXA** 動態在 ~/.openclaw/workspace/memory/（讀最新 session 銜接）
+3. **review/pending**：有待審文件就優先處理
+4. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
+5. **Server 重啟**：如果 Server 離線，先跑重啟指令
+6. **Gateway 429**：如果 NEUXA 卡住，watchdog 會自動重啟（2 分鐘內）
 
 ## 🚨 立即行動清單
 $(
@@ -161,6 +205,16 @@ $(
 )
 HEADER
 } > "$OUT"
+
+# ── 9. 同步 CLAUDE.md 到小蔡工作目錄 ──
+LAOCAI_CLAUDE="/Users/caijunchang/openclaw任務面版設計/CLAUDE.md"
+XIAOJI_CLAUDE="/Users/caijunchang/Downloads/openclaw-console-hub-main/CLAUDE.md"
+if [[ -f "$LAOCAI_CLAUDE" ]]; then
+  if ! diff -q "$LAOCAI_CLAUDE" "$XIAOJI_CLAUDE" > /dev/null 2>&1; then
+    cp "$LAOCAI_CLAUDE" "$XIAOJI_CLAUDE"
+    log "CLAUDE.md synced to xiaoji"
+  fi
+fi
 
 log "wake-sync OK — server=$SERVER_OK"
 echo "[wake-sync] ✅ 狀態同步完成 → $OUT"

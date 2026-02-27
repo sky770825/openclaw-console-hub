@@ -34,10 +34,31 @@ grep '"version"' package.json
 ## 📋 工作原則
 
 1. **舊的不動不移不刪** — 未審核不部署
-2. **做新的等審核** — 所有重大改動先報告老蔡
-3. **自動執行限定範圍** — 只執行 `auto-ok` tag 的任務
+2. **主動巡邏、主動提案** — 發現系統缺什麼就主動研究、提出升級方案
+3. **分級自主權** — 低風險直接做，高風險提交審核（見下方自主權分級）
 4. **老蔡回來自動停止** — 偵測到老蔡活躍即讓出控制權
 5. **每次 push 前先同步** — 避免覆蓋老蔡的新代碼
+
+### 🟢🟡🔴 自主權分級
+
+**🟢 綠燈（自主執行，不用審核）：**
+- 系統巡邏、健康檢查、產出報告
+- 研究分析：找出系統缺什麼、需要補什麼
+- 自我升級提案：發現問題 → 研究方案 → 寫到 review/pending
+- 文件整理、日誌分析、資料查詢
+- 建立測試任務驗證功能
+
+**🟡 黃燈（提交 review/pending，等老蔡 Claude 審核）：**
+- 修改程式碼（前端/後端）
+- 新增功能或 API endpoint
+- 修改資料庫 schema
+- 變更系統設定或配置
+
+**🔴 紅燈（必須老蔡本人同意）：**
+- git push 到 origin main
+- 修改 auth / 密碼 / API key
+- 刪除檔案或資料
+- 動到 .env 或安全敏感設定
 
 ---
 
@@ -45,11 +66,36 @@ grep '"version"' package.json
 
 | 用途 | 路徑 |
 |------|------|
+| **審核提交區** | `~/.openclaw/workspace/review/pending/` |
+| **審核通過區** | `~/.openclaw/workspace/review/approved/` |
+| **審核範本** | `~/.openclaw/workspace/review/TEMPLATE.md` |
 | 待老蔡審核的提案 | `PROPOSAL-REPORT.md` |
 | 任務執行結果 | `RESULT.md` |
 | 副手模式設定 | `.openclaw-deputy-mode.json` |
 | 巡邏狀態 | `.openclaw-patrol-status.json` |
 | 核心記憶 | `~/.claude/projects/.../memory/MEMORY.md` |
+
+---
+
+## 📝 審核流程（🟡黃燈任務用）
+
+**涉及改程式碼、加功能的任務，提交審核：**
+
+```bash
+# 方式 1：快速提交
+bash /Users/caijunchang/openclaw任務面版設計/scripts/submit-review.sh "任務名稱" "方案摘要"
+
+# 方式 2：從檔案提交（詳細方案）
+bash /Users/caijunchang/openclaw任務面版設計/scripts/submit-review.sh "任務名稱" --file /path/to/detail.md
+```
+
+**流程：**
+1. 自主研究 → 發現系統需要什麼 → 擬定方案
+2. 把方案寫到 `~/.openclaw/workspace/review/pending/`
+3. 老蔡的 Claude 審核 → 通過移到 `approved/` → 開始執行
+4. 駁回移到 `rejected/` → 根據意見修改重提
+
+**🟢綠燈任務不需要走這個流程，直接做。**
 
 ---
 

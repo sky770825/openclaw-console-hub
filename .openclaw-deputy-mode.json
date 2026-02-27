@@ -1,12 +1,12 @@
 {
   "enabled": true,
-  "enabledAt": "2026-02-26T14:55:27.758Z",
+  "enabledAt": "2026-02-27T01:22:19.039Z",
   "enabledBy": "api",
   "maxTasksPerRun": 3,
   "allowedTags": [
     "auto-ok"
   ],
   "excludeTags": [],
-  "disabledAt": "2026-02-19T02:47:36.235Z",
+  "disabledAt": "2026-02-27T01:22:14.794Z",
   "delegateToXiaoji": true
 }
