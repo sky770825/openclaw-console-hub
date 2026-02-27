@@ -12,10 +12,20 @@ export type DispatchRiskLevel = 'none' | 'low' | 'medium' | 'critical';
 
 const CRITICAL_KEYWORDS = [
   'deploy', '部署', 'production', 'prod', '上線',
-  '金鑰', 'key', 'secret', 'token', 'credential',
+  '金鑰', 'secret', 'credential',
   '費用', 'cost', 'payment', '花費', 'billing',
-  'infra', 'dns', 'domain', 'ssl', 'certificate',
+  'dns', 'ssl', 'certificate',
   'npm publish', 'docker push',
+];
+
+// 這些詞在開發任務裡太常見（jwt token、跨域 domain、api key 欄位），
+// 只有搭配危險動詞才算 critical
+const CRITICAL_CONTEXT_KEYWORDS = [
+  'api key', 'api_key', 'apikey',       // 真的在動 API key
+  'token secret', 'token rotate',        // 真的在動 token 密鑰
+  'domain registr', 'domain transfer',   // 真的在動網域
+  'change key', 'replace key', 'rotate key', // 換密鑰
+  'delete infra', 'destroy infra',       // 刪基礎設施
 ];
 
 const MEDIUM_KEYWORDS = [
@@ -78,8 +88,11 @@ export function classifyTaskRisk(task: {
 
   const blob = getTextBlob(task);
 
-  // 紫燈
+  // 紫燈：精確匹配的危險關鍵字
   if (matchesAny(blob, CRITICAL_KEYWORDS)) return 'critical';
+
+  // 紫燈：需要上下文的關鍵字（token/domain/key/infra 單獨出現不算）
+  if (matchesAny(blob, CRITICAL_CONTEXT_KEYWORDS)) return 'critical';
 
   // 紅燈
   if (matchesAny(blob, MEDIUM_KEYWORDS)) return 'medium';
