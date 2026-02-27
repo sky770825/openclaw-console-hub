@@ -422,26 +422,55 @@ async function executeNextPendingTask(): Promise<void> {
 
     try {
       const result = await AgentExecutor.execute(task, agentType);
+      const quality = result.quality;
+      const qualityInfo = quality
+        ? { grade: quality.grade, score: quality.score, passed: quality.passed, reason: quality.reason }
+        : { grade: 'N/A', score: 0, passed: false, reason: 'no quality data' };
 
       await supabase
         .from('openclaw_runs')
         .update({
-          status: 'success',
+          status: result.success ? 'success' : 'failed',
           ended_at: new Date().toISOString(),
           duration_ms: result.durationMs,
           output_summary: (result.output || '').slice(0, 4000),
-          input_summary: JSON.stringify({ agentType, modelUsed: result.modelUsed, exitCode: result.exitCode }),
+          input_summary: JSON.stringify({ agentType, modelUsed: result.modelUsed, exitCode: result.exitCode, quality: qualityInfo }),
           steps: [
             { name: 'generate_script', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString() },
-            { name: 'execute_script', status: 'success', startedAt: run.started_at, endedAt: new Date().toISOString(), message: (result.output || '').slice(0, 500) },
+            { name: 'execute_script', status: result.success ? 'success' : 'failed', startedAt: run.started_at, endedAt: new Date().toISOString(), message: (result.output || '').slice(0, 500) },
+            { name: 'quality_gate', status: quality?.passed ? 'success' : 'failed', startedAt: new Date().toISOString(), endedAt: new Date().toISOString(), message: `${qualityInfo.grade} (${qualityInfo.score}/100): ${qualityInfo.reason}` },
           ],
         })
         .eq('id', runId);
 
-      // Acceptance validation
+      // ── 品質閘門：不及格 → 不標 done ──
+      if (quality && !quality.passed) {
+        log.warn(`[QualityGate] ❌ 任務「${task.name}」品質不及格: ${quality.grade} (${quality.score}分) — ${quality.reason}`);
+        await supabase
+          .from('openclaw_runs')
+          .update({
+            status: 'failed',
+            error: { message: `品質閘門: ${quality.grade} (${quality.score}分)`, code: 'QUALITY_GATE_FAILED', checks: quality.checks },
+          })
+          .eq('id', runId);
+        activeTaskIds.delete(task.id);
+        await upsertOpenClawTask({ id: task.id, status: 'needs_review' as never, progress: 50 });
+        recordAgentFailure(agentType || 'auto', false);
+        await circuitBreakerFailure();
+        await sendTelegramMessage(
+          `⚠️ <b>品質閘門擋下</b>\n\n` +
+          `<b>任務：</b>${task.name}\n` +
+          `<b>評分：</b>${quality.grade} (${quality.score}/100)\n` +
+          `<b>原因：</b>${quality.reason}\n\n` +
+          `任務已改為 needs_review，等老蔡決定`,
+          { parseMode: 'HTML' }
+        );
+        return;
+      }
+
+      // Acceptance validation（原有的驗收條件檢查，保留）
       const acceptance = await validateAcceptanceCriteria(task, result.output || '');
       if (acceptance.validated && !acceptance.passed) {
-        // 驗收未通過 → 不標記完成，改回 queued
         await supabase
           .from('openclaw_runs')
           .update({
@@ -450,6 +479,7 @@ async function executeNextPendingTask(): Promise<void> {
             error: { message: '驗收條件未通過', code: 'ACCEPTANCE_FAILED' },
           })
           .eq('id', runId);
+        activeTaskIds.delete(task.id);
         await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
@@ -457,7 +487,7 @@ async function executeNextPendingTask(): Promise<void> {
         return;
       }
 
-      // P3 auto-executor 防呆: 任務 result 必填驗證
+      // result 必填驗證（保留）
       if (!result.output || result.output.trim() === '') {
         log.warn(`[AutoExecutor] 任務「${task.name}」完成但無 result 輸出，改標記為 needs_review`);
         await supabase
@@ -468,18 +498,20 @@ async function executeNextPendingTask(): Promise<void> {
             error: { message: '任務完成但無 result 輸出', code: 'NO_RESULT_OUTPUT' },
           })
           .eq('id', runId);
+        activeTaskIds.delete(task.id);
         await upsertOpenClawTask({ id: task.id, status: 'needs_review' as never, progress: 99 });
-        recordAgentFailure(agentType || 'auto', false); // 算失敗，因為沒交作業
+        recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
         return;
       }
 
-      // 寫入 result 欄位（結構化執行結果）
+      // 寫入 result 欄位（結構化執行結果 + 品質評分）
       const structuredResult = {
-        output: (result.output || '').slice(0, 1500),
+        output: (result.output || '').slice(0, 1200),
         exitCode: result.exitCode,
         modelUsed: result.modelUsed || 'unknown',
         hasArtifacts: (result.output || '').includes('=== Artifacts'),
+        quality: qualityInfo,
       };
       await supabase
         .from('openclaw_tasks')

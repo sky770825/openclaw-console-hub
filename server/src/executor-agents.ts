@@ -86,6 +86,20 @@ const AGENT_CONFIGS: Record<AgentType, AgentExecutorConfig> = {
   },
 };
 
+/** 品質評分結果 */
+export interface QualityGrade {
+  score: number;          // 0-100
+  grade: 'A' | 'B' | 'C' | 'F';  // A=優 B=可 C=差 F=不及格
+  passed: boolean;        // score >= 60 才算通過
+  checks: {
+    name: string;
+    passed: boolean;
+    weight: number;
+    detail: string;
+  }[];
+  reason: string;         // 人類可讀的判定理由
+}
+
 /** 執行結果 */
 export interface AgentExecutionResult {
   success: boolean;
@@ -96,6 +110,7 @@ export interface AgentExecutionResult {
   agentType: AgentType;
   modelUsed?: string;
   fallbackTried?: string[];
+  quality?: QualityGrade;
   tokenUsage?: {
     input: number;
     output: number;
@@ -400,10 +415,19 @@ echo "✅ 封存檢查完成"`;
     if (this.isZeroTokenTask(task)) {
       log.info(`[Zero-Token] 執行零 Token 任務: ${task.name}`);
       const zeroTokenResult = await this.executeZeroTokenTask(task, timeout);
+      // Zero-Token 任務如果 exitCode=0 就算通過，直接給 A 級
+      const zeroTokenQuality: QualityGrade = {
+        score: zeroTokenResult.success ? 100 : 0,
+        grade: zeroTokenResult.success ? 'A' : 'F',
+        passed: zeroTokenResult.success,
+        checks: [{ name: 'zero_token_exit', passed: zeroTokenResult.success, weight: 100, detail: `exit ${zeroTokenResult.exitCode}` }],
+        reason: zeroTokenResult.success ? '零 Token 任務執行成功' : '零 Token 任務執行失敗',
+      };
       return {
         ...zeroTokenResult,
         modelUsed: modelPlan.primary,
         fallbackTried: modelPlan.fallbacks,
+        quality: zeroTokenQuality,
         tokenUsage: { input: 0, output: 0, total: 0, estimated: true },
         costUsd: 0,
       };
@@ -498,6 +522,18 @@ echo "✅ 封存檢查完成"`;
     try {
       const execResult = await this.generateAndExecute(task.name, task.description, timeout);
 
+      // 品質閘門評分
+      const quality = this.gradeExecution(
+        task.name,
+        task.description,
+        execResult.exitCode,
+        execResult.stdout,
+        execResult.stderr,
+        execResult.artifacts,
+        execResult.script
+      );
+      log.info(`[QualityGate] ${task.name}: ${quality.grade} (${quality.score}分) — ${quality.reason}`);
+
       // 組裝人類可讀輸出
       const outputParts: string[] = [];
       if (execResult.stdout) {
@@ -510,17 +546,22 @@ echo "✅ 封存檢查完成"`;
       if (execResult.retryCount > 0) {
         outputParts.push(`\n[Retried ${execResult.retryCount} time(s)]`);
       }
+      outputParts.push(`\n=== Quality: ${quality.grade} (${quality.score}/100) ===`);
+      if (!quality.passed) {
+        outputParts.push(`FAILED: ${quality.reason}`);
+      }
       const output = outputParts.join('\n');
 
       onProgress?.(output);
       return {
-        success: execResult.exitCode === 0,
+        success: quality.passed,  // 品質閘門決定成敗，不再只看 exitCode
         output,
-        error: execResult.exitCode !== 0 ? execResult.stderr : undefined,
-        exitCode: execResult.exitCode,
+        error: !quality.passed ? `品質不及格 (${quality.score}分): ${quality.reason}` : undefined,
+        exitCode: quality.passed ? 0 : -2,  // -2 = 品質閘門擋下
         durationMs: Date.now() - startTime,
         agentType,
         modelUsed: execResult.modelUsed,
+        quality,
       };
     } catch (error) {
       return {
@@ -533,6 +574,139 @@ echo "✅ 封存檢查完成"`;
         modelUsed: model,
       };
     }
+  }
+
+  // ─── 品質閘門：3 層嚴格驗證 ───
+
+  /**
+   * 品質評分系統 — 3 層閘門
+   * Gate 1: 執行完整性（exitCode、有 stdout、無致命 stderr）
+   * Gate 2: 產出物驗證（任務要求產出 → 必須有檔案）
+   * Gate 3: 內容品質檢查（不是純計畫文字、不是空洞回應）
+   */
+  static gradeExecution(
+    taskName: string,
+    taskDescription: string,
+    exitCode: number,
+    stdout: string,
+    _stderr: string,
+    artifacts: string[],
+    script: string
+  ): QualityGrade {
+    const checks: QualityGrade['checks'] = [];
+    const desc = `${taskName}\n${taskDescription}`.toLowerCase();
+
+    // ── Gate 1: 執行完整性（40 分）──
+
+    // 1a. exitCode 必須為 0（20 分）
+    checks.push({
+      name: 'exitCode',
+      passed: exitCode === 0,
+      weight: 20,
+      detail: exitCode === 0 ? 'exit 0' : `exit ${exitCode}`,
+    });
+
+    // 1b. 有實質 stdout 輸出（10 分）— 至少 20 字
+    const stdoutLen = stdout.trim().length;
+    checks.push({
+      name: 'stdout_not_empty',
+      passed: stdoutLen >= 20,
+      weight: 10,
+      detail: `stdout ${stdoutLen} chars`,
+    });
+
+    // 1c. 包含 TASK_COMPLETE 標記（10 分）
+    checks.push({
+      name: 'task_complete_marker',
+      passed: stdout.includes('TASK_COMPLETE'),
+      weight: 10,
+      detail: stdout.includes('TASK_COMPLETE') ? '有 TASK_COMPLETE 標記' : '缺少 TASK_COMPLETE 標記',
+    });
+
+    // ── Gate 2: 產出物驗證（30 分）──
+
+    // 判斷任務是否「要求產出檔案」
+    const requiresArtifact = /建立|建構|寫入|產出|生成|建置|create|build|write|generate|output/i.test(desc)
+      && !/檢查|監控|健康|統計|掃描|check|monitor|health|status|scan/i.test(desc);
+
+    if (requiresArtifact) {
+      // 2a. 必須有產出物（20 分）
+      checks.push({
+        name: 'has_artifacts',
+        passed: artifacts.length > 0,
+        weight: 20,
+        detail: artifacts.length > 0 ? `${artifacts.length} 個產出物` : '無產出物（任務要求建立檔案）',
+      });
+      // 2b. 產出物不是空檔案（10 分）
+      const nonEmptyArtifacts = artifacts.filter(f => {
+        try { return fs.statSync(f).size > 0; } catch { return false; }
+      });
+      checks.push({
+        name: 'artifacts_not_empty',
+        passed: nonEmptyArtifacts.length === artifacts.length && artifacts.length > 0,
+        weight: 10,
+        detail: `${nonEmptyArtifacts.length}/${artifacts.length} 個非空檔案`,
+      });
+    } else {
+      // 非產出型任務（如監控、檢查），產出物加分但不扣分
+      checks.push({
+        name: 'artifacts_bonus',
+        passed: true,
+        weight: 30,
+        detail: artifacts.length > 0 ? `${artifacts.length} 個產出物（加分）` : '非產出型任務，不要求檔案',
+      });
+    }
+
+    // ── Gate 3: 內容品質（30 分）──
+
+    // 3a. 不是純 AI 計畫書 / 廢話（15 分）
+    const planPatterns = [
+      '身為執行代理', '我將為您分析', '任務分析（需要做什麼）',
+      '需要完成以下幾', '具體需要完成', '規劃完成方案',
+      'as an execution agent', 'i will analyze', 'here is my plan',
+    ];
+    const isPlanOnly = planPatterns.some(p => stdout.toLowerCase().includes(p.toLowerCase()))
+      && !stdout.includes('TASK_COMPLETE');
+    checks.push({
+      name: 'not_plan_only',
+      passed: !isPlanOnly,
+      weight: 15,
+      detail: isPlanOnly ? '偵測到純計畫文字（未實際執行）' : '非純計畫文字',
+    });
+
+    // 3b. 腳本有實質內容，不是 echo 騙分（15 分）
+    const scriptLines = script.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+    const isSubstantialScript = scriptLines.length >= 3
+      && !scriptLines.every(l => l.trim().startsWith('echo'));
+    checks.push({
+      name: 'script_substantial',
+      passed: isSubstantialScript,
+      weight: 15,
+      detail: `腳本 ${scriptLines.length} 行有效指令`,
+    });
+
+    // ── 計算總分 ──
+    const totalWeight = checks.reduce((sum, c) => sum + c.weight, 0);
+    const earnedWeight = checks.filter(c => c.passed).reduce((sum, c) => sum + c.weight, 0);
+    const score = Math.round((earnedWeight / totalWeight) * 100);
+
+    const grade: QualityGrade['grade'] =
+      score >= 90 ? 'A' :
+      score >= 70 ? 'B' :
+      score >= 60 ? 'C' : 'F';
+
+    const failedChecks = checks.filter(c => !c.passed);
+    const reason = failedChecks.length === 0
+      ? `全部通過 (${score}分)`
+      : `未通過: ${failedChecks.map(c => c.name).join(', ')} (${score}分)`;
+
+    return {
+      score,
+      grade,
+      passed: score >= 60,
+      checks,
+      reason,
+    };
   }
 
   // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
