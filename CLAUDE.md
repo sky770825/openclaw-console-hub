@@ -206,18 +206,41 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v2.2.2**
+- 目前版本：**v2.3.1**
 - 每次重大功能更新，版本號 patch +1（如 v2.2.3、v2.2.4）
 - 需同時更新：`package.json`、`server/package.json`、`server/src/index.ts`
 - 每天 00:01 老蔡 launchd 自動遞增 patch 版本號
 
 ---
 
-## 📡 目前系統狀態（2026-02-27 更新）
+## 📚 知識庫（cookbook）— 不會的先查這裡
+
+`cookbook/` 目錄有 12 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
+
+| # | 檔案 | 什麼時候查 |
+|---|------|-----------|
+| 01 | API-端點.md | 要呼叫 API |
+| 02 | 資料庫.md | 要查/存 Supabase 資料 |
+| 03 | 資安與防護.md | 安全相關 |
+| 04 | 自動化執行.md | 建任務給 auto-executor |
+| 05 | 前端架構.md | 改 UI / 看前端 |
+| 06 | 除錯與救援.md | 系統出問題 |
+| 07 | 網站與部署.md | 部署/重啟 |
+| 08 | 協作與通訊.md | 發通知/協作 |
+| 09 | 高階代碼模板.md | 要寫程式 |
+| 10 | 會話與權限.md | 子代理/權限問題 |
+| 11 | 任務狀態機.md | 任務卡住 |
+| 12 | 匯報與溝通協議.md | 不確定要不要跟老蔡說 |
+
+---
+
+## 📡 目前系統狀態（2026-02-28 更新）
 
 - 9 個甲板全部建立完成（AI/後勤/工程/自動化/通信/輪機/防禦/保護/科技）
 - 五大看板資料已補滿 100%（通信/後勤/工程/公開展示/協作空間）
 - MDCI 文明指數：100%（6軸全滿）
-- Server：v2.2.2，port 3011，autoExecutor 運行中（真實執行引擎已啟用）
+- Server：v2.3.1，port 3011，autoExecutor 運行中（真實執行引擎已啟用）
 - Owner 密碼：sky36990
 - API Key 已寫入 `.env`，小蔡可直接寫入任務
+- NEUXA 知識庫 cookbook/ 已同步（12 份手冊）
+- NEUXA workspace 工具包已同步（armory/skills/scripts/knowledge）
