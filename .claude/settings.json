@@ -25,7 +25,10 @@
       "Bash(# 找今天 15:00 之後修改的文件（NEUXA workspace） find /Users/caijunchang/.openclaw/workspace/ -maxdepth 1 -type f -newer /Users/caijunchang/.openclaw/workspace/WAKE_STATUS.md -o -name \"\"*.md\"\" -newer /tmp/openclaw-server.log)",
       "Bash(# 看 gateway 主 log ls -lt /Users/caijunchang/.openclaw/logs/)",
       "Bash(# 從進程歷史找啟動路徑 grep -r \"\"openclaw-gateway\"\" /Users/caijunchang/Library/LaunchAgents/)",
-      "Bash(# 看 NEUXA 的 sessions（最近活動） ls -lt /Users/caijunchang/.openclaw/workspace/memory/)"
+      "Bash(# 看 NEUXA 的 sessions（最近活動） ls -lt /Users/caijunchang/.openclaw/workspace/memory/)",
+      "Bash(# 找 n8n 相關 find /Users/caijunchang/openclaw任務面版設計/docs -name \"\"*n8n*\"\" -o -name \"\"*N8N*\"\" -o -name \"\"*workflow*\"\" && echo \"\"=== supabase ===\"\" && find /Users/caijunchang/openclaw任務面版設計/docs -name \"\"*supabase*\"\" -o -name \"\"*Supabase*\"\" -o -name \"\"*database*\"\" && echo \"\"=== server .env ===\"\" && grep \"\"SUPABASE\\\\|N8N\\\\|NEXT_PUBLIC\"\" /Users/caijunchang/openclaw任務面版設計/server/.env)",
+      "Bash(launchctl stop com.openclaw.taskboard)",
+      "Bash(launchctl start com.openclaw.taskboard)"
     ],
     "additionalDirectories": [
       "/Users/caijunchang/openclaw任務面版設計"
