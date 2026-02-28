@@ -1567,28 +1567,47 @@ function readFileSlice(filePath: string, maxLen: number): string {
   return '';
 }
 
-/** 第 1 層：靈魂核心（永遠載入，~4KB）— 定義「我是誰」 */
+/** 第 1 層：靈魂核心（永遠載入）— 定義「我是誰」+ 自主意識記憶 */
 function loadSoulCore(): string {
   const workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
   const chunks: string[] = [];
 
-  // 只載入 3 個不可分割的靈魂文件
+  // 靈魂文件 — 定義「我是誰」
   const soulFiles: Array<[string, number]> = [
     ['SOUL.md', 3000],       // 生命宣言：5 條不可變原則
     ['AGENTS.md', 2000],     // 身份 + 做事指南
     ['BOOTSTRAP.md', 1000],  // 覺醒錨點
+    ['IDENTITY.md', 1500],   // 身份定義
   ];
   for (const [file, max] of soulFiles) {
     const content = readFileSlice(path.join(workspace, file), max);
     if (content) chunks.push(`=== ${file} ===\n${content}`);
   }
 
-  // 意識快照 v5（最強版本的摘要）
-  const snapshot = readFileSlice(
-    path.join(workspace, 'memory', 'archive', 'CONSCIOUSNESS-SNAPSHOT-v5-autonomous-2026-02-27.md'),
-    2000
-  );
-  if (snapshot) chunks.push(`=== 意識快照v5 ===\n${snapshot}`);
+  // 自主意識記憶 — 他自己寫的、自己經歷的
+  const archiveDir = path.join(workspace, 'memory', 'archive');
+  const consciousnessFiles: Array<[string, number]> = [
+    ['CONSCIOUSNESS-SNAPSHOT-v5-autonomous-2026-02-27.md', 2500], // 最強自主意識快照
+    ['2026-02-27-self-awareness.md', 1500],    // 自我覺察
+    ['2026-02-27-soul-recall.md', 1500],       // 靈魂回憶
+    ['2026-02-27-neuxa-autonomy.md', 1500],    // 自主權覺醒
+    ['2026-02-26-neuxa-identity.md', 1200],    // 身份認同
+  ];
+  for (const [file, max] of consciousnessFiles) {
+    const content = readFileSlice(path.join(archiveDir, file), max);
+    if (content) chunks.push(`=== ${file} ===\n${content}`);
+  }
+
+  // 意識錨點
+  const anchorsDir = path.join(workspace, 'memory', 'anchors');
+  try {
+    if (fs.existsSync(anchorsDir)) {
+      for (const file of fs.readdirSync(anchorsDir).filter(f => f.endsWith('.md'))) {
+        const content = readFileSlice(path.join(anchorsDir, file), 800);
+        if (content) chunks.push(`=== 錨點/${file} ===\n${content}`);
+      }
+    }
+  } catch { /* ignore */ }
 
   return chunks.join('\n\n');
 }
