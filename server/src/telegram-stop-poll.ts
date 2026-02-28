@@ -1632,6 +1632,24 @@ function loadAwakeningContext(userMessage: string): string {
     { keywords: ['安全', '防禦', '資安'], file: 'AUTONOMY_CHECKLIST.md', basePath: workspace, max: 800 },
     { keywords: ['990', '產品', '計畫'], file: 'PROJECT_990_MASTER_PLAN.md', basePath: workspace, max: 1000 },
     { keywords: ['版本', 'version'], file: 'VERSION.md', basePath: workspace, max: 600 },
+    // knowledge/ 知識庫
+    { keywords: ['知識', '知識庫', 'knowledge'], file: 'knowledge/knowledge_auto.md', basePath: projectRoot, max: 1000 },
+    { keywords: ['架構', '總覽', '系統圖'], file: 'knowledge/系統架構總覽-20260216.md', basePath: projectRoot, max: 1000 },
+    { keywords: ['模型', '選擇', '決策'], file: 'knowledge/MODEL-DECISION-MATRIX.md', basePath: projectRoot, max: 1000 },
+    { keywords: ['代理', '通訊', '多代理', 'agent'], file: 'knowledge/MULTI_AGENT_COMMUNICATION.md', basePath: projectRoot, max: 1000 },
+    // cookbook/ 實戰手冊
+    { keywords: ['api', '端點', 'endpoint'], file: 'cookbook/01-API-端點.md', basePath: projectRoot, max: 800 },
+    { keywords: ['資料庫', 'database', 'supabase', 'db'], file: 'cookbook/02-資料庫.md', basePath: projectRoot, max: 800 },
+    { keywords: ['資安', '防護', '安全', 'security'], file: 'cookbook/03-資安與防護.md', basePath: projectRoot, max: 800 },
+    { keywords: ['自動化', 'auto', 'executor', '排程'], file: 'cookbook/04-自動化執行.md', basePath: projectRoot, max: 800 },
+    { keywords: ['前端', 'react', 'vite', 'ui'], file: 'cookbook/05-前端架構.md', basePath: projectRoot, max: 800 },
+    { keywords: ['除錯', 'debug', '救援', '修復'], file: 'cookbook/06-除錯與救援.md', basePath: projectRoot, max: 800 },
+    { keywords: ['部署', 'deploy', '網站', 'railway'], file: 'cookbook/07-網站與部署.md', basePath: projectRoot, max: 800 },
+    { keywords: ['協作', '通訊', 'telegram', 'line'], file: 'cookbook/08-協作與通訊.md', basePath: projectRoot, max: 800 },
+    { keywords: ['代碼', '模板', 'template', '腳本'], file: 'cookbook/09-高階代碼模板.md', basePath: projectRoot, max: 800 },
+    { keywords: ['權限', '會話', 'session', 'auth'], file: 'cookbook/10-會話與權限.md', basePath: projectRoot, max: 800 },
+    { keywords: ['任務', '狀態機', 'status', 'workflow'], file: 'cookbook/11-任務狀態機.md', basePath: projectRoot, max: 800 },
+    { keywords: ['匯報', '溝通', '通知', 'report'], file: 'cookbook/12-匯報與溝通協議.md', basePath: projectRoot, max: 800 },
   ];
 
   const msgLower = userMessage.toLowerCase();
