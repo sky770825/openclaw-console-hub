@@ -215,7 +215,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## 📚 知識庫（cookbook）— 不會的先查這裡
 
-`cookbook/` 目錄有 12 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
+`cookbook/` 目錄有 13 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
 
 | # | 檔案 | 什麼時候查 |
 |---|------|-----------|
@@ -231,6 +231,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 | 10 | 會話與權限.md | 子代理/權限問題 |
 | 11 | 任務狀態機.md | 任務卡住 |
 | 12 | 匯報與溝通協議.md | 不確定要不要跟老蔡說 |
+| 13 | 編碼品質.md | 寫程式前後的品質檢查 |
 
 ---
 
@@ -242,5 +243,5 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 - Server：v2.3.1，port 3011，autoExecutor 運行中（真實執行引擎已啟用）
 - Owner 密碼：sky36990
 - API Key 已寫入 `.env`，小蔡可直接寫入任務
-- NEUXA 知識庫 cookbook/ 已同步（12 份手冊）
+- NEUXA 知識庫 cookbook/ 已同步（13 份手冊）
 - NEUXA workspace 工具包已同步（armory/skills/scripts/knowledge）

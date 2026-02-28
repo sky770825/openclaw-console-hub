@@ -37,7 +37,7 @@ export const logger = _pino;
 
 type LogFn = (...args: unknown[]) => void;
 
-/ Wrap pino child into a console-compatible logger /
+/** Wrap pino child into a console-compatible logger */
 function wrapChild(child: pino.Logger) {
   const wrap = (level: 'info' | 'warn' | 'error' | 'debug'): LogFn =>
     (...args: unknown[]) => {
@@ -66,7 +66,7 @@ function wrapChild(child: pino.Logger) {
   };
 }
 
-/ Create a console-compatible structured logger with module context /
+/** Create a console-compatible structured logger with module context */
 export function createLogger(module: string) {
   return wrapChild(_pino.child({ module }));
 }
