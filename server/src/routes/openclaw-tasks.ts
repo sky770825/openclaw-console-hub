@@ -247,6 +247,38 @@ openclawTasksRouter.patch('/:id', async (req, res) => {
   }
 });
 
+// POST /api/openclaw/tasks/archive-done — 批次刪除所有 done 任務
+openclawTasksRouter.post('/archive-done', async (_req, res) => {
+  try {
+    if (!hasSupabase() || !supabase) {
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+    // 先計數
+    const { data: doneList } = await supabase
+      .from('openclaw_tasks')
+      .select('id')
+      .eq('status', 'done');
+    const count = doneList?.length ?? 0;
+    if (count === 0) {
+      return res.json({ archived: 0 });
+    }
+    // 批次刪除
+    const { error } = await supabase
+      .from('openclaw_tasks')
+      .delete()
+      .eq('status', 'done');
+    if (error) {
+      log.error('[OpenClaw] archive-done error:', error.message);
+      return res.status(500).json({ message: error.message });
+    }
+    log.info(`[OpenClaw] Deleted ${count} done tasks`);
+    res.json({ archived: count });
+  } catch (e) {
+    log.error('[OpenClaw] archive-done error:', e);
+    res.status(500).json({ message: 'Failed to archive tasks' });
+  }
+});
+
 // DELETE /api/openclaw/tasks/:id
 openclawTasksRouter.delete('/:id', async (req, res) => {
   try {

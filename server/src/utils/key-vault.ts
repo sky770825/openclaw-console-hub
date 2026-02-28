@@ -6,7 +6,7 @@
  *
  * 用途：
  * - logger.ts — 日誌脫敏
- * - telegram-stop-poll.ts — action 結果脫敏（防止 key 進入 NEUXA 對話 context）
+ * - telegram/action-handlers.ts — action 結果脫敏（防止 key 進入 NEUXA 對話 context）
  * - routes/proxy.ts — 回應脫敏
  */
 
