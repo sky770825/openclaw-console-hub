@@ -289,6 +289,8 @@ async function executeNextPendingTask(): Promise<void> {
       .map(openClawTaskToTask)
       .filter((t) => {
         if (t.status !== 'ready') return false;
+        // 跳過指派給老蔡的任務 — 需要老蔡本人處理
+        if (t.owner === '老蔡') return false;
         // 跳過標記為 manual-only 的任務（需人工執行，不交給 auto-executor）
         if (t.tags?.includes('manual-only')) return false;
         // In dispatch mode, skip strict gate validation (no runCommands/agent needed for dispatch)
