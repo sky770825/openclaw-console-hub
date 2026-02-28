@@ -24,8 +24,6 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   // ── Google（子代理級）──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  { id: 'gemini-2.0-flash', label: '⚡ Flash 2.0', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  { id: 'gemini-2.0-flash-lite', label: '⚙️ Flash Lite 2.0', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── DeepSeek（指揮官級，temperature=1 官方建議）──
   { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
   { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
@@ -36,14 +34,14 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   // ── OpenRouter 免費（指揮官級 — 大模型免費版）──
-  { id: 'deepseek/deepseek-r1:free', label: '🆓 DeepSeek R1', provider: 'OpenRouter', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'meta-llama/llama-4-maverick:free', label: '🆓 Llama 4 Maverick', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'google/gemini-2.5-pro-exp-03-25:free', label: '🆓 Gemini 2.5 Pro', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'nvidia/llama-3.1-nemotron-ultra-253b-v1:free', label: '🆓 Nemotron Ultra', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'nousresearch/hermes-3-llama-3.1-405b:free', label: '🆓 Hermes 405B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🆓 Llama 3.3 70B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'qwen/qwen3-coder:free', label: '🆓 Qwen3 Coder', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'mistralai/mistral-small-3.1-24b-instruct:free', label: '🆓 Mistral Small', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── Ollama 本地（子代理級 — 8B/14B 太弱不能指揮）──
   { id: 'qwen3:8b', label: '🖥️ Qwen3 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
   { id: 'deepseek-r1:8b', label: '🖥️ DeepSeek R1 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
-  { id: 'llama3.2:latest', label: '🖥️ Llama 3.2', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
+  { id: 'qwen3:4b', label: '🖥️ Qwen3 4B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
   { id: 'qwen2.5:14b', label: '🖥️ Qwen2.5 14B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
 ];
 
@@ -103,6 +101,10 @@ export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' | '
   const reg = MODEL_REGISTRY.find(m => m.id === modelId);
   if (reg) {
     const p = reg.provider.toLowerCase();
+    if (p === 'google') return 'google';
+    if (p === 'deepseek') return 'deepseek';
+    if (p === 'kimi') return 'kimi';
+    if (p === 'xai') return 'xai';
     if (p === 'openrouter') return 'openrouter';
     if (p === 'ollama') return 'ollama';
   }
