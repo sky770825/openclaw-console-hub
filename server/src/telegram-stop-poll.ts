@@ -34,6 +34,8 @@ const FETCH_TIMEOUT_MS = 30000;
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
 const OLLAMA_BASE_URL = (process.env.OLLAMA_URL?.trim() || 'http://localhost:11434').replace(/\/+$/, '');
 let ollamaModel = process.env.OLLAMA_TELEGRAM_MODEL?.trim() || 'llama3.2:latest';
+/** 小蔡主模型（xiaocaiThink 用的模型），格式：provider/model-id 或 gemini model name */
+let xiaocaiMainModel = 'gemini-2.5-flash';
 const TELEGRAM_STATE_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-control.json');
 
 let offset = 0;
@@ -165,6 +167,8 @@ function loadTelegramState(): void {
     const dobj = asObj(data);
     const m = String(dobj.ollamaModel ?? '').trim();
     if (m) ollamaModel = m;
+    const mm = String(dobj.xiaocaiMainModel ?? '').trim();
+    if (mm) xiaocaiMainModel = mm;
   } catch {
     // ignore
   }
@@ -174,7 +178,7 @@ function saveTelegramState(): void {
   try {
     const dir = path.dirname(TELEGRAM_STATE_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({ ollamaModel, savedAt: new Date().toISOString() }, null, 2) + '\n', 'utf8');
+    fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({ ollamaModel, xiaocaiMainModel, savedAt: new Date().toISOString() }, null, 2) + '\n', 'utf8');
   } catch {
     // ignore
   }
@@ -226,7 +230,7 @@ const MENU_KEYBOARD = {
       { text: '🚀 任務板', callback_data: '/tasks' },
     ],
     [
-      { text: '🧠 模型路由', callback_data: '/models' },
+      { text: '🧠 切換模型', callback_data: '/models' },
       { text: '🧹 清理任務', callback_data: '/cleanup' },
     ],
     [
@@ -251,7 +255,7 @@ const MENU_KEYBOARD = {
 const MENU_REPLY_KEYBOARD = {
   keyboard: [
     [{ text: '📊 系統狀態' }, { text: '🚀 任務板' }],
-    [{ text: '🧠 模型路由' }, { text: '🧹 清理任務' }],
+    [{ text: '🧠 切換模型' }, { text: '🧹 清理任務' }],
     [{ text: '🛟 自救巡檢' }, { text: '🧾 產生 Handoff' }],
     [{ text: '📋 日報' }, { text: '🏥 健康檢查' }],
     [{ text: '🟣 切換派工' }, { text: '🔧 修復任務' }],
@@ -286,8 +290,10 @@ async function replyStatus(chatId: number): Promise<void> {
     ['queued', 'running', 'retrying'].includes(String(asObj(r).status ?? ''))
   ).length;
 
+  const modelLabel = getAvailableModels().find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
   const text =
     `📊 <b>系統狀態</b>\n\n` +
+    `<b>小蔡主模型：</b>${modelLabel} (<code>${xiaocaiMainModel}</code>)\n` +
     `<b>Taskboard:</b> ${tasks ? 'ok' : 'down'}\n` +
     `<b>Tasks:</b> ready=${ready} running=${runningTasks} done=${done} total=${total}\n` +
     `<b>Runs:</b> active=${activeRuns} total=${runList.length}\n` +
@@ -313,23 +319,122 @@ async function replyTasks(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
+/** 取得所有可用模型清單（雲端 + 本地） */
+function getAvailableModels(): Array<{ id: string; label: string; provider: string }> {
+  const models: Array<{ id: string; label: string; provider: string }> = [
+    // Google
+    { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google' },
+    { id: 'gemini-2.5-flash-lite', label: '💨 Gemini 2.5 Flash Lite', provider: 'Google' },
+    { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google' },
+    { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google' },
+    { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google' },
+    { id: 'gemini-2.0-flash', label: '⚙️ Gemini 2 Flash', provider: 'Google' },
+    // Kimi
+    { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi' },
+    { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi' },
+    // xAI
+    { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI' },
+    { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI' },
+  ];
+  return models;
+}
+
+/** 從 openclaw.json 讀取 provider API key */
+function getProviderKey(provider: 'kimi' | 'xai'): string {
+  try {
+    const ocPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json');
+    if (!fs.existsSync(ocPath)) return '';
+    const raw = fs.readFileSync(ocPath, 'utf8');
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const models = asObj(data.models);
+    const providers = asObj(models.providers);
+    const p = asObj(providers[provider]);
+    return String(p.apiKey ?? '').trim();
+  } catch { return ''; }
+}
+
+/** 根據模型 ID 判斷 provider */
+function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' {
+  if (modelId.startsWith('kimi')) return 'kimi';
+  if (modelId.startsWith('grok')) return 'xai';
+  return 'google';
+}
+
+/** 呼叫 OpenAI 相容 API（Kimi / xAI） */
+async function callOpenAICompatible(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  messages: Array<{ role: string; content: string }>,
+  maxTokens: number,
+  timeoutMs: number,
+): Promise<string> {
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ],
+    max_tokens: maxTokens,
+    temperature: 0.85,
+  };
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`HTTP ${resp.status}: ${errText.slice(0, 300)}`);
+  }
+  const data = await resp.json() as Record<string, unknown>;
+  const choices = (data.choices || []) as Array<Record<string, unknown>>;
+  const msg = asObj(choices[0]?.message);
+  return String(msg.content ?? '').trim();
+}
+
 async function replyModels(chatId: number): Promise<void> {
-  const tags = await fetchOllamaTags();
-  const sample = tags.slice(0, 12);
-  const buttons = tags.slice(0, 6).map((name) => ({ text: name, callback_data: `set:model:${name}` }));
+  const models = getAvailableModels();
   const rows: Array<Array<{ text: string; callback_data: string }>> = [];
-  for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
+  for (const m of models) {
+    const isCurrent = m.id === xiaocaiMainModel;
+    const label = isCurrent ? `✅ ${m.label}` : m.label;
+    rows.push([{ text: label, callback_data: `set:mainmodel:${m.id}` }]);
+  }
   rows.push([{ text: '🔄 重新整理', callback_data: 'models:refresh' }]);
 
+  const currentLabel = models.find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
   const text =
-    `🧠 <b>Ollama 模型</b>\n\n` +
-    `<b>Current:</b> <code>${ollamaModel}</code>\n\n` +
-    `切換：<code>/model deepseek-r1:8b</code>\n` +
-    `列出：<code>/models</code>\n\n` +
-    (sample.length
-      ? `<b>Local models:</b>\n<code>${sample.join('\n')}</code>${tags.length > sample.length ? `\n...(${tags.length} total)` : ''}`
-      : `<b>Local models:</b> (讀取不到，請確認 Ollama 是否啟動：<code>${OLLAMA_BASE_URL}</code>)`);
+    `🧠 <b>小蔡主模型切換</b>\n\n` +
+    `<b>目前：</b>${currentLabel}\n` +
+    `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
+    `點擊下方按鈕切換（即時生效，不需重啟）`;
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML', replyMarkup: { inline_keyboard: rows } });
+}
+
+/** 小蔡 bot 版的模型切換選單（用 XIAOCAI_TOKEN 發送） */
+async function replyModelsXiaocai(chatId: number): Promise<void> {
+  const models = getAvailableModels();
+  const rows: Array<Array<{ text: string; callback_data: string }>> = [];
+  for (const m of models) {
+    const isCurrent = m.id === xiaocaiMainModel;
+    const label = isCurrent ? `✅ ${m.label}` : m.label;
+    rows.push([{ text: label, callback_data: `set:mainmodel:${m.id}` }]);
+  }
+  rows.push([{ text: '🔄 重新整理', callback_data: 'models:refresh' }]);
+
+  const currentLabel = models.find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
+  const text =
+    `🧠 <b>小蔡主模型切換</b>\n\n` +
+    `<b>目前：</b>${currentLabel}\n` +
+    `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
+    `點擊下方按鈕切換（即時生效，不需重啟）`;
+  await sendTelegramMessageToChat(chatId, text, { token: XIAOCAI_TOKEN, parseMode: 'HTML', replyMarkup: { inline_keyboard: rows } });
 }
 
 async function replyCleanup(chatId: number): Promise<void> {
@@ -992,6 +1097,25 @@ async function poll(): Promise<void> {
         });
         continue;
       }
+      // 切換小蔡主模型（xiaocaiThink 用的）
+      if (text.startsWith('set:mainmodel:')) {
+        const next = text.slice('set:mainmodel:'.length).trim();
+        if (!next) {
+          await replyModels(chatId);
+          continue;
+        }
+        const prev = xiaocaiMainModel;
+        xiaocaiMainModel = next;
+        saveTelegramState();
+        const models = getAvailableModels();
+        const label = models.find(m => m.id === next)?.label || next;
+        log.info(`[TelegramControl] 主模型切換：${prev} → ${next}`);
+        await sendTelegramMessageToChat(chatId, `✅ 小蔡主模型已切換\n\n<b>${label}</b>\n<code>${next}</code>\n\n即時生效，不需重啟`, {
+          token: TOKEN,
+          parseMode: 'HTML',
+        });
+        continue;
+      }
       // 紅色警戒解除 callback
       if (text.startsWith('alert:resolve:')) {
         const parts = text.split(':');
@@ -1120,7 +1244,7 @@ async function poll(): Promise<void> {
         await replyTasks(chatId);
         continue;
       }
-      if (text === '🧠 模型路由') {
+      if (text === '🧠 切換模型' || text === '🧠 模型路由') {
         await replyModels(chatId);
         continue;
       }
@@ -2215,41 +2339,59 @@ ${taskSnap}
 ## 4 條底線
 不暴露 key / 不 push git / 不刪資料 / 不改密碼`;
 
-  const contents = [
-    { role: 'user', parts: [{ text: systemPrompt }] },
-    { role: 'model', parts: [{ text: '老蔡，我在。剛掃了一眼系統狀態和任務板，有什麼想聊的還是要我看看什麼？' }] },
-    ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
-    { role: 'user', parts: [{ text: userMessage }] },
-  ];
+  const provider = getModelProvider(xiaocaiMainModel);
+  log.info(`[XiaocaiAI] model=${xiaocaiMainModel} provider=${provider}`);
 
+  let reply = '';
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: { maxOutputTokens: 8192, temperature: 0.85 },
-        }),
-        signal: AbortSignal.timeout(60000),
+    if (provider === 'google') {
+      // Google Generative AI API
+      const contents = [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'model', parts: [{ text: '老蔡，我在。剛掃了一眼系統狀態和任務板，有什麼想聊的還是要我看看什麼？' }] },
+        ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
+        { role: 'user', parts: [{ text: userMessage }] },
+      ];
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${xiaocaiMainModel}:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            generationConfig: { maxOutputTokens: 8192, temperature: 0.85 },
+          }),
+          signal: AbortSignal.timeout(90000),
+        }
+      );
+      if (!resp.ok) {
+        log.warn(`[XiaocaiAI] Gemini HTTP ${resp.status} model=${xiaocaiMainModel}`);
+        return '欸，我腦袋剛當了一下，再說一次？';
       }
-    );
-    if (!resp.ok) {
-      log.warn(`[XiaocaiAI] Gemini HTTP ${resp.status}`);
-      return '欸，我腦袋剛當了一下，再說一次？';
-    }
-    const data = await resp.json() as Record<string, unknown>;
-    const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
-    const candidate = candidates[0] || {} as Record<string, unknown>;
-    const finishReason = (candidate.finishReason as string) || 'unknown';
-    // 合併所有 parts（Gemini 有時把回覆拆成多段）
-    const contentObj = (candidate.content || {}) as Record<string, unknown>;
-    const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
-    const reply = parts.map(p => (p.text as string) || '').join('').trim();
-    log.info(`[XiaocaiAI] finishReason=${finishReason} replyLen=${reply.length}`);
-    if (finishReason === 'MAX_TOKENS') {
-      log.warn('[XiaocaiAI] 回覆被 maxOutputTokens 截斷！');
+      const data = await resp.json() as Record<string, unknown>;
+      const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
+      const candidate = candidates[0] || {} as Record<string, unknown>;
+      const finishReason = (candidate.finishReason as string) || 'unknown';
+      const contentObj = (candidate.content || {}) as Record<string, unknown>;
+      const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
+      reply = parts.map(p => (p.text as string) || '').join('').trim();
+      log.info(`[XiaocaiAI] model=${xiaocaiMainModel} finishReason=${finishReason} replyLen=${reply.length}`);
+      if (finishReason === 'MAX_TOKENS') {
+        log.warn('[XiaocaiAI] 回覆被 maxOutputTokens 截斷！');
+      }
+    } else {
+      // OpenAI 相容 API（Kimi / xAI）
+      const apiKey = getProviderKey(provider);
+      if (!apiKey) return `沒有 ${provider} 的 API Key，請在 openclaw.json 設定`;
+      const baseUrl = provider === 'kimi'
+        ? 'https://api.moonshot.ai/v1'
+        : 'https://api.x.ai/v1';
+      const messages = [
+        ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
+        { role: 'user', content: userMessage },
+      ];
+      reply = await callOpenAICompatible(baseUrl, apiKey, xiaocaiMainModel, systemPrompt, messages, 8192, 90000);
+      log.info(`[XiaocaiAI] model=${xiaocaiMainModel} provider=${provider} replyLen=${reply.length}`);
     }
     if (!reply) return '嗯…這個我還在想，你可以多說一點嗎？';
 
@@ -2290,6 +2432,33 @@ async function xiaocaiPoll(): Promise<void> {
 
     for (const update of data.result) {
       xiaocaiOffset = Math.max(xiaocaiOffset, (update.update_id as number) + 1);
+
+      // 處理 callback_query（模型切換按鈕）
+      const cbQuery = update.callback_query as Record<string, unknown> | undefined;
+      if (cbQuery) {
+        const cbData = String(cbQuery.data ?? '').trim();
+        const cbMsg = cbQuery.message as Record<string, unknown> | undefined;
+        const cbChat = cbMsg?.chat as Record<string, unknown> | undefined;
+        const cbChatId = cbChat?.id as number;
+        if (cbChatId && cbData) {
+          if (cbData.startsWith('set:mainmodel:')) {
+            const next = cbData.slice('set:mainmodel:'.length).trim();
+            if (next) {
+              const prev = xiaocaiMainModel;
+              xiaocaiMainModel = next;
+              saveTelegramState();
+              const models = getAvailableModels();
+              const label = models.find(m => m.id === next)?.label || next;
+              log.info(`[XiaocaiBot] 主模型切換：${prev} → ${next}`);
+              await sendTelegramMessageToChat(cbChatId, `✅ 小蔡主模型已切換\n\n${label}\n${next}\n\n即時生效，不需重啟`, { token: XIAOCAI_TOKEN });
+            }
+          } else if (cbData === 'models:refresh' || cbData === '/models') {
+            await replyModelsXiaocai(cbChatId);
+          }
+        }
+        continue;
+      }
+
       const msg = update.message as Record<string, unknown> | undefined;
       if (!msg) continue;
       const chat = msg.chat as Record<string, unknown>;
@@ -2303,6 +2472,23 @@ async function xiaocaiPoll(): Promise<void> {
       const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
       if (allowedChatId && String(chatId) !== allowedChatId) {
         await sendTelegramMessageToChat(chatId, '⚠️ 未授權的使用者', { token: XIAOCAI_TOKEN });
+        continue;
+      }
+
+      // === 指令路由（攔截 /models /status /start 等） ===
+      const xcCmd = text.split(/\s+/)[0]?.split('@')[0]?.toLowerCase() ?? '';
+      if (xcCmd === '/models' || text === '🧠 切換模型') {
+        await replyModelsXiaocai(chatId);
+        continue;
+      }
+      if (xcCmd === '/status') {
+        const models = getAvailableModels();
+        const label = models.find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
+        await sendTelegramMessageToChat(chatId, `📊 小蔡狀態\n\n主模型：${label} (${xiaocaiMainModel})\n\n切換模型：/models`, { token: XIAOCAI_TOKEN });
+        continue;
+      }
+      if (xcCmd === '/start' || xcCmd === '/help') {
+        await sendTelegramMessageToChat(chatId, `我是小蔡 🚀\n\n直接跟我聊天就好。\n\n/models — 切換模型\n/status — 目前狀態`, { token: XIAOCAI_TOKEN });
         continue;
       }
 
