@@ -5,37 +5,52 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+export type ModelRole = 'commander' | 'subagent';
+
 export interface ModelConfig {
   id: string;
   label: string;
   provider: string;
   temperature: number;
   maxOutputTokens: number;
+  role: ModelRole; // commander=可當指揮官大腦, subagent=只適合子代理/ask_ai
 }
 
 export const MODEL_REGISTRY: ModelConfig[] = [
-  // Google
-  { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'gemini-2.5-flash-lite', label: '💨 Gemini 2.5 Flash Lite', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'gemini-2.0-flash-lite', label: '⚙️ Gemini 2 Flash Lite', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
-  // Kimi（K2 系列只接受 temperature=1）
-  { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192 },
-  { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192 },
-  // xAI
-  { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 8192 },
-  // DeepSeek
-  { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 0.85, maxOutputTokens: 8192 },
-  { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 0.85, maxOutputTokens: 8192 },
+  // ── Google（指揮官級）──
+  { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  // ── Google（子代理級）──
+  { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'gemini-2.0-flash', label: '⚡ Flash 2.0', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'gemini-2.0-flash-lite', label: '⚙️ Flash Lite 2.0', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  // ── DeepSeek（指揮官級，temperature=1 官方建議）──
+  { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
+  // ── Kimi（指揮官級，K2 系列只接受 temperature=1）──
+  { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
+  // ── xAI（指揮官級）──
+  { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  // ── OpenRouter 免費（指揮官級 — 大模型免費版）──
+  { id: 'deepseek/deepseek-r1:free', label: '🆓 DeepSeek R1', provider: 'OpenRouter', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'meta-llama/llama-4-maverick:free', label: '🆓 Llama 4 Maverick', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'google/gemini-2.5-pro-exp-03-25:free', label: '🆓 Gemini 2.5 Pro', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'nvidia/llama-3.1-nemotron-ultra-253b-v1:free', label: '🆓 Nemotron Ultra', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  // ── Ollama 本地（子代理級 — 8B/14B 太弱不能指揮）──
+  { id: 'qwen3:8b', label: '🖥️ Qwen3 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
+  { id: 'deepseek-r1:8b', label: '🖥️ DeepSeek R1 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
+  { id: 'llama3.2:latest', label: '🖥️ Llama 3.2', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
+  { id: 'qwen2.5:14b', label: '🖥️ Qwen2.5 14B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
 ];
 
 /** 查詢模型配置，找不到就用預設值 */
 export function getModelConfig(modelId: string): ModelConfig {
   return MODEL_REGISTRY.find(m => m.id === modelId) || {
-    id: modelId, label: modelId, provider: 'Google', temperature: 0.85, maxOutputTokens: 8192,
+    id: modelId, label: modelId, provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' as ModelRole,
   };
 }
 
@@ -44,8 +59,31 @@ export function getAvailableModels(): Array<{ id: string; label: string; provide
   return MODEL_REGISTRY.map(m => ({ id: m.id, label: m.label, provider: m.provider }));
 }
 
+/** 按 provider 分組取得模型清單 */
+export function getModelsGrouped(): Array<{ provider: string; models: Array<{ id: string; label: string; role: ModelRole }> }> {
+  const groups = new Map<string, Array<{ id: string; label: string; role: ModelRole }>>();
+  for (const m of MODEL_REGISTRY) {
+    if (!groups.has(m.provider)) groups.set(m.provider, []);
+    groups.get(m.provider)!.push({ id: m.id, label: m.label, role: m.role });
+  }
+  return Array.from(groups.entries()).map(([provider, models]) => ({ provider, models }));
+}
+
+/** 取得指揮官級模型（按 provider 分組） */
+export function getCommanderModels(): Array<{ provider: string; models: Array<{ id: string; label: string }> }> {
+  const all = getModelsGrouped();
+  return all
+    .map(g => ({ provider: g.provider, models: g.models.filter(m => m.role === 'commander') }))
+    .filter(g => g.models.length > 0);
+}
+
+/** 取得子代理級模型（ask_ai / auto-executor 用） */
+export function getSubagentModels(): Array<{ id: string; label: string; provider: string }> {
+  return MODEL_REGISTRY.filter(m => m.role === 'subagent').map(m => ({ id: m.id, label: m.label, provider: m.provider }));
+}
+
 /** 從 openclaw.json 讀取 provider API key */
-export function getProviderKey(provider: 'kimi' | 'xai' | 'deepseek'): string {
+export function getProviderKey(provider: string): string {
   try {
     const ocPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json');
     if (!fs.existsSync(ocPath)) return '';
@@ -60,10 +98,20 @@ export function getProviderKey(provider: 'kimi' | 'xai' | 'deepseek'): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' | 'deepseek' {
+export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' | 'ollama' {
+  // 先查 registry（最準確）
+  const reg = MODEL_REGISTRY.find(m => m.id === modelId);
+  if (reg) {
+    const p = reg.provider.toLowerCase();
+    if (p === 'openrouter') return 'openrouter';
+    if (p === 'ollama') return 'ollama';
+  }
+  // fallback: 按 id prefix 判斷
   if (modelId.startsWith('kimi')) return 'kimi';
   if (modelId.startsWith('grok')) return 'xai';
-  if (modelId.startsWith('deepseek')) return 'deepseek';
+  if (modelId.startsWith('deepseek') && !modelId.includes('/')) return 'deepseek';
+  if (modelId.includes('/') && modelId.includes(':free')) return 'openrouter';
+  if (modelId.startsWith('qwen') || modelId.startsWith('llama')) return 'ollama';
   return 'google';
 }
 

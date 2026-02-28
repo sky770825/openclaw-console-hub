@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // ── 模組匯入 ──
-import { getModelConfig, getAvailableModels, getModelProvider, getProviderKey, callOpenAICompatible } from './model-registry.js';
+import { getModelConfig, getAvailableModels, getModelsGrouped, getCommanderModels, getModelProvider, getProviderKey, callOpenAICompatible } from './model-registry.js';
 import { NEUXA_WORKSPACE } from './security.js';
 import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './action-handlers.js';
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
@@ -332,41 +332,59 @@ async function replyTasks(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
+const providerIcons: Record<string, string> = { Google: '🔵', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓', Ollama: '🖥️' };
+
 async function replyModels(chatId: number): Promise<void> {
-  const models = getAvailableModels();
+  const commanders = getCommanderModels();
   const rows: Array<Array<{ text: string; callback_data: string }>> = [];
-  for (const m of models) {
-    const isCurrent = m.id === xiaocaiMainModel;
-    const label = isCurrent ? `✅ ${m.label}` : m.label;
-    rows.push([{ text: label, callback_data: `set:mainmodel:${m.id}` }]);
+  for (const group of commanders) {
+    rows.push([{ text: `── ${providerIcons[group.provider] || '▪️'} ${group.provider} ──`, callback_data: 'noop' }]);
+    for (let i = 0; i < group.models.length; i += 2) {
+      const row: Array<{ text: string; callback_data: string }> = [];
+      for (const m of group.models.slice(i, i + 2)) {
+        const isCurrent = m.id === xiaocaiMainModel;
+        row.push({ text: isCurrent ? `✅ ${m.label}` : m.label, callback_data: `set:mainmodel:${m.id}` });
+      }
+      rows.push(row);
+    }
   }
   rows.push([{ text: '🔄 重新整理', callback_data: 'models:refresh' }]);
 
-  const currentLabel = models.find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
+  const currentLabel = getAvailableModels().find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
+  const currentProvider = getModelProvider(xiaocaiMainModel);
   const text =
-    `🧠 <b>小蔡主模型切換</b>\n\n` +
+    `🧠 <b>小蔡主模型切換</b>（指揮官級）\n\n` +
     `<b>目前：</b>${currentLabel}\n` +
+    `<b>Provider：</b>${currentProvider}\n` +
     `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
-    `點擊下方按鈕切換（即時生效，不需重啟）`;
+    `只顯示能當指揮官的模型\n子代理級（Ollama/Flash Lite）由 ask_ai 自動調用`;
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML', replyMarkup: { inline_keyboard: rows } });
 }
 
 async function replyModelsXiaocai(chatId: number): Promise<void> {
-  const models = getAvailableModels();
+  const commanders = getCommanderModels();
   const rows: Array<Array<{ text: string; callback_data: string }>> = [];
-  for (const m of models) {
-    const isCurrent = m.id === xiaocaiMainModel;
-    const label = isCurrent ? `✅ ${m.label}` : m.label;
-    rows.push([{ text: label, callback_data: `set:mainmodel:${m.id}` }]);
+  for (const group of commanders) {
+    rows.push([{ text: `── ${providerIcons[group.provider] || '▪️'} ${group.provider} ──`, callback_data: 'noop' }]);
+    for (let i = 0; i < group.models.length; i += 2) {
+      const row: Array<{ text: string; callback_data: string }> = [];
+      for (const m of group.models.slice(i, i + 2)) {
+        const isCurrent = m.id === xiaocaiMainModel;
+        row.push({ text: isCurrent ? `✅ ${m.label}` : m.label, callback_data: `set:mainmodel:${m.id}` });
+      }
+      rows.push(row);
+    }
   }
   rows.push([{ text: '🔄 重新整理', callback_data: 'models:refresh' }]);
 
-  const currentLabel = models.find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
+  const currentLabel = getAvailableModels().find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
+  const currentProvider = getModelProvider(xiaocaiMainModel);
   const text =
-    `🧠 <b>小蔡主模型切換</b>\n\n` +
+    `🧠 <b>小蔡主模型切換</b>（指揮官級）\n\n` +
     `<b>目前：</b>${currentLabel}\n` +
+    `<b>Provider：</b>${currentProvider}\n` +
     `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
-    `點擊下方按鈕切換（即時生效，不需重啟）`;
+    `只顯示能當指揮官的模型\n子代理級（Ollama/Flash Lite）由 ask_ai 自動調用`;
   await sendTelegramMessageToChat(chatId, text, { token: XIAOCAI_TOKEN, parseMode: 'HTML', replyMarkup: { inline_keyboard: rows } });
 }
 
@@ -970,6 +988,7 @@ async function poll(): Promise<void> {
       }
 
       // Callback 路由
+      if (text === 'noop') continue; // provider 分類標題，不做事
       if (text === 'deputy:on') { await replyDeputy(chatId, 'on'); continue; }
       if (text === 'deputy:off') { await replyDeputy(chatId, 'off'); continue; }
       if (text === 'deputy:run') { await replyDeputy(chatId, 'run'); continue; }
