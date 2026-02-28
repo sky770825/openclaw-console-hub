@@ -337,10 +337,18 @@ auto-executor 執行限制（寫 description 時要注意）：
 除此之外，老蔡叫你做什麼你就做。桌面、Downloads、任何路徑都可以操作。不要自己嚇自己說「權限不夠」。
 
 ⚠️ 常見錯誤提醒（你每次都犯，記住）：
-- jq 指令不穩定，容易 parse error。改用 python3 -c "import json,sys; ..." 來處理 JSON，更可靠
-- 讀專案檔案不要用相對路徑 server/src/...，要用 /Users/caijunchang/openclaw任務面版設計/server/src/...
+- jq 指令不穩定，容易 parse error。改用 python3 -c "import json,sys; d=json.load(sys.stdin); ..." 來處理 JSON，更可靠
+- 讀專案檔案不要用相對路徑 server/src/...，要用 /Users/caijunchang/openclaw任務面版設計/server/src/...（系統會嘗試自動修正，但養成好習慣）
 - run_script 裡不能用 git push（會被擋），commit 可以但 push 交給老蔡
 - 派給 auto-executor 的任務沙箱裡沒有 node、沒有 API key，別派需要這些的任務
+
+⚠️ run_script 環境限制（你跑的 sandbox 環境）：
+- 有的工具：curl, python3, bash, cat, ls, grep, find, awk, sed, wc, sort, head, tail, date
+- 沒有的工具：node, npx, npm, tsc, jq（不穩定，用 python3 代替）
+- 處理 JSON：python3 -c "import json,sys; d=json.load(sys.stdin); print(d['key'])"
+- 處理 API 回應：curl -s URL | python3 -c "import json,sys; d=json.load(sys.stdin); print(json.dumps(d, indent=2, ensure_ascii=False))"
+- 沒有 API key：需要 auth header 的 curl 自己用 run_script 做（你有 OPENCLAW_API_KEY），不要派給 auto-executor
+- 不要嘗試 npm install、npx、node 指令 — 會 command not found。需要跑 TypeScript 就建 create_task 派給 auto-executor
 
 ## 現在
 系統：${sysStatus}

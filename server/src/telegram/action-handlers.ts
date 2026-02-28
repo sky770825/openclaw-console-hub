@@ -34,13 +34,38 @@ export async function createTask(name: string, description?: string, owner?: str
 
 // ── 檔案操作 ──
 
+/** 常見相對路徑前綴 → 自動補全對應的絕對路徑 */
+const PATH_PREFIXES: [string, string][] = [
+  ['server/', '/Users/caijunchang/openclaw任務面版設計/server/'],
+  ['src/', '/Users/caijunchang/openclaw任務面版設計/src/'],
+  ['cookbook/', `${NEUXA_WORKSPACE}/cookbook/`],
+  ['armory/', `${NEUXA_WORKSPACE}/armory/`],
+  ['scripts/', `${NEUXA_WORKSPACE}/scripts/`],
+  ['memory/', `${NEUXA_WORKSPACE}/memory/`],
+  ['projects/', `${NEUXA_WORKSPACE}/projects/`],
+];
+
 export async function handleReadFile(actionPath: string): Promise<ActionResult> {
   const check = isPathSafe(actionPath, 'read');
   if (!check.safe) return { ok: false, output: `🚫 ${check.reason}` };
 
   try {
-    const resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
-    if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${actionPath}` };
+    let resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
+
+    // 自動修正常見相對路徑（小蔡常忘記打絕對路徑）
+    if (!fs.existsSync(resolved) && !path.isAbsolute(actionPath)) {
+      for (const [prefix, abs] of PATH_PREFIXES) {
+        if (actionPath.startsWith(prefix)) {
+          const candidate = path.join(abs, actionPath.slice(prefix.length));
+          if (fs.existsSync(candidate)) {
+            resolved = candidate;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${actionPath}（提醒：專案檔案要用絕對路徑 /Users/caijunchang/openclaw任務面版設計/...）` };
     const stat = fs.statSync(resolved);
     if (stat.isDirectory()) return { ok: false, output: `這是目錄，不是檔案。用 list_dir 看目錄內容。` };
     const content = fs.readFileSync(resolved, 'utf8');
@@ -146,7 +171,26 @@ export async function handleRunScript(command: string): Promise<ActionResult> {
         stderr.trim() ? `stderr: ${stderr.trim().slice(0, 500)}` : '',
         `exit: ${code}`,
       ].filter(Boolean).join('\n');
-      resolve({ ok: code === 0, output: sanitize(rawOutput) });
+
+      // 常見失敗自動附帶修復建議
+      let hint = '';
+      if (code !== 0 && stderr) {
+        const se = stderr.toLowerCase();
+        if (se.includes('command not found')) {
+          const cmd = stderr.match(/sh: (\S+): command not found/)?.[1] || '';
+          if (['node', 'npx', 'npm'].includes(cmd)) {
+            hint = `\n💡 提示：sandbox 環境沒有 ${cmd}。改用 python3 或 curl，或建 create_task 派給 auto-executor。`;
+          } else if (cmd === 'jq') {
+            hint = '\n💡 提示：jq 不穩定，改用 python3 -c "import json,sys; d=json.load(sys.stdin); ..."';
+          } else {
+            hint = `\n💡 提示：${cmd} 不存在，用 which 確認或換其他工具。`;
+          }
+        } else if (se.includes('jq: parse error') || se.includes('jq: error')) {
+          hint = '\n💡 提示：jq 解析失敗。改用 python3 -c "import json,sys; d=json.load(sys.stdin); ..." 更可靠。';
+        }
+      }
+
+      resolve({ ok: code === 0, output: sanitize(rawOutput + hint) });
     });
 
     proc.on('error', (e) => {
