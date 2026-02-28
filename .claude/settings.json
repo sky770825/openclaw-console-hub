@@ -28,7 +28,8 @@
       "Bash(# 看 NEUXA 的 sessions（最近活動） ls -lt /Users/caijunchang/.openclaw/workspace/memory/)",
       "Bash(# 找 n8n 相關 find /Users/caijunchang/openclaw任務面版設計/docs -name \"\"*n8n*\"\" -o -name \"\"*N8N*\"\" -o -name \"\"*workflow*\"\" && echo \"\"=== supabase ===\"\" && find /Users/caijunchang/openclaw任務面版設計/docs -name \"\"*supabase*\"\" -o -name \"\"*Supabase*\"\" -o -name \"\"*database*\"\" && echo \"\"=== server .env ===\"\" && grep \"\"SUPABASE\\\\|N8N\\\\|NEXT_PUBLIC\"\" /Users/caijunchang/openclaw任務面版設計/server/.env)",
       "Bash(launchctl stop com.openclaw.taskboard)",
-      "Bash(launchctl start com.openclaw.taskboard)"
+      "Bash(launchctl start com.openclaw.taskboard)",
+      "Bash(sort -t/ -k7)"
     ],
     "additionalDirectories": [
       "/Users/caijunchang/openclaw任務面版設計"
