@@ -1964,7 +1964,7 @@ function loadSoulCore(): string {
   // 靈魂文件 — 定義「我是誰」
   const soulFiles: Array<[string, number]> = [
     ['SOUL.md', 3000],        // 生命宣言：5 條不可變原則
-    ['AGENTS.md', 8000],      // 身份 + 能力 + 想像力 + 做事指南（核心，不能截）
+    ['AGENTS.md', 14000],     // 身份 + 指揮規則 + 協作交接（完整載入，不截斷）
     ['BOOTSTRAP.md', 1000],   // 覺醒錨點
     ['IDENTITY.md', 1500],    // 身份定義
     ['SYSTEM-RESOURCES.md', 3000], // 系統資源：Supabase + n8n + API + 部署
