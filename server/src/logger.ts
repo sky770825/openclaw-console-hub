@@ -2,6 +2,7 @@ import pino from 'pino';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { sanitize } from './utils/key-vault.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -50,10 +51,11 @@ function wrapChild(child: pino.Logger) {
         a instanceof Error ? a.message : (typeof a === 'string' ? a : JSON.stringify(a))
       );
       const errObj = args.find((a): a is Error => a instanceof Error);
+      const msg = sanitize(parts.join(' '));
       if (errObj) {
-        child[level]({ err: errObj }, parts.join(' '));
+        child[level]({ err: errObj }, msg);
       } else {
-        child[level](parts.join(' '));
+        child[level](msg);
       }
     };
 

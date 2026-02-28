@@ -37,6 +37,18 @@ const OC_STATUS_TO_BOARD: Record<string, string> = {
 /** 映射 OpenClaw task 到前端看板格式 */
 function mapToBoard(oc: any) {
   const mapped = openClawTaskToTask(oc);
+  // 從 result JSON 解析品質分數
+  let qualityScore: number | null = null;
+  let qualityGrade: string | null = null;
+  if (oc.result) {
+    try {
+      const r = JSON.parse(oc.result);
+      if (r.quality) {
+        qualityScore = r.quality.score ?? null;
+        qualityGrade = r.quality.grade ?? null;
+      }
+    } catch { /* not JSON */ }
+  }
   return {
     ...mapped,
     // 用映射後的 status（ready/running/done），讓 Kanban 欄位正確對應
@@ -48,6 +60,8 @@ function mapToBoard(oc: any) {
     thought: oc.thought,
     from_review_id: oc.fromR ?? null,
     result: oc.result ?? undefined,
+    qualityScore,
+    qualityGrade,
   };
 }
 

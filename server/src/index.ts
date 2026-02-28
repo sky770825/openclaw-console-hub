@@ -75,6 +75,7 @@ import autoExecutorRouter, {
 } from './routes/auto-executor.js';
 // === 新增：房源文案 API 路由 (P3 任務) ===
 import propertyApiRouter from './routes/property-api.js';
+import { proxyRouter } from './routes/proxy.js';
 import {
   hasN8n,
   listWorkflows,
@@ -513,6 +514,8 @@ app.use('/api/openclaw', openclawDataRouter);
 app.use('/api/openclaw/insights', insightsRouter);
 // === 新增：房源文案 API 路由 (P3 任務) ===
 app.use('/api/tools', propertyApiRouter);
+// API Key 安全代理（proxy_fetch action + HTTP endpoint）
+app.use('/api/proxy', proxyRouter);
 // FADP 聯盟協防協議路由（/api/federation/*，部分端點不需 auth，內部使用 x-fadp-key）
 app.use('/api/federation', federationRouter);
 
@@ -3877,7 +3880,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.3.3',
+    version: '2.3.4',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

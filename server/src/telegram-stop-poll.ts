@@ -9,6 +9,7 @@
 import { createLogger } from './logger.js';
 import { sendTelegramMessageToChat } from './utils/telegram.js';
 import { handleStopCommand } from './emergency-stop.js';
+import { sanitize } from './utils/key-vault.js';
 import { spawn } from 'node:child_process';
 
 const log = createLogger('telegram');
@@ -328,7 +329,7 @@ function getAvailableModels(): Array<{ id: string; label: string; provider: stri
     { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google' },
     { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google' },
     { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google' },
-    { id: 'gemini-2.0-flash', label: '⚙️ Gemini 2 Flash', provider: 'Google' },
+    { id: 'gemini-2.0-flash-lite', label: '⚙️ Gemini 2 Flash Lite', provider: 'Google' },
     // Kimi
     { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi' },
     { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi' },
@@ -1698,6 +1699,7 @@ const SOUL_FILES = new Set([
 const FORBIDDEN_PATH_PATTERNS = [
   '.env', 'credentials', 'secret', 'password', 'api_key', 'apikey',
   'token', '.pem', '.key', 'id_rsa', 'authorized_keys',
+  'openclaw.json', // 含 provider API keys
 ];
 
 /** 危險指令 — 腳本中不可出現（只鎖 key 相關，其他放開） */
@@ -1770,7 +1772,7 @@ async function handleReadFile(actionPath: string): Promise<ActionResult> {
     const content = fs.readFileSync(resolved, 'utf8');
     // 截斷到 3000 字，避免回覆爆炸
     const trimmed = content.length > 3000 ? content.slice(0, 3000) + '\n...(截斷)' : content;
-    return { ok: true, output: trimmed };
+    return { ok: true, output: sanitize(trimmed) };
   } catch (e) {
     return { ok: false, output: `讀取失敗: ${(e as Error).message}` };
   }
@@ -1865,12 +1867,12 @@ async function handleRunScript(command: string): Promise<ActionResult> {
     proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
 
     proc.on('close', (code) => {
-      const output = [
+      const rawOutput = [
         stdout.trim() ? stdout.trim().slice(0, 2000) : '',
         stderr.trim() ? `stderr: ${stderr.trim().slice(0, 500)}` : '',
         `exit: ${code}`,
       ].filter(Boolean).join('\n');
-      resolve({ ok: code === 0, output });
+      resolve({ ok: code === 0, output: sanitize(rawOutput) });
     });
 
     proc.on('error', (e) => {
@@ -1972,7 +1974,7 @@ async function handleAskGemini(
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
-      return { ok: false, output: `[ask_ai] ${geminiModel} HTTP ${resp.status}: ${errText.slice(0, 200)}` };
+      return { ok: false, output: sanitize(`[ask_ai] ${geminiModel} HTTP ${resp.status}: ${errText.slice(0, 200)}`) };
     }
 
     const data = await resp.json() as Record<string, unknown>;
@@ -1989,7 +1991,7 @@ async function handleAskGemini(
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);
     log.error({ err: e }, `[NEUXA-AskAI] ${geminiModel} failed`);
-    return { ok: false, output: `[ask_ai] ${geminiModel} 失敗: ${errMsg}` };
+    return { ok: false, output: sanitize(`[ask_ai] ${geminiModel} 失敗: ${errMsg}`) };
   }
 }
 
@@ -2076,8 +2078,86 @@ async function executeNEUXAAction(action: Record<string, string>): Promise<Actio
       }
       return handleAskAI(askModel, action.prompt || '', action.context);
     }
+    case 'proxy_fetch':
+      return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
     default:
       return { ok: false, output: `未知 action: ${type}` };
+  }
+}
+
+/** 安全代理：NEUXA 透過 server 發外部 API 請求，key 由 server 自動注入 */
+async function handleProxyFetch(url: string, method: string, body: string): Promise<ActionResult> {
+  if (!url) return { ok: false, output: 'proxy_fetch 需要 url 參數' };
+
+  // URL 白名單 → key 映射
+  const TARGETS: Array<{ pattern: RegExp; name: string; inject: (u: string, h: Record<string, string>) => { url: string; headers: Record<string, string> } }> = [
+    {
+      pattern: /^https:\/\/generativelanguage\.googleapis\.com\//,
+      name: 'Gemini',
+      inject: (u, h) => {
+        const key = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
+        const sep = u.includes('?') ? '&' : '?';
+        return { url: `${u}${sep}key=${key}`, headers: h };
+      },
+    },
+    {
+      pattern: /^https:\/\/api\.moonshot\.ai\//,
+      name: 'Kimi',
+      inject: (u, h) => {
+        let key = '';
+        try {
+          const ocData = JSON.parse(fs.readFileSync(path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json'), 'utf8'));
+          key = ocData?.models?.providers?.kimi?.apiKey || '';
+        } catch { /* */ }
+        return { url: u, headers: { ...h, Authorization: `Bearer ${key}` } };
+      },
+    },
+    {
+      pattern: /^https:\/\/api\.x\.ai\//,
+      name: 'xAI',
+      inject: (u, h) => {
+        let key = '';
+        try {
+          const ocData = JSON.parse(fs.readFileSync(path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json'), 'utf8'));
+          key = ocData?.models?.providers?.xai?.apiKey || '';
+        } catch { /* */ }
+        return { url: u, headers: { ...h, Authorization: `Bearer ${key}` } };
+      },
+    },
+  ];
+
+  const target = TARGETS.find(t => t.pattern.test(url));
+  if (!target) {
+    return { ok: false, output: `proxy_fetch: URL 不在白名單。允許的目標: ${TARGETS.map(t => t.name).join(', ')}` };
+  }
+
+  try {
+    const injected = target.inject(url, { 'Content-Type': 'application/json' });
+    const fetchOpts: RequestInit = {
+      method: method.toUpperCase(),
+      headers: injected.headers,
+      signal: AbortSignal.timeout(60000),
+    };
+    if (body && method.toUpperCase() !== 'GET') {
+      fetchOpts.body = typeof body === 'object' ? JSON.stringify(body) : body;
+    }
+
+    const resp = await fetch(injected.url, fetchOpts);
+    const contentType = resp.headers.get('content-type') || '';
+    let data: string;
+    if (contentType.includes('application/json')) {
+      data = JSON.stringify(await resp.json());
+    } else {
+      data = await resp.text();
+    }
+
+    // 脫敏後才回給 NEUXA
+    const output = sanitize(data.slice(0, 3000));
+    log.info(`[ProxyFetch] ${target.name} ${method} → ${resp.status} (${data.length} chars)`);
+    return { ok: resp.ok, output: `[${target.name} ${resp.status}]\n${output}` };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, output: sanitize(`proxy_fetch ${target.name} 失敗: ${msg}`) };
   }
 }
 
@@ -2614,7 +2694,7 @@ async function xiaocaiPoll(): Promise<void> {
             const label = action.action === 'create_task' ? `任務「${action.name}」` : action.action;
             const maxOutput = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
             log.info(`[Xiaocai-Chain] step=${step} ${action.action} → ok=${result.ok}${!result.ok ? ` reason=${result.output.slice(0, 120)}` : ''}`);
-            return `${icon} ${label}: ${result.output.slice(0, maxOutput)}`;
+            return `${icon} ${label}: ${sanitize(result.output.slice(0, maxOutput))}`;
           } catch {
             log.warn(`[Xiaocai-Chain] JSON parse failed at step ${step}`);
             return null;
@@ -2641,7 +2721,7 @@ async function xiaocaiPoll(): Promise<void> {
           history.push({ role: 'user', text: thinkInput });
         }
         history.push({ role: 'model', text: reply || '（執行中）' });
-        history.push({ role: 'user', text: `[執行結果]\n${stepResults.join('\n')}` });
+        history.push({ role: 'user', text: sanitize(`[執行結果]\n${stepResults.join('\n')}`) });
         if (history.length > 30) history.splice(0, history.length - 30);
         xiaocaiHistory.set(chatId, history);
 
@@ -2706,7 +2786,7 @@ async function xiaocaiPoll(): Promise<void> {
               const result = await executeNEUXAAction(action);
               const icon = result.ok ? '✅' : '🚫';
               const driveMax = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
-              driveResults.push(`${icon} ${action.action}: ${result.output.slice(0, driveMax)}`);
+              driveResults.push(`${icon} ${action.action}: ${sanitize(result.output.slice(0, driveMax))}`);
               log.info(`[XiaocaiSelfDrive] round=${selfDrive} ${action.action} → ok=${result.ok}${!result.ok ? ` reason=${result.output.slice(0, 120)}` : ''}`);
             } catch { /* skip */ }
             driveText = driveText.replace(jsonStr, '').trim();

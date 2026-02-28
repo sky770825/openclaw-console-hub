@@ -456,6 +456,9 @@ async function executeNextPendingTask(): Promise<void> {
           })
           .eq('id', runId);
         activeTaskIds.delete(task.id);
+        // 不及格也寫入品質分數到 result JSON
+        const failResult = JSON.stringify({ output: '', quality: { grade: quality.grade, score: quality.score, passed: false, reason: quality.reason } });
+        await supabase.from('openclaw_tasks').update({ result: failResult }).eq('id', task.id);
         await upsertOpenClawTask({ id: task.id, status: 'needs_review' as never, progress: 50 });
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
@@ -517,7 +520,9 @@ async function executeNextPendingTask(): Promise<void> {
       };
       await supabase
         .from('openclaw_tasks')
-        .update({ result: JSON.stringify(structuredResult).slice(0, 2000) })
+        .update({
+          result: JSON.stringify(structuredResult).slice(0, 2000),
+        })
         .eq('id', task.id);
       activeTaskIds.delete(task.id);
       await upsertOpenClawTask({ id: task.id, status: 'done', progress: 100 });

@@ -536,7 +536,7 @@ echo "✅ 封存檢查完成"`;
       const execResult = await this.generateAndExecute(task.name, task.description, timeout);
 
       // 品質閘門評分
-      const quality = this.gradeExecution(
+      const quality = await this.gradeExecution(
         task.name,
         task.description,
         execResult.exitCode,
@@ -597,7 +597,7 @@ echo "✅ 封存檢查完成"`;
    * Gate 2: 產出物驗證（任務要求產出 → 必須有檔案）
    * Gate 3: 內容品質檢查（不是純計畫文字、不是空洞回應）
    */
-  static gradeExecution(
+  static async gradeExecution(
     taskName: string,
     taskDescription: string,
     exitCode: number,
@@ -605,7 +605,7 @@ echo "✅ 封存檢查完成"`;
     _stderr: string,
     artifacts: string[],
     script: string
-  ): QualityGrade {
+  ): Promise<QualityGrade> {
     const checks: QualityGrade['checks'] = [];
     const desc = `${taskName}\n${taskDescription}`.toLowerCase();
 
@@ -698,6 +698,15 @@ echo "✅ 封存檢查完成"`;
       detail: `腳本 ${scriptLines.length} 行有效指令`,
     });
 
+    // ── Gate 4: AI 內容審查（20 分）— 用 Gemini 2.0 Flash 判斷產出是否回答了任務要求 ──
+    const aiReviewScore = await this.aiContentReview(desc, stdout, artifacts);
+    checks.push({
+      name: 'ai_content_review',
+      passed: aiReviewScore >= 6,
+      weight: 20,
+      detail: `AI 審查 ${aiReviewScore}/10`,
+    });
+
     // ── 計算總分 ──
     const totalWeight = checks.reduce((sum, c) => sum + c.weight, 0);
     const earnedWeight = checks.filter(c => c.passed).reduce((sum, c) => sum + c.weight, 0);
@@ -720,6 +729,84 @@ echo "✅ 封存檢查完成"`;
       checks,
       reason,
     };
+  }
+
+  /**
+   * AI 內容審查：用 Gemini 2.0 Flash 判斷產出是否回答了任務要求
+   * 回傳 1-10 分。Gemini 掛了或超時回傳 7（不擋流程）。
+   */
+  private static async aiContentReview(
+    taskDescription: string,
+    stdout: string,
+    artifacts: string[]
+  ): Promise<number> {
+    const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+    if (!GOOGLE_API_KEY) return 7; // 沒 key 就跳過
+
+    // 讀產出物內容（最多 1500 字）
+    let artifactContent = '';
+    for (const f of artifacts.slice(0, 3)) {
+      try {
+        const content = fs.readFileSync(f, 'utf8').trim();
+        artifactContent += `\n--- ${path.basename(f)} ---\n${content.slice(0, 500)}\n`;
+      } catch { /* skip */ }
+    }
+
+    const outputSnippet = (stdout || '').slice(0, 800);
+    const prompt = `你是品質審查員。判斷以下任務的產出是否真正回答了任務要求。
+
+任務描述：${taskDescription.slice(0, 300)}
+
+執行輸出：${outputSnippet}
+
+${artifactContent ? `產出檔案內容：${artifactContent.slice(0, 700)}` : '（無產出檔案）'}
+
+評分標準：
+- 10分：完美回答，內容詳實有用
+- 7-9分：有回答，但可以更好
+- 4-6分：部分回答，缺少關鍵內容
+- 1-3分：沒有回答，是廢話或離題
+
+只回覆一個數字（1-10），不要其他文字。`;
+
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 50, temperature: 0.1 },
+          }),
+          signal: AbortSignal.timeout(15000), // 15 秒超時
+        }
+      );
+      if (!resp.ok) {
+        log.warn(`[QualityGate-AI] Gemini HTTP ${resp.status}: ${resp.statusText}`);
+        return 7;
+      }
+      const data = await resp.json() as Record<string, unknown>;
+      const candidates = (data as Record<string, unknown>).candidates as Array<Record<string, unknown>> | undefined;
+      if (!candidates || candidates.length === 0) {
+        log.warn(`[QualityGate-AI] Gemini 無 candidates，回應: ${JSON.stringify(data).slice(0, 200)}`);
+        return 7;
+      }
+      const parts = (candidates[0]?.content as Record<string, unknown>)?.parts as Array<Record<string, unknown>> | undefined;
+      const text = (String(parts?.[0]?.text || '')).trim();
+      // 從回覆中提取數字（Gemini 有時會多輸出幾個字）
+      const match = text.match(/(\d+)/);
+      const num = match ? parseInt(match[1], 10) : NaN;
+      if (num >= 1 && num <= 10) {
+        log.info(`[QualityGate-AI] Gemini 審查: ${num}/10`);
+        return num;
+      }
+      log.warn(`[QualityGate-AI] Gemini 回覆無法解析: "${text}", 預設 7`);
+      return 7;
+    } catch (e) {
+      log.warn({ err: e }, '[QualityGate-AI] Gemini 審查失敗，跳過');
+      return 7; // 失敗不擋流程
+    }
   }
 
   // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
@@ -1030,7 +1117,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
 
       const artifacts = this.scanArtifacts();
 
-      const quality = this.gradeExecution(
+      const quality = await this.gradeExecution(
         task.name,
         task.description,
         result.exitCode,
