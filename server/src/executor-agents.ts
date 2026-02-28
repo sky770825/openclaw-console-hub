@@ -662,12 +662,28 @@ echo "✅ 封存檢查完成"`;
       });
     } else {
       // 非產出型任務（如監控、檢查），產出物加分但不扣分
+      // 但 AI分析 類任務（純寫 markdown）降低白送分數，避免刷分
+      const isAnalysisTask = /\[AI分析\]|靈魂|意識|顧問|策略|規格|設計|架構設計|技術規格/i.test(taskName);
+      const bonusWeight = isAnalysisTask ? 15 : 30; // AI分析 類只給 15 分，其他給 30 分
       checks.push({
         name: 'artifacts_bonus',
         passed: true,
-        weight: 30,
-        detail: artifacts.length > 0 ? `${artifacts.length} 個產出物（加分）` : '非產出型任務，不要求檔案',
+        weight: bonusWeight,
+        detail: isAnalysisTask
+          ? `AI分析類任務，降低產出物加分 (${bonusWeight}分)`
+          : (artifacts.length > 0 ? `${artifacts.length} 個產出物（加分）` : '非產出型任務，不要求檔案'),
       });
+      // AI分析 類額外檢查：產出不能只是複述任務描述
+      if (isAnalysisTask) {
+        const outputLen = stdout.trim().length;
+        const hasSubstance = outputLen > 200 && !stdout.includes('我將為您') && !stdout.includes('以下是分析');
+        checks.push({
+          name: 'analysis_substance',
+          passed: hasSubstance,
+          weight: 15,
+          detail: hasSubstance ? `分析內容 ${outputLen} 字` : `分析內容不足或為空洞開場白 (${outputLen} 字)`,
+        });
+      }
     }
 
     // ── Gate 3: 內容品質（30 分）──

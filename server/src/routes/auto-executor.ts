@@ -119,6 +119,8 @@ let executorLocked = false;
 // 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
 const autoExecutorExecHistoryMs: number[] = [];
+// AI分析 類任務限頻：每小時最多 5 個，避免量產低價值分析報告
+const analysisTaskExecTimestamps: number[] = [];
 
 // 記錄目前正在執行中的任務 ID（用於 SIGTERM graceful shutdown）
 const activeTaskIds = new Set<string>();
@@ -285,6 +287,14 @@ async function executeNextPendingTask(): Promise<void> {
     }
 
     const ocTasks = await fetchOpenClawTasks();
+    // AI分析 類任務限頻檢查（每小時最多 5 個）
+    const nowMs = Date.now();
+    const oneHourAgo = nowMs - 3600_000;
+    while (analysisTaskExecTimestamps.length > 0 && analysisTaskExecTimestamps[0] < oneHourAgo) {
+      analysisTaskExecTimestamps.shift();
+    }
+    const analysisQuotaFull = analysisTaskExecTimestamps.length >= 5;
+
     const pendingTasks = ocTasks
       .map(openClawTaskToTask)
       .filter((t) => {
@@ -293,6 +303,10 @@ async function executeNextPendingTask(): Promise<void> {
         if (t.owner === '老蔡') return false;
         // 跳過標記為 manual-only 的任務（需人工執行，不交給 auto-executor）
         if (t.tags?.includes('manual-only')) return false;
+        // AI分析 類任務限頻：每小時最多 5 個
+        if (analysisQuotaFull && /\[AI分析\]/i.test(t.name || '')) {
+          return false;
+        }
         // In dispatch mode, skip strict gate validation (no runCommands/agent needed for dispatch)
         if (autoExecutorState.dispatchMode) return true;
         return validateTaskForGate(t, 'ready').ok;
@@ -396,6 +410,11 @@ async function executeNextPendingTask(): Promise<void> {
     }
 
     const agentType = AgentSelector.selectAgent(task);
+
+    // 記錄 AI分析 類任務的執行時間（限頻用）
+    if (/\[AI分析\]/i.test(task.name || '')) {
+      analysisTaskExecTimestamps.push(Date.now());
+    }
 
     await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
     // 確保 Supabase 已設為 in_progress 後，才從批准 set 移除（避免競爭條件）
