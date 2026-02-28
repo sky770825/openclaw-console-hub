@@ -320,24 +320,41 @@ async function replyTasks(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
+/** 模型配置表：集中管理所有模型的 provider、temperature、maxTokens 等參數 */
+interface ModelConfig {
+  id: string;
+  label: string;
+  provider: string;
+  temperature: number;   // 該模型可接受的 temperature
+  maxOutputTokens: number;
+}
+
+const MODEL_REGISTRY: ModelConfig[] = [
+  // Google
+  { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'gemini-2.5-flash-lite', label: '💨 Gemini 2.5 Flash Lite', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'gemini-2.0-flash-lite', label: '⚙️ Gemini 2 Flash Lite', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192 },
+  // Kimi（K2 系列只接受 temperature=1）
+  { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192 },
+  { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192 },
+  // xAI
+  { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 8192 },
+];
+
+/** 查詢模型配置，找不到就用預設值 */
+function getModelConfig(modelId: string): ModelConfig {
+  return MODEL_REGISTRY.find(m => m.id === modelId) || {
+    id: modelId, label: modelId, provider: 'Google', temperature: 0.85, maxOutputTokens: 8192,
+  };
+}
+
 /** 取得所有可用模型清單（雲端 + 本地） */
 function getAvailableModels(): Array<{ id: string; label: string; provider: string }> {
-  const models: Array<{ id: string; label: string; provider: string }> = [
-    // Google
-    { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google' },
-    { id: 'gemini-2.5-flash-lite', label: '💨 Gemini 2.5 Flash Lite', provider: 'Google' },
-    { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google' },
-    { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google' },
-    { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google' },
-    { id: 'gemini-2.0-flash-lite', label: '⚙️ Gemini 2 Flash Lite', provider: 'Google' },
-    // Kimi
-    { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi' },
-    { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi' },
-    // xAI
-    { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI' },
-    { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI' },
-  ];
-  return models;
+  return MODEL_REGISTRY.map(m => ({ id: m.id, label: m.label, provider: m.provider }));
 }
 
 /** 從 openclaw.json 讀取 provider API key */
@@ -371,6 +388,7 @@ async function callOpenAICompatible(
   maxTokens: number,
   timeoutMs: number,
 ): Promise<string> {
+  const cfg = getModelConfig(model);
   const body = {
     model,
     messages: [
@@ -378,7 +396,7 @@ async function callOpenAICompatible(
       ...messages,
     ],
     max_tokens: maxTokens,
-    temperature: 0.85,
+    temperature: cfg.temperature,
   };
   const resp = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
@@ -2506,7 +2524,7 @@ ${taskSnap}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents,
-            generationConfig: { maxOutputTokens: 8192, temperature: 0.85 },
+            generationConfig: { maxOutputTokens: getModelConfig(xiaocaiMainModel).maxOutputTokens, temperature: getModelConfig(xiaocaiMainModel).temperature },
           }),
           signal: AbortSignal.timeout(90000),
         }

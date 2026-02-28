@@ -5,7 +5,7 @@
  */
 import './preload-dotenv.js';
 import { createLogger } from './logger.js';
-import { startTelegramStopPoll } from './telegram-stop-poll.js';
+import { startTelegramStopPoll } from './telegram/index.js';
 import path from 'path';
 import fs from 'fs';
 import { spawn, execSync } from 'child_process';
@@ -3880,7 +3880,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.3.7',
+    version: '2.3.8',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

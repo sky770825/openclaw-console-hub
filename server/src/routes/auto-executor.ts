@@ -96,8 +96,8 @@ type AutoExecutorDiskState = {
 
 const autoExecutorState: AutoExecutorState = {
   isRunning: false,
-  pollIntervalMs: 10000,
-  maxTasksPerMinute: 1,
+  pollIntervalMs: 15000,
+  maxTasksPerMinute: 3,
   lastPollAt: null,
   lastExecutedTaskId: null,
   lastExecutedAt: null,
@@ -142,8 +142,8 @@ function loadAutoExecutorDiskState(): AutoExecutorDiskState {
   const p = autoExecutorStatePath();
   const fallback: AutoExecutorDiskState = {
     enabled: false,
-    pollIntervalMs: 10000,
-    maxTasksPerMinute: 1,
+    pollIntervalMs: 15000,
+    maxTasksPerMinute: 3,
     updatedAt: new Date().toISOString(),
   };
   try {

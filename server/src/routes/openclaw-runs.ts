@@ -7,6 +7,7 @@ export const openclawRunsRouter = Router();
 
 openclawRunsRouter.get('/', async (req, res) => {
   try {
+    if (!supabase) { res.status(503).json({ error: 'Supabase not connected' }); return; }
     const { data, error } = await supabase.from('openclaw_runs').select('*').order('created_at', { ascending: false }).limit(50);
     if (error) throw error;
     res.json(data);
