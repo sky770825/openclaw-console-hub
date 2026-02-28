@@ -2703,8 +2703,13 @@ async function xiaocaiPoll(): Promise<void> {
         const settled = await Promise.all(actionPromises);
         const stepResults = settled.filter((r): r is string => r !== null);
         for (const jsonStr of actionMatches) {
+          // 移除 JSON 本體
           reply = reply.replace(jsonStr, '').trim();
         }
+        // 清理殘留的 markdown code block 標記（Gemini 常把 action 包在 ```json ... ``` 裡）
+        reply = reply.replace(/```json\s*```/g, '').replace(/```\s*```/g, '').trim();
+        // 清理孤立的 ``` 標記（前後沒有內容的）
+        reply = reply.replace(/^\s*```(?:json)?\s*$/gm, '').trim();
 
         allActionResults.push(...stepResults);
 
@@ -2771,7 +2776,11 @@ async function xiaocaiPoll(): Promise<void> {
           );
           const driveActions = extractActionJsons(driveReply);
           if (!driveActions || driveActions.length === 0) {
-            const cleanDrive = driveReply.replace(/\{"action"[^}]*\}/g, '').trim();
+            const cleanDrive = driveReply
+              .replace(/\{"action"[^}]*\}/g, '')
+              .replace(/```json\s*```/g, '').replace(/```\s*```/g, '')
+              .replace(/^\s*```(?:json)?\s*$/gm, '')
+              .trim();
             if (cleanDrive && cleanDrive.length > 5) {
               await sendTelegramMessageToChat(chatId, cleanDrive, { token: XIAOCAI_TOKEN });
             }
@@ -2791,6 +2800,9 @@ async function xiaocaiPoll(): Promise<void> {
             } catch { /* skip */ }
             driveText = driveText.replace(jsonStr, '').trim();
           }
+          // 清理殘留的 markdown code block 標記
+          driveText = driveText.replace(/```json\s*```/g, '').replace(/```\s*```/g, '').trim();
+          driveText = driveText.replace(/^\s*```(?:json)?\s*$/gm, '').trim();
           const driveMsg = driveText
             ? driveText
             : driveResults.map(r => r.length > 80 ? r.slice(0, 80) + '...' : r).join('\n');
