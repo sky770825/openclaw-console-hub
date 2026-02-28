@@ -362,6 +362,18 @@ export async function handleProxyFetch(url: string, method: string, body: string
         return { url: u, headers: { ...h, Authorization: `Bearer ${key}` } };
       },
     },
+    {
+      pattern: /^https:\/\/api\.deepseek\.com\//,
+      name: 'DeepSeek',
+      inject: (u, h) => {
+        let key = '';
+        try {
+          const ocData = JSON.parse(fs.readFileSync(path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json'), 'utf8'));
+          key = ocData?.models?.providers?.deepseek?.apiKey || '';
+        } catch { /* */ }
+        return { url: u, headers: { ...h, Authorization: `Bearer ${key}` } };
+      },
+    },
   ];
 
   const target = TARGETS.find(t => t.pattern.test(url));

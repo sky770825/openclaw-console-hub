@@ -422,6 +422,8 @@ export async function xiaocaiThink(
       if (!apiKey) return `沒有 ${provider} 的 API Key，請在 openclaw.json 設定`;
       const baseUrl = provider === 'kimi'
         ? 'https://api.moonshot.ai/v1'
+        : provider === 'deepseek'
+        ? 'https://api.deepseek.com/v1'
         : 'https://api.x.ai/v1';
       const messages = [
         ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),

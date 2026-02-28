@@ -27,6 +27,9 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // xAI
   { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 8192 },
   { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 8192 },
+  // DeepSeek
+  { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 0.85, maxOutputTokens: 8192 },
+  { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 0.85, maxOutputTokens: 8192 },
 ];
 
 /** 查詢模型配置，找不到就用預設值 */
@@ -42,7 +45,7 @@ export function getAvailableModels(): Array<{ id: string; label: string; provide
 }
 
 /** 從 openclaw.json 讀取 provider API key */
-export function getProviderKey(provider: 'kimi' | 'xai'): string {
+export function getProviderKey(provider: 'kimi' | 'xai' | 'deepseek'): string {
   try {
     const ocPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json');
     if (!fs.existsSync(ocPath)) return '';
@@ -57,9 +60,10 @@ export function getProviderKey(provider: 'kimi' | 'xai'): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' {
+export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' | 'deepseek' {
   if (modelId.startsWith('kimi')) return 'kimi';
   if (modelId.startsWith('grok')) return 'xai';
+  if (modelId.startsWith('deepseek')) return 'deepseek';
   return 'google';
 }
 
