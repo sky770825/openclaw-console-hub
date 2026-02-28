@@ -1476,6 +1476,16 @@ export function startTelegramStopPoll(): void {
       loop();
     });
 
+  // 啟動小蔡 bot polling（獨立 loop）
+  if (XIAOCAI_TOKEN) {
+    xiaocaiRunning = true;
+    const xcBotId = XIAOCAI_TOKEN.split(':')[0] || '(unknown)';
+    log.info(`[XiaocaiBot] 啟動小蔡 bot polling bot_id=${xcBotId}`);
+    fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/deleteWebhook?drop_pending_updates=true`)
+      .catch(() => {})
+      .finally(() => xiaocaiLoop());
+  }
+
   // 啟動群組 bot polling（獨立 loop）
   if (GROUP_TOKEN && GROUP_CHAT_ID) {
     groupRunning = true;
@@ -1491,4 +1501,182 @@ export function startTelegramStopPoll(): void {
 export function stopTelegramStopPoll(): void {
   running = false;
   groupRunning = false;
+  xiaocaiRunning = false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 小蔡 Bot (@xiaoji_cai_bot) — OpenClaw 主對話入口
+// ═══════════════════════════════════════════════════════════
+
+const XIAOCAI_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
+let xiaocaiOffset = 0;
+let xiaocaiRunning = false;
+
+async function xiaocaiPoll(): Promise<void> {
+  if (!XIAOCAI_TOKEN) return;
+  try {
+    const url = `https://api.telegram.org/bot${XIAOCAI_TOKEN}/getUpdates?offset=${xiaocaiOffset}&timeout=${GET_UPDATES_TIMEOUT_SEC}&allowed_updates=["message","callback_query"]`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+    if (!res.ok) { log.warn(`[XiaocaiBot] poll HTTP ${res.status}`); return; }
+    const data = (await res.json()) as { ok: boolean; result?: Array<Record<string, unknown>> };
+    if (!data.ok || !data.result?.length) return;
+
+    for (const update of data.result) {
+      xiaocaiOffset = Math.max(xiaocaiOffset, (update.update_id as number) + 1);
+      const msg = update.message as Record<string, unknown> | undefined;
+      if (!msg) continue;
+      const chat = msg.chat as Record<string, unknown>;
+      const chatId = chat?.id as number;
+      const text = ((msg.text as string) ?? '').trim();
+      if (!text) continue;
+
+      log.info(`[XiaocaiBot] recv chatId=${chatId} text=${text.slice(0, 60)}`);
+
+      // 只回應老蔡（TELEGRAM_CHAT_ID）
+      const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
+      if (allowedChatId && String(chatId) !== allowedChatId) {
+        await sendTelegramMessageToChat(chatId, '⚠️ 未授權的使用者', { token: XIAOCAI_TOKEN });
+        continue;
+      }
+
+      const cmd = text.split(/\s+/)[0]?.split('@')[0]?.toLowerCase() ?? '';
+
+      // /start — 小蔡歡迎選單
+      if (!cmd || cmd === '/start' || cmd === '/help') {
+        const menu = `🤖 <b>小蔡 OpenClaw</b>\n\n` +
+          `可用指令：\n` +
+          `📋 /tasks — 查看任務板\n` +
+          `📊 /status — 系統狀態\n` +
+          `➕ /new 任務名稱 — 建立新任務\n` +
+          `🔍 /search 關鍵字 — 搜尋任務\n` +
+          `\n直接打字也可以建立任務`;
+        await sendTelegramMessageToChat(chatId, menu, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        continue;
+      }
+
+      // /tasks — 任務板快照
+      if (cmd === '/tasks') {
+        try {
+          const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=10`, {
+            headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+          });
+          const tasks = (await r.json()) as Array<Record<string, unknown>>;
+          const list = (Array.isArray(tasks) ? tasks : []).slice(0, 10);
+          if (!list.length) {
+            await sendTelegramMessageToChat(chatId, '📋 任務板目前沒有任務', { token: XIAOCAI_TOKEN });
+            continue;
+          }
+          const statusIcon: Record<string, string> = { done: '✅', ready: '🟡', running: '🔄', pending: '⏳', failed: '❌' };
+          let msg = '📋 <b>最近 10 個任務</b>\n\n';
+          for (const t of list) {
+            const icon = statusIcon[t.status as string] ?? '⬜';
+            msg += `${icon} ${t.name}\n`;
+          }
+          await sendTelegramMessageToChat(chatId, msg, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        } catch {
+          await sendTelegramMessageToChat(chatId, '⚠️ 無法連線任務板', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+
+      // /status — 系統狀態
+      if (cmd === '/status') {
+        try {
+          const r = await fetch(`${TASKBOARD_BASE_URL}/api/health`, {
+            headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+          });
+          const h = (await r.json()) as Record<string, unknown>;
+          const ae = h.autoExecutor as Record<string, unknown> | undefined;
+          let msg = `📊 <b>系統狀態</b>\n\n`;
+          msg += `Server: v${h.version} | uptime: ${h.uptime}s\n`;
+          if (ae) {
+            msg += `AutoExec: ${ae.isRunning ? '✅ 運行中' : '❌ 停止'}\n`;
+            msg += `今日執行: ${ae.totalExecutedToday} 個任務\n`;
+          }
+          await sendTelegramMessageToChat(chatId, msg, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        } catch {
+          await sendTelegramMessageToChat(chatId, '⚠️ Server 無回應', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+
+      // /new 任務名稱 — 快速建任務
+      if (cmd === '/new') {
+        const taskName = text.replace(/^\/new\s*/i, '').trim();
+        if (!taskName) {
+          await sendTelegramMessageToChat(chatId, '用法：/new 任務名稱', { token: XIAOCAI_TOKEN });
+          continue;
+        }
+        try {
+          const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+            body: JSON.stringify({ name: taskName, status: 'pending', priority: 2, owner: '老蔡' }),
+          });
+          const result = (await r.json()) as Record<string, unknown>;
+          await sendTelegramMessageToChat(chatId, `✅ 已建立任務：<b>${taskName}</b>\nID: <code>${result.id}</code>`, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        } catch {
+          await sendTelegramMessageToChat(chatId, '⚠️ 建立任務失敗', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+
+      // /search 關鍵字
+      if (cmd === '/search') {
+        const keyword = text.replace(/^\/search\s*/i, '').trim();
+        if (!keyword) {
+          await sendTelegramMessageToChat(chatId, '用法：/search 關鍵字', { token: XIAOCAI_TOKEN });
+          continue;
+        }
+        try {
+          const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks`, {
+            headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+          });
+          const tasks = (await r.json()) as Array<Record<string, unknown>>;
+          const list = (Array.isArray(tasks) ? tasks : []).filter(
+            t => ((t.name as string) ?? '').includes(keyword) || ((t.description as string) ?? '').includes(keyword)
+          ).slice(0, 5);
+          if (!list.length) {
+            await sendTelegramMessageToChat(chatId, `🔍 找不到包含「${keyword}」的任務`, { token: XIAOCAI_TOKEN });
+            continue;
+          }
+          const statusIcon: Record<string, string> = { done: '✅', ready: '🟡', running: '🔄', pending: '⏳', failed: '❌' };
+          let msg = `🔍 搜尋「${keyword}」結果：\n\n`;
+          for (const t of list) {
+            const icon = statusIcon[t.status as string] ?? '⬜';
+            msg += `${icon} ${t.name}\n`;
+          }
+          await sendTelegramMessageToChat(chatId, msg, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        } catch {
+          await sendTelegramMessageToChat(chatId, '⚠️ 搜尋失敗', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+
+      // 預設：直接打字 = 建立任務
+      try {
+        const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+          body: JSON.stringify({ name: text.slice(0, 100), status: 'pending', priority: 2, owner: '老蔡', description: text }),
+        });
+        const result = (await r.json()) as Record<string, unknown>;
+        await sendTelegramMessageToChat(chatId, `📝 已建立任務：<b>${text.slice(0, 60)}</b>\nID: <code>${result.id}</code>`, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+      } catch {
+        await sendTelegramMessageToChat(chatId, '⚠️ 建立任務失敗', { token: XIAOCAI_TOKEN });
+      }
+    }
+  } catch (e: unknown) {
+    if (e instanceof DOMException && e.name === 'AbortError') return;
+    log.error({ err: e }, '[XiaocaiBot] poll error');
+  }
+}
+
+function xiaocaiLoop(): void {
+  if (!xiaocaiRunning) return;
+  xiaocaiPoll().finally(() => {
+    if (xiaocaiRunning) setTimeout(xiaocaiLoop, POLL_INTERVAL_MS);
+  });
 }
