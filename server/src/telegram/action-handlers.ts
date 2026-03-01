@@ -7,6 +7,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
+import { sendTelegramMessageToChat } from '../utils/telegram.js';
 import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE } from './security.js';
 
 const log = createLogger('telegram');
@@ -208,6 +209,75 @@ export async function handleRunScript(command: string): Promise<ActionResult> {
       resolve({ ok: false, output: `執行失敗: ${e.message}` });
     });
   });
+}
+
+// ── 背景腳本執行 ──
+
+const XIAOCAI_BG_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
+
+function getBgNotifyChatId(): number | null {
+  const raw = process.env.TELEGRAM_CHAT_ID?.trim();
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function handleRunScriptBg(command: string, label?: string): ActionResult {
+  const check = isScriptSafe(command);
+  if (!check.safe) return { ok: false, output: `🚫 ${check.reason}` };
+
+  const tag = label || command.slice(0, 40);
+
+  const proc = spawn('sh', ['-c', command], {
+    cwd: NEUXA_WORKSPACE,
+    timeout: 600000, // 10 分鐘上限
+    env: {
+      HOME: process.env.HOME,
+      PATH: process.env.PATH,
+      LANG: 'en_US.UTF-8',
+    },
+  });
+
+  let stdout = '';
+  let stderr = '';
+  const startedAt = Date.now();
+
+  proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+  proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+
+  proc.on('close', async (code) => {
+    const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+    const ok = code === 0;
+    const icon = ok ? '✅' : '❌';
+    const outputSnippet = sanitize(
+      (stdout.trim() || stderr.trim()).slice(-800) || '（無輸出）'
+    );
+    const summary = `${icon} 背景任務完成\n📋 ${tag}\n⏱ ${elapsed}s | exit ${code}\n\n${outputSnippet}`;
+
+    log.info(`[NEUXA-BG] "${tag}" done exit=${code} ${elapsed}s stdout=${stdout.length} stderr=${stderr.length}`);
+
+    const chatId = getBgNotifyChatId();
+    if (chatId && XIAOCAI_BG_TOKEN) {
+      try {
+        await sendTelegramMessageToChat(chatId, summary, { token: XIAOCAI_BG_TOKEN });
+      } catch (e) {
+        log.warn({ err: e }, `[NEUXA-BG] 通知發送失敗`);
+      }
+    }
+  });
+
+  proc.on('error', async (e) => {
+    log.error({ err: e }, `[NEUXA-BG] "${tag}" spawn error`);
+    const chatId = getBgNotifyChatId();
+    if (chatId && XIAOCAI_BG_TOKEN) {
+      try {
+        await sendTelegramMessageToChat(chatId, `❌ 背景任務啟動失敗\n📋 ${tag}\n${e.message}`, { token: XIAOCAI_BG_TOKEN });
+      } catch { /* ignore */ }
+    }
+  });
+
+  log.info(`[NEUXA-BG] 背景啟動: "${tag}" pid=${proc.pid}`);
+  return { ok: true, output: `已開始背景執行: ${tag} (pid=${proc.pid})，完成後會 Telegram 通知老蔡。` };
 }
 
 // ── AI 諮詢 ──
@@ -503,6 +573,8 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       return handleListDir(action.path || NEUXA_WORKSPACE);
     case 'run_script':
       return handleRunScript(action.command || '');
+    case 'run_script_bg':
+      return handleRunScriptBg(action.command || '', action.label);
     case 'ask_ai': {
       const askModel = (action.model || 'flash').toLowerCase();
       if (askModel.includes('claude') || askModel.includes('sonnet') || askModel.includes('opus')) {
