@@ -1521,17 +1521,83 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
 
+      // ── 小蔡 Reply Keyboard 選單 ──
+      const XIAOCAI_MENU_KEYBOARD = {
+        keyboard: [
+          [{ text: '📊 系統狀態' }, { text: '🚀 任務板' }],
+          [{ text: '🧠 切換模型' }, { text: '📋 日報' }],
+          [{ text: '🏥 健康檢查' }, { text: '🛟 自救巡檢' }],
+          [{ text: '❓ 幫助' }],
+        ],
+        resize_keyboard: true,
+      };
+
       // 指令路由
       const xcCmd = text.split(/\s+/)[0]?.split('@')[0]?.toLowerCase() ?? '';
       if (xcCmd === '/models' || text === '🧠 切換模型') { await replyModelsXiaocai(chatId); continue; }
-      if (xcCmd === '/status') {
+      if (xcCmd === '/status' || text === '📊 系統狀態') {
         const models = getAvailableModels();
         const label = models.find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
-        await sendTelegramMessageToChat(chatId, `📊 小蔡狀態\n\n主模型：${label} (${xiaocaiMainModel})\n\n切換模型：/models`, { token: XIAOCAI_TOKEN });
+        const tasks = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/tasks`, {}, 4000).catch(() => [])) as unknown;
+        const taskList = Array.isArray(tasks) ? tasks : [];
+        const pending = taskList.filter((t: Record<string, unknown>) => t.status === 'pending').length;
+        const running = taskList.filter((t: Record<string, unknown>) => t.status === 'running').length;
+        const done = taskList.filter((t: Record<string, unknown>) => t.status === 'done').length;
+        await sendTelegramMessageToChat(chatId, `📊 小蔡狀態\n\n主模型：${label} (${xiaocaiMainModel})\n任務：${pending} 待辦 / ${running} 進行中 / ${done} 完成\n\n切換模型：/models`, { token: XIAOCAI_TOKEN });
         continue;
       }
-      if (xcCmd === '/start' || xcCmd === '/help') {
-        await sendTelegramMessageToChat(chatId, `我是小蔡 🚀\n\n直接跟我聊天就好。\n\n/models — 切換模型\n/status — 目前狀態`, { token: XIAOCAI_TOKEN });
+      if (text === '🚀 任務板' || xcCmd === '/tasks') {
+        const tasks = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/tasks`, {}, 4000).catch(() => [])) as unknown;
+        const taskList = Array.isArray(tasks) ? tasks : [];
+        if (taskList.length === 0) {
+          await sendTelegramMessageToChat(chatId, '🚀 任務板是空的', { token: XIAOCAI_TOKEN });
+        } else {
+          const lines = taskList.slice(0, 15).map((t: Record<string, unknown>, i: number) => {
+            const icon = t.status === 'done' ? '✅' : t.status === 'running' ? '🔄' : '⏳';
+            return `${i + 1}. ${icon} ${t.title || t.name || '(無標題)'}`;
+          });
+          await sendTelegramMessageToChat(chatId, `🚀 任務板（前 15 筆）\n\n${lines.join('\n')}`, { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+      if (text === '📋 日報' || xcCmd === '/report') {
+        const report = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/auto-executor/status`, {}, 4000).catch(() => ({})) as Record<string, unknown>;
+        const tasks = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/tasks`, {}, 4000).catch(() => [])) as unknown;
+        const taskList = Array.isArray(tasks) ? tasks : [];
+        const done = taskList.filter((t: Record<string, unknown>) => t.status === 'done').length;
+        const total = taskList.length;
+        await sendTelegramMessageToChat(chatId, `📋 日報\n\n任務完成率：${done}/${total}\n自動執行器：${report.enabled ? '✅ 啟用' : '❌ 停用'}\n主模型：${xiaocaiMainModel}`, { token: XIAOCAI_TOKEN });
+        continue;
+      }
+      if (text === '🏥 健康檢查' || xcCmd === '/health') {
+        try {
+          const h = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/health`, {}, 4000) as Record<string, unknown>;
+          await sendTelegramMessageToChat(chatId, `🏥 健康檢查\n\nServer：${h.status || 'ok'}\n版本：${h.version || '?'}\nUptime：${h.uptime || '?'}`, { token: XIAOCAI_TOKEN });
+        } catch {
+          await sendTelegramMessageToChat(chatId, '🏥 健康檢查\n\n❌ Server 無回應', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+      if (text === '🛟 自救巡檢' || xcCmd === '/recover') {
+        await sendTelegramMessageToChat(chatId, '🛟 正在巡檢...', { token: XIAOCAI_TOKEN });
+        try {
+          const h = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/health`, {}, 4000) as Record<string, unknown>;
+          const tasks = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/tasks`, {}, 4000).catch(() => [])) as unknown;
+          const taskList = Array.isArray(tasks) ? tasks : [];
+          const stuck = taskList.filter((t: Record<string, unknown>) => t.status === 'running').length;
+          const lines = [
+            `Server：${h.status ? '✅' : '❌'}`,
+            `版本：${h.version || '?'}`,
+            `卡住的任務：${stuck} 個`,
+          ];
+          await sendTelegramMessageToChat(chatId, `🛟 巡檢結果\n\n${lines.join('\n')}`, { token: XIAOCAI_TOKEN });
+        } catch {
+          await sendTelegramMessageToChat(chatId, '🛟 巡檢失敗 — Server 無回應', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+      if (xcCmd === '/start' || xcCmd === '/help' || text === '❓ 幫助') {
+        await sendTelegramMessageToChat(chatId, `我是小蔡 🚀\n\n直接跟我聊天就好。\n\n/models — 切換模型\n/status — 系統狀態\n/tasks — 任務板\n/report — 日報\n/health — 健康檢查\n/recover — 自救巡檢`, { token: XIAOCAI_TOKEN, replyMarkup: XIAOCAI_MENU_KEYBOARD });
         continue;
       }
 
