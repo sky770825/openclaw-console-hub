@@ -693,15 +693,15 @@ function TaskDetailDrawer({ task, open, onClose, initialTab = 'overview', onTask
 
             {/* 執行結果（由 auto-executor 寫入） */}
             {task.result && (
-              <Card>
+              <Card className={task.status === 'failed' ? 'border-destructive/50 bg-destructive/5' : ''}>
                 <CardHeader className="py-3">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <span>執行結果</span>
+                    <span>{task.status === 'failed' ? '失敗原因' : '執行結果'}</span>
                     {task.lastRunStatus && <StatusBadge status={task.lastRunStatus} />}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm whitespace-pre-wrap break-words text-muted-foreground line-clamp-10">
+                  <p className={`text-sm whitespace-pre-wrap break-words line-clamp-10 ${task.status === 'failed' ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {task.result}
                   </p>
                 </CardContent>

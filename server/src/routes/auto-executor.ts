@@ -666,9 +666,9 @@ async function executeNextPendingTask(): Promise<void> {
           })
           .eq('id', runId);
         activeTaskIds.delete(task.id);
-        // 不及格也寫入品質分數到 result JSON
-        const failResult = JSON.stringify({ output: '', quality: { grade: quality.grade, score: quality.score, passed: false, reason: quality.reason } });
-        await supabase.from('openclaw_tasks').update({ result: failResult }).eq('id', task.id);
+        // 寫入易讀的失敗原因到 task result
+        const failReason = `❌ 品質閘門不及格：${quality.grade} (${quality.score}/100 分)\n\n原因：${quality.reason}\n\n${quality.checks ? '檢查項目：\n' + (quality.checks as Array<{name: string; passed: boolean; detail?: string}>).map((c: {name: string; passed: boolean; detail?: string}) => `${c.passed ? '✅' : '❌'} ${c.name}${c.detail ? ` — ${c.detail}` : ''}`).join('\n') : ''}`;
+        await supabase.from('openclaw_tasks').update({ result: failReason }).eq('id', task.id);
         const qgFails = (taskFailCounts.get(task.id) || 0) + 1;
         taskFailCounts.set(task.id, qgFails);
         if (qgFails <= MAX_TASK_RETRIES) {
@@ -696,6 +696,9 @@ async function executeNextPendingTask(): Promise<void> {
           })
           .eq('id', runId);
         activeTaskIds.delete(task.id);
+        const acDetails = acceptance.results.map(r => `${r.passed ? '✅' : '❌'} ${r.criterion}${r.error ? ` — ${r.error}` : ''}`).join('\n');
+        const acFailReason = `❌ 驗收條件未通過\n\n${acDetails || '未達到任務的驗收標準'}`;
+        await supabase.from('openclaw_tasks').update({ result: acFailReason }).eq('id', task.id);
         const acFails = (taskFailCounts.get(task.id) || 0) + 1;
         taskFailCounts.set(task.id, acFails);
         if (acFails <= MAX_TASK_RETRIES) {
@@ -795,6 +798,8 @@ async function executeNextPendingTask(): Promise<void> {
         .eq('id', runId);
 
       activeTaskIds.delete(task.id);
+      const exFailReason = `❌ 執行失敗\n\n${errorMsg.slice(0, 500)}`;
+      await supabase.from('openclaw_tasks').update({ result: exFailReason }).eq('id', task.id);
       const exFails = (taskFailCounts.get(task.id) || 0) + 1;
       taskFailCounts.set(task.id, exFails);
       if (exFails <= MAX_TASK_RETRIES) {
