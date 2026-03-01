@@ -119,7 +119,7 @@ type AutoExecutorDiskState = {
 const autoExecutorState: AutoExecutorState = {
   isRunning: false,
   pollIntervalMs: 15000,
-  maxTasksPerMinute: 3,
+  maxTasksPerMinute:  5,
   lastPollAt: null,
   lastExecutedTaskId: null,
   lastExecutedAt: null,
@@ -321,7 +321,7 @@ function loadAutoExecutorDiskState(): AutoExecutorDiskState {
   const fallback: AutoExecutorDiskState = {
     enabled: false,
     pollIntervalMs: 15000,
-    maxTasksPerMinute: 3,
+    maxTasksPerMinute:  5,
     updatedAt: new Date().toISOString(),
   };
   try {
@@ -820,7 +820,7 @@ async function executeNextPendingTask(): Promise<void> {
 
 // ─── Start / Stop ───
 
-function startAutoExecutor(pollIntervalMs: number = 10000, maxTasksPerMinute: number = 1): void {
+function startAutoExecutor(pollIntervalMs: number = 10000, maxTasksPerMinute: number = 3): void {
   if (autoExecutorInterval) {
     clearInterval(autoExecutorInterval);
   }

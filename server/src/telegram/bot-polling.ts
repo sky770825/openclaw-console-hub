@@ -65,6 +65,27 @@ const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘
 const HEARTBEAT_IDLE_THRESHOLD_MS = 5 * 60 * 1000; // 老蔡 5 分鐘沒說話才觸發
 const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
 
+// Action Circuit Breaker — 阻止同一個 action 連續失敗超過 N 次
+class ActionCircuitBreaker {
+  private failMap = new Map<string, number>();
+  constructor(private maxFails = 2) {}
+  private key(action: Record<string, string>): string {
+    return `${action.action || ''}:${action.path || action.name || action.url || action.query || ''}`;
+  }
+  /** true = 放行，false = 阻擋 */
+  check(action: Record<string, string>): boolean {
+    return (this.failMap.get(this.key(action)) || 0) < this.maxFails;
+  }
+  recordSuccess(action: Record<string, string>): void {
+    this.failMap.delete(this.key(action));
+  }
+  recordFailure(action: Record<string, string>): void {
+    const k = this.key(action);
+    this.failMap.set(k, (this.failMap.get(k) || 0) + 1);
+  }
+  reset(): void { this.failMap.clear(); }
+}
+
 // 群組 bot 狀態
 let groupOffset = 0;
 let groupRunning = false;
@@ -1507,6 +1528,7 @@ async function xiaocaiPoll(): Promise<void> {
       let currentInput = text;
       let finalReply = '';
       const allActionResults: string[] = [];
+      const breaker = new ActionCircuitBreaker(2);
 
       for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
         const isFollowUp = step > 0;
@@ -1528,7 +1550,12 @@ async function xiaocaiPoll(): Promise<void> {
         const actionPromises = actionMatches.map(async (jsonStr) => {
           try {
             const action = JSON.parse(jsonStr.replace(/~/g, process.env.HOME || '/tmp')) as Record<string, string>;
+            if (!breaker.check(action)) {
+              log.warn(`[Xiaocai-Chain] 🔒 阻擋重複失敗: ${action.action} ${action.path || ''}`);
+              return `🔒 ${action.action}: 連續失敗 2 次，已跳過`;
+            }
             const result = await executeNEUXAAction(action);
+            if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
             const icon = result.ok ? '✅' : '🚫';
             const label = action.action === 'create_task' ? `任務「${action.name}」` : action.action;
             const maxOutput = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
@@ -1623,7 +1650,14 @@ async function xiaocaiPoll(): Promise<void> {
           for (const jsonStr of driveActions) {
             try {
               const action = JSON.parse(jsonStr.replace(/~/g, process.env.HOME || '/tmp')) as Record<string, string>;
+              if (!breaker.check(action)) {
+                driveResults.push(`🔒 ${action.action}: 連續失敗已阻擋`);
+                log.warn(`[XiaocaiSelfDrive] 🔒 阻擋: ${action.action} ${action.path || ''}`);
+                driveText = driveText.replace(jsonStr, '').trim();
+                continue;
+              }
               const result = await executeNEUXAAction(action);
+              if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
               const icon = result.ok ? '✅' : '🚫';
               const driveMax = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
               driveResults.push(`${icon} ${action.action}: ${sanitize(result.output.slice(0, driveMax))}`);
@@ -1719,6 +1753,7 @@ async function heartbeatTick(): Promise<void> {
     const MAX_HEARTBEAT_STEPS = 3;
     let currentInput = heartbeatInput;
     const allResults: string[] = [];
+    const hbBreaker = new ActionCircuitBreaker(2);
 
     for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
       const isFollowUp = step > 0;
@@ -1738,7 +1773,13 @@ async function heartbeatTick(): Promise<void> {
       for (const jsonStr of actionMatches) {
         try {
           const action = JSON.parse(jsonStr.replace(/~/g, process.env.HOME || '/tmp')) as Record<string, string>;
+          if (!hbBreaker.check(action)) {
+            allResults.push(`🔒 ${action.action}: 連續失敗已阻擋`);
+            log.warn(`[Heartbeat] 🔒 阻擋: ${action.action} ${action.path || ''}`);
+            continue;
+          }
           const result = await executeNEUXAAction(action);
+          if (result.ok) hbBreaker.recordSuccess(action); else hbBreaker.recordFailure(action);
           const icon = result.ok ? '✅' : '🚫';
           const maxOutput = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
           allResults.push(`${icon} ${action.action}: ${sanitize(result.output.slice(0, maxOutput))}`);

@@ -834,9 +834,13 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
   if (!filePath || !filePath.endsWith('.md')) {
     return { ok: false, output: 'index_file 需要 .md 檔案路徑' };
   }
-  const resolved = path.resolve(filePath);
+  // 相對路徑自動補 workspace 前綴（小蔡常用 notes/xxx.md 而非完整路徑）
+  let resolved = path.resolve(filePath);
+  if (!fs.existsSync(resolved) && !path.isAbsolute(filePath)) {
+    resolved = path.join(NEUXA_WORKSPACE, filePath);
+  }
   if (!fs.existsSync(resolved)) {
-    return { ok: false, output: `檔案不存在: ${filePath}` };
+    return { ok: false, output: `檔案不存在: ${filePath}（也嘗試了 ${resolved}）` };
   }
 
   try {
