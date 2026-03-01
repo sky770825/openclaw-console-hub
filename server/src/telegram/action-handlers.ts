@@ -459,16 +459,26 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
   if (!table || typeof table !== 'string') return { ok: false, output: 'query_supabase 需要 table 參數' };
   if (!ALLOWED_TABLES.has(table)) return { ok: false, output: `表 "${table}" 不在白名單。可用: ${[...ALLOWED_TABLES].join(', ')}` };
 
-  // select 欄位 mapping — 映射後如果欄位仍不存在，就改用 *
+  // select 欄位 mapping — 映射後過濾掉不存在的欄位
+  // 已知每張表的真實欄位（Supabase schema）
+  const REAL_COLUMNS: Record<string, Set<string>> = {
+    openclaw_tasks: new Set(['id', 'title', 'status', 'cat', 'progress', 'auto', 'thought', 'subs', 'from_review_id', 'created_at', 'updated_at']),
+    openclaw_audit_logs: new Set(['id', 'action', 'resource', 'resource_id', 'user_id', 'ip', 'diff', 'created_at']),
+    openclaw_reviews: new Set(['id', 'title', 'type', 'description', 'src', 'pri', 'status', 'reasoning', 'created_at', 'updated_at']),
+    openclaw_automations: new Set(['id', 'name', 'cron', 'active', 'chain', 'health', 'runs', 'last_run', 'created_at', 'updated_at']),
+    openclaw_evolution_log: new Set(['id', 't', 'x', 'c', 'tag', 'tc', 'created_at']),
+    openclaw_runs: new Set(['id', 'task_id', 'task_name', 'status', 'started_at', 'ended_at', 'duration_ms', 'input_summary', 'output_summary', 'steps', 'created_at']),
+    openclaw_memory: new Set(['id', 'key', 'value', 'category', 'created_at', 'updated_at']),
+  };
   let select = action.select || '*';
   if (select !== '*') {
     const mapped = select.split(',').map((s: string) => mapColumn(table, s.trim()));
-    // 已知不存在的虛擬欄位（owner/agent/result 等存在 thought JSON 裡，無法直接 select）
-    const VIRTUAL_COLS: Record<string, Set<string>> = {
-      openclaw_tasks: new Set(['owner', 'agent', 'executor', 'result', 'priority']),
-    };
-    const virtualSet = VIRTUAL_COLS[table];
-    const filtered = virtualSet ? mapped.filter((c: string) => !virtualSet.has(c)) : mapped;
+    const realSet = REAL_COLUMNS[table];
+    const filtered = realSet ? mapped.filter((c: string) => realSet.has(c)) : mapped;
+    if (filtered.length < mapped.length) {
+      const dropped = mapped.filter((c: string) => realSet && !realSet.has(c));
+      log.info(`[NEUXA-Action] query_supabase select 過濾掉不存在的欄位: ${dropped.join(', ')} → 改用 ${filtered.length > 0 ? filtered.join(',') : '*'}`);
+    }
     select = filtered.length > 0 ? filtered.join(',') : '*';
   }
   const limit = Math.min(Math.max(Number(action.limit) || 50, 1), 200);
@@ -479,6 +489,7 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
     // 套用 filters: [{ column, op, value }] — 自動 mapping 欄位名
     // 虛擬欄位（owner/agent/priority 等）自動轉成 thought ilike 搜尋
     const THOUGHT_VIRTUAL_COLS = new Set(['owner', 'agent', 'executor', 'result', 'priority']);
+    const realSet = REAL_COLUMNS[table];
     if (Array.isArray(action.filters)) {
       for (const f of action.filters) {
         if (!f.column || !f.op) continue;
@@ -487,6 +498,11 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
         if (table === 'openclaw_tasks' && THOUGHT_VIRTUAL_COLS.has(col) && f.value) {
           log.info(`[NEUXA-Action] query_supabase 虛擬欄位 ${f.column} → thought ilike '%${f.value}%'`);
           query = query.ilike('thought', `%${f.value}%`);
+          continue;
+        }
+        // 不存在的欄位：跳過，不送到 Supabase
+        if (realSet && !realSet.has(col)) {
+          log.info(`[NEUXA-Action] query_supabase filter 跳過不存在的欄位: ${table}.${f.column}→${col}`);
           continue;
         }
         switch (f.op) {

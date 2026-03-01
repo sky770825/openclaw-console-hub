@@ -287,6 +287,9 @@ MODEL-DECISION-MATRIX.md — 模型決策矩陣 | MULTI_AGENT_COMMUNICATION.md �
 背景執行：{"action":"run_script_bg","command":"bash scripts/xxx.sh","label":"任務名"}
 問顧問：{"action":"ask_ai","model":"flash","prompt":"問題"}
 查資料庫：{"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
+Supabase 真實欄位（用錯會失敗）：
+- openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at。owner/agent/priority 存在 thought 裡，filter 時系統自動轉換。
+- openclaw_audit_logs: id, action(=type), resource, resource_id, user_id, ip, diff, created_at。沒有 timestamp/level/message/metadata 欄位。
 安全代理：{"action":"proxy_fetch","url":"https://...","method":"POST","body":{}}
 
 可以一次放多個 action，每個獨立一行 JSON。
