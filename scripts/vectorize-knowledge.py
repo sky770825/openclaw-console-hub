@@ -57,6 +57,45 @@ SINGLE_FILES = [
     ("SOUL.md", "core-soul"),
 ]
 
+# 工具文件（armory + skills 的 README/SKILL.md）
+def collect_tool_docs():
+    """掃描 armory 和 skills 目錄，收集所有工具文件"""
+    tool_files = []
+
+    # armory — 武器庫（每個子目錄的 README.md / SKILL.md）
+    armory_dir = os.path.join(WORKSPACE, "armory")
+    if os.path.isdir(armory_dir):
+        for sub in sorted(os.listdir(armory_dir)):
+            sub_path = os.path.join(armory_dir, sub)
+            if not os.path.isdir(sub_path):
+                continue
+            for doc in ["SKILL.md", "README.md"]:
+                doc_path = os.path.join(sub_path, doc)
+                if os.path.isfile(doc_path):
+                    tool_files.append((doc_path, f"armory/{sub}/{doc}", "tool-armory"))
+
+    # skills — 技能包（每個子目錄的 SKILL.md / README.md）
+    skills_dir = os.path.join(WORKSPACE, "skills")
+    if os.path.isdir(skills_dir):
+        for sub in sorted(os.listdir(skills_dir)):
+            sub_path = os.path.join(skills_dir, sub)
+            if not os.path.isdir(sub_path):
+                continue
+            for doc in ["SKILL.md", "README.md"]:
+                doc_path = os.path.join(sub_path, doc)
+                if os.path.isfile(doc_path):
+                    tool_files.append((doc_path, f"skills/{sub}/{doc}", "tool-skill"))
+
+    # 專案根 scripts 的 README（如果有）
+    proj_scripts = os.path.join(PROJECT_ROOT, "scripts")
+    if os.path.isdir(proj_scripts):
+        for doc in ["README.md"]:
+            doc_path = os.path.join(proj_scripts, doc)
+            if os.path.isfile(doc_path):
+                tool_files.append((doc_path, f"scripts/{doc}", "tool-script"))
+
+    return tool_files
+
 
 def read_file(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -385,6 +424,16 @@ def main():
             total += count
             file_count += 1
             print(f"  ✅ {fname} → {count} chunks")
+
+    # 處理工具文件（armory + skills）
+    tool_docs = collect_tool_docs()
+    if tool_docs:
+        print(f"\n🔧 工具文件 ({len(tool_docs)} 檔)")
+        for fpath, rel_path, category in tool_docs:
+            count = process_file(fpath, rel_path, category)
+            total += count
+            file_count += 1
+            print(f"  ✅ {rel_path} → {count} chunks")
 
     # 處理單一檔案
     for fname, category in SINGLE_FILES:

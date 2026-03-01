@@ -680,6 +680,77 @@ export async function handleProxyFetch(url: string, method: string, body: string
   }
 }
 
+// ── 安全腳本執行（白名單模式）──
+
+/**
+ * 小蔡可以直接跑的輕量工具白名單。
+ * 規則：唯讀/診斷性質，30 秒 timeout，沙盒環境（無 API key）。
+ * 重型任務（改代碼、部署、npm install）仍然要建任務。
+ */
+const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
+  // 系統診斷
+  { pattern: /^curl\s+-s\s+http:\/\/localhost:3011\/api\//, desc: '本地 API 呼叫' },
+  { pattern: /^curl\s+-s\s+http:\/\/localhost:6333\//, desc: 'Qdrant 查詢' },
+  { pattern: /^lsof\s+-i\s+:/, desc: '查 port 占用' },
+  { pattern: /^ps\s+(aux|ef)/, desc: '查進程' },
+  { pattern: /^docker\s+(ps|logs|inspect)/, desc: 'Docker 狀態' },
+  { pattern: /^cat\s+\/tmp\/openclaw/, desc: '讀 server log' },
+  { pattern: /^tail\s+(-n\s+\d+\s+)?\//, desc: '讀日誌尾部' },
+  { pattern: /^head\s+(-n\s+\d+\s+)?\//, desc: '讀檔案頭部' },
+  { pattern: /^wc\s+-[lcw]\s+/, desc: '統計行數' },
+  { pattern: /^du\s+-s/, desc: '檢查磁碟用量' },
+  { pattern: /^df\s+-h/, desc: '檢查磁碟空間' },
+  { pattern: /^uptime/, desc: '系統運行時間' },
+  { pattern: /^date/, desc: '系統時間' },
+  { pattern: /^which\s+/, desc: '查找命令路徑' },
+  // 搜尋和查詢
+  { pattern: /^grep\s+-[rilnc]+\s+/, desc: 'grep 搜尋' },
+  { pattern: /^find\s+.*-name\s+/, desc: '找檔案' },
+  { pattern: /^python3\s+-c\s+/, desc: 'Python 單行腳本' },
+  // workspace 工具（唯讀類）
+  { pattern: /^bash\s+.*health-check\.sh/, desc: '健康檢查' },
+  { pattern: /^bash\s+.*agent-status\.sh/, desc: 'Agent 狀態' },
+  { pattern: /^bash\s+.*security-check\.sh/, desc: '安全掃描' },
+  { pattern: /^python3\s+.*health-check\.py/, desc: '健康檢查 (py)' },
+  { pattern: /^python3\s+.*hybrid-search\.py/, desc: '混合搜尋' },
+  { pattern: /^python3\s+.*smart-recall\.py/, desc: '智能回憶' },
+  { pattern: /^bash\s+.*vector-index-manager\.sh\s+stats/, desc: '向量索引統計' },
+];
+
+/** 危險指令黑名單（即使匹配白名單也拒絕） */
+const DANGEROUS_PATTERNS = [
+  /rm\s+-rf/i, /mkfs/i, /dd\s+if=/i, />\s*\/dev\//i,
+  /chmod\s+777/i, /eval\s*\(/i, /\$\(/i, /`[^`]+`/,
+  /npm\s+(install|uninstall|publish)/i, /pip\s+install/i,
+  /git\s+(push|reset|checkout|clean)/i,
+  /kill\s+-9/i, /pkill/i, /killall/i,
+  /launchctl\s+(stop|start|remove)/i,
+  /curl\s+.*-X\s*(POST|PUT|DELETE|PATCH)/i,
+];
+
+async function handleSafeRunScript(command: string): Promise<ActionResult> {
+  if (!command.trim()) {
+    return { ok: false, output: 'run_script 需要 command 參數' };
+  }
+
+  const cmd = command.trim();
+
+  // 1. 先檢查黑名單
+  const dangerous = DANGEROUS_PATTERNS.find(p => p.test(cmd));
+  if (dangerous) {
+    return { ok: false, output: `🛑 危險指令被攔截。這類操作請建任務（create_task）派給 auto-executor。` };
+  }
+
+  // 2. 檢查白名單
+  const allowed = SAFE_SCRIPT_PATTERNS.find(p => p.pattern.test(cmd));
+  if (!allowed) {
+    return { ok: false, output: `🛑 這個指令不在輕量工具白名單裡。\n指揮官可以直接跑的：系統診斷（curl localhost、lsof、ps）、搜尋（grep、find）、Python 單行、健康檢查腳本。\n重型任務請用 create_task 派工。` };
+  }
+
+  log.info(`[SafeRunScript] 允許: ${allowed.desc} → ${cmd.slice(0, 80)}`);
+  return handleRunScript(cmd);
+}
+
 // ── 語義搜尋（Qdrant + Ollama bge-m3）──
 
 const QDRANT_URL = 'http://localhost:6333';
@@ -779,9 +850,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     case 'list_dir':
       return handleListDir(action.path || NEUXA_WORKSPACE);
     case 'run_script':
-      return { ok: false, output: '🛑 指揮官不需要自己跑腳本。請建任務（create_task）派給 auto-executor 執行。' };
+      return handleSafeRunScript(action.command || action.cmd || '');
     case 'run_script_bg':
-      return { ok: false, output: '🛑 指揮官不需要自己跑腳本。請建任務（create_task）派給 auto-executor 執行。' };
+      return { ok: false, output: '🛑 背景腳本不開放。用 run_script 跑輕量工具，或 create_task 派工。' };
     case 'ask_ai':
       return handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
     case 'proxy_fetch':
