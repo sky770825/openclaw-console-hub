@@ -701,9 +701,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     case 'list_dir':
       return handleListDir(action.path || NEUXA_WORKSPACE);
     case 'run_script':
-      return handleRunScript(action.command || '');
+      return { ok: false, output: '🛑 指揮官不需要自己跑腳本。請建任務（create_task）派給 auto-executor 執行。' };
     case 'run_script_bg':
-      return handleRunScriptBg(action.command || '', action.label);
+      return { ok: false, output: '🛑 指揮官不需要自己跑腳本。請建任務（create_task）派給 auto-executor 執行。' };
     case 'ask_ai': {
       const askModel = (action.model || 'flash').toLowerCase();
       if (askModel.includes('claude') || askModel.includes('sonnet') || askModel.includes('opus')) {
