@@ -51,13 +51,16 @@ export async function createTask(name: string, description?: string, owner?: str
       if (dup) return `已存在同名任務 (ID: ${dup.id}, status: ${dup.status})，不重複建立`;
     }
 
+    // 小蔡建的任務進 draft，需老蔡批准才變 ready 讓 auto-executor 執行
+    const initialStatus = validOwner === '老蔡' ? 'ready' : 'draft';
     const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
-      body: JSON.stringify({ name: trimmedName, status: 'ready', priority: 2, owner: validOwner, description }),
+      body: JSON.stringify({ name: trimmedName, status: initialStatus, priority: 2, owner: validOwner, description }),
     });
     const result = (await r.json()) as Record<string, unknown>;
-    return result.id ? `已建立，ID: ${result.id}，owner: ${validOwner}` : '建立失敗';
+    const statusNote = initialStatus === 'draft' ? '（draft — 等老蔡批准後才會執行）' : '';
+    return result.id ? `已建立，ID: ${result.id}，owner: ${validOwner}${statusNote}` : '建立失敗';
   } catch { return '建立失敗（連線錯誤）'; }
 }
 
