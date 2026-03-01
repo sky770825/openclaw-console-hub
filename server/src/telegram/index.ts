@@ -2,7 +2,7 @@
  * Telegram 模組入口 — 統一匯出
  */
 export { startTelegramStopPoll, stopTelegramStopPoll, triggerHeartbeat } from './bot-polling.js';
-export { MODEL_REGISTRY, getModelConfig, getAvailableModels, getModelsGrouped, getCommanderModels, getSubagentModels, getProviderKey, getModelProvider, callOpenAICompatible } from './model-registry.js';
+export { MODEL_REGISTRY, getModelConfig, getAvailableModels, getModelsGrouped, getCommanderModels, getSubagentModels, getProviderKey, getModelProvider, callOpenAICompatible, callAnthropic } from './model-registry.js';
 export type { ModelRole } from './model-registry.js';
 export type { ModelConfig } from './model-registry.js';
 export { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS, FORBIDDEN_COMMANDS } from './security.js';

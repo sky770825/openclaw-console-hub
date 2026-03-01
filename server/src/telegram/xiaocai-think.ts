@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../logger.js';
-import { getModelConfig, getModelProvider, getProviderKey, getAvailableModels, callOpenAICompatible } from './model-registry.js';
+import { getModelConfig, getModelProvider, getProviderKey, getAvailableModels, callOpenAICompatible, callAnthropic } from './model-registry.js';
 
 const log = createLogger('telegram');
 
@@ -391,6 +391,17 @@ export async function xiaocaiThink(
       if (finishReason === 'MAX_TOKENS') {
         log.warn('[XiaocaiAI] 回覆被 maxOutputTokens 截斷！');
       }
+    } else if (provider === 'anthropic') {
+      // Anthropic Claude API
+      const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim() || getProviderKey('Anthropic') || '';
+      if (!anthropicKey) return '沒有 Anthropic API Key，請在 .env 設定 ANTHROPIC_API_KEY';
+      const cfg = getModelConfig(xiaocaiMainModel);
+      const msgs = [
+        ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
+        { role: 'user', content: userMessage || '請看這張圖片' },
+      ];
+      reply = await callAnthropic(anthropicKey, xiaocaiMainModel, systemPrompt, msgs, cfg.maxOutputTokens, 90000);
+      log.info(`[XiaocaiAI] Anthropic model=${xiaocaiMainModel} replyLen=${reply.length}`);
     } else {
       // OpenAI 相容 API（Kimi / xAI / DeepSeek / OpenRouter / Ollama）
       let baseUrl: string;

@@ -360,7 +360,7 @@ async function replyTasks(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
-const providerIcons: Record<string, string> = { Google: '🔵', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓', Ollama: '🖥️' };
+const providerIcons: Record<string, string> = { Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓', Ollama: '🖥️' };
 
 async function replyModels(chatId: number): Promise<void> {
   const commanders = getCommanderModels();
