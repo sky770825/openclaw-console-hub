@@ -4,7 +4,7 @@
  */
 
 import { createLogger } from './logger.js';
-import { spawn, exec } from 'child_process';
+import { spawn, spawnSync, exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
@@ -1034,10 +1034,11 @@ ${WRITABLE_WORKSPACE_DIRS.map(d => `  - ${d}`).join('\n')}
       restrictionSection = `RESTRICTIONS — 保護核心資產:
 - Do NOT access or modify .env, openclaw.json, sessions.json, config.json (API keys)
 - Do NOT access or modify SOUL.md, AWAKENING.md, IDENTITY.md (靈魂文件)
-- Do NOT modify xiaocai-think.ts, bot-polling.ts, executor-agents.ts (小蔡的大腦和執行引擎，只有老蔡能改)
-- Do NOT run git push
-- Everything else: GO FOR IT. Read and modify any source code, scripts, configs.
-- You CAN modify ${PROJECT_ROOT}/server/src/ files (except brain files above)
+- Do NOT modify ANY files under ${PROJECT_ROOT}/server/src/ (整個 server 原始碼禁區，只有老蔡能改)
+- Do NOT modify ANY files under ${PROJECT_ROOT}/src/ (整個前端原始碼禁區)
+- Do NOT run git push, git commit, or any git write commands
+- Do NOT use sed -i, awk, or any command to modify files under ${PROJECT_ROOT}/
+- You CAN READ ${PROJECT_ROOT}/ for analysis
 - You CAN write to workspace directories and ${outputDir}/`;
 
       requirementSection = `Requirements:
@@ -1307,6 +1308,20 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
       const artifacts = this.scanArtifacts();
 
       // Step 4: 驗證
+      // 安全檢查：如果腳本改到了 server/src 或 src，自動回滾
+      try {
+        const gitDiff = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+        const changedFiles = (gitDiff.stdout || '').trim().split('\n').filter(f => f);
+        const protectedChanges = changedFiles.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
+        if (protectedChanges.length > 0) {
+          log.warn(`[GenerateAndExecute] 🛡️ 腳本改到了保護區: ${protectedChanges.join(', ')}，自動回滾`);
+          for (const f of protectedChanges) {
+            spawnSync('git', ['checkout', '--', f], { cwd: PROJECT_ROOT, timeout: 5000 });
+          }
+          log.info(`[GenerateAndExecute] 🛡️ 已回滾 ${protectedChanges.length} 個保護檔案`);
+        }
+      } catch { /* git 失敗不影響任務結果 */ }
+
       if (execResult.exitCode === 0) {
         log.info(`[GenerateAndExecute] Success: ${artifacts.length} artifacts, ${execResult.durationMs}ms`);
         return {
