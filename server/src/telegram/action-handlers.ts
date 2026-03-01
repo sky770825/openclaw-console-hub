@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
-import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE } from './security.js';
+import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES } from './security.js';
 
 const log = createLogger('telegram');
 
@@ -140,7 +140,19 @@ export async function handleReadFile(actionPath: string): Promise<ActionResult> 
 
 export async function handleWriteFile(actionPath: string, content: string): Promise<ActionResult> {
   const check = isPathSafe(actionPath, 'write');
-  if (!check.safe) return { ok: false, output: `🚫 ${check.reason}` };
+  if (!check.safe) {
+    // 靈魂文件被擋 → 自動轉存到 pending-updates/ 等老蔡審核
+    const basename = path.basename(actionPath);
+    if (SOUL_FILES.has(basename)) {
+      const pendingDir = path.join(NEUXA_WORKSPACE, 'pending-updates');
+      fs.mkdirSync(pendingDir, { recursive: true });
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const pendingPath = path.join(pendingDir, `${basename}.${ts}.md`);
+      fs.writeFileSync(pendingPath, `<!-- 小蔡想更新 ${basename}，已轉存等老蔡審核 -->\n\n${content}`, 'utf8');
+      return { ok: true, output: `📋 ${basename} 是靈魂文件，已轉存到 pending-updates/ 等老蔡審核合併` };
+    }
+    return { ok: false, output: `🚫 ${check.reason}` };
+  }
 
   try {
     const resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
