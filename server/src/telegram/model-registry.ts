@@ -29,13 +29,14 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'claude-opus-4-6', label: '🚨 Claude Opus 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'claude-sonnet-4-6', label: '💎 Claude Sonnet 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'claude-haiku-4-5-20251001', label: '⚡ Claude Haiku 4.5', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   // ══════════════════════════════════════════
   // 子代理級（ask_ai 可派遣，全部免費/訂閱制）
   // 訂閱制 CLI：Claude Code、Codex、Cursor（不花 API 錢）
   // 免費額度：Gemini Lite、OpenRouter :free
   // 本地：Ollama
   // 其他：xAI、Kimi、DeepSeek
-  // Anthropic API 付費制：僅供 registry 記錄，不派子代理
   // ══════════════════════════════════════════
   // ── 訂閱制 CLI（Claude Code / Codex / Cursor）──
   { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
@@ -43,9 +44,6 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'codex-mini', label: '📦 Codex Mini (CLI)', provider: 'OpenAI-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── Google 免費額度 ──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  // ── Anthropic 付費制（僅記錄，不派子代理）──
-  { id: 'claude-sonnet-4-6', label: '💎 Claude Sonnet 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  { id: 'claude-haiku-4-5-20251001', label: '⚡ Claude Haiku 4.5', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── DeepSeek ──
   { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
