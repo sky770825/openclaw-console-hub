@@ -973,6 +973,72 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
 
 const PROJECT_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..', '..');
 
+// ── 網頁搜尋與抓取 ──
+
+/** Google Custom Search — 小蔡用來搜網頁學技能 */
+async function handleWebSearch(query: string, limit: number = 5): Promise<ActionResult> {
+  if (!query) return { ok: false, output: 'web_search 需要 query 參數' };
+
+  const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
+  const cseId = process.env.GOOGLE_CSE_ID || '';
+  if (!apiKey || !cseId) return { ok: false, output: 'web_search 需要 GOOGLE_API_KEY + GOOGLE_CSE_ID（請老蔡設定）' };
+
+  const num = Math.min(Math.max(limit, 1), 10);
+  const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(query)}&num=${num}`;
+
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) return { ok: false, output: `搜尋失敗: HTTP ${resp.status}` };
+
+    const data = await resp.json() as { items?: Array<{ title: string; link: string; snippet?: string }> };
+    const items = (data.items || []).map((item, i) =>
+      `${i + 1}. ${item.title}\n   ${item.link}\n   ${item.snippet || ''}`
+    ).join('\n\n');
+
+    log.info(`[WebSearch] "${query}" → ${(data.items || []).length} results`);
+    return { ok: true, output: items || '沒有搜尋結果' };
+  } catch (e) {
+    return { ok: false, output: `web_search 失敗: ${(e as Error).message}` };
+  }
+}
+
+/** 抓取網頁內容 — 封鎖內網，純文字截斷 4000 字 */
+async function handleWebFetch(url: string): Promise<ActionResult> {
+  if (!url) return { ok: false, output: 'web_fetch 需要 url 參數' };
+
+  if (!/^https?:\/\//i.test(url)) return { ok: false, output: '只允許 http/https URL' };
+  if (/^https?:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(url))
+    return { ok: false, output: '🚫 不允許存取內網地址' };
+
+  try {
+    const resp = await fetch(url, {
+      signal: AbortSignal.timeout(15000),
+      headers: { 'User-Agent': 'OpenClaw-NEUXA/1.0' },
+    });
+    if (!resp.ok) return { ok: false, output: `抓取失敗: HTTP ${resp.status}` };
+
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('text/') && !contentType.includes('application/json'))
+      return { ok: false, output: `不支援的內容類型: ${contentType}` };
+
+    let text = await resp.text();
+    if (contentType.includes('html')) {
+      text = text
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    const trimmed = text.slice(0, 4000);
+    log.info(`[WebFetch] ${url} → ${resp.status} (${text.length} chars)`);
+    return { ok: true, output: trimmed + (text.length > 4000 ? '\n...(截斷)' : '') };
+  } catch (e) {
+    return { ok: false, output: `web_fetch 失敗: ${(e as Error).message}` };
+  }
+}
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -1012,6 +1078,10 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       return handleIndexFile(action.path || '', action.category);
     case 'reindex_knowledge':
       return handleReindexKnowledge(action.mode || 'append');
+    case 'web_search':
+      return handleWebSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+    case 'web_fetch':
+      return handleWebFetch(action.url || '');
     default:
       return { ok: false, output: `未知 action: ${type}` };
   }
