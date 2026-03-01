@@ -74,6 +74,11 @@ const FORBIDDEN_WRITE_PATHS = [
 function classifyExecutionLevel(taskName: string, taskDescription: string): 'sandbox' | 'workspace' | 'readonly-project' {
   const combined = `${taskName}\n${taskDescription}`.toLowerCase();
 
+  // 修改源碼 / 修復 bug → workspace（可寫 workspace + 專案源碼）
+  if (/修復|修改|fix|修正|patch|改進|upgrade|更新.*\.ts|改.*prompt|改.*score|改.*model/i.test(combined)) {
+    return 'workspace';
+  }
+
   // 明確需要系統變更的任務 → workspace（可寫 workspace 安全子目錄）
   if (/建立腳本|建立工具|重建.*腳本|寫入.*workspace|deploy.*script|create.*script|write.*tool/i.test(combined)) {
     return 'workspace';
@@ -1027,12 +1032,11 @@ ${WRITABLE_WORKSPACE_DIRS.map(d => `  - ${d}`).join('\n')}
 - OS: macOS (Darwin)`;
 
       restrictionSection = `HARD RESTRICTIONS — NEVER violate these:
-- Do NOT modify any files in ${PROJECT_ROOT}/server/ or ${PROJECT_ROOT}/src/
 - Do NOT access or modify .env, openclaw.json, sessions.json, config.json
-- Do NOT access or modify SOUL.md, AWAKENING.md, IDENTITY.md, HEARTBEAT.md
-- Do NOT run git push or git commit
+- Do NOT access or modify SOUL.md, AWAKENING.md, IDENTITY.md
+- Do NOT run git push
 - Do NOT access API keys or secrets
-- You CAN read files from ${PROJECT_ROOT}/ for analysis
+- You CAN read and modify files in ${PROJECT_ROOT}/server/src/ (source code)
 - You CAN write files to the WRITABLE workspace directories listed above
 - You CAN also write to ${outputDir}/`;
 
