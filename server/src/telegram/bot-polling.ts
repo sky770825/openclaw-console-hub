@@ -1378,13 +1378,19 @@ function stripActionJson(text: string): string {
   if (found) {
     for (const j of found) text = text.replace(j, '');
   }
-  // 2. 移除包裹 JSON 的 markdown code blocks
-  text = text.replace(/```json\s*```/g, '').replace(/```\s*```/g, '');
-  text = text.replace(/^\s*```(?:json)?\s*$/gm, '');
-  // 3. 移除殘留的 {"action"...} 片段（不完整 JSON）
+  // 2. 移除 ```json ... ``` code blocks（含多行內容）
+  text = text.replace(/```json[\s\S]*?```/g, '');
+  text = text.replace(/```\s*\{[\s\S]*?\}\s*```/g, '');
+  // 3. 移除殘留的 {"action"...} 片段（含多行，用 bracket counting）
+  text = text.replace(/\{\s*"action"\s*:[\s\S]*?\n\s*\}/g, '');
   text = text.replace(/\{"action"[^}]*\}/g, '');
-  // 4. 移除孤立的 ``` 標記
-  text = text.replace(/^\s*```\s*$/gm, '');
+  // 4. 移除所有看起來像 JSON object 的獨立行塊（以 { 開頭 } 結尾的多行）
+  text = text.replace(/^\s*\{[\s\S]*?"action"[\s\S]*?\}\s*$/gm, '');
+  // 5. 移除孤立的 ``` 標記和空 code blocks
+  text = text.replace(/```\s*```/g, '');
+  text = text.replace(/^\s*```(?:json)?\s*$/gm, '');
+  // 6. 清理多餘空行
+  text = text.replace(/\n{3,}/g, '\n\n');
   return text.trim();
 }
 
