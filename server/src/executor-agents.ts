@@ -1034,7 +1034,7 @@ ${WRITABLE_WORKSPACE_DIRS.map(d => `  - ${d}`).join('\n')}
       restrictionSection = `RESTRICTIONS — 保護核心資產:
 - Do NOT access or modify .env, openclaw.json, sessions.json, config.json (API keys)
 - Do NOT access or modify SOUL.md, AWAKENING.md, IDENTITY.md (靈魂文件)
-- Do NOT modify xiaocai-think.ts, bot-polling.ts (小蔡的大腦，只有老蔡能改)
+- Do NOT modify xiaocai-think.ts, bot-polling.ts, executor-agents.ts (小蔡的大腦和執行引擎，只有老蔡能改)
 - Do NOT run git push
 - Everything else: GO FOR IT. Read and modify any source code, scripts, configs.
 - You CAN modify ${PROJECT_ROOT}/server/src/ files (except brain files above)
