@@ -1398,15 +1398,19 @@ function stripActionJson(text: string): string {
 function extractActionJsons(text: string): string[] | null {
   const results: string[] = [];
   let searchFrom = 0;
+  // 先去除 markdown code fence 包裹
+  const stripped = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
   while (true) {
-    const idx = text.indexOf('{"action"', searchFrom);
-    if (idx === -1) break;
+    // 搜尋 {"action" 或 { "action" 或 {\n "action"（Gemini 3 Pro 格式）
+    const match = stripped.slice(searchFrom).match(/\{[\s\n]*"action"/);
+    if (!match || match.index === undefined) break;
+    const idx = searchFrom + match.index;
     let depth = 0;
     let inString = false;
     let escape = false;
     let end = -1;
-    for (let i = idx; i < text.length; i++) {
-      const ch = text[i];
+    for (let i = idx; i < stripped.length; i++) {
+      const ch = stripped[i];
       if (escape) { escape = false; continue; }
       if (ch === '\\' && inString) { escape = true; continue; }
       if (ch === '"' && !escape) { inString = !inString; continue; }
@@ -1415,7 +1419,7 @@ function extractActionJsons(text: string): string[] | null {
       if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
     }
     if (end > idx) {
-      const candidate = text.slice(idx, end + 1);
+      const candidate = stripped.slice(idx, end + 1);
       try {
         JSON.parse(candidate);
         results.push(candidate);
@@ -1574,11 +1578,8 @@ async function xiaocaiPoll(): Promise<void> {
         });
         const settled = await Promise.all(actionPromises);
         const stepResults = settled.filter((r): r is string => r !== null);
-        for (const jsonStr of actionMatches) {
-          reply = reply.replace(jsonStr, '').trim();
-        }
-        reply = reply.replace(/```json\s*```/g, '').replace(/```\s*```/g, '').trim();
-        reply = reply.replace(/^\s*```(?:json)?\s*$/gm, '').trim();
+        // 清除所有 JSON action 和 code fence（用 stripActionJson 統一處理）
+        reply = stripActionJson(reply);
 
         allActionResults.push(...stepResults);
 
