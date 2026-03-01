@@ -56,6 +56,22 @@ export function isPathSafe(targetPath: string, operation: 'read' | 'write'): { s
   return { safe: true };
 }
 
+/** 核心文件保護 — run_script 禁止寫入這些路徑 */
+const PROTECTED_FILE_PATTERNS = [
+  'executor-agents', 'xiaocai-think', 'bot-polling', 'governanceEngine',
+  'openclawSupabase', 'security.ts', 'action-handlers',
+  'SOUL.md', 'AGENTS.md', 'IDENTITY.md', 'AWAKENING.md',
+  '.env', 'openclaw.json', 'sessions.json', 'config.json',
+  'package.json', 'package-lock.json',
+];
+
+/** 腳本寫入偵測 — 檢查腳本是否企圖寫入受保護檔案 */
+const WRITE_INDICATORS = [
+  />\s*\S/, /tee\s/, /cp\s.*server\/src/, /mv\s.*server\/src/,
+  /sed\s+-i/, /cat\s.*>/, /echo\s.*>/, /printf\s.*>/,
+  /npm\s+install/, /npm\s+uninstall/, /npm\s+update/,
+];
+
 /** 安全檢查：腳本內容是否安全 */
 export function isScriptSafe(script: string): { safe: boolean; reason?: string } {
   const lower = script.toLowerCase();
@@ -64,5 +80,16 @@ export function isScriptSafe(script: string): { safe: boolean; reason?: string }
       return { safe: false, reason: `腳本包含禁止指令: "${cmd}"` };
     }
   }
+
+  // 檢查是否企圖寫入受保護的核心文件
+  const hasWriteOp = WRITE_INDICATORS.some(r => r.test(script));
+  if (hasWriteOp) {
+    for (const pf of PROTECTED_FILE_PATTERNS) {
+      if (lower.includes(pf.toLowerCase())) {
+        return { safe: false, reason: `🛑 禁止透過腳本修改核心文件: "${pf}"` };
+      }
+    }
+  }
+
   return { safe: true };
 }
