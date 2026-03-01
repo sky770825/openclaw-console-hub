@@ -9,6 +9,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
+import { hasSupabase, supabase } from '../supabase.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -137,6 +138,95 @@ proxyRouter.get('/targets', (_req: Request, res: Response) => {
     ok: true,
     targets: PROXY_TARGETS.map(t => ({ name: t.name, pattern: t.urlPattern.source })),
   });
+});
+
+// ─── POST /api/proxy/supabase ─── 安全 Supabase 查詢代理
+
+/** 允許查詢的表白名單 */
+const ALLOWED_TABLES = new Set([
+  'openclaw_tasks', 'openclaw_reviews', 'openclaw_automations',
+  'openclaw_evolution_log', 'openclaw_runs', 'openclaw_audit_logs',
+  'fadp_members', 'fadp_attack_events', 'fadp_blocklist',
+  // 注意：schedules/shifts/attendance/employees 是楊梅餐車的表，在另一個 Supabase，這裡查不到
+]);
+
+proxyRouter.post('/supabase', async (req: Request, res: Response) => {
+  if (!hasSupabase() || !supabase) {
+    return res.status(503).json({ ok: false, error: 'Supabase not configured' });
+  }
+
+  const { table, select = '*', filters, order, limit = 100, single = false } = req.body;
+
+  if (!table || typeof table !== 'string') {
+    return res.status(400).json({ ok: false, error: 'Missing "table" field' });
+  }
+
+  if (!ALLOWED_TABLES.has(table)) {
+    return res.status(403).json({
+      ok: false,
+      error: `Table "${table}" not allowed. Allowed: ${[...ALLOWED_TABLES].join(', ')}`,
+    });
+  }
+
+  const cappedLimit = Math.min(Math.max(Number(limit) || 100, 1), 500);
+
+  log.info(`[Proxy/Supabase] SELECT ${select} FROM ${table} LIMIT ${cappedLimit}`);
+
+  try {
+    let query: any = supabase.from(table).select(select);
+
+    // 套用 filters: [{ column, op, value }]
+    if (Array.isArray(filters)) {
+      for (const f of filters) {
+        if (!f.column || !f.op) continue;
+        switch (f.op) {
+          case 'eq': query = query.eq(f.column, f.value); break;
+          case 'neq': query = query.neq(f.column, f.value); break;
+          case 'gt': query = query.gt(f.column, f.value); break;
+          case 'gte': query = query.gte(f.column, f.value); break;
+          case 'lt': query = query.lt(f.column, f.value); break;
+          case 'lte': query = query.lte(f.column, f.value); break;
+          case 'like': query = query.like(f.column, f.value); break;
+          case 'ilike': query = query.ilike(f.column, f.value); break;
+          case 'in': query = query.in(f.column, f.value); break;
+          case 'is': query = query.is(f.column, f.value); break;
+          default: break;
+        }
+      }
+    }
+
+    // 排序
+    if (order && typeof order === 'object' && order.column) {
+      query = query.order(order.column, { ascending: order.ascending ?? false });
+    }
+
+    query = query.limit(cappedLimit);
+
+    if (single) {
+      const { data, error } = await query.single();
+      if (error) return res.status(400).json({ ok: false, error: error.message });
+      return res.json({ ok: true, data: JSON.parse(sanitize(JSON.stringify(data))) });
+    }
+
+    const { data, error, count } = await query;
+    if (error) return res.status(400).json({ ok: false, error: error.message });
+
+    res.json({
+      ok: true,
+      count: data?.length ?? 0,
+      data: JSON.parse(sanitize(JSON.stringify(data))),
+    });
+  } catch (e) {
+    const errMsg = e instanceof Error ? e.message : String(e);
+    log.warn(`[Proxy/Supabase] Error: ${sanitize(errMsg)}`);
+    res.status(500).json({ ok: false, error: sanitize(errMsg) });
+  }
+});
+
+// ─── GET /api/proxy/supabase/tables ─── 列出可查詢的表
+
+proxyRouter.get('/supabase/tables', (_req: Request, res: Response) => {
+  res.json({ ok: true, tables: [...ALLOWED_TABLES] });
 });
 
 export { proxyRouter };

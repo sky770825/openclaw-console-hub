@@ -44,6 +44,14 @@
 
 ---
 
+## OPENCLAW-與任務板-是否一直執行
+
+# OpenClaw 與任務板 — 是否會一直執行、吃掉 Gemini 額度？
+## 結論摘要
+| 來源 | 會不會真的呼叫 OpenClaw / Gemini？ | 說明 |
+
+---
+
 ## Ollama-Telegram回覆速度-實測與優化
 
 # Ollama Telegram 回覆速度 — 實測與優化
@@ -327,21 +335,11 @@ Config invalid
 ## 改用改過的OpenClaw-讓輕量模式生效
 
 # 改用改過的 OpenClaw — 讓輕量模式生效
-> 我們改的 Token 優化（一般聊天輕量、自動寫入輪數提示）在 **openclaw任務面版設計/openclaw-main**；你現在若用全域安裝的 `openclaw` 或從 **~/.openclaw/workspace** 跑，會是舊程式。照下面做就會改跑「有改過的那份」。
----
-
----
+> 我們改的 Token 優化（一般聊天輕量、自動寫入輪數提示）在 **openclaw任務面版設計/openclaw-main**；你現在若用全域安裝的 `openclaw` 或從 **~/.openclaw/workspace** 跑，會是舊程式。照下面做
+...(已截斷)
 
 ## 模型不回話-排查步驟
 
 # 模型不回話 — 排查步驟
 當 OpenClaw 2.9 的模型沒有回話時（任務板執行沒輸出、或 Telegram/WhatsApp 沒回覆），依下面順序檢查。
----
-
----
-
-## 測試結果-目前跑的是哪一個OpenClaw
-
-# 測試結果 — 目前跑的是哪一個 OpenClaw
-> 已用指令實際檢查，結論如下。
 ...(已截斷)

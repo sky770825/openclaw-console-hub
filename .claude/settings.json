@@ -29,7 +29,17 @@
       "Bash(# 找 n8n 相關 find /Users/caijunchang/openclaw任務面版設計/docs -name \"\"*n8n*\"\" -o -name \"\"*N8N*\"\" -o -name \"\"*workflow*\"\" && echo \"\"=== supabase ===\"\" && find /Users/caijunchang/openclaw任務面版設計/docs -name \"\"*supabase*\"\" -o -name \"\"*Supabase*\"\" -o -name \"\"*database*\"\" && echo \"\"=== server .env ===\"\" && grep \"\"SUPABASE\\\\|N8N\\\\|NEXT_PUBLIC\"\" /Users/caijunchang/openclaw任務面版設計/server/.env)",
       "Bash(launchctl stop com.openclaw.taskboard)",
       "Bash(launchctl start com.openclaw.taskboard)",
-      "Bash(sort -t/ -k7)"
+      "Bash(sort -t/ -k7)",
+      "Bash(# 22:15 的第一次「如何讓模型200%」— 沒有 reply？看看那段時間 tail -1000 /Users/caijunchang/.openclaw/automation/logs/taskboard.log)",
+      "Bash(# 看最新的 NEUXA 活動 — 他現在在做什麼 tail -30 /Users/caijunchang/.openclaw/automation/logs/taskboard.log)",
+      "Bash(# 1. 品質閘門：看最新跑的任務品質 tail -500 /Users/caijunchang/.openclaw/automation/logs/taskboard.log)",
+      "Bash(# 2. 派工邏輯：看 AutoExecutor 怎麼 pick 任務、owner 分配 tail -500 /Users/caijunchang/.openclaw/automation/logs/taskboard.log)",
+      "Bash(# 4. 看 Gemini AI 審查的問題 — 回空太多次 tail -1000 /Users/caijunchang/.openclaw/automation/logs/taskboard.log)",
+      "Bash(# 5. 風險分類是否合理 — 看 riskClassifier 的判斷 tail -1000 /Users/caijunchang/.openclaw/automation/logs/taskboard.log)",
+      "Read(//Users/caijunchang/openclaw任務面版設計/server/**)",
+      "Bash(# 找到 v5.1 巔峰時的 system prompt \\(在那時還是 telegram-stop-poll.ts\\) git show 2bdbe29a:server/src/telegram-stop-poll.ts)",
+      "Bash(# v5.2 指揮優先校準 git show fef4ff28:server/src/telegram-stop-poll.ts)",
+      "Bash(# 全面盤點：NEUXA 的所有知識文件 echo \"\"=== workspace 根目錄 ===\"\" && ls ~/.openclaw/workspace/*.md)"
     ],
     "additionalDirectories": [
       "/Users/caijunchang/openclaw任務面版設計"

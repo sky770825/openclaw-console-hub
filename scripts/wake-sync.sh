@@ -183,13 +183,11 @@ $GIT_LOG
 - **${NEUXA_REVIEW_PENDING:-"review/pending: 0 份待審"}**
 - **NEUXA memory 目錄**：~/.openclaw/workspace/memory/（讀最新 .md 可銜接）
 
-## 🤝 協作指引（重要！醒來必讀）
-1. **小蔡** 在 $XIAOJI_PROJECTS_DIR — 她是執行者，我是指揮者
-2. **NEUXA** 動態在 ~/.openclaw/workspace/memory/（讀最新 session 銜接）
-3. **review/pending**：有待審文件就優先處理
-4. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
-5. **Server 重啟**：如果 Server 離線，先跑重啟指令
-6. **Gateway 429**：如果 NEUXA 卡住，watchdog 會自動重啟（2 分鐘內）
+## 🤝 協作指引
+1. **小蔡（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
+2. **review/pending**：有待審文件就優先處理
+3. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
+4. **Server 重啟**：如果 Server 離線，用 launchctl stop/start com.openclaw.taskboard
 
 ## 🚨 立即行動清單
 $(

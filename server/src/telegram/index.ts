@@ -1,7 +1,7 @@
 /**
  * Telegram 模組入口 — 統一匯出
  */
-export { startTelegramStopPoll, stopTelegramStopPoll } from './bot-polling.js';
+export { startTelegramStopPoll, stopTelegramStopPoll, triggerHeartbeat } from './bot-polling.js';
 export { MODEL_REGISTRY, getModelConfig, getAvailableModels, getModelsGrouped, getCommanderModels, getSubagentModels, getProviderKey, getModelProvider, callOpenAICompatible } from './model-registry.js';
 export type { ModelRole } from './model-registry.js';
 export type { ModelConfig } from './model-registry.js';

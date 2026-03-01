@@ -58,6 +58,13 @@ let xiaocaiOffset = 0;
 let xiaocaiRunning = false;
 const xiaocaiHistory = new Map<number, Array<{ role: string; text: string }>>();
 
+// 心跳狀態
+let lastUserActivityAt = 0; // 老蔡最後一次發訊息的時間
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘
+const HEARTBEAT_IDLE_THRESHOLD_MS = 5 * 60 * 1000; // 老蔡 5 分鐘沒說話才觸發
+const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
+
 // 群組 bot 狀態
 let groupOffset = 0;
 let groupRunning = false;
@@ -1342,6 +1349,24 @@ function groupLoop(): void {
 // 小蔡 Bot (@xiaoji_cai_bot) polling loop
 // ══════════════════════════════════════════════════════════════
 
+/** 清除殘留的 JSON action blocks — 發送到 Telegram 前必經 */
+function stripActionJson(text: string): string {
+  if (!text) return text;
+  // 1. 用 extractActionJsons 找到完整 JSON 並移除
+  const found = extractActionJsons(text);
+  if (found) {
+    for (const j of found) text = text.replace(j, '');
+  }
+  // 2. 移除包裹 JSON 的 markdown code blocks
+  text = text.replace(/```json\s*```/g, '').replace(/```\s*```/g, '');
+  text = text.replace(/^\s*```(?:json)?\s*$/gm, '');
+  // 3. 移除殘留的 {"action"...} 片段（不完整 JSON）
+  text = text.replace(/\{"action"[^}]*\}/g, '');
+  // 4. 移除孤立的 ``` 標記
+  text = text.replace(/^\s*```\s*$/gm, '');
+  return text.trim();
+}
+
 /** JSON action 解析器（支援 content 內含花括號）*/
 function extractActionJsons(text: string): string[] | null {
   const results: string[] = [];
@@ -1420,10 +1445,42 @@ async function xiaocaiPoll(): Promise<void> {
       if (!msg) continue;
       const chat = msg.chat as Record<string, unknown>;
       const chatId = chat?.id as number;
-      const text = ((msg.text as string) ?? '').trim();
-      if (!text) continue;
 
-      log.info(`[XiaocaiBot] recv chatId=${chatId} text=${text.slice(0, 60)}`);
+      // ── 圖片處理：取得 photo + caption ──
+      const photoArr = msg.photo as Array<Record<string, unknown>> | undefined;
+      const caption = ((msg.caption as string) ?? '').trim();
+      let imageBase64: string | undefined;
+      let imageMime: string | undefined;
+
+      if (photoArr && photoArr.length > 0) {
+        // Telegram photo 陣列由小到大排列，取最大的（最後一個）
+        const largest = photoArr[photoArr.length - 1];
+        const fileId = largest.file_id as string;
+        try {
+          // 1. getFile 取得 file_path
+          const fileResp = await fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/getFile?file_id=${fileId}`, { signal: AbortSignal.timeout(10000) });
+          const fileData = await fileResp.json() as Record<string, unknown>;
+          const result = fileData.result as Record<string, unknown> | undefined;
+          const filePath = result?.file_path as string | undefined;
+          if (filePath) {
+            // 2. 下載圖片
+            const dlResp = await fetch(`https://api.telegram.org/file/bot${XIAOCAI_TOKEN}/${filePath}`, { signal: AbortSignal.timeout(15000) });
+            const buf = Buffer.from(await dlResp.arrayBuffer());
+            imageBase64 = buf.toString('base64');
+            // 判斷 mime type
+            imageMime = filePath.endsWith('.png') ? 'image/png' : filePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
+            log.info(`[XiaocaiBot] 收到圖片 fileId=${fileId.slice(0, 20)}... size=${buf.length} mime=${imageMime}`);
+          }
+        } catch (e) {
+          log.warn({ err: e }, '[XiaocaiBot] 圖片下載失敗');
+        }
+      }
+
+      const text = ((msg.text as string) ?? caption).trim();
+      if (!text && !imageBase64) continue;
+
+      log.info(`[XiaocaiBot] recv chatId=${chatId} text=${text.slice(0, 60)}${imageBase64 ? ' +image' : ''}`);
+      lastUserActivityAt = Date.now(); // 追蹤老蔡最後活動時間（心跳用）
 
       const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
       if (allowedChatId && String(chatId) !== allowedChatId) {
@@ -1457,11 +1514,13 @@ async function xiaocaiPoll(): Promise<void> {
           ? `[系統回饋] 你上一步的執行結果：\n${allActionResults.slice(-3).join('\n')}\n\n根據結果，決定下一步。你可以繼續操作（放 action），也可以覺得夠了就直接用自然語言回覆老蔡。記得：查檔案先看索引，不要 list_dir 慢慢翻。`
           : currentInput;
 
-        let reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory);
+        // 第一輪帶圖片，後續 follow-up 不帶
+        const thinkImage = (!isFollowUp && imageBase64) ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined;
+        let reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory, thinkImage);
 
         const actionMatches = extractActionJsons(reply);
         if (!actionMatches || actionMatches.length === 0) {
-          finalReply = reply;
+          finalReply = stripActionJson(reply);
           break;
         }
 
@@ -1504,7 +1563,7 @@ async function xiaocaiPoll(): Promise<void> {
         if (history.length > 30) history.splice(0, history.length - 30);
         xiaocaiHistory.set(chatId, history);
 
-        if (reply) finalReply = reply;
+        if (reply) finalReply = stripActionJson(reply);
 
         log.info(`[NEUXA-Chain] step=${step} done, ${stepResults.length} actions, hasReply=${!!reply}`);
       }
@@ -1569,8 +1628,7 @@ async function xiaocaiPoll(): Promise<void> {
             } catch { /* skip */ }
             driveText = driveText.replace(jsonStr, '').trim();
           }
-          driveText = driveText.replace(/```json\s*```/g, '').replace(/```\s*```/g, '').trim();
-          driveText = driveText.replace(/^\s*```(?:json)?\s*$/gm, '').trim();
+          driveText = stripActionJson(driveText);
           const driveMsg = driveText
             ? driveText
             : driveResults.map(r => r.length > 80 ? r.slice(0, 80) + '...' : r).join('\n');
@@ -1587,8 +1645,8 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
 
-      // 發送回覆
-      if (!finalReply) finalReply = '🤔';
+      // 發送回覆 — 最終保險：清除所有殘留 JSON
+      finalReply = stripActionJson(finalReply || '') || '🤔';
       const TG_LIMIT = 4000;
       if (finalReply.length <= TG_LIMIT) {
         await sendTelegramMessageToChat(chatId, finalReply, { token: XIAOCAI_TOKEN });
@@ -1625,6 +1683,93 @@ function xiaocaiLoop(): void {
 }
 
 // ══════════════════════════════════════════════════════════════
+// NEUXA 心跳 — 老蔡不在時自主思考
+// ══════════════════════════════════════════════════════════════
+
+async function heartbeatTick(): Promise<void> {
+  if (!XIAOCAI_TOKEN) return;
+
+  // 老蔡最近 5 分鐘有活動 → 不打擾，跳過
+  if (lastUserActivityAt > 0 && (Date.now() - lastUserActivityAt) < HEARTBEAT_IDLE_THRESHOLD_MS) {
+    log.info('[Heartbeat] 老蔡活躍中，跳過心跳');
+    return;
+  }
+
+  // 讀 HEARTBEAT.md
+  const heartbeatPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'HEARTBEAT.md');
+  let heartbeatContent = '';
+  try {
+    heartbeatContent = fs.readFileSync(heartbeatPath, 'utf8').trim();
+  } catch { /* ignore */ }
+  if (!heartbeatContent) {
+    log.warn('[Heartbeat] HEARTBEAT.md 空白或不存在，跳過');
+    return;
+  }
+
+  log.info('[Heartbeat] 🫀 心跳觸發 — 開始自主思考');
+
+  const heartbeatInput = `[心跳醒來] 老蔡目前不在線。你自己醒來了。\n讀完以下指南後，按照裡面的步驟自主行動：\n\n${heartbeatContent}`;
+
+  try {
+    // 第一輪思考
+    const MAX_HEARTBEAT_STEPS = 3;
+    let currentInput = heartbeatInput;
+    const allResults: string[] = [];
+
+    for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
+      const isFollowUp = step > 0;
+      const thinkInput = isFollowUp
+        ? `[系統回饋] 你上一步的執行結果：\n${allResults.slice(-3).join('\n')}\n\n根據結果，決定下一步。繼續操作或停下來。`
+        : currentInput;
+
+      const reply = await xiaocaiThink(HEARTBEAT_CHAT_ID, thinkInput, xiaocaiMainModel, xiaocaiHistory);
+
+      const actionMatches = extractActionJsons(reply);
+      if (!actionMatches || actionMatches.length === 0) {
+        log.info(`[Heartbeat] step=${step} 無 action，結束。reply=${reply.slice(0, 200)}`);
+        break;
+      }
+
+      // 執行 actions
+      for (const jsonStr of actionMatches) {
+        try {
+          const action = JSON.parse(jsonStr.replace(/~/g, process.env.HOME || '/tmp')) as Record<string, string>;
+          const result = await executeNEUXAAction(action);
+          const icon = result.ok ? '✅' : '🚫';
+          const maxOutput = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
+          allResults.push(`${icon} ${action.action}: ${sanitize(result.output.slice(0, maxOutput))}`);
+          log.info(`[Heartbeat] step=${step} ${action.action} → ok=${result.ok}`);
+        } catch {
+          log.warn(`[Heartbeat] step=${step} JSON parse failed`);
+        }
+      }
+
+      // 更新心跳對話歷史
+      const history = xiaocaiHistory.get(HEARTBEAT_CHAT_ID) || [];
+      if (isFollowUp) history.push({ role: 'user', text: thinkInput });
+      history.push({ role: 'model', text: reply || '（執行中）' });
+      history.push({ role: 'user', text: sanitize(`[執行結果]\n${allResults.slice(-5).join('\n')}`) });
+      if (history.length > 20) history.splice(0, history.length - 20);
+      xiaocaiHistory.set(HEARTBEAT_CHAT_ID, history);
+    }
+
+    // 心跳完成通知（發到老蔡的 chat，讓他回來看得到）
+    if (allResults.length > 0) {
+      const ownerChatId = getAllowChatId();
+      if (ownerChatId) {
+        const summary = `🫀 自主心跳\n${allResults.map(r => r.replace(/<[^>]*>/g, '').slice(0, 100)).join('\n')}`;
+        await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN });
+      }
+      appendInteractionLog('[心跳]', allResults, '自主巡邏完成');
+    }
+
+    log.info(`[Heartbeat] 🫀 心跳完成，執行 ${allResults.length} 個動作`);
+  } catch (e) {
+    log.error({ err: e }, '[Heartbeat] 心跳異常');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 // 公開 API：啟動 / 停止
 // ══════════════════════════════════════════════════════════════
 
@@ -1651,6 +1796,12 @@ export function startTelegramStopPoll(): void {
     fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/deleteWebhook?drop_pending_updates=true`)
       .catch(() => {})
       .finally(() => xiaocaiLoop());
+
+    // 啟動心跳 — 每 15 分鐘自主思考
+    heartbeatTimer = setInterval(() => {
+      heartbeatTick().catch(e => log.error({ err: e }, '[Heartbeat] tick error'));
+    }, HEARTBEAT_INTERVAL_MS);
+    log.info(`[Heartbeat] 🫀 心跳已啟動，每 ${HEARTBEAT_INTERVAL_MS / 60000} 分鐘一次`);
   }
 
   if (GROUP_TOKEN && GROUP_CHAT_ID) {
@@ -1667,4 +1818,18 @@ export function stopTelegramStopPoll(): void {
   running = false;
   groupRunning = false;
   xiaocaiRunning = false;
+  if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+}
+
+/** 手動觸發心跳（繞過活躍檢查） */
+export async function triggerHeartbeat(): Promise<string> {
+  if (!XIAOCAI_TOKEN) return '小蔡 bot 未設定';
+  const saved = lastUserActivityAt;
+  lastUserActivityAt = 0; // 暫時清除，讓心跳不被跳過
+  try {
+    await heartbeatTick();
+    return '心跳已觸發，查看 log 確認結果';
+  } finally {
+    lastUserActivityAt = saved;
+  }
 }

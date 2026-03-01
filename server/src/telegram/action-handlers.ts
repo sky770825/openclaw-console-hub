@@ -54,6 +54,7 @@ export async function handleReadFile(actionPath: string): Promise<ActionResult> 
 
     // 自動修正常見相對路徑（小蔡常忘記打絕對路徑）
     if (!fs.existsSync(resolved) && !path.isAbsolute(actionPath)) {
+      // 先用 prefix mapping
       for (const [prefix, abs] of PATH_PREFIXES) {
         if (actionPath.startsWith(prefix)) {
           const candidate = path.join(abs, actionPath.slice(prefix.length));
@@ -63,9 +64,19 @@ export async function handleReadFile(actionPath: string): Promise<ActionResult> 
           }
         }
       }
+      // 再試 workspace 根目錄（CODEBASE-INDEX.md、SYSTEM-RESOURCES.md 等）
+      if (!fs.existsSync(resolved)) {
+        const wsCandidate = path.join(NEUXA_WORKSPACE, actionPath);
+        if (fs.existsSync(wsCandidate)) resolved = wsCandidate;
+      }
+      // 再試專案根目錄
+      if (!fs.existsSync(resolved)) {
+        const projCandidate = path.join('/Users/caijunchang/openclaw任務面版設計', actionPath);
+        if (fs.existsSync(projCandidate)) resolved = projCandidate;
+      }
     }
 
-    if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${actionPath}（提醒：專案檔案要用絕對路徑 /Users/caijunchang/openclaw任務面版設計/...）` };
+    if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${actionPath}（提醒：workspace 檔案用 ~/.openclaw/workspace/ 前綴，專案檔案用絕對路徑 /Users/caijunchang/openclaw任務面版設計/...）` };
     const stat = fs.statSync(resolved);
     if (stat.isDirectory()) return { ok: false, output: `這是目錄，不是檔案。用 list_dir 看目錄內容。` };
     const content = fs.readFileSync(resolved, 'utf8');
@@ -324,6 +335,66 @@ export function handleAskAI(model: string, prompt: string, context?: string): Pr
   return handleAskGemini(model, prompt, context);
 }
 
+/** 安全 Supabase 查詢代理：NEUXA 不需要 key，由 server 內部 client 處理 */
+const ALLOWED_TABLES = new Set([
+  'openclaw_tasks', 'openclaw_reviews', 'openclaw_automations',
+  'openclaw_evolution_log', 'openclaw_runs', 'openclaw_audit_logs',
+  'fadp_members', 'fadp_attack_events', 'fadp_blocklist',
+  // 注意：schedules/shifts/attendance/employees 是楊梅餐車的表，在另一個 Supabase，這裡查不到
+]);
+
+async function handleQuerySupabase(action: Record<string, any>): Promise<ActionResult> {
+  const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
+  if (!hasSb() || !sb) return { ok: false, output: 'Supabase 未設定' };
+
+  const table = action.table;
+  if (!table || typeof table !== 'string') return { ok: false, output: 'query_supabase 需要 table 參數' };
+  if (!ALLOWED_TABLES.has(table)) return { ok: false, output: `表 "${table}" 不在白名單。可用: ${[...ALLOWED_TABLES].join(', ')}` };
+
+  const select = action.select || '*';
+  const limit = Math.min(Math.max(Number(action.limit) || 50, 1), 200);
+
+  try {
+    let query: any = sb.from(table).select(select);
+
+    // 套用 filters: [{ column, op, value }]
+    if (Array.isArray(action.filters)) {
+      for (const f of action.filters) {
+        if (!f.column || !f.op) continue;
+        switch (f.op) {
+          case 'eq': query = query.eq(f.column, f.value); break;
+          case 'neq': query = query.neq(f.column, f.value); break;
+          case 'gt': query = query.gt(f.column, f.value); break;
+          case 'gte': query = query.gte(f.column, f.value); break;
+          case 'lt': query = query.lt(f.column, f.value); break;
+          case 'lte': query = query.lte(f.column, f.value); break;
+          case 'like': query = query.like(f.column, f.value); break;
+          case 'ilike': query = query.ilike(f.column, f.value); break;
+          case 'in': query = query.in(f.column, f.value); break;
+          case 'is': query = query.is(f.column, f.value); break;
+          default: break;
+        }
+      }
+    }
+
+    if (action.order && typeof action.order === 'object' && action.order.column) {
+      query = query.order(action.order.column, { ascending: action.order.ascending ?? false });
+    }
+
+    query = query.limit(limit);
+
+    const { data, error } = await query;
+    if (error) return { ok: false, output: `Supabase 查詢錯誤: ${error.message}` };
+
+    const jsonStr = JSON.stringify(data, null, 2);
+    const trimmed = jsonStr.length > 3000 ? jsonStr.slice(0, 3000) + '\n...(截斷)' : jsonStr;
+    log.info(`[NEUXA-Action] query_supabase ${table} → ${data?.length ?? 0} rows`);
+    return { ok: true, output: sanitize(`查到 ${data?.length ?? 0} 筆:\n${trimmed}`) };
+  } catch (e) {
+    return { ok: false, output: `Supabase 查詢失敗: ${(e as Error).message}` };
+  }
+}
+
 /** 安全代理：NEUXA 透過 server 發外部 API 請求，key 由 server 自動注入 */
 export async function handleProxyFetch(url: string, method: string, body: string): Promise<ActionResult> {
   if (!url) return { ok: false, output: 'proxy_fetch 需要 url 參數' };
@@ -445,6 +516,8 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     }
     case 'proxy_fetch':
       return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
+    case 'query_supabase':
+      return handleQuerySupabase(action);
     default:
       return { ok: false, output: `未知 action: ${type}` };
   }

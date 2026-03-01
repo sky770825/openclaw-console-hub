@@ -5,7 +5,7 @@
  */
 import './preload-dotenv.js';
 import { createLogger } from './logger.js';
-import { startTelegramStopPoll } from './telegram/index.js';
+import { startTelegramStopPoll, triggerHeartbeat } from './telegram/index.js';
 import path from 'path';
 import fs from 'fs';
 import { spawn, execSync } from 'child_process';
@@ -3880,7 +3880,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.3.9',
+    version: '2.4.0',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
@@ -3905,6 +3905,16 @@ app.get('/api/health', async (_req, res) => {
       totalExecutedToday: autoExecutorState.totalExecutedToday,
     },
   });
+});
+
+// 手動觸發 NEUXA 心跳
+app.post('/api/neuxa/heartbeat', async (_req, res) => {
+  try {
+    const result = await triggerHeartbeat();
+    res.json({ ok: true, message: result });
+  } catch (e: unknown) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
 });
 
 // Safe to expose (no secrets): shows whether key security toggles are enabled.

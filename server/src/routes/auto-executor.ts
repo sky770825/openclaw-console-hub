@@ -126,6 +126,123 @@ const analysisTaskExecTimestamps: number[] = [];
 const activeTaskIds = new Set<string>();
 let dispatchDigestTimer: NodeJS.Timeout | null = null;
 
+// ─── 空閒巡邏（Idle Patrol）───
+// AutoExecutor 連續空閒一段時間後，用 Gemini 生成巡邏任務讓系統持續運轉
+let consecutiveIdlePolls = 0;
+const idlePatrolTimestamps: number[] = []; // 每小時最多 2 次
+const IDLE_PATROL_THRESHOLD = 20; // 20 polls × 15s ≈ 5 分鐘
+const IDLE_PATROL_HOURLY_LIMIT = 2;
+
+async function triggerIdlePatrol(): Promise<void> {
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+  if (!GOOGLE_API_KEY) {
+    log.warn('[IdlePatrol] 沒有 GOOGLE_API_KEY，跳過巡邏');
+    return;
+  }
+
+  // 限頻：每小時最多 2 次
+  const oneHourAgo = Date.now() - 3600_000;
+  while (idlePatrolTimestamps.length > 0 && idlePatrolTimestamps[0] < oneHourAgo) {
+    idlePatrolTimestamps.shift();
+  }
+  if (idlePatrolTimestamps.length >= IDLE_PATROL_HOURLY_LIMIT) {
+    log.info(`[IdlePatrol] 本小時已巡邏 ${idlePatrolTimestamps.length} 次，休息`);
+    return;
+  }
+
+  log.info('[IdlePatrol] 任務板空閒，觸發自主巡邏...');
+
+  // 收集系統狀態給 Gemini 參考
+  let taskContext = '';
+  try {
+    const tasks = await fetchOpenClawTasks();
+    const recentDone = tasks
+      .filter(t => t.status === 'done')
+      .sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
+      .slice(0, 10);
+    taskContext = recentDone.map(t => `- [done] ${t.name}`).join('\n');
+  } catch { /* skip */ }
+
+  const prompt = `你是 OpenClaw 星艦指揮中心的自動巡邏系統。任務板目前是空的。
+
+專案路徑：/Users/caijunchang/openclaw任務面版設計
+技術棧：React + TypeScript + Vite + Express.js (server/src/)
+
+最近完成的任務：
+${taskContext || '（無資料）'}
+
+提出 1-2 個有價值的巡邏任務。優先順序：
+1. 掃描 server/src/ 真實程式碼，找具體品質問題（TODO/FIXME、大檔案、deprecated API）
+2. 安全掃描（API endpoint 未授權風險、敏感資料暴露）
+3. 日誌分析（server.log 的 error/warn 統計）
+
+關鍵要求：
+- description 必須包含具體執行步驟（用 grep/find/wc 掃什麼路徑、找什麼關鍵字）
+- 不要重複已完成的任務
+- 任務必須可以用 bash 腳本在 30 秒內完成
+
+回覆格式（嚴格 JSON array）：
+[{"name":"任務名（15字以內）","description":"具體步驟描述（80字以內）"}]
+
+只回覆 JSON，不要其他文字。`;
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+        }),
+        signal: AbortSignal.timeout(20000),
+      }
+    );
+    if (!resp.ok) {
+      log.warn(`[IdlePatrol] Gemini HTTP ${resp.status}`);
+      return;
+    }
+    const data = await resp.json() as Record<string, unknown>;
+    const candidates = (data as Record<string, unknown>).candidates as Array<Record<string, unknown>> | undefined;
+    const parts = (candidates?.[0]?.content as Record<string, unknown>)?.parts as Array<Record<string, unknown>> | undefined;
+    const text = String(parts?.[0]?.text || '').trim();
+    if (!text) {
+      log.warn('[IdlePatrol] Gemini 回覆空白');
+      return;
+    }
+
+    // 提取 JSON array
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      log.warn(`[IdlePatrol] 無法解析 JSON: ${text.slice(0, 200)}`);
+      return;
+    }
+    const tasks = JSON.parse(jsonMatch[0]) as Array<{ name: string; description: string }>;
+    if (!Array.isArray(tasks) || tasks.length === 0) return;
+
+    // 建立任務（最多 3 個）
+    const { createTask } = await import('../telegram/action-handlers.js');
+    let created = 0;
+    for (const t of tasks.slice(0, 3)) {
+      if (!t.name || !t.description) continue;
+      const result = await createTask(`[巡邏] ${t.name}`, t.description, '小蔡');
+      log.info(`[IdlePatrol] 建立任務: ${t.name} → ${result}`);
+      created++;
+    }
+
+    if (created > 0) {
+      idlePatrolTimestamps.push(Date.now());
+      await sendTelegramMessage(
+        `🔭 <b>自主巡邏</b>\n任務板空閒 ${Math.round(consecutiveIdlePolls * 15 / 60)} 分鐘，已自動建立 ${created} 個巡邏任務`,
+        { parseMode: 'HTML' }
+      );
+    }
+  } catch (e) {
+    log.warn({ err: e }, '[IdlePatrol] 巡邏失敗');
+  }
+}
+
 // ─── Helpers ───
 
 function repoRootPath(): string {
@@ -314,9 +431,17 @@ async function executeNextPendingTask(): Promise<void> {
       .sort((a, b) => (a.priority || 3) - (b.priority || 3));
 
     if (pendingTasks.length === 0) {
-      log.info('[AutoExecutor] 沒有待執行的任務');
+      consecutiveIdlePolls++;
+      if (consecutiveIdlePolls >= IDLE_PATROL_THRESHOLD) {
+        log.info(`[AutoExecutor] 連續空閒 ${consecutiveIdlePolls} 次 (${Math.round(consecutiveIdlePolls * 15 / 60)} 分鐘)，觸發自主巡邏`);
+        await triggerIdlePatrol();
+        consecutiveIdlePolls = 0; // 巡邏後重新計數
+      } else {
+        log.info('[AutoExecutor] 沒有待執行的任務');
+      }
       return;
     }
+    consecutiveIdlePolls = 0; // 有任務就重置
 
     // Dispatch gate: 在 dispatch mode 下，找到第一個「可執行」的任務
     // critical 且未批准的任務會加入待審佇列後跳過，繼續找下一個

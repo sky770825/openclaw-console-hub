@@ -1,12 +1,12 @@
 {
   "enabled": true,
-  "enabledAt": "2026-02-27T01:22:19.039Z",
-  "enabledBy": "api",
+  "enabledAt": "2026-02-28T22:32:33.418Z",
+  "enabledBy": "telegram-group",
   "maxTasksPerRun": 3,
   "allowedTags": [
     "auto-ok"
   ],
   "excludeTags": [],
-  "disabledAt": "2026-02-27T01:22:14.794Z",
+  "disabledAt": "2026-02-28T13:25:50.349Z",
   "delegateToXiaoji": true
 }
