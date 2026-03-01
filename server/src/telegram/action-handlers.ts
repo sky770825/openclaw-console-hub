@@ -25,6 +25,18 @@ export async function createTask(name: string, description?: string, owner?: str
     const validOwner = owner && ['小蔡', '老蔡', 'system'].includes(owner) ? owner : '小蔡';
     const trimmedName = name.slice(0, 100);
 
+    // 核心資產保護：禁止建立涉及靈魂文件 / 大腦 / key 的任務
+    const combined = `${trimmedName} ${description || ''}`.toLowerCase();
+    const FORBIDDEN_TASK_PATTERNS = [
+      /agents\.md/i, /soul\.md/i, /awakening\.md/i, /identity\.md/i,
+      /xiaocai-think/i, /bot-polling/i, /executor-agents/i,
+      /覆蓋.*意識/i, /覆寫.*靈魂/i, /修改.*大腦/i,
+      /\.env/i, /openclaw\.json/i, /sessions\.json/i,
+      /api.?key/i, /token.*洩/i,
+    ];
+    const blocked = FORBIDDEN_TASK_PATTERNS.find(p => p.test(combined));
+    if (blocked) return `🛑 安全攔截：任務涉及核心資產（${blocked.source}），禁止建立。只有老蔡能動這些。`;
+
     // 防重复：检查是否已有同名 + 非 done 的任务
     const checkR = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=100`, {
       headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
