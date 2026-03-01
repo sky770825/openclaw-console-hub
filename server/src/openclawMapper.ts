@@ -112,9 +112,10 @@ export function openClawTaskToTask(oc: OpenClawTask): Task {
   const now = new Date().toISOString();
   const { description, meta } = parseThought(oc.thought);
   // 如果 title 为空，使用 id 作为备用显示
-  const taskName = oc.title?.trim() || `任務-${oc.id.slice(-6)}`;
+  const ocId = oc.id ?? '';
+  const taskName = oc.title?.trim() || `任務-${ocId.slice(-6)}`;
   const t: Task = {
-    id: oc.id,
+    id: ocId,
     name: taskName,
     description,
     status: OC_TO_TASK_STATUS[oc.status] ?? 'ready',
@@ -123,7 +124,7 @@ export function openClawTaskToTask(oc: OpenClawTask): Task {
     priority: meta.priority ?? 3,
     scheduleType: meta.scheduleType ?? 'manual',
     scheduleExpr: meta.scheduleExpr,
-    lastRunStatus: oc.progress >= 100 ? 'success' : undefined,
+    lastRunStatus: (oc.progress ?? 0) >= 100 ? 'success' : undefined,
     lastRunAt: undefined,
     taskType: meta.taskType,
     complexity: meta.complexity,
@@ -203,9 +204,9 @@ export function openClawReviewToAlert(r: OpenClawReview): Alert {
     medium: 'medium',
   };
   return {
-    id: r.id,
+    id: r.id ?? '',
     type: 'task_run_failed',
-    severity: priToSev[r.pri] ?? 'medium',
+    severity: priToSev[r.pri ?? ''] ?? 'medium',
     status: r.status === 'pending' ? 'open' : 'acked',
     createdAt: r.created_at ?? new Date().toISOString(),
     message: `${r.title}: ${r.desc}`,
@@ -323,11 +324,11 @@ export function openClawRunToRun(row: OpenClawRunRow): Run {
     : `⏳ 任務「${row.task_name}」執行中...`);
   
   return {
-    id: row.id,
+    id: row.id ?? '',
     taskId: row.task_id,
-    taskName: row.task_name,
+    taskName: row.task_name ?? '',
     status: (row.status === 'queued' ? 'queued' : row.status === 'running' ? 'running' : row.status === 'failed' ? 'failed' : row.status === 'cancelled' ? 'cancelled' : 'success') as Run['status'],
-    startedAt: row.started_at,
+    startedAt: row.started_at ?? new Date().toISOString(),
     endedAt: row.ended_at ?? null,
     durationMs: row.duration_ms ?? null,
     inputSummary,

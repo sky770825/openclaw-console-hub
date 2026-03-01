@@ -30,12 +30,18 @@ export const supabaseServiceRole = createClient(supabaseUrl!, supabaseServiceRol
 export interface OpenClawTask {
   id?: string; name: string; status: string; priority?: number; owner?: string;
   description?: string; result?: string; created_at?: string; updated_at?: string;
-  from_review_id?: string; tags?: string[]; [key: string]: unknown;
+  from_review_id?: string; tags?: string[];
+  title?: string; thought?: string; cat?: string; progress?: number;
+  auto?: boolean; subs?: { t: string; d: boolean }[];
+  fromR?: string;
+  [key: string]: unknown;
 }
 
 export interface OpenClawReview {
   id?: string; title: string; status: string; content?: string;
-  created_at?: string; updated_at?: string; [key: string]: unknown;
+  created_at?: string; updated_at?: string;
+  desc?: string; pri?: string; type?: string; reasoning?: string; src?: string;
+  [key: string]: unknown;
 }
 
 export interface OpenClawProject {
@@ -50,12 +56,18 @@ export interface OpenClawMemory {
 
 export interface EvolutionLogRow {
   id?: string; event_type: string; event_data?: Record<string, unknown>;
-  created_at?: string; [key: string]: unknown;
+  created_at?: string;
+  tag?: string; t?: string; x?: string; c?: string;
+  [key: string]: unknown;
 }
 
 export interface OpenClawRunRow {
   id?: string; task_id: string; status: string; output?: string;
-  started_at?: string; finished_at?: string; [key: string]: unknown;
+  started_at?: string; finished_at?: string;
+  task_name?: string; ended_at?: string; duration_ms?: number;
+  input_summary?: string; output_summary?: string;
+  steps?: unknown;
+  [key: string]: unknown;
 }
 
 // ── Supabase CRUD 函數 ──
@@ -140,8 +152,11 @@ export async function insertOpenClawEvolutionLog(row: Partial<EvolutionLogRow>):
 }
 
 // Runs
-export async function fetchOpenClawRuns(): Promise<OpenClawRunRow[]> {
-  const { data } = await supabaseServiceRole.from(TABLE_RUNS).select('*').order('started_at', { ascending: false });
+export async function fetchOpenClawRuns(limit?: number, taskId?: string): Promise<OpenClawRunRow[]> {
+  let query = supabaseServiceRole.from(TABLE_RUNS).select('*').order('started_at', { ascending: false });
+  if (taskId) query = query.eq('task_id', taskId);
+  if (limit) query = query.limit(limit);
+  const { data } = await query;
   return (data ?? []) as OpenClawRunRow[];
 }
 export async function fetchOpenClawRunById(id: string): Promise<OpenClawRunRow | null> {
@@ -164,12 +179,19 @@ export async function fetchOpenClawAuditLogs(): Promise<Record<string, unknown>[
 }
 
 // Memory
-export async function fetchOpenClawMemory(): Promise<OpenClawMemory[]> {
-  const { data } = await supabaseServiceRole.from(TABLE_MEMORY).select('*').order('updated_at', { ascending: false });
+export async function fetchOpenClawMemory(opts?: { type?: string; source?: string; limit?: number; offset?: number }): Promise<OpenClawMemory[]> {
+  let query = supabaseServiceRole.from(TABLE_MEMORY).select('*').order('updated_at', { ascending: false });
+  if (opts?.type) query = query.eq('category', opts.type);
+  if (opts?.limit) query = query.limit(opts.limit);
+  if (opts?.offset) query = query.range(opts.offset, opts.offset + (opts.limit ?? 50) - 1);
+  const { data } = await query;
   return (data ?? []) as OpenClawMemory[];
 }
-export async function searchOpenClawMemory(query: string): Promise<OpenClawMemory[]> {
-  const { data } = await supabaseServiceRole.from(TABLE_MEMORY).select('*').ilike('key', `%${query}%`);
+export async function searchOpenClawMemory(query: string, opts?: { type?: string; source?: string; tags?: string[]; limit?: number }): Promise<OpenClawMemory[]> {
+  let q = supabaseServiceRole.from(TABLE_MEMORY).select('*').ilike('key', `%${query}%`);
+  if (opts?.type) q = q.eq('category', opts.type);
+  if (opts?.limit) q = q.limit(opts.limit);
+  const { data } = await q;
   return (data ?? []) as OpenClawMemory[];
 }
 export async function upsertOpenClawMemory(mem: Partial<OpenClawMemory>): Promise<OpenClawMemory | null> {

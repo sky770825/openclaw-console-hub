@@ -30,6 +30,7 @@ import {
   insertOpenClawRun,
   updateOpenClawRun,
   fetchOpenClawAuditLogs,
+  type OpenClawTask,
 } from './openclawSupabase.js';
 import { hasSupabase, supabase } from './supabase.js';
 import {
@@ -1383,9 +1384,9 @@ async function executeNextQueuedTask(): Promise<
   | { ok: false; status: number; message: string }
 > {
   let list: { id: string; status: string }[] = [];
-  const ocTasks = await fetchOpenClawTasks().catch(() => []);
+  const ocTasks = await fetchOpenClawTasks().catch(() => [] as OpenClawTask[]);
   if (ocTasks.length > 0) {
-    list = ocTasks;
+    list = ocTasks.map((t) => ({ id: t.id ?? '', status: t.status }));
   } else if (tasks.length > 0) {
     list = tasks.map((t) => ({
       id: t.id,
@@ -1421,7 +1422,7 @@ async function executeNextQueuedTask(): Promise<
       input_summary: typeof run.inputSummary === 'string' ? run.inputSummary : JSON.stringify(run.inputSummary ?? {}),
       steps: run.steps,
     });
-    if (inserted) run = { ...run, id: inserted.id };
+    if (inserted?.id) run = { ...run, id: inserted.id };
   }
   runs.unshift(run);
   const now = run.startedAt;
@@ -1472,7 +1473,7 @@ app.post('/api/openclaw/tasks/:id/run', async (req, res) => {
       input_summary: typeof run.inputSummary === 'string' ? run.inputSummary : JSON.stringify(run.inputSummary ?? {}),
       steps: run.steps,
     });
-    if (inserted) run = { ...run, id: inserted.id };
+    if (inserted?.id) run = { ...run, id: inserted.id };
   }
   runs.unshift(run);
   const now = run.startedAt;
@@ -1781,8 +1782,8 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
 
     const nowIso = new Date().toISOString();
     const runLabel = formatRunTime(nowIso);
-    const nextRuns = (automation.runs ?? 0) + 1;
-    let nextHealth = Math.min(100, (automation.health ?? 100) + 1);
+    const nextRuns = (Number(automation.runs) || 0) + 1;
+    let nextHealth = Math.min(100, (Number(automation.health) || 100) + 1);
     let mode: 'webhook' | 'run-next' = 'run-next';
     let resultPayload: unknown = null;
     let runInfo: Run | null = null;
@@ -1806,8 +1807,8 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
         if (hasSupabase()) {
           try {
             const row = await insertOpenClawRun({
-              task_id: automation.id,
-              task_name: automation.name,
+              task_id: automation.id as string,
+              task_name: automation.name as string,
               status: 'success',
               started_at: nowIso,
               input_summary: JSON.stringify({
@@ -1825,7 +1826,7 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
                 },
               ],
             });
-            if (row) createdRunId = row.id;
+            if (row?.id) createdRunId = row.id;
           } catch (e) {
             log.warn('[OpenClaw] insert automation run trace failed:', e);
           }
@@ -1843,7 +1844,7 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
           errorType = 'network';
         }
 
-        nextHealth = Math.max(0, (automation.health ?? 100) - 5);
+        nextHealth = Math.max(0, (Number(automation.health) || 100) - 5);
         const failedAutomation = await upsertOpenClawAutomation({
           ...automation,
           runs: nextRuns,
@@ -1854,8 +1855,8 @@ app.post('/api/openclaw/automations/:id/run', async (req, res) => {
         if (hasSupabase()) {
           try {
             await insertOpenClawRun({
-              task_id: automation.id,
-              task_name: automation.name,
+              task_id: automation.id as string,
+              task_name: automation.name as string,
               status: 'failed',
               started_at: nowIso,
               input_summary: JSON.stringify({
@@ -3614,10 +3615,11 @@ app.post('/api/openclaw/maintenance/reconcile', async (_req, res) => {
     const details: Array<{ taskId: string; from: string; to: string; reason: string }> = [];
     for (const t of ocTasks ?? []) {
       const st = t.status ?? '';
-      if ((st === 'running' || st === 'in_progress') && !activeRunTaskIds.has(t.id)) {
+      const tId = t.id ?? '';
+      if ((st === 'running' || st === 'in_progress') && !activeRunTaskIds.has(tId)) {
         // running 但沒有 active run → 改回 queued（中斷重試），不能假設已完成
-        await upsertOpenClawTask({ id: t.id, status: 'queued' });
-        details.push({ taskId: t.id, from: st, to: 'queued', reason: 'orphaned in_progress, reset for retry' });
+        await upsertOpenClawTask({ id: tId, name: t.name, status: 'queued' });
+        details.push({ taskId: tId, from: st, to: 'queued', reason: 'orphaned in_progress, reset for retry' });
         fixedToReady++;
       }
     }

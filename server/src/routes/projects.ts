@@ -73,10 +73,7 @@ projectsRouter.delete('/:id', async (req, res) => {
     if (!hasSupabase()) {
       return res.status(503).json({ message: 'Supabase not connected' });
     }
-    const ok = await deleteOpenClawProject(req.params.id);
-    if (!ok) {
-      return res.status(500).json({ message: 'Failed to delete project' });
-    }
+    await deleteOpenClawProject(req.params.id);
     res.status(204).send();
   } catch (e) {
     log.error('[OpenClaw] DELETE /api/openclaw/projects error:', e);

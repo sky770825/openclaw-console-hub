@@ -121,10 +121,7 @@ memoryRouter.delete('/memory/:id', async (req, res) => {
     if (!hasSupabase()) {
       return res.status(503).json({ message: 'Supabase not connected' });
     }
-    const ok = await deleteOpenClawMemory(req.params.id);
-    if (!ok) {
-      return res.status(500).json({ message: 'Failed to delete memory' });
-    }
+    await deleteOpenClawMemory(req.params.id);
     res.status(204).send();
   } catch (e) {
     log.error('[Memory] DELETE /memory error:', e);

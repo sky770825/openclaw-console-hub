@@ -77,12 +77,13 @@ openclawTasksRouter.get('/', async (_req, res) => {
     if ((!data || data.length === 0) && tasks.length > 0) {
       data = tasks.map((t) => ({
         id: t.id,
+        name: t.name,
         title: t.name,
         cat: (t.tags?.[0] as string) ?? 'feature',
         status: t.status === 'done' ? 'done' : t.status === 'running' ? 'in_progress' : 'queued',
         progress: t.status === 'done' ? 100 : 0,
         auto: false,
-        from_review_id: null,
+        from_review_id: undefined,
         subs: [] as { t: string; d: boolean }[],
         thought: t.description,
       }));

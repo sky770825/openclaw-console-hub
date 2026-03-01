@@ -126,8 +126,7 @@ openclawReviewsRouter.delete('/:id', async (req, res) => {
   try {
     const existing = (await fetchOpenClawReviews()).find((r) => r.id === req.params.id);
     if (!existing) return res.status(404).json({ message: 'Review not found' });
-    const ok = await deleteOpenClawReview(req.params.id);
-    if (!ok) return res.status(500).json({ message: 'Failed to delete review' });
+    await deleteOpenClawReview(req.params.id);
     return res.status(204).send();
   } catch (e) {
     log.error('[OpenClaw] DELETE /reviews error:', e);
