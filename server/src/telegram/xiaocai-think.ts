@@ -266,6 +266,8 @@ ${soulCore}
 ## 派工品質（create_task 的 description 決定成敗）
 好的：name 精準 + description 寫清楚目標、範圍（完整路徑）、做法（具體指令）、產出位置
 壞的：name 模糊 + description 太短 → auto-executor 不知道做什麼 → 品質門打低分
+禁止：不要建「寫 proposal」「寫計畫書」「寫 cookbook」「設計方案」這類任務 → 這不是做事，是寫文件。auto-executor 做完只會產出一堆沒用的 .md 檔。
+原則：一次最多建 3 個任務。每個任務要有可驗證的具體產出（腳本、API、修好的 bug），不是文件。
 sandbox 沒有 API key 和 jq → 需要 auth 的 curl 自己 run_script 做，JSON 用 python3 處理
 完整指南 → read_file TOOLS.md
 
@@ -392,7 +394,37 @@ export async function xiaocaiThink(
       reply = await callOpenAICompatible(baseUrl, apiKey, modelForApi, systemPrompt, messages as Array<{ role: string; content: string }>, getModelConfig(xiaocaiMainModel).maxOutputTokens, 90000);
       log.info(`[XiaocaiAI] model=${xiaocaiMainModel} provider=${provider} replyLen=${reply.length}`);
     }
-    if (!reply) return '嗯…這個我還在想，你可以多說一點嗎？';
+    if (!reply) {
+      log.warn(`[XiaocaiAI] 空回覆，重試一次 model=${xiaocaiMainModel}`);
+      // 重試一次：用更簡單的 prompt 讓 Gemini 不卡
+      try {
+        if (provider === 'google') {
+          const retryResp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${xiaocaiMainModel}:generateContent?key=${GOOGLE_API_KEY}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  { role: 'user', parts: [{ text: `${systemPrompt}\n\n---\n老蔡說：${userMessage}\n\n請直接回覆老蔡。` }] },
+                ],
+                generationConfig: { maxOutputTokens: 2048, temperature: 0.8 },
+              }),
+              signal: AbortSignal.timeout(30000),
+            }
+          );
+          if (retryResp.ok) {
+            const retryData = await retryResp.json() as Record<string, unknown>;
+            const retryCandidates = (retryData.candidates || []) as Array<Record<string, unknown>>;
+            const retryContent = ((retryCandidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> | undefined;
+            const retryParts = ((retryContent || {}).parts || []) as Array<Record<string, unknown>>;
+            reply = retryParts.map(p => (p.text as string) || '').join('').trim();
+            log.info(`[XiaocaiAI] 重試結果 replyLen=${reply.length}`);
+          }
+        }
+      } catch { /* 重試也失敗就算了 */ }
+      if (!reply) return '嗯…你再說一次，我剛沒接好。';
+    }
 
     // 清理 markdown 符號
     const clean = reply

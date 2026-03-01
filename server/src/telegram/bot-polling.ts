@@ -1599,7 +1599,7 @@ async function xiaocaiPoll(): Promise<void> {
 
         for (let selfDrive = 0; selfDrive < 1; selfDrive++) {
           const driveReply = await xiaocaiThink(chatId,
-            '[系統] 你剛才做了一些事。你有沒有說了「要去做」但還沒做的？有的話用 create_task 派出去，或者快速 action 做掉。沒有就直接回覆老蔡最終結論，不要放 action。',
+            '[系統] 你剛才做了一些事。還有沒有說了「要做」但沒做的？有就用 action 做掉。沒有就回「done」一個字就好。注意：不要重複你剛才已經說過的話。',
             xiaocaiMainModel, xiaocaiHistory
           );
           const driveActions = extractActionJsons(driveReply);
@@ -1609,7 +1609,10 @@ async function xiaocaiPoll(): Promise<void> {
               .replace(/```json\s*```/g, '').replace(/```\s*```/g, '')
               .replace(/^\s*```(?:json)?\s*$/gm, '')
               .trim();
-            if (cleanDrive && cleanDrive.length > 5) {
+            // 跳過 "done" 或跟 finalReply 高度重複的回覆
+            const isDone = /^done$/i.test(cleanDrive);
+            const isDuplicate = cleanDrive.length > 5 && finalReply && cleanDrive.slice(0, 60) === finalReply.slice(0, 60);
+            if (cleanDrive && cleanDrive.length > 5 && !isDone && !isDuplicate) {
               await sendTelegramMessageToChat(chatId, cleanDrive, { token: XIAOCAI_TOKEN });
             }
             log.info(`[XiaocaiSelfDrive] round=${selfDrive} 沒有更多 action，停止`);
@@ -1632,7 +1635,8 @@ async function xiaocaiPoll(): Promise<void> {
           const driveMsg = driveText
             ? driveText
             : driveResults.map(r => r.length > 80 ? r.slice(0, 80) + '...' : r).join('\n');
-          if (driveMsg) {
+          const driveMsgDup = driveMsg && finalReply && driveMsg.slice(0, 60) === finalReply.slice(0, 60);
+          if (driveMsg && !driveMsgDup) {
             await sendTelegramMessageToChat(chatId, driveMsg.slice(0, 4000), { token: XIAOCAI_TOKEN });
           }
           const hist = xiaocaiHistory.get(chatId) || [];

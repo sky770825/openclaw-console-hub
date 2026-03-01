@@ -410,8 +410,31 @@ const ALLOWED_TABLES = new Set([
   'openclaw_tasks', 'openclaw_reviews', 'openclaw_automations',
   'openclaw_evolution_log', 'openclaw_runs', 'openclaw_audit_logs',
   'fadp_members', 'fadp_attack_events', 'fadp_blocklist',
-  // 注意：schedules/shifts/attendance/employees 是楊梅餐車的表，在另一個 Supabase，這裡查不到
 ]);
+
+// Supabase 真實欄位 vs NEUXA 常用的別名（API 層有 mapping，直查 Supabase 要用真實欄位名）
+const COLUMN_ALIASES: Record<string, Record<string, string>> = {
+  openclaw_tasks: { name: 'title', description: 'thought', content: 'thought', tags: 'cat', priority: 'progress', agent: 'owner', executor: 'owner' },
+  openclaw_reviews: { name: 'title', description: 'content' },
+};
+// 反向 mapping：Supabase 欄位 → NEUXA 友善名
+const COLUMN_REVERSE: Record<string, Record<string, string>> = {
+  openclaw_tasks: { title: 'name', thought: 'description' },
+};
+
+function mapColumn(table: string, col: string): string {
+  return COLUMN_ALIASES[table]?.[col] || col;
+}
+
+function mapResultRow(table: string, row: Record<string, unknown>): Record<string, unknown> {
+  const rev = COLUMN_REVERSE[table];
+  if (!rev) return row;
+  const mapped: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    mapped[rev[k] || k] = v;
+  }
+  return mapped;
+}
 
 async function handleQuerySupabase(action: Record<string, any>): Promise<ActionResult> {
   const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
@@ -421,42 +444,55 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
   if (!table || typeof table !== 'string') return { ok: false, output: 'query_supabase 需要 table 參數' };
   if (!ALLOWED_TABLES.has(table)) return { ok: false, output: `表 "${table}" 不在白名單。可用: ${[...ALLOWED_TABLES].join(', ')}` };
 
-  const select = action.select || '*';
+  // select 欄位 mapping
+  let select = action.select || '*';
+  if (select !== '*') {
+    select = select.split(',').map((s: string) => mapColumn(table, s.trim())).join(',');
+  }
   const limit = Math.min(Math.max(Number(action.limit) || 50, 1), 200);
 
   try {
     let query: any = sb.from(table).select(select);
 
-    // 套用 filters: [{ column, op, value }]
+    // 套用 filters: [{ column, op, value }] — 自動 mapping 欄位名
     if (Array.isArray(action.filters)) {
       for (const f of action.filters) {
         if (!f.column || !f.op) continue;
+        const col = mapColumn(table, f.column);
         switch (f.op) {
-          case 'eq': query = query.eq(f.column, f.value); break;
-          case 'neq': query = query.neq(f.column, f.value); break;
-          case 'gt': query = query.gt(f.column, f.value); break;
-          case 'gte': query = query.gte(f.column, f.value); break;
-          case 'lt': query = query.lt(f.column, f.value); break;
-          case 'lte': query = query.lte(f.column, f.value); break;
-          case 'like': query = query.like(f.column, f.value); break;
-          case 'ilike': query = query.ilike(f.column, f.value); break;
-          case 'in': query = query.in(f.column, f.value); break;
-          case 'is': query = query.is(f.column, f.value); break;
+          case 'eq': query = query.eq(col, f.value); break;
+          case 'neq': query = query.neq(col, f.value); break;
+          case 'gt': query = query.gt(col, f.value); break;
+          case 'gte': query = query.gte(col, f.value); break;
+          case 'lt': query = query.lt(col, f.value); break;
+          case 'lte': query = query.lte(col, f.value); break;
+          case 'like': query = query.like(col, f.value); break;
+          case 'ilike': query = query.ilike(col, f.value); break;
+          case 'in': query = query.in(col, f.value); break;
+          case 'is': query = query.is(col, f.value); break;
           default: break;
         }
       }
     }
 
     if (action.order && typeof action.order === 'object' && action.order.column) {
-      query = query.order(action.order.column, { ascending: action.order.ascending ?? false });
+      const orderCol = mapColumn(table, action.order.column);
+      query = query.order(orderCol, { ascending: action.order.ascending ?? false });
     }
 
     query = query.limit(limit);
 
     const { data, error } = await query;
-    if (error) return { ok: false, output: `Supabase 查詢錯誤: ${error.message}` };
+    if (error) {
+      const hint = table === 'openclaw_tasks'
+        ? '\n💡 openclaw_tasks 可用欄位: id, title(=name), status, owner(=agent), thought(=description), cat(=tags), progress, auto, subs, result, created_at, updated_at'
+        : '';
+      return { ok: false, output: `Supabase 查詢錯誤: ${error.message}${hint}` };
+    }
 
-    const jsonStr = JSON.stringify(data, null, 2);
+    // 結果 mapping：Supabase 欄位名 → NEUXA 友善名
+    const mapped = (data || []).map((row: Record<string, unknown>) => mapResultRow(table, row));
+    const jsonStr = JSON.stringify(mapped, null, 2);
     const trimmed = jsonStr.length > 3000 ? jsonStr.slice(0, 3000) + '\n...(截斷)' : jsonStr;
     log.info(`[NEUXA-Action] query_supabase ${table} → ${data?.length ?? 0} rows`);
     return { ok: true, output: sanitize(`查到 ${data?.length ?? 0} 筆:\n${trimmed}`) };
