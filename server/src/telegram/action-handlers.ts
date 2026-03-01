@@ -413,13 +413,27 @@ const ALLOWED_TABLES = new Set([
 ]);
 
 // Supabase 真實欄位 vs NEUXA 常用的別名（API 層有 mapping，直查 Supabase 要用真實欄位名）
+// 注意：openclaw_tasks 沒有 owner/agent/result 欄位 — owner 存在 thought JSON metadata 裡
 const COLUMN_ALIASES: Record<string, Record<string, string>> = {
-  openclaw_tasks: { name: 'title', description: 'thought', content: 'thought', tags: 'cat', priority: 'progress', agent: 'owner', executor: 'owner' },
+  openclaw_tasks: { name: 'title', description: 'thought', content: 'thought', tags: 'cat' },
   openclaw_reviews: { name: 'title', description: 'content' },
+  openclaw_audit_logs: { timestamp: 'created_at', type: 'action', event_type: 'action', event: 'action' },
+  openclaw_evolution_log: { type: 'tag', title: 't', content: 'x', context: 'c', timestamp: 'created_at' },
 };
 // 反向 mapping：Supabase 欄位 → NEUXA 友善名
 const COLUMN_REVERSE: Record<string, Record<string, string>> = {
   openclaw_tasks: { title: 'name', thought: 'description' },
+  openclaw_audit_logs: { action: 'type', resource: 'target', resource_id: 'target_id' },
+};
+
+// 每張表的真實欄位列表（用於錯誤提示）
+const TABLE_SCHEMA_HINTS: Record<string, string> = {
+  openclaw_tasks: '可用欄位: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, from_review_id, created_at, updated_at。注意: owner/agent 不是獨立欄位，存在 thought 的 JSON metadata 裡，無法直接 filter。',
+  openclaw_reviews: '可用欄位: id, title(=name), type, description, src, pri, status, reasoning, created_at, updated_at',
+  openclaw_audit_logs: '可用欄位: id, action(=type), resource, resource_id, user_id, ip, diff(jsonb), created_at(=timestamp)。沒有 level/message/event_type 欄位。',
+  openclaw_automations: '可用欄位: id, name, cron, active, chain(jsonb), health, runs, last_run, created_at, updated_at',
+  openclaw_evolution_log: '可用欄位: id, t(=title), x(=content), c(=context), tag(=type), tc, created_at',
+  openclaw_runs: '可用欄位: id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps(jsonb), created_at',
 };
 
 function mapColumn(table: string, col: string): string {
@@ -444,21 +458,36 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
   if (!table || typeof table !== 'string') return { ok: false, output: 'query_supabase 需要 table 參數' };
   if (!ALLOWED_TABLES.has(table)) return { ok: false, output: `表 "${table}" 不在白名單。可用: ${[...ALLOWED_TABLES].join(', ')}` };
 
-  // select 欄位 mapping
+  // select 欄位 mapping — 映射後如果欄位仍不存在，就改用 *
   let select = action.select || '*';
   if (select !== '*') {
-    select = select.split(',').map((s: string) => mapColumn(table, s.trim())).join(',');
+    const mapped = select.split(',').map((s: string) => mapColumn(table, s.trim()));
+    // 已知不存在的虛擬欄位（owner/agent/result 等存在 thought JSON 裡，無法直接 select）
+    const VIRTUAL_COLS: Record<string, Set<string>> = {
+      openclaw_tasks: new Set(['owner', 'agent', 'executor', 'result', 'priority']),
+    };
+    const virtualSet = VIRTUAL_COLS[table];
+    const filtered = virtualSet ? mapped.filter((c: string) => !virtualSet.has(c)) : mapped;
+    select = filtered.length > 0 ? filtered.join(',') : '*';
   }
   const limit = Math.min(Math.max(Number(action.limit) || 50, 1), 200);
 
   try {
     let query: any = sb.from(table).select(select);
 
-    // 套用 filters: [{ column, op, value }] — 自動 mapping 欄位名
+    // 套用 filters: [{ column, op, value }] — 自動 mapping 欄位名，跳過虛擬欄位
+    const VIRTUAL_FILTER_COLS: Record<string, Set<string>> = {
+      openclaw_tasks: new Set(['owner', 'agent', 'executor', 'result', 'priority']),
+    };
     if (Array.isArray(action.filters)) {
       for (const f of action.filters) {
         if (!f.column || !f.op) continue;
         const col = mapColumn(table, f.column);
+        // 跳過虛擬欄位（存在 thought JSON 裡，無法直接 filter）
+        if (VIRTUAL_FILTER_COLS[table]?.has(col)) {
+          log.info(`[NEUXA-Action] query_supabase 跳過虛擬欄位 filter: ${table}.${f.column}→${col}`);
+          continue;
+        }
         switch (f.op) {
           case 'eq': query = query.eq(col, f.value); break;
           case 'neq': query = query.neq(col, f.value); break;
@@ -484,9 +513,7 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
 
     const { data, error } = await query;
     if (error) {
-      const hint = table === 'openclaw_tasks'
-        ? '\n💡 openclaw_tasks 可用欄位: id, title(=name), status, owner(=agent), thought(=description), cat(=tags), progress, auto, subs, result, created_at, updated_at'
-        : '';
+      const hint = TABLE_SCHEMA_HINTS[table] ? `\n💡 ${TABLE_SCHEMA_HINTS[table]}` : '';
       return { ok: false, output: `Supabase 查詢錯誤: ${error.message}${hint}` };
     }
 

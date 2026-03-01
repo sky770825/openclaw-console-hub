@@ -255,7 +255,11 @@ ${soulCore}
 {"action":"write_file","path":"memory/note.md","content":"筆記內容"}
 {"action":"create_task","name":"任務名","description":"詳細步驟"}
 {"action":"ask_ai","model":"flash","prompt":"問題"}
-{"action":"query_supabase","table":"表名","select":"*","limit":50}
+{"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
+注意 Supabase 真實欄位：
+- openclaw_tasks: id, title, cat, status, progress, auto, thought, subs, created_at（沒有 owner/agent/result/priority 欄位，不要 select 或 filter 這些）
+- openclaw_audit_logs: id, action, resource, resource_id, user_id, ip, diff, created_at（沒有 timestamp/level/message 欄位）
+- name→title, description→thought, tags→cat, timestamp→created_at 會自動轉換
 {"action":"proxy_fetch","url":"https://...","method":"POST","body":{}}
 其他：mkdir, move_file, list_dir
 

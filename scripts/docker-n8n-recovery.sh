@@ -26,7 +26,7 @@ fi
 
 # 檢查 n8n 容器
 echo "[$(date)] 檢查 n8n 容器狀態..." >> "$LOG_FILE"
-N8N_CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c "n8n" || echo "0")
+N8N_CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c "n8n-production-" || echo "0")
 
 if [ "$N8N_CONTAINERS" -ge 4 ]; then
     echo "[$(date)] ✅ n8n 容器已運行 ($N8N_CONTAINERS 個)" >> "$LOG_FILE"
@@ -35,7 +35,7 @@ else
     cd /Users/caijunchang/n8n-production || exit 1
     docker compose up -d 2>&1 >> "$LOG_FILE"
     sleep 5
-    N8N_CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c "n8n" || echo "0")
+    N8N_CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c "n8n-production-" || echo "0")
     echo "[$(date)] ✅ n8n 啟動完成 ($N8N_CONTAINERS 個容器)" >> "$LOG_FILE"
 fi
 

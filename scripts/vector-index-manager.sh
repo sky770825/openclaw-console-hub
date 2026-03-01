@@ -25,7 +25,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # 檢查 Qdrant 狀態
 check_qdrant() {
     if ! curl -s "http://${QDRANT_HOST}:${QDRANT_PORT}/collections" > /dev/null 2>&1; then
-        log_error "Qdrant 未啟動，請先執行: docker start qdrant"
+        log_error "Qdrant 未啟動，請先執行: docker start n8n-production-qdrant-1"
         exit 1
     fi
     log_success "Qdrant 連線正常"

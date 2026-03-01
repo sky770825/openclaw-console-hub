@@ -208,9 +208,9 @@ export async function recordModelUsage(modelName: string, tokensUsed: number, co
   try {
     const { data, error } = await supabase.from('openclaw_audit_logs').insert([
       {
-        event_type: 'MODEL_USAGE',
-        event_data: {
-          model: modelName,
+        action: 'MODEL_USAGE',
+        resource: modelName,
+        diff: {
           tokens: tokensUsed,
           cost: cost,
           purpose: purpose,
