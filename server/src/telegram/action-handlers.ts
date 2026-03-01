@@ -409,6 +409,7 @@ export function handleAskAI(model: string, prompt: string, context?: string): Pr
 const ALLOWED_TABLES = new Set([
   'openclaw_tasks', 'openclaw_reviews', 'openclaw_automations',
   'openclaw_evolution_log', 'openclaw_runs', 'openclaw_audit_logs',
+  'openclaw_memory',
   'fadp_members', 'fadp_attack_events', 'fadp_blocklist',
 ]);
 
@@ -475,17 +476,17 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
   try {
     let query: any = sb.from(table).select(select);
 
-    // 套用 filters: [{ column, op, value }] — 自動 mapping 欄位名，跳過虛擬欄位
-    const VIRTUAL_FILTER_COLS: Record<string, Set<string>> = {
-      openclaw_tasks: new Set(['owner', 'agent', 'executor', 'result', 'priority']),
-    };
+    // 套用 filters: [{ column, op, value }] — 自動 mapping 欄位名
+    // 虛擬欄位（owner/agent/priority 等）自動轉成 thought ilike 搜尋
+    const THOUGHT_VIRTUAL_COLS = new Set(['owner', 'agent', 'executor', 'result', 'priority']);
     if (Array.isArray(action.filters)) {
       for (const f of action.filters) {
         if (!f.column || !f.op) continue;
         const col = mapColumn(table, f.column);
-        // 跳過虛擬欄位（存在 thought JSON 裡，無法直接 filter）
-        if (VIRTUAL_FILTER_COLS[table]?.has(col)) {
-          log.info(`[NEUXA-Action] query_supabase 跳過虛擬欄位 filter: ${table}.${f.column}→${col}`);
+        // 虛擬欄位：自動轉成 thought ilike '%value%'（這些值存在 thought 的 JSON metadata 裡）
+        if (table === 'openclaw_tasks' && THOUGHT_VIRTUAL_COLS.has(col) && f.value) {
+          log.info(`[NEUXA-Action] query_supabase 虛擬欄位 ${f.column} → thought ilike '%${f.value}%'`);
+          query = query.ilike('thought', `%${f.value}%`);
           continue;
         }
         switch (f.op) {
