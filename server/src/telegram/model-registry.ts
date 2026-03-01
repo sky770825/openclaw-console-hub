@@ -1,5 +1,8 @@
 /**
  * 模型配置註冊表 — 集中管理所有 AI 模型的 provider、temperature、maxTokens
+ *
+ * 指揮官規則：只有 Gemini 2.5 Flash 以上 + Claude Opus 4.6（緊急）
+ * 子代理規則：訂閱制 CLI + 免費額度 + 本地，Anthropic API 付費不派子代理
  */
 
 import fs from 'node:fs';
@@ -17,28 +20,47 @@ export interface ModelConfig {
 }
 
 export const MODEL_REGISTRY: ModelConfig[] = [
-  // ── Google（指揮官級）──
-  { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  // ══════════════════════════════════════════
+  // 指揮官級（Telegram /models 選單可切換）
+  // 規則：只有 Gemini 2.5 Flash 以上 + Claude Opus 緊急用
+  // ══════════════════════════════════════════
   { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  // ── Google（子代理級）──
+  { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'claude-opus-4-6', label: '🚨 Claude Opus 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  // ══════════════════════════════════════════
+  // 子代理級（ask_ai 可派遣，全部免費/訂閱制）
+  // 訂閱制 CLI：Claude Code、Codex、Cursor（不花 API 錢）
+  // 免費額度：Gemini Lite、OpenRouter :free
+  // 本地：Ollama
+  // 其他：xAI、Kimi、DeepSeek
+  // Anthropic API 付費制：僅供 registry 記錄，不派子代理
+  // ══════════════════════════════════════════
+  // ── 訂閱制 CLI（Claude Code / Codex / Cursor）──
+  { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'claude-haiku-cli', label: '⚡ Claude Haiku (CLI)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'codex-mini', label: '📦 Codex Mini (CLI)', provider: 'OpenAI-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  // ── Google 免費額度 ──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  // ── DeepSeek（指揮官級，temperature=1 官方建議）──
-  { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
-  // ── Kimi（指揮官級，K2 系列只接受 temperature=1）──
-  { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'commander' },
-  // ── xAI（指揮官級）──
-  { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  // ── OpenRouter 免費（指揮官級 — 大模型免費版）──
-  { id: 'nousresearch/hermes-3-llama-3.1-405b:free', label: '🆓 Hermes 405B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🆓 Llama 3.3 70B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'qwen/qwen3-coder:free', label: '🆓 Qwen3 Coder', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  // ── Anthropic 付費制（僅記錄，不派子代理）──
+  { id: 'claude-sonnet-4-6', label: '💎 Claude Sonnet 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'claude-haiku-4-5-20251001', label: '⚡ Claude Haiku 4.5', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  // ── DeepSeek ──
+  { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
+  // ── Kimi ──
+  { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
+  // ── xAI ──
+  { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
+  { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
+  // ── OpenRouter 免費 ──
+  { id: 'nousresearch/hermes-3-llama-3.1-405b:free', label: '🆓 Hermes 405B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🆓 Llama 3.3 70B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  { id: 'qwen/qwen3-coder:free', label: '🆓 Qwen3 Coder', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'mistralai/mistral-small-3.1-24b-instruct:free', label: '🆓 Mistral Small', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  // ── Ollama 本地（子代理級 — 8B/14B 太弱不能指揮）──
+  // ── Ollama 本地 ──
   { id: 'qwen3:8b', label: '🖥️ Qwen3 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
   { id: 'deepseek-r1:8b', label: '🖥️ DeepSeek R1 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
   { id: 'qwen3:4b', label: '🖥️ Qwen3 4B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
@@ -96,12 +118,13 @@ export function getProviderKey(provider: string): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' | 'ollama' {
+export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' | 'ollama' {
   // 先查 registry（最準確）
   const reg = MODEL_REGISTRY.find(m => m.id === modelId);
   if (reg) {
     const p = reg.provider.toLowerCase();
     if (p === 'google') return 'google';
+    if (p === 'anthropic') return 'anthropic';
     if (p === 'deepseek') return 'deepseek';
     if (p === 'kimi') return 'kimi';
     if (p === 'xai') return 'xai';
@@ -109,12 +132,49 @@ export function getModelProvider(modelId: string): 'google' | 'kimi' | 'xai' | '
     if (p === 'ollama') return 'ollama';
   }
   // fallback: 按 id prefix 判斷
+  if (modelId.startsWith('claude')) return 'anthropic';
   if (modelId.startsWith('kimi')) return 'kimi';
   if (modelId.startsWith('grok')) return 'xai';
   if (modelId.startsWith('deepseek') && !modelId.includes('/')) return 'deepseek';
   if (modelId.includes('/') && modelId.includes(':free')) return 'openrouter';
   if (modelId.startsWith('qwen') || modelId.startsWith('llama')) return 'ollama';
   return 'google';
+}
+
+/** 呼叫 Anthropic API（Claude 系列） */
+export async function callAnthropic(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  messages: Array<{ role: string; content: string }>,
+  maxTokens: number,
+  timeoutMs: number,
+): Promise<string> {
+  const cfg = getModelConfig(model);
+  const body = {
+    model,
+    max_tokens: maxTokens,
+    temperature: cfg.temperature,
+    system: systemPrompt,
+    messages: messages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.content })),
+  };
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`Anthropic HTTP ${resp.status}: ${errText.slice(0, 300)}`);
+  }
+  const data = await resp.json() as Record<string, unknown>;
+  const content = (data.content || []) as Array<Record<string, unknown>>;
+  return content.filter(c => c.type === 'text').map(c => String(c.text || '')).join('').trim();
 }
 
 /** 呼叫 OpenAI 相容 API（Kimi / xAI） */
