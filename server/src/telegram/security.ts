@@ -53,6 +53,11 @@ export function isPathSafe(targetPath: string, operation: 'read' | 'write'): { s
     }
   }
 
+  // 禁止寫入 server 源碼目錄 — 只有老蔡能改
+  if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
+    return { safe: false, reason: '🛑 禁止寫入 server 源碼目錄，只有老蔡能改' };
+  }
+
   return { safe: true };
 }
 
