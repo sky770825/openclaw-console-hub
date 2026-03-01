@@ -38,16 +38,36 @@ EMBED_DIM = 1024              # bge-m3 = 1024 維, nomic-embed-text = 768 維
 CHUNK_MAX = 500  # 每個 chunk 最大字元數
 CHUNK_MIN = 50   # 低於此字元數的 chunk 直接丟棄
 
-# 要向量化的目錄/檔案（workspace 下的子目錄）
+# ===== 向量化目標 =====
+# workspace 下的一級子目錄（不遞迴）
 TARGETS = [
     ("sop-知識庫", "sop"),
     ("xiaocai-指令集", "instruction"),
     ("knowledge", "knowledge"),
+    ("docs", "docs"),
+    ("reports", "reports"),
+    ("proposals", "proposals"),
+    ("projects", "projects"),
+    ("learning", "learning"),
+    ("memories", "memories"),
+    ("notes", "notes"),
+    ("n8n-workflows", "n8n"),
+    ("knowledge_base", "knowledge"),
+    ("extensions", "extensions"),
+    ("core", "core"),
+    ("anchors", "core"),
+    ("guides", "guide"),
 ]
 
-# 專案根目錄下的目錄（cookbook 等）
+# workspace 下需要遞迴掃描的目錄（子目錄也要索引）
+RECURSIVE_TARGETS = [
+    ("cookbook", "cookbook"),        # workspace cookbook（29本 + README）
+    ("memory", "memory"),          # memory/ 下有很多子目錄
+]
+
+# 專案根目錄下的目錄
 PROJECT_TARGETS = [
-    ("cookbook", "cookbook"),
+    ("cookbook", "cookbook-project"),  # 專案根 cookbook（20 本基礎版）
 ]
 
 SINGLE_FILES = [
@@ -55,7 +75,22 @@ SINGLE_FILES = [
     ("memory/PROFILE.md", "profile"),
     ("HEARTBEAT.md", "core-rule"),
     ("SOUL.md", "core-soul"),
+    ("WAKE_STATUS.md", "core-status"),
+    ("CODEBASE-INDEX.md", "core-index"),
 ]
+
+# 排除的目錄（不索引）
+EXCLUDE_DIRS = {
+    "node_modules", "dist", "vendor", ".git", "__pycache__",
+    "artifacts", "config", "data", "logs", "storage",
+    "server", "src", "ui", "packages", "tools",
+    "sandbox", "quarantine", "test", "tests", "test_projects",
+    "worktrees", "subagents", "workflows", "git-hooks",
+    "secrets", "credentials", "backups", "_archive",
+    "archived", "runs", "patches",
+    # memory 下的高噪音子目錄
+    "autopilot-results", "auto-skill",
+}
 
 # 工具文件（armory + skills 的 README/SKILL.md）
 def collect_tool_docs():
@@ -98,7 +133,7 @@ def collect_tool_docs():
 
 
 def read_file(path):
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read()
 
 
@@ -388,8 +423,12 @@ def main():
 
     total = 0
     file_count = 0
+    category_stats = {}
 
-    # 處理目錄
+    def track(cat, count):
+        category_stats[cat] = category_stats.get(cat, 0) + count
+
+    # 1. workspace 一級目錄（不遞迴）
     for dir_name, category in TARGETS:
         dir_path = os.path.join(WORKSPACE, dir_name)
         if not os.path.isdir(dir_path):
@@ -401,13 +440,71 @@ def main():
 
         for fname in md_files:
             fpath = os.path.join(dir_path, fname)
+            if not os.path.isfile(fpath):
+                continue
             rel_path = f"{dir_name}/{fname}"
             count = process_file(fpath, rel_path, category)
             total += count
             file_count += 1
+            track(category, count)
             print(f"  ✅ {fname} → {count} chunks")
 
-    # 處理專案根目錄下的目錄（cookbook 等）
+    # 2. workspace 遞迴目錄（cookbook、memory 等有子目錄結構的）
+    for dir_name, category in RECURSIVE_TARGETS:
+        dir_path = os.path.join(WORKSPACE, dir_name)
+        if not os.path.isdir(dir_path):
+            print(f"\n⚠️  目錄不存在: {dir_name}")
+            continue
+
+        md_files = []
+        for root, dirs, files in os.walk(dir_path):
+            # 排除不需要的子目錄
+            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+            for fname in sorted(files):
+                if fname.endswith(".md"):
+                    fpath = os.path.join(root, fname)
+                    rel = os.path.relpath(fpath, WORKSPACE)
+                    md_files.append((fpath, rel))
+
+        print(f"\n📁 {dir_name}/ ({len(md_files)} 檔) [遞迴]")
+
+        for fpath, rel_path in md_files:
+            fname = os.path.basename(fpath)
+            count = process_file(fpath, rel_path, category)
+            total += count
+            file_count += 1
+            track(category, count)
+            print(f"  ✅ {rel_path} → {count} chunks")
+
+    # 3. knowledge/ 子目錄遞迴（每個子目錄是一個主題）
+    knowledge_dir = os.path.join(WORKSPACE, "knowledge")
+    if os.path.isdir(knowledge_dir):
+        for sub in sorted(os.listdir(knowledge_dir)):
+            sub_path = os.path.join(knowledge_dir, sub)
+            if not os.path.isdir(sub_path):
+                continue
+            if sub in EXCLUDE_DIRS:
+                continue
+            sub_cat = f"knowledge-{sub}"
+            md_files = []
+            for root, dirs, files in os.walk(sub_path):
+                dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+                for fname in sorted(files):
+                    if fname.endswith(".md"):
+                        fpath = os.path.join(root, fname)
+                        rel = os.path.relpath(fpath, WORKSPACE)
+                        md_files.append((fpath, rel))
+
+            if md_files:
+                print(f"\n📁 knowledge/{sub}/ ({len(md_files)} 檔)")
+                for fpath, rel_path in md_files:
+                    count = process_file(fpath, rel_path, sub_cat)
+                    total += count
+                    file_count += 1
+                    track(sub_cat, count)
+                    print(f"  ✅ {os.path.basename(fpath)} → {count} chunks")
+
+    # 4. 專案根目錄下的目錄
     for dir_name, category in PROJECT_TARGETS:
         dir_path = os.path.join(PROJECT_ROOT, dir_name)
         if not os.path.isdir(dir_path):
@@ -419,13 +516,14 @@ def main():
 
         for fname in md_files:
             fpath = os.path.join(dir_path, fname)
-            rel_path = f"{dir_name}/{fname}"
+            rel_path = f"project/{dir_name}/{fname}"
             count = process_file(fpath, rel_path, category)
             total += count
             file_count += 1
+            track(category, count)
             print(f"  ✅ {fname} → {count} chunks")
 
-    # 處理工具文件（armory + skills）
+    # 5. 工具文件（armory + skills）
     tool_docs = collect_tool_docs()
     if tool_docs:
         print(f"\n🔧 工具文件 ({len(tool_docs)} 檔)")
@@ -433,9 +531,10 @@ def main():
             count = process_file(fpath, rel_path, category)
             total += count
             file_count += 1
+            track(category, count)
             print(f"  ✅ {rel_path} → {count} chunks")
 
-    # 處理單一檔案
+    # 6. 單一檔案
     for fname, category in SINGLE_FILES:
         fpath = os.path.join(WORKSPACE, fname)
         if not os.path.isfile(fpath):
@@ -446,10 +545,11 @@ def main():
         count = process_file(fpath, fname, category)
         total += count
         file_count += 1
+        track(category, count)
         print(f"  ✅ {fname} → {count} chunks")
 
     # 最終統計
-    print(f"\n{'=' * 50}")
+    print(f"\n{'=' * 60}")
     print(f"✅ 完成！")
     print(f"   檔案數：{file_count}")
     print(f"   Chunks：{total}")
@@ -460,7 +560,13 @@ def main():
         points_count = info.get("points_count", "?")
         print(f"   Qdrant 總點數：{points_count}")
 
-    print("=" * 50)
+    # 分類統計
+    if category_stats:
+        print(f"\n📊 分類統計：")
+        for cat, cnt in sorted(category_stats.items(), key=lambda x: -x[1]):
+            print(f"   {cat}: {cnt} chunks")
+
+    print("=" * 60)
 
 
 if __name__ == "__main__":
