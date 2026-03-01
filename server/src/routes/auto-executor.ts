@@ -145,6 +145,9 @@ const analysisTaskExecTimestamps: number[] = [];
 
 // 記錄目前正在執行中的任務 ID（用於 SIGTERM graceful shutdown）
 const activeTaskIds = new Set<string>();
+// 任務失敗次數追蹤（超過 MAX_TASK_RETRIES 就不再重試）
+const taskFailCounts = new Map<string, number>();
+const MAX_TASK_RETRIES = 1; // 允許重試 1 次，第 2 次失敗就停
 let dispatchDigestTimer: NodeJS.Timeout | null = null;
 
 // ─── Done 任務自動清理 ───
@@ -666,10 +669,18 @@ async function executeNextPendingTask(): Promise<void> {
         // 不及格也寫入品質分數到 result JSON
         const failResult = JSON.stringify({ output: '', quality: { grade: quality.grade, score: quality.score, passed: false, reason: quality.reason } });
         await supabase.from('openclaw_tasks').update({ result: failResult }).eq('id', task.id);
-        await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+        const qgFails = (taskFailCounts.get(task.id) || 0) + 1;
+        taskFailCounts.set(task.id, qgFails);
+        if (qgFails <= MAX_TASK_RETRIES) {
+          await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
+          log.warn(`[AutoExecutor] 品質閘門擋下 (${qgFails}/${MAX_TASK_RETRIES + 1}，重試): ${task.name} — ${quality.grade} (${quality.score}分)`);
+        } else {
+          await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+          taskFailCounts.delete(task.id);
+          log.warn(`[AutoExecutor] 品質閘門擋下 (${qgFails}次，不再重試): ${task.name} — ${quality.grade} (${quality.score}分) ${quality.reason}`);
+        }
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
-        log.warn(`[AutoExecutor] 品質閘門擋下: ${task.name} — ${quality.grade} (${quality.score}分) ${quality.reason}`);
         return;
       }
 
@@ -685,10 +696,18 @@ async function executeNextPendingTask(): Promise<void> {
           })
           .eq('id', runId);
         activeTaskIds.delete(task.id);
-        await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+        const acFails = (taskFailCounts.get(task.id) || 0) + 1;
+        taskFailCounts.set(task.id, acFails);
+        if (acFails <= MAX_TASK_RETRIES) {
+          await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
+          log.warn(`[AutoExecutor] 驗收未通過 (${acFails}/${MAX_TASK_RETRIES + 1}，重試): ${task.name}`);
+        } else {
+          await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+          taskFailCounts.delete(task.id);
+          log.warn(`[AutoExecutor] 驗收未通過 (${acFails}次，不再重試): ${task.name}`);
+        }
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
-        log.warn(`[AutoExecutor] 任務驗收未通過: ${task.name}`);
         return;
       }
 
@@ -731,6 +750,7 @@ async function executeNextPendingTask(): Promise<void> {
       circuitBreakerSuccess();
       recordAgentSuccess(agentType || 'auto');
 
+      taskFailCounts.delete(task.id); // 成功 → 清除失敗計數
       autoExecutorExecHistoryMs.push(Date.now());
       autoExecutorState.totalExecutedToday++;
       autoExecutorState.lastExecutedTaskId = task.id;
@@ -775,8 +795,16 @@ async function executeNextPendingTask(): Promise<void> {
         .eq('id', runId);
 
       activeTaskIds.delete(task.id);
-      await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
-      log.error(`[AutoExecutor] 任務失敗（不重試）: ${task.name} — ${errorMsg.slice(0, 200)}`);
+      const exFails = (taskFailCounts.get(task.id) || 0) + 1;
+      taskFailCounts.set(task.id, exFails);
+      if (exFails <= MAX_TASK_RETRIES) {
+        await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
+        log.error(`[AutoExecutor] 任務失敗 (${exFails}/${MAX_TASK_RETRIES + 1}，重試): ${task.name} — ${errorMsg.slice(0, 200)}`);
+      } else {
+        await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+        taskFailCounts.delete(task.id);
+        log.error(`[AutoExecutor] 任務失敗 (${exFails}次，不再重試): ${task.name} — ${errorMsg.slice(0, 200)}`);
+      }
       log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
 
       // Governance: failure tracking
