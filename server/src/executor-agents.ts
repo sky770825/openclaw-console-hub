@@ -736,11 +736,11 @@ echo "✅ 封存檢查完成"`;
         weight: 5,
         detail: artifacts.length > 0 ? `${artifacts.length} 個產出物` : '無產出物',
       });
-      // 3b. 產出物不能只在 sandbox（15 分）— 高權重，這是核心問題
+      // 3b. 產出物不能只在 sandbox（25 分）— 落地型任務核心指標
       checks.push({
         name: 'artifacts_real_landing',
         passed: !allInSandbox,
-        weight: 15,
+        weight: 25,
         detail: allInSandbox
           ? `全部 ${sandboxArtifacts.length} 個產出在 sandbox — 未落地到真實系統（落地型任務不合格）`
           : (realArtifacts.length > 0

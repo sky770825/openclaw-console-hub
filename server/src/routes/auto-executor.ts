@@ -28,9 +28,25 @@ import { classifyTaskRisk, type DispatchRiskLevel } from '../riskClassifier.js';
 import { AgentSelector, AgentExecutor } from '../executor-agents.js';
 import {
   sendTelegramMessage,
+  sendTelegramMessageToChat,
   notifyTaskSuccess,
   notifyTaskFailure,
 } from '../utils/telegram.js';
+
+// 小蔡 bot — 任務完成後通知小蔡（指揮官需要知道結果）
+const XIAOCAI_BOT_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
+const XIAOCAI_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim() ?? '';
+
+async function notifyXiaocaiTaskResult(taskName: string, taskId: string, success: boolean, summary?: string): Promise<void> {
+  if (!XIAOCAI_BOT_TOKEN || !XIAOCAI_CHAT_ID) return;
+  try {
+    const icon = success ? '✅' : '❌';
+    const status = success ? '完成' : '失敗';
+    const summaryLine = summary ? `\n📝 ${summary.slice(0, 200)}` : '';
+    const text = `${icon} 任務${status}：${taskName}\n🆔 ${taskId}${summaryLine}`;
+    await sendTelegramMessageToChat(XIAOCAI_CHAT_ID, text, { token: XIAOCAI_BOT_TOKEN, silent: true });
+  } catch { /* 通知失敗不影響主流程 */ }
+}
 import {
   circuitBreakerCheck,
   circuitBreakerSuccess,
@@ -656,6 +672,7 @@ async function executeNextPendingTask(): Promise<void> {
           `任務已改為 needs_review，等老蔡決定`,
           { parseMode: 'HTML' }
         );
+        await notifyXiaocaiTaskResult(task.name, task.id, false, `品質閘門: ${quality.grade} (${quality.score}分) — ${quality.reason}`);
         return;
       }
 
@@ -674,6 +691,7 @@ async function executeNextPendingTask(): Promise<void> {
         await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
+        await notifyXiaocaiTaskResult(task.name, task.id, false, '驗收條件未通過');
         log.warn(`[AutoExecutor] 任務驗收未通過: ${task.name}`);
         return;
       }
@@ -738,6 +756,7 @@ async function executeNextPendingTask(): Promise<void> {
       }
 
       await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
+      await notifyXiaocaiTaskResult(task.name, task.id, true, (result.output || '').replace(/\n+/g, ' ').trim().slice(0, 200));
       log.info(`[AutoExecutor] 任務完成: ${task.name}`);
     } catch (execError) {
       const errorMsg = String(execError);
@@ -762,6 +781,7 @@ async function executeNextPendingTask(): Promise<void> {
       activeTaskIds.delete(task.id);
       await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
       await notifyTaskFailure(task.name, task.id, runId, errorMsg, 0);
+      await notifyXiaocaiTaskResult(task.name, task.id, false, errorMsg.slice(0, 200));
       log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
 
       // Governance: failure tracking

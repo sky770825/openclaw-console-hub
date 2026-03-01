@@ -1503,7 +1503,7 @@ async function xiaocaiPoll(): Promise<void> {
       }
 
       // ── 多步執行迴路（最多 3 輪連續行動）──
-      const MAX_CHAIN_STEPS = 3;
+      const MAX_CHAIN_STEPS = 5;
       let currentInput = text;
       let finalReply = '';
       const allActionResults: string[] = [];

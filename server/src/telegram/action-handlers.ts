@@ -66,8 +66,8 @@ async function updateTask(id: string, updates: Record<string, unknown>): Promise
     const allowed: Record<string, unknown> = {};
     if (updates.status && ['ready', 'running', 'done', 'pending', 'needs_review'].includes(String(updates.status))) allowed.status = updates.status;
     if (updates.progress !== undefined) allowed.progress = Math.min(100, Math.max(0, Number(updates.progress)));
-    if (updates.description) allowed.description = String(updates.description).slice(0, 2000);
-    if (updates.result) allowed.result = String(updates.result).slice(0, 2000);
+    if (updates.description) allowed.description = String(updates.description).slice(0, 5000);
+    if (updates.result) allowed.result = String(updates.result).slice(0, 5000);
     if (Object.keys(allowed).length === 0) return '沒有可更新的欄位';
     const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks/${id}`, {
       method: 'PATCH',
