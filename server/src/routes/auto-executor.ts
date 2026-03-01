@@ -126,6 +126,45 @@ const analysisTaskExecTimestamps: number[] = [];
 const activeTaskIds = new Set<string>();
 let dispatchDigestTimer: NodeJS.Timeout | null = null;
 
+// ─── Done 任務自動清理 ───
+// 每 6 小時清理一次超過 7 天的 done/failed 任務
+let lastCleanupAt = 0;
+const CLEANUP_INTERVAL_MS = 6 * 3600_000; // 6 小時
+const DONE_RETENTION_DAYS = 7;
+
+async function cleanupStaleDoneTasks(): Promise<void> {
+  const now = Date.now();
+  if (now - lastCleanupAt < CLEANUP_INTERVAL_MS) return;
+  lastCleanupAt = now;
+
+  if (!hasSupabase() || !supabase) return;
+
+  try {
+    const cutoff = new Date(now - DONE_RETENTION_DAYS * 86400_000).toISOString();
+    const { data: stale, error: fetchErr } = await supabase
+      .from('openclaw_tasks')
+      .select('id, title, status')
+      .in('status', ['done', 'failed'])
+      .lt('updated_at', cutoff);
+
+    if (fetchErr || !stale || stale.length === 0) return;
+
+    const ids = stale.map((t: { id: string }) => t.id);
+    const { error: delErr } = await supabase
+      .from('openclaw_tasks')
+      .delete()
+      .in('id', ids);
+
+    if (delErr) {
+      log.warn(`[Cleanup] 刪除失敗: ${delErr.message}`);
+    } else {
+      log.info(`[Cleanup] 自動清理 ${ids.length} 個超過 ${DONE_RETENTION_DAYS} 天的 done/failed 任務`);
+    }
+  } catch (e) {
+    log.warn('[Cleanup] 自動清理異常:', e);
+  }
+}
+
 // ─── 空閒巡邏（Idle Patrol）───
 // AutoExecutor 連續空閒一段時間後，用 Gemini 生成巡邏任務讓系統持續運轉
 let consecutiveIdlePolls = 0;
@@ -376,6 +415,9 @@ async function executeNextPendingTask(): Promise<void> {
   }
   executorLocked = true;
   try {
+    // 低頻清理：每 6 小時刪除超過 7 天的 done/failed 任務
+    await cleanupStaleDoneTasks();
+
     if (!hasSupabase() || !supabase) {
       log.warn('[AutoExecutor] Supabase 未連線，無法執行任務');
       return;

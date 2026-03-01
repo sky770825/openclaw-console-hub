@@ -23,10 +23,26 @@ export type ActionResult = { ok: boolean; output: string };
 export async function createTask(name: string, description?: string, owner?: string): Promise<string> {
   try {
     const validOwner = owner && ['小蔡', '老蔡', 'system'].includes(owner) ? owner : '小蔡';
+    const trimmedName = name.slice(0, 100);
+
+    // 防重复：检查是否已有同名 + 非 done 的任务
+    const checkR = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=100`, {
+      headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+    });
+    if (checkR.ok) {
+      const existing = (await checkR.json()) as Array<Record<string, unknown>>;
+      const dup = existing.find((t: Record<string, unknown>) => {
+        const tName = String(t.name || t.title || '');
+        const tStatus = String(t.status || '');
+        return tName === trimmedName && tStatus !== 'done' && tStatus !== 'failed';
+      });
+      if (dup) return `已存在同名任務 (ID: ${dup.id}, status: ${dup.status})，不重複建立`;
+    }
+
     const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
-      body: JSON.stringify({ name: name.slice(0, 100), status: 'ready', priority: 2, owner: validOwner, description }),
+      body: JSON.stringify({ name: trimmedName, status: 'ready', priority: 2, owner: validOwner, description }),
     });
     const result = (await r.json()) as Record<string, unknown>;
     return result.id ? `已建立，ID: ${result.id}，owner: ${validOwner}` : '建立失敗';
