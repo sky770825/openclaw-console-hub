@@ -1511,7 +1511,7 @@ async function xiaocaiPoll(): Promise<void> {
       for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
         const isFollowUp = step > 0;
         const thinkInput = isFollowUp
-          ? `[系統回饋] 你上一步的執行結果：\n${allActionResults.slice(-3).join('\n')}\n\n根據結果，決定下一步。你可以繼續操作（放 action），也可以覺得夠了就直接用自然語言回覆老蔡。記得：查檔案先看索引，不要 list_dir 慢慢翻。`
+          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${allActionResults.slice(-3).join('\n')}\n\n判斷下一步：\n- ❌ 失敗了 → 分析原因，最多重試 1 次，不要死磕\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，用自然語言跟老蔡說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做\n你的終點不是「我執行了」，而是「老蔡能根據你的結論做決定」。`
           : currentInput;
 
         // 第一輪帶圖片，後續 follow-up 不帶
@@ -1599,7 +1599,7 @@ async function xiaocaiPoll(): Promise<void> {
 
         for (let selfDrive = 0; selfDrive < 1; selfDrive++) {
           const driveReply = await xiaocaiThink(chatId,
-            '[系統] 你剛才做了一些事。還有沒有說了「要做」但沒做的？有就用 action 做掉。沒有就回「done」一個字就好。注意：不要重複你剛才已經說過的話。',
+            '[系統] 你剛才的行動已完成。現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給老蔡一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。',
             xiaocaiMainModel, xiaocaiHistory
           );
           const driveActions = extractActionJsons(driveReply);
@@ -1723,7 +1723,7 @@ async function heartbeatTick(): Promise<void> {
     for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
       const isFollowUp = step > 0;
       const thinkInput = isFollowUp
-        ? `[系統回饋] 你上一步的執行結果：\n${allResults.slice(-3).join('\n')}\n\n根據結果，決定下一步。繼續操作或停下來。`
+        ? `[系統回饋] 心跳 step ${step}/${MAX_HEARTBEAT_STEPS}：\n${allResults.slice(-3).join('\n')}\n\n按 HEARTBEAT.md 的步驟繼續：查完狀態 → 查任務板 → 最後一步寫報告到 notes/heartbeat-report.md（固定格式：時間、系統狀態、任務板、異常發現、建議）。`
         : currentInput;
 
       const reply = await xiaocaiThink(HEARTBEAT_CHAT_ID, thinkInput, xiaocaiMainModel, xiaocaiHistory);

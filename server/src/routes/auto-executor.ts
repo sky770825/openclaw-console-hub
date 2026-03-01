@@ -37,14 +37,20 @@ import {
 const XIAOCAI_BOT_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
 const XIAOCAI_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim() ?? '';
 
-async function notifyXiaocaiTaskResult(taskName: string, taskId: string, success: boolean, summary?: string): Promise<void> {
+async function notifyXiaocaiTaskResult(
+  taskName: string, taskId: string, success: boolean, summary?: string, qualityInfo?: string
+): Promise<void> {
   if (!XIAOCAI_BOT_TOKEN || !XIAOCAI_CHAT_ID) return;
   try {
     const icon = success ? '✅' : '❌';
     const status = success ? '完成' : '失敗';
     const summaryLine = summary ? `\n📝 ${summary.slice(0, 200)}` : '';
-    const text = `${icon} 任務${status}：${taskName}\n🆔 ${taskId}${summaryLine}`;
-    await sendTelegramMessageToChat(XIAOCAI_CHAT_ID, text, { token: XIAOCAI_BOT_TOKEN, silent: true });
+    const qualityLine = qualityInfo ? `\n📊 ${qualityInfo}` : '';
+    const nextStep = success
+      ? '\n👉 用 query_supabase 查看詳細結果，確認品質後跟老蔡匯報'
+      : '\n👉 用 query_supabase 查看錯誤原因，判斷要重建任務還是報告老蔡';
+    const text = `${icon} 任務${status}：${taskName}\n🆔 ${taskId}${summaryLine}${qualityLine}${nextStep}`;
+    await sendTelegramMessageToChat(XIAOCAI_CHAT_ID, text, { token: XIAOCAI_BOT_TOKEN });
   } catch { /* 通知失敗不影響主流程 */ }
 }
 import {
@@ -756,7 +762,7 @@ async function executeNextPendingTask(): Promise<void> {
       }
 
       await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
-      await notifyXiaocaiTaskResult(task.name, task.id, true, (result.output || '').replace(/\n+/g, ' ').trim().slice(0, 200));
+      await notifyXiaocaiTaskResult(task.name, task.id, true, (result.output || '').replace(/\n+/g, ' ').trim().slice(0, 200), qualityInfo ? `${qualityInfo.grade} (${qualityInfo.score}/100)` : undefined);
       log.info(`[AutoExecutor] 任務完成: ${task.name}`);
     } catch (execError) {
       const errorMsg = String(execError);
