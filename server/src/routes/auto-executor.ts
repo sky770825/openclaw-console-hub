@@ -30,7 +30,6 @@ import {
   sendTelegramMessage,
   sendTelegramMessageToChat,
   notifyTaskSuccess,
-  notifyTaskFailure,
 } from '../utils/telegram.js';
 
 // 小蔡 bot — 任務完成後通知小蔡（指揮官需要知道結果）
@@ -667,18 +666,10 @@ async function executeNextPendingTask(): Promise<void> {
         // 不及格也寫入品質分數到 result JSON
         const failResult = JSON.stringify({ output: '', quality: { grade: quality.grade, score: quality.score, passed: false, reason: quality.reason } });
         await supabase.from('openclaw_tasks').update({ result: failResult }).eq('id', task.id);
-        await upsertOpenClawTask({ id: task.id, status: 'needs_review' as never, progress: 50 });
+        await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
-        await sendTelegramMessage(
-          `⚠️ <b>品質閘門擋下</b>\n\n` +
-          `<b>任務：</b>${task.name}\n` +
-          `<b>評分：</b>${quality.grade} (${quality.score}/100)\n` +
-          `<b>原因：</b>${quality.reason}\n\n` +
-          `任務已改為 needs_review，等老蔡決定`,
-          { parseMode: 'HTML' }
-        );
-        await notifyXiaocaiTaskResult(task.name, task.id, false, `品質閘門: ${quality.grade} (${quality.score}分) — ${quality.reason}`);
+        log.warn(`[AutoExecutor] 品質閘門擋下: ${task.name} — ${quality.grade} (${quality.score}分) ${quality.reason}`);
         return;
       }
 
@@ -694,10 +685,9 @@ async function executeNextPendingTask(): Promise<void> {
           })
           .eq('id', runId);
         activeTaskIds.delete(task.id);
-        await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
+        await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
-        await notifyXiaocaiTaskResult(task.name, task.id, false, '驗收條件未通過');
         log.warn(`[AutoExecutor] 任務驗收未通過: ${task.name}`);
         return;
       }
@@ -785,9 +775,8 @@ async function executeNextPendingTask(): Promise<void> {
         .eq('id', runId);
 
       activeTaskIds.delete(task.id);
-      await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
-      await notifyTaskFailure(task.name, task.id, runId, errorMsg, 0);
-      await notifyXiaocaiTaskResult(task.name, task.id, false, errorMsg.slice(0, 200));
+      await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+      log.error(`[AutoExecutor] 任務失敗（不重試）: ${task.name} — ${errorMsg.slice(0, 200)}`);
       log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
 
       // Governance: failure tracking
