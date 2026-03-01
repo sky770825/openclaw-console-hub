@@ -707,17 +707,8 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       return { ok: false, output: '🛑 指揮官不需要自己跑腳本。請建任務（create_task）派給 auto-executor 執行。' };
     case 'run_script_bg':
       return { ok: false, output: '🛑 指揮官不需要自己跑腳本。請建任務（create_task）派給 auto-executor 執行。' };
-    case 'ask_ai': {
-      const askModel = (action.model || 'flash').toLowerCase();
-      if (askModel.includes('claude') || askModel.includes('sonnet') || askModel.includes('opus')) {
-        const taskName = `[AI分析] ${(action.prompt || '').slice(0, 60)}`;
-        const taskDesc = `用 Claude ${askModel} 分析以下問題：\n\n${action.prompt || ''}\n\n${action.context ? `背景資料：\n${action.context.slice(0, 500)}` : ''}`;
-        const result = await createTask(taskName, taskDesc);
-        log.info(`[Xiaocai-Action] ask_ai model=${askModel} 太慢，已自動轉為 create_task`);
-        return { ok: true, output: `已派工（${askModel} 太慢，自動建任務）: ${result}` };
-      }
-      return handleAskAI(askModel, action.prompt || '', action.context);
-    }
+    case 'ask_ai':
+      return handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
     case 'proxy_fetch':
       return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
     case 'query_supabase':
