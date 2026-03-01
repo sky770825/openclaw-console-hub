@@ -33,6 +33,24 @@ export async function createTask(name: string, description?: string, owner?: str
   } catch { return '建立失敗（連線錯誤）'; }
 }
 
+async function updateTask(id: string, updates: Record<string, unknown>): Promise<string> {
+  try {
+    const allowed: Record<string, unknown> = {};
+    if (updates.status && ['ready', 'running', 'done', 'pending', 'needs_review'].includes(String(updates.status))) allowed.status = updates.status;
+    if (updates.progress !== undefined) allowed.progress = Math.min(100, Math.max(0, Number(updates.progress)));
+    if (updates.description) allowed.description = String(updates.description).slice(0, 2000);
+    if (updates.result) allowed.result = String(updates.result).slice(0, 2000);
+    if (Object.keys(allowed).length === 0) return '沒有可更新的欄位';
+    const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+      body: JSON.stringify(allowed),
+    });
+    if (!r.ok) return `更新失敗: HTTP ${r.status}`;
+    return `已更新任務 ${id}: ${Object.keys(allowed).join(', ')}`;
+  } catch { return '更新失敗（連線錯誤）'; }
+}
+
 // ── 檔案操作 ──
 
 /** 常見相對路徑前綴 → 自動補全對應的絕對路徑 */
@@ -641,6 +659,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
   switch (type) {
     case 'create_task':
       return { ok: true, output: await createTask(action.name || '未命名', action.description, action.owner) };
+    case 'update_task':
+      if (!action.id) return { ok: false, output: 'update_task 需要 id 參數' };
+      return { ok: true, output: await updateTask(action.id, action) };
     case 'read_file':
       return handleReadFile(action.path || '');
     case 'write_file':
