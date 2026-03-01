@@ -4,6 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
@@ -826,6 +827,136 @@ async function handleSemanticSearch(query: string, limit: number = 5): Promise<A
   }
 }
 
+// ── 向量索引 ──
+
+/** 單檔快速索引：把一個 .md 檔案切 chunk → embed → 寫入 Qdrant */
+async function handleIndexFile(filePath: string, category?: string): Promise<ActionResult> {
+  if (!filePath || !filePath.endsWith('.md')) {
+    return { ok: false, output: 'index_file 需要 .md 檔案路徑' };
+  }
+  const resolved = path.resolve(filePath);
+  if (!fs.existsSync(resolved)) {
+    return { ok: false, output: `檔案不存在: ${filePath}` };
+  }
+
+  try {
+    const content = fs.readFileSync(resolved, 'utf-8');
+    const fileName = path.basename(resolved);
+    const relPath = path.relative(NEUXA_WORKSPACE, resolved);
+    const cat = category || guessCategoryFromPath(relPath);
+
+    // 按 ## 切 chunk
+    const sections = content.split(/(?=^## )/m).filter(s => s.trim().length > 50);
+    if (sections.length === 0) {
+      return { ok: false, output: `檔案內容太短或沒有 ## 章節: ${fileName}` };
+    }
+
+    // 取文件標題
+    const titleMatch = content.match(/^# (.+)/m);
+    const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
+
+    let indexed = 0;
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i].trim();
+      const secTitleMatch = section.match(/^## (.+)/m);
+      const secTitle = secTitleMatch ? secTitleMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
+
+      // 構建帶前綴的 embed text
+      const embedText = `[${docTitle} | ${secTitle}] ${section.slice(0, 500)}`;
+
+      // Ollama embedding
+      const embedResp = await fetch(`${OLLAMA_URL}/api/embed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: EMBED_MODEL, input: embedText }),
+      });
+      if (!embedResp.ok) continue;
+      const embedData = await embedResp.json();
+      const vector = embedData.embeddings?.[0];
+      if (!vector) continue;
+
+      // 生成穩定 ID
+      const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
+      const pointId = parseInt(hash.slice(0, 15), 16);
+
+      // Upsert to Qdrant
+      const upsertResp = await fetch(`${QDRANT_URL}/collections/${QDRANT_COLLECTION}/points`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          points: [{
+            id: pointId,
+            vector,
+            payload: {
+              title: secTitle,
+              section_title: secTitle,
+              doc_title: docTitle,
+              content: section,
+              content_preview: section.slice(0, 200),
+              file_path: relPath,
+              file_name: fileName,
+              category: cat,
+              chunk_index: i,
+              chunk_total: sections.length,
+              size: section.length,
+              date: new Date().toISOString().split('T')[0],
+            },
+          }],
+        }),
+      });
+      if (upsertResp.ok) indexed++;
+    }
+
+    return { ok: true, output: `已索引 ${fileName} → ${indexed}/${sections.length} chunks (category: ${cat})` };
+  } catch (err: any) {
+    return { ok: false, output: sanitize(`index_file 失敗: ${err.message}`) };
+  }
+}
+
+/** 從路徑猜測 category */
+function guessCategoryFromPath(relPath: string): string {
+  const parts = relPath.split('/');
+  const dir = parts[0]?.toLowerCase() || '';
+  const categoryMap: Record<string, string> = {
+    'cookbook': 'cookbook', 'sop-知識庫': 'sop', 'xiaocai-指令集': 'instruction',
+    'knowledge': 'knowledge', 'docs': 'docs', 'reports': 'reports',
+    'proposals': 'proposals', 'projects': 'projects', 'learning': 'learning',
+    'memories': 'memories', 'notes': 'notes', 'memory': 'memory',
+    'extensions': 'extensions', 'core': 'core', 'anchors': 'core',
+  };
+  return categoryMap[dir] || 'knowledge';
+}
+
+/** 全量重建索引（背景執行 Python 腳本） */
+async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
+  const scriptPath = path.join(PROJECT_ROOT, 'scripts', 'vectorize-knowledge.py');
+  if (!fs.existsSync(scriptPath)) {
+    return { ok: false, output: `索引腳本不存在: ${scriptPath}` };
+  }
+
+  const args = mode === 'rebuild' ? ['--rebuild'] : [];
+  try {
+    // 非阻塞：spawn 後不等完成，回報已啟動
+    const child = spawn('python3', [scriptPath, ...args], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+
+    return {
+      ok: true,
+      output: `向量索引${mode === 'rebuild' ? '重建' : '更新'}已在背景啟動。\n` +
+        `腳本: ${scriptPath} ${args.join(' ')}\n` +
+        `完成後 Qdrant collection '${QDRANT_COLLECTION}' 會自動更新。\n` +
+        `可用 semantic_search 驗證結果。`,
+    };
+  } catch (err: any) {
+    return { ok: false, output: sanitize(`reindex_knowledge 失敗: ${err.message}`) };
+  }
+}
+
+const PROJECT_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..', '..');
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -861,6 +992,10 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       return handleQuerySupabase(action);
     case 'semantic_search':
       return handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+    case 'index_file':
+      return handleIndexFile(action.path || '', action.category);
+    case 'reindex_knowledge':
+      return handleReindexKnowledge(action.mode || 'append');
     default:
       return { ok: false, output: `未知 action: ${type}` };
   }
