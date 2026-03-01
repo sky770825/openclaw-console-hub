@@ -29,6 +29,7 @@ import time
 import urllib.request
 
 WORKSPACE = os.path.expanduser("~/.openclaw/workspace")
+PROJECT_ROOT = "/Users/caijunchang/openclaw任務面版設計"
 OLLAMA_URL = "http://localhost:11434/api/embed"
 QDRANT_URL = "http://localhost:6333"
 COLLECTION = "memory_smart_chunks"
@@ -37,15 +38,23 @@ EMBED_DIM = 1024              # bge-m3 = 1024 維, nomic-embed-text = 768 維
 CHUNK_MAX = 500  # 每個 chunk 最大字元數
 CHUNK_MIN = 50   # 低於此字元數的 chunk 直接丟棄
 
-# 要向量化的目錄/檔案
+# 要向量化的目錄/檔案（workspace 下的子目錄）
 TARGETS = [
     ("sop-知識庫", "sop"),
     ("xiaocai-指令集", "instruction"),
     ("knowledge", "knowledge"),
 ]
+
+# 專案根目錄下的目錄（cookbook 等）
+PROJECT_TARGETS = [
+    ("cookbook", "cookbook"),
+]
+
 SINGLE_FILES = [
     ("AGENTS.md", "core-rule"),
     ("memory/PROFILE.md", "profile"),
+    ("HEARTBEAT.md", "core-rule"),
+    ("SOUL.md", "core-soul"),
 ]
 
 
@@ -350,6 +359,24 @@ def main():
 
         md_files = sorted([f for f in os.listdir(dir_path) if f.endswith(".md")])
         print(f"\n📁 {dir_name}/ ({len(md_files)} 檔)")
+
+        for fname in md_files:
+            fpath = os.path.join(dir_path, fname)
+            rel_path = f"{dir_name}/{fname}"
+            count = process_file(fpath, rel_path, category)
+            total += count
+            file_count += 1
+            print(f"  ✅ {fname} → {count} chunks")
+
+    # 處理專案根目錄下的目錄（cookbook 等）
+    for dir_name, category in PROJECT_TARGETS:
+        dir_path = os.path.join(PROJECT_ROOT, dir_name)
+        if not os.path.isdir(dir_path):
+            print(f"\n⚠️  目錄不存在: {PROJECT_ROOT}/{dir_name}")
+            continue
+
+        md_files = sorted([f for f in os.listdir(dir_path) if f.endswith(".md")])
+        print(f"\n📁 {dir_name}/ ({len(md_files)} 檔) [專案根目錄]")
 
         for fname in md_files:
             fpath = os.path.join(dir_path, fname)

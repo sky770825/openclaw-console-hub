@@ -680,6 +680,81 @@ export async function handleProxyFetch(url: string, method: string, body: string
   }
 }
 
+// ── 語義搜尋（Qdrant + Ollama bge-m3）──
+
+const QDRANT_URL = 'http://localhost:6333';
+const QDRANT_COLLECTION = 'memory_smart_chunks';
+const OLLAMA_URL = 'http://localhost:11434';
+const EMBED_MODEL = 'bge-m3';
+
+async function handleSemanticSearch(query: string, limit: number = 5): Promise<ActionResult> {
+  if (!query || query.trim().length < 2) {
+    return { ok: false, output: 'semantic_search 需要 query 參數（至少 2 個字）' };
+  }
+
+  const safeLimit = Math.min(Math.max(1, limit), 10);
+
+  try {
+    // 1. 用 Ollama bge-m3 產生 query embedding
+    const embedResp = await fetch(`${OLLAMA_URL}/api/embed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: EMBED_MODEL, input: query }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!embedResp.ok) {
+      return { ok: false, output: `Embedding 失敗: Ollama HTTP ${embedResp.status}（確認 Ollama 和 bge-m3 模型在跑）` };
+    }
+    const embedData = await embedResp.json() as { embeddings?: number[][] };
+    const queryVector = embedData?.embeddings?.[0];
+    if (!queryVector || queryVector.length === 0) {
+      return { ok: false, output: 'Embedding 回傳空向量' };
+    }
+
+    // 2. 向 Qdrant 做向量搜尋
+    const searchResp = await fetch(`${QDRANT_URL}/collections/${QDRANT_COLLECTION}/points/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vector: queryVector,
+        limit: safeLimit,
+        with_payload: true,
+        score_threshold: 0.3,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!searchResp.ok) {
+      return { ok: false, output: `Qdrant 搜尋失敗: HTTP ${searchResp.status}` };
+    }
+    const searchData = await searchResp.json() as {
+      result?: Array<{ score: number; payload: Record<string, unknown> }>;
+    };
+    const results = searchData?.result || [];
+
+    if (results.length === 0) {
+      return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
+    }
+
+    // 3. 格式化結果
+    const lines = results.map((r, i) => {
+      const p = r.payload || {};
+      const score = (r.score * 100).toFixed(0);
+      const title = p.doc_title || p.title || p.file_name || '未知';
+      const section = p.section_title || '';
+      const category = p.category || '';
+      const content = String(p.content || '').slice(0, 400);
+      const filePath = p.file_path || '';
+      return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, ${score}%相關)\n📁 ${filePath}\n${content}`;
+    });
+
+    log.info(`[SemanticSearch] query="${query}" → ${results.length} results (top score: ${(results[0].score * 100).toFixed(0)}%)`);
+    return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆）：\n\n${lines.join('\n\n')}` };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, output: sanitize(`semantic_search 失敗: ${msg}`) };
+  }
+}
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -713,6 +788,8 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
     case 'query_supabase':
       return handleQuerySupabase(action);
+    case 'semantic_search':
+      return handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
     default:
       return { ok: false, output: `未知 action: ${type}` };
   }
