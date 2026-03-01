@@ -764,12 +764,23 @@ async function handleSafeRunScript(command: string): Promise<ActionResult> {
   return handleRunScript(cmd);
 }
 
-// ── 語義搜尋（Qdrant + Ollama bge-m3）──
+// ── 語義搜尋（Google Embedding + Supabase pgvector）──
 
-const QDRANT_URL = 'http://localhost:6333';
-const QDRANT_COLLECTION = 'memory_smart_chunks';
-const OLLAMA_URL = 'http://localhost:11434';
-const EMBED_MODEL = 'bge-m3';
+/** 呼叫 Google gemini-embedding-001 取得 768 維向量 */
+async function googleEmbed(text: string): Promise<number[] | null> {
+  const apiKey = process.env.GOOGLE_API_KEY || '';
+  if (!apiKey) return null;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: { parts: [{ text }] }, outputDimensionality: 768 }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!resp.ok) return null;
+  const data = await resp.json() as { embedding?: { values?: number[] } };
+  return data?.embedding?.values || null;
+}
 
 async function handleSemanticSearch(query: string, limit: number = 5): Promise<ActionResult> {
   if (!query || query.trim().length < 2) {
@@ -779,59 +790,44 @@ async function handleSemanticSearch(query: string, limit: number = 5): Promise<A
   const safeLimit = Math.min(Math.max(1, limit), 10);
 
   try {
-    // 1. 用 Ollama bge-m3 產生 query embedding
-    const embedResp = await fetch(`${OLLAMA_URL}/api/embed`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: EMBED_MODEL, input: query }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!embedResp.ok) {
-      return { ok: false, output: `Embedding 失敗: Ollama HTTP ${embedResp.status}（確認 Ollama 和 bge-m3 模型在跑）` };
-    }
-    const embedData = await embedResp.json() as { embeddings?: number[][] };
-    const queryVector = embedData?.embeddings?.[0];
-    if (!queryVector || queryVector.length === 0) {
-      return { ok: false, output: 'Embedding 回傳空向量' };
+    // 1. Google Embedding
+    const queryVector = await googleEmbed(query);
+    if (!queryVector) {
+      return { ok: false, output: 'Embedding 失敗: 確認 GOOGLE_API_KEY 已設定' };
     }
 
-    // 2. 向 Qdrant 做向量搜尋
-    const searchResp = await fetch(`${QDRANT_URL}/collections/${QDRANT_COLLECTION}/points/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vector: queryVector,
-        limit: safeLimit,
-        with_payload: true,
-        score_threshold: 0.3,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!searchResp.ok) {
-      return { ok: false, output: `Qdrant 搜尋失敗: HTTP ${searchResp.status}` };
+    // 2. Supabase pgvector RPC 搜尋
+    const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
+    if (!hasSb() || !sb) {
+      return { ok: false, output: 'Supabase 未連線，無法搜尋向量庫' };
     }
-    const searchData = await searchResp.json() as {
-      result?: Array<{ score: number; payload: Record<string, unknown> }>;
-    };
-    const results = searchData?.result || [];
 
-    if (results.length === 0) {
+    const { data: results, error } = await sb.rpc('match_embeddings', {
+      query_embedding: JSON.stringify(queryVector),
+      match_threshold: 0.3,
+      match_count: safeLimit,
+    });
+
+    if (error) {
+      return { ok: false, output: `向量搜尋失敗: ${error.message}` };
+    }
+
+    if (!results || results.length === 0) {
       return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
     }
 
     // 3. 格式化結果
-    const lines = results.map((r, i) => {
-      const p = r.payload || {};
-      const score = (r.score * 100).toFixed(0);
-      const title = p.doc_title || p.title || p.file_name || '未知';
-      const section = p.section_title || '';
-      const category = p.category || '';
-      const content = String(p.content || '').slice(0, 400);
-      const filePath = p.file_path || '';
+    const lines = results.map((r: any, i: number) => {
+      const score = ((r.similarity || 0) * 100).toFixed(0);
+      const title = r.doc_title || r.file_name || '未知';
+      const section = r.section_title || '';
+      const category = r.category || '';
+      const content = String(r.content || '').slice(0, 400);
+      const filePath = r.file_path || '';
       return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, ${score}%相關)\n📁 ${filePath}\n${content}`;
     });
 
-    log.info(`[SemanticSearch] query="${query}" → ${results.length} results (top score: ${(results[0].score * 100).toFixed(0)}%)`);
+    log.info(`[SemanticSearch] query="${query}" → ${results.length} results (top: ${((results[0].similarity || 0) * 100).toFixed(0)}%)`);
     return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆）：\n\n${lines.join('\n\n')}` };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -839,14 +835,13 @@ async function handleSemanticSearch(query: string, limit: number = 5): Promise<A
   }
 }
 
-// ── 向量索引 ──
+// ── 向量索引（Google Embedding + Supabase pgvector）──
 
-/** 單檔快速索引：把一個 .md 檔案切 chunk → embed → 寫入 Qdrant */
+/** 單檔快速索引：把一個 .md 檔案切 chunk → embed → 寫入 Supabase */
 async function handleIndexFile(filePath: string, category?: string): Promise<ActionResult> {
   if (!filePath || !filePath.endsWith('.md')) {
     return { ok: false, output: 'index_file 需要 .md 檔案路徑' };
   }
-  // 相對路徑自動補 workspace 前綴（小蔡常用 notes/xxx.md 而非完整路徑）
   let resolved = path.resolve(filePath);
   if (!fs.existsSync(resolved) && !path.isAbsolute(filePath)) {
     resolved = path.join(NEUXA_WORKSPACE, filePath);
@@ -855,19 +850,22 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
     return { ok: false, output: `檔案不存在: ${filePath}（也嘗試了 ${resolved}）` };
   }
 
+  const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
+  if (!hasSb() || !sb) {
+    return { ok: false, output: 'Supabase 未連線，無法索引' };
+  }
+
   try {
     const content = fs.readFileSync(resolved, 'utf-8');
     const fileName = path.basename(resolved);
     const relPath = path.relative(NEUXA_WORKSPACE, resolved);
     const cat = category || guessCategoryFromPath(relPath);
 
-    // 按 ## 切 chunk
     const sections = content.split(/(?=^## )/m).filter(s => s.trim().length > 50);
     if (sections.length === 0) {
       return { ok: false, output: `檔案內容太短或沒有 ## 章節: ${fileName}` };
     }
 
-    // 取文件標題
     const titleMatch = content.match(/^# (.+)/m);
     const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
 
@@ -877,50 +875,30 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
       const secTitleMatch = section.match(/^## (.+)/m);
       const secTitle = secTitleMatch ? secTitleMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
 
-      // 構建帶前綴的 embed text
       const embedText = `[${docTitle} | ${secTitle}] ${section.slice(0, 500)}`;
-
-      // Ollama embedding
-      const embedResp = await fetch(`${OLLAMA_URL}/api/embed`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: EMBED_MODEL, input: embedText }),
-      });
-      if (!embedResp.ok) continue;
-      const embedData = await embedResp.json();
-      const vector = embedData.embeddings?.[0];
+      const vector = await googleEmbed(embedText);
       if (!vector) continue;
 
-      // 生成穩定 ID
       const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
       const pointId = parseInt(hash.slice(0, 15), 16);
 
-      // Upsert to Qdrant
-      const upsertResp = await fetch(`${QDRANT_URL}/collections/${QDRANT_COLLECTION}/points`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          points: [{
-            id: pointId,
-            vector,
-            payload: {
-              title: secTitle,
-              section_title: secTitle,
-              doc_title: docTitle,
-              content: section,
-              content_preview: section.slice(0, 200),
-              file_path: relPath,
-              file_name: fileName,
-              category: cat,
-              chunk_index: i,
-              chunk_total: sections.length,
-              size: section.length,
-              date: new Date().toISOString().split('T')[0],
-            },
-          }],
-        }),
-      });
-      if (upsertResp.ok) indexed++;
+      const { error } = await sb.from('openclaw_embeddings').upsert({
+        id: pointId,
+        doc_title: docTitle,
+        section_title: secTitle,
+        content: section,
+        content_preview: section.slice(0, 200),
+        file_path: relPath,
+        file_name: fileName,
+        category: cat,
+        chunk_index: i,
+        chunk_total: sections.length,
+        size: section.length,
+        date: new Date().toISOString().split('T')[0],
+        embedding: JSON.stringify(vector),
+      }, { onConflict: 'id' });
+
+      if (!error) indexed++;
     }
 
     return { ok: true, output: `已索引 ${fileName} → ${indexed}/${sections.length} chunks (category: ${cat})` };
@@ -943,35 +921,108 @@ function guessCategoryFromPath(relPath: string): string {
   return categoryMap[dir] || 'knowledge';
 }
 
-/** 全量重建索引（背景執行 Python 腳本） */
+/** 全量重建索引（TypeScript 內建，不依賴 Python/Ollama/Docker） */
 async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
-  const scriptPath = path.join(PROJECT_ROOT, 'scripts', 'vectorize-knowledge.py');
-  if (!fs.existsSync(scriptPath)) {
-    return { ok: false, output: `索引腳本不存在: ${scriptPath}` };
+  const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
+  if (!hasSb() || !sb) {
+    return { ok: false, output: 'Supabase 未連線，無法重建索引' };
   }
 
-  const args = mode === 'rebuild' ? ['--rebuild'] : [];
+  const scanDirs = [
+    'cookbook', 'memory', 'docs', 'reports', 'knowledge',
+    'notes', 'proposals', 'projects', 'learning',
+    'sop-知識庫', 'xiaocai-指令集', 'extensions', 'core', 'anchors',
+  ];
+
+  const mdFiles: string[] = [];
+  for (const dir of scanDirs) {
+    const fullDir = path.join(NEUXA_WORKSPACE, dir);
+    if (!fs.existsSync(fullDir)) continue;
+    const files = fs.readdirSync(fullDir, { recursive: true }) as string[];
+    for (const f of files) {
+      if (typeof f === 'string' && f.endsWith('.md')) {
+        mdFiles.push(path.join(fullDir, f));
+      }
+    }
+  }
   try {
-    // 非阻塞：spawn 後不等完成，回報已啟動
-    const child = spawn('python3', [scriptPath, ...args], {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
+    const rootFiles = fs.readdirSync(NEUXA_WORKSPACE);
+    for (const f of rootFiles) {
+      if (f.endsWith('.md')) mdFiles.push(path.join(NEUXA_WORKSPACE, f));
+    }
+  } catch { /* ignore */ }
 
-    return {
-      ok: true,
-      output: `向量索引${mode === 'rebuild' ? '重建' : '更新'}已在背景啟動。\n` +
-        `腳本: ${scriptPath} ${args.join(' ')}\n` +
-        `完成後 Qdrant collection '${QDRANT_COLLECTION}' 會自動更新。\n` +
-        `可用 semantic_search 驗證結果。`,
-    };
-  } catch (err: any) {
-    return { ok: false, output: sanitize(`reindex_knowledge 失敗: ${err.message}`) };
+  if (mdFiles.length === 0) {
+    return { ok: false, output: `workspace 下沒有找到 .md 檔案: ${NEUXA_WORKSPACE}` };
   }
-}
 
-const PROJECT_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..', '..');
+  if (mode === 'rebuild') {
+    const { error: delErr } = await sb.from('openclaw_embeddings').delete().gte('id', 0);
+    if (delErr) log.warn(`[ReindexKnowledge] 清空舊資料失敗: ${delErr.message}`);
+  }
+
+  const startTime = Date.now();
+  (async () => {
+    let totalChunks = 0;
+    let totalIndexed = 0;
+    let filesDone = 0;
+
+    for (const fp of mdFiles) {
+      try {
+        const content = fs.readFileSync(fp, 'utf-8');
+        const fileName = path.basename(fp);
+        const relPath = path.relative(NEUXA_WORKSPACE, fp);
+        const cat = guessCategoryFromPath(relPath);
+        const titleMatch = content.match(/^# (.+)/m);
+        const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
+
+        const sections = content.split(/(?=^## )/m).filter(s => s.trim().length > 50);
+        totalChunks += sections.length;
+
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i].trim();
+          const secMatch = section.match(/^## (.+)/m);
+          const secTitle = secMatch ? secMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
+          const embedText = `[${docTitle} | ${secTitle}] ${section.slice(0, 500)}`;
+
+          const vector = await googleEmbed(embedText);
+          if (!vector) continue;
+
+          const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
+          const pointId = parseInt(hash.slice(0, 15), 16);
+
+          const { error } = await sb.from('openclaw_embeddings').upsert({
+            id: pointId,
+            doc_title: docTitle, section_title: secTitle,
+            content: section, content_preview: section.slice(0, 200),
+            file_path: relPath, file_name: fileName, category: cat,
+            chunk_index: i, chunk_total: sections.length,
+            size: section.length, date: new Date().toISOString().split('T')[0],
+            embedding: JSON.stringify(vector),
+          }, { onConflict: 'id' });
+
+          if (!error) totalIndexed++;
+          if (i % 10 === 9) await new Promise(r => setTimeout(r, 200));
+        }
+        filesDone++;
+        if (filesDone % 10 === 0) {
+          log.info(`[ReindexKnowledge] 進度: ${filesDone}/${mdFiles.length} files, ${totalIndexed} chunks`);
+        }
+      } catch (err) {
+        log.warn(`[ReindexKnowledge] 跳過 ${fp}: ${(err as Error).message}`);
+      }
+    }
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    log.info(`[ReindexKnowledge] 完成！${filesDone} files, ${totalIndexed}/${totalChunks} chunks, ${elapsed}s`);
+  })().catch(err => log.error(`[ReindexKnowledge] 背景執行失敗: ${err.message}`));
+
+  return {
+    ok: true,
+    output: `向量索引${mode === 'rebuild' ? '重建' : '更新'}已在背景啟動。\n` +
+      `掃描到 ${mdFiles.length} 個 .md 檔案，使用 Google Embedding + Supabase pgvector。\n` +
+      `可稍後用 semantic_search 驗證結果。`,
+  };
+}
 
 // ── 網頁搜尋與抓取 ──
 
