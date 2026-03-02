@@ -59,7 +59,7 @@ const xiaocaiHistory = new Map<number, Array<{ role: string; text: string }>>();
 // 心跳狀態
 let lastUserActivityAt = 0; // 老蔡最後一次發訊息的時間
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 分鐘
 const HEARTBEAT_IDLE_THRESHOLD_MS = 5 * 60 * 1000; // 老蔡 5 分鐘沒說話才觸發
 const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
 
