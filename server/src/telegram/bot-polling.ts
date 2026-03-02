@@ -1540,11 +1540,12 @@ async function xiaocaiPoll(): Promise<void> {
       }
 
       // ── 多步執行迴路（最多 3 輪連續行動）──
-      const MAX_CHAIN_STEPS = 5;
+      const MAX_CHAIN_STEPS = 15;
       let currentInput = text;
       let finalReply = '';
       const allActionResults: string[] = [];
       const breaker = new ActionCircuitBreaker(2);
+      const recentStepSigs: string[] = []; // 重複 action 偵測
 
       for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
         const isFollowUp = step > 0;
@@ -1588,6 +1589,18 @@ async function xiaocaiPoll(): Promise<void> {
         reply = stripActionJson(reply);
 
         allActionResults.push(...stepResults);
+
+        // 重複 action 偵測：連續 3 步完全相同的 action 組合 → 自動中斷防無限迴圈
+        const stepSig = actionMatches.map(j => { try { const a = JSON.parse(j) as Record<string,string>; return `${a.action}::${a.path||a.table||a.query||''}`; } catch { return '?'; } }).sort().join('|');
+        recentStepSigs.push(stepSig);
+        if (recentStepSigs.length >= 3) {
+          const last3 = recentStepSigs.slice(-3);
+          if (last3[0] === last3[1] && last3[1] === last3[2]) {
+            log.warn(`[NEUXA-Chain] ⚠️ 連續 3 步重複 action (${stepSig})，自動中斷`);
+            finalReply = (finalReply || '') + '\n\n⚠️ 偵測到重複動作，已自動中斷。請換個方式試試。';
+            break;
+          }
+        }
 
         if (step === 0 && MAX_CHAIN_STEPS > 1) {
           const progressMsg = `⏳ 處理中... 已完成 ${stepResults.length} 個動作，繼續分析中`;

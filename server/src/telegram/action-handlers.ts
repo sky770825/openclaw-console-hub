@@ -5,11 +5,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
-import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES } from './security.js';
+import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS } from './security.js';
 
 const log = createLogger('telegram');
 
@@ -31,6 +31,8 @@ const CHAIN_HINTS: Record<string, string> = {
   ask_ai: '💡 諮詢完了 → 把建議整理成 write_file 筆記 + index_file 索引，兩個一起發。',
   analyze_code: '💡 分析完了 → write_file 寫分析報告 + index_file 索引，兩個一起發。',
   query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
+  pty_exec: '💡 互動命令完成 → 檢查輸出是否正常，有問題再跑一次或 write_file 記錄結果。',
+  patch_file: '💡 修補完了 → read_file 確認結果，或繼續 patch_file 改下一處。多處修改一起發。',
 };
 
 // ── 任務操作 ──
@@ -884,6 +886,157 @@ async function handleSafeRunScript(command: string): Promise<ActionResult> {
   return handleRunScript(cmd);
 }
 
+// ── PTY-like 互動式命令執行 ──
+
+/** pty_exec 命令白名單：只允許這些程式開頭 */
+const PTY_ALLOWED_COMMANDS = [
+  /^npm\s/i, /^yarn\s/i, /^pnpm\s/i,
+  /^node\s/i, /^python3\s/i, /^pip\s/i, /^pip3\s/i,
+  /^git\s/i, /^curl\s/i, /^brew\s/i,
+];
+
+/** pty_exec 禁止的危險模式 */
+const PTY_DANGEROUS_PATTERNS = [
+  /rm\s+-rf/i, /sudo\s/i, /chmod\s+777/i, /dd\s+if=/i, /mkfs/i,
+  />\s*\/dev\//i, /eval\s*\(/i,
+  /git\s+(push|force|reset\s+--hard|clean\s+-f)/i,
+  /\|\s*(sh|bash|zsh|eval)/i,
+  /;\s*(rm|sudo|dd|mkfs|chmod)/i,
+];
+
+/** 互動提示偵測模式 */
+const INTERACTIVE_PROMPT_PATTERNS = [
+  /\?\s*$/,
+  /\[Y\/n\]/i, /\[y\/N\]/i,
+  /\(yes\/no\)/i, /\(y\/n\)/i,
+  /continue\?/i, /proceed\?/i,
+  /password:/i, /passphrase:/i,
+  /confirm/i, /overwrite/i,
+  /do you want/i, /are you sure/i,
+  /enter\s+.*:/i, /press\s+enter/i,
+  /ok\s+to\s+proceed/i,
+];
+
+/**
+ * 處理 pty_exec action：用 spawn + pipe 模擬 PTY 互動行為
+ * 監聽 stdout/stderr，遇到互動提示自動從 answers 陣列依序回答
+ */
+export async function handlePtyExec(
+  command: string,
+  answers: string[] = [],
+  timeout = 30,
+): Promise<ActionResult> {
+  if (!command.trim()) {
+    return { ok: false, output: 'pty_exec 需要 command 參數' };
+  }
+
+  const cmd = command.trim();
+
+  // ── 安全檢查 1：命令白名單 ──
+  const isAllowed = PTY_ALLOWED_COMMANDS.some(p => p.test(cmd));
+  if (!isAllowed) {
+    return {
+      ok: false,
+      output: `🚫 pty_exec 白名單攔截：只允許 npm/yarn/pnpm/node/python3/pip/git/curl/brew 開頭的命令。收到: ${cmd.slice(0, 60)}`,
+    };
+  }
+
+  // ── 安全檢查 2：危險模式黑名單 ──
+  const dangerous = PTY_DANGEROUS_PATTERNS.find(p => p.test(cmd));
+  if (dangerous) {
+    return {
+      ok: false,
+      output: `🚫 pty_exec 危險指令攔截（${dangerous.source}）。git push/force、rm -rf、sudo 等一律禁止。`,
+    };
+  }
+
+  // ── 安全檢查 3：timeout 上限 120 秒 ──
+  const safeTimeout = Math.max(5, Math.min(120, timeout)) * 1000;
+
+  // ── cwd 限制在專案目錄 ──
+  const cwd = '/Users/caijunchang/openclaw任務面版設計';
+
+  log.info(`[PtyExec] 啟動: ${cmd.slice(0, 100)} | answers=${answers.length} | timeout=${safeTimeout / 1000}s`);
+
+  return new Promise((resolve) => {
+    let answerIndex = 0;
+    let output = '';
+    let lastChunk = '';
+    let promptCheckTimer: ReturnType<typeof setTimeout> | null = null;
+    let resolved = false;
+
+    const safeResolve = (result: ActionResult) => {
+      if (resolved) return;
+      resolved = true;
+      if (promptCheckTimer) clearTimeout(promptCheckTimer);
+      resolve(result);
+    };
+
+    const proc = spawn('sh', ['-c', cmd], {
+      cwd,
+      timeout: safeTimeout,
+      env: {
+        HOME: process.env.HOME,
+        PATH: process.env.PATH,
+        LANG: 'en_US.UTF-8',
+        TERM: 'dumb',
+        CI: '1',
+        NPM_CONFIG_YES: 'true',
+        NONINTERACTIVE: '1',
+      },
+    });
+
+    /** 檢查最近輸出是否包含互動提示，如果是就送出下一個 answer */
+    const checkAndRespond = () => {
+      if (!proc.stdin?.writable) return;
+      const isPrompt = INTERACTIVE_PROMPT_PATTERNS.some(p => p.test(lastChunk));
+      if (isPrompt) {
+        const answer = answerIndex < answers.length ? answers[answerIndex] : '';
+        answerIndex++;
+        log.info(`[PtyExec] 偵測到互動提示，回答 #${answerIndex}: "${answer.slice(0, 20)}"`);
+        try {
+          proc.stdin.write(answer + '\n');
+        } catch {
+          // stdin 已關閉，忽略
+        }
+        lastChunk = '';
+      }
+    };
+
+    /** 累積輸出，並在短暫停頓後檢查互動提示 */
+    const onData = (data: Buffer) => {
+      const text = data.toString();
+      output += text;
+      lastChunk += text;
+
+      if (lastChunk.length > 2000) {
+        lastChunk = lastChunk.slice(-2000);
+      }
+
+      if (promptCheckTimer) clearTimeout(promptCheckTimer);
+      promptCheckTimer = setTimeout(checkAndRespond, 200);
+    };
+
+    proc.stdout?.on('data', onData);
+    proc.stderr?.on('data', onData);
+
+    proc.on('close', (code) => {
+      const truncated = output.length > 5000
+        ? output.slice(0, 2000) + '\n\n... (截斷 ' + output.length + ' 字元) ...\n\n' + output.slice(-2500)
+        : output;
+
+      const result = sanitize(truncated.trim() || '（無輸出）') + `\nexit: ${code}`;
+      log.info(`[PtyExec] 完成: exit=${code} output=${output.length}字元 answers used=${answerIndex}/${answers.length}`);
+      safeResolve({ ok: code === 0, output: result });
+    });
+
+    proc.on('error', (e) => {
+      log.error({ err: e }, `[PtyExec] spawn 失敗`);
+      safeResolve({ ok: false, output: `pty_exec 啟動失敗: ${e.message}` });
+    });
+  });
+}
+
 // ── 語義搜尋（Google Embedding + Supabase pgvector）──
 
 /** 呼叫 Google gemini-embedding-001 取得 768 維向量 */
@@ -1340,6 +1493,384 @@ async function handleAnalyzeCode(filePath: string, question: string): Promise<Ac
   }
 }
 
+// ── grep_project & find_symbol ──
+
+/** 允許搜尋的目錄白名單 */
+const GREP_ALLOWED_DIRS = [
+  '/Users/caijunchang/openclaw任務面版設計/server/src/',
+  '/Users/caijunchang/openclaw任務面版設計/src/',
+  '/Users/caijunchang/openclaw任務面版設計/cookbook/',
+  '/Users/caijunchang/openclaw任務面版設計/scripts/',
+  path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
+];
+
+/** 路徑安全檢查：只允許搜尋白名單目錄 */
+function isGrepPathSafe(targetPath: string): { safe: boolean; resolved: string; reason?: string } {
+  const resolved = path.resolve(targetPath);
+  const forbidden = ['/etc', '/var', '/usr', '/bin', '/sbin', '/System', '/Library', '/private'];
+  for (const f of forbidden) {
+    if (resolved.startsWith(f)) {
+      return { safe: false, resolved, reason: `禁止搜尋系統目錄: ${f}` };
+    }
+  }
+  const allowed = GREP_ALLOWED_DIRS.some(d => resolved.startsWith(d));
+  if (!allowed) {
+    return { safe: false, resolved, reason: `路徑不在白名單。允許: server/src/, src/, cookbook/, scripts/, ~/.openclaw/workspace/` };
+  }
+  if (!fs.existsSync(resolved)) {
+    return { safe: false, resolved, reason: `目錄不存在: ${resolved}` };
+  }
+  return { safe: true, resolved };
+}
+
+/** 截斷過長的行 */
+function truncateLine(line: string, max: number): string {
+  return line.length > max ? line.slice(0, max) + '...' : line;
+}
+
+/** grep_project: 在專案目錄中搜尋文字模式 */
+async function handleGrepProject(
+  pattern: string,
+  searchPath?: string,
+  options?: { ignore_case?: boolean; max_results?: number; file_pattern?: string }
+): Promise<ActionResult> {
+  if (!pattern || pattern.trim().length < 2) {
+    return { ok: false, output: 'grep_project 需要 pattern 參數（至少 2 個字）' };
+  }
+
+  const targetDir = searchPath || '/Users/caijunchang/openclaw任務面版設計/server/src/';
+  const pathCheck = isGrepPathSafe(targetDir);
+  if (!pathCheck.safe) return { ok: false, output: `🚫 ${pathCheck.reason}` };
+
+  const ignoreCase = options?.ignore_case ?? false;
+  const maxResults = Math.min(Math.max(options?.max_results ?? 20, 1), 50);
+  const filePattern = options?.file_pattern || '';
+
+  // 優先用 rg（ripgrep），fallback grep -rn
+  let useRg = false;
+  try {
+    execSync('which rg', { stdio: 'pipe', timeout: 3000 });
+    useRg = true;
+  } catch { /* rg 不存在，用 grep */ }
+
+  let cmd: string;
+  const safePattern = pattern.replace(/'/g, "'\\''");
+
+  if (useRg) {
+    const flags = ['-n', '--no-heading', '--color=never', `--max-count=${maxResults * 2}`];
+    if (ignoreCase) flags.push('-i');
+    if (filePattern) flags.push(`--glob='${filePattern}'`);
+    cmd = `rg ${flags.join(' ')} '${safePattern}' '${pathCheck.resolved}'`;
+  } else {
+    const flags = ['-rn', '--color=never'];
+    if (ignoreCase) flags.push('-i');
+    if (filePattern) flags.push(`--include='${filePattern}'`);
+    cmd = `grep ${flags.join(' ')} '${safePattern}' '${pathCheck.resolved}'`;
+  }
+
+  try {
+    const raw = String(execSync(cmd, {
+      timeout: 10000,
+      maxBuffer: 1024 * 512,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }));
+
+    const lines = raw.trim().split('\n').filter(Boolean);
+    const trimmed = lines.slice(0, maxResults).map((l: string) => truncateLine(l, 200));
+    const total = lines.length;
+    const shown = trimmed.length;
+
+    const header = `🔍 grep_project「${pattern}」in ${targetDir}\n找到 ${total} 筆${total > shown ? `，顯示前 ${shown} 筆` : ''}：\n`;
+    return { ok: true, output: header + trimmed.join('\n') };
+  } catch (e: unknown) {
+    const err = e as { status?: number; stdout?: string; stderr?: string; message?: string };
+    if (err.status === 1) {
+      return { ok: true, output: `🔍 grep_project「${pattern}」in ${targetDir}\n沒有匹配結果。` };
+    }
+    if (err.message?.includes('TIMEOUT') || err.message?.includes('timed out')) {
+      return { ok: false, output: `grep_project 超時 (10s)。嘗試縮小搜尋範圍或更精確的 pattern。` };
+    }
+    return { ok: false, output: `grep_project 失敗: ${err.stderr || err.message || '未知錯誤'}` };
+  }
+}
+
+/** find_symbol: 搜尋函數/類別/介面/型別定義與引用 */
+async function handleFindSymbol(
+  symbol: string,
+  symbolType?: string
+): Promise<ActionResult> {
+  if (!symbol || symbol.trim().length < 2) {
+    return { ok: false, output: 'find_symbol 需要 symbol 參數（至少 2 個字）' };
+  }
+
+  const searchDirs = [
+    '/Users/caijunchang/openclaw任務面版設計/server/src/',
+    '/Users/caijunchang/openclaw任務面版設計/src/',
+  ];
+
+  const safeSymbol = symbol.replace(/'/g, "'\\''").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const defPatterns: string[] = [];
+  const t = (symbolType || '').toLowerCase();
+
+  if (!t || t === 'function') {
+    defPatterns.push(`(function|const|let|var)\\s+${safeSymbol}\\s*[=(]`);
+    defPatterns.push(`async\\s+function\\s+${safeSymbol}`);
+    defPatterns.push(`${safeSymbol}\\s*:\\s*\\(`);
+  }
+  if (!t || t === 'class') {
+    defPatterns.push(`class\\s+${safeSymbol}`);
+  }
+  if (!t || t === 'interface') {
+    defPatterns.push(`interface\\s+${safeSymbol}`);
+  }
+  if (!t || t === 'type') {
+    defPatterns.push(`type\\s+${safeSymbol}\\s*[=<]`);
+  }
+  defPatterns.push(`export\\s+(default\\s+)?(function|class|interface|type|const|let|var|async)\\s+${safeSymbol}`);
+
+  const refPattern = safeSymbol;
+
+  let useRg = false;
+  try {
+    execSync('which rg', { stdio: 'pipe', timeout: 3000 });
+    useRg = true;
+  } catch { /* fallback grep */ }
+
+  const definitions: string[] = [];
+  const references: string[] = [];
+
+  for (const dir of searchDirs) {
+    if (!fs.existsSync(dir)) continue;
+
+    for (const pat of defPatterns) {
+      const cmd = useRg
+        ? `rg -n --no-heading --color=never --glob='*.{ts,tsx,js,jsx}' '${pat}' '${dir}'`
+        : `grep -rn --color=never --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' -E '${pat}' '${dir}'`;
+      try {
+        const raw = String(execSync(cmd, { timeout: 10000, maxBuffer: 256 * 1024, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }));
+        const lines = raw.trim().split('\n').filter(Boolean);
+        for (const l of lines) {
+          const truncated = truncateLine(l, 200);
+          if (!definitions.includes(truncated)) definitions.push(truncated);
+        }
+      } catch { /* exit 1 = no match */ }
+    }
+
+    const refCmd = useRg
+      ? `rg -n --no-heading --color=never --glob='*.{ts,tsx,js,jsx}' '${refPattern}' '${dir}'`
+      : `grep -rn --color=never --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' '${refPattern}' '${dir}'`;
+    try {
+      const raw = String(execSync(refCmd, { timeout: 10000, maxBuffer: 256 * 1024, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }));
+      const lines = raw.trim().split('\n').filter(Boolean);
+      for (const l of lines) {
+        const truncated = truncateLine(l, 200);
+        if (!definitions.includes(truncated) && !references.includes(truncated)) {
+          references.push(truncated);
+        }
+      }
+    } catch { /* exit 1 = no match */ }
+  }
+
+  const defSlice = definitions.slice(0, 15);
+  const refSlice = references.slice(0, 30);
+
+  if (defSlice.length === 0 && refSlice.length === 0) {
+    return { ok: true, output: `🔍 find_symbol「${symbol}」${t ? `(type: ${t})` : ''}\n找不到任何定義或引用。確認名稱是否正確。` };
+  }
+
+  const parts: string[] = [`🔍 find_symbol「${symbol}」${t ? `(type: ${t})` : ''}\n`];
+
+  if (defSlice.length > 0) {
+    parts.push(`📌 定義 (${defSlice.length}${definitions.length > 15 ? `/${definitions.length}` : ''})：`);
+    parts.push(defSlice.join('\n'));
+  } else {
+    parts.push('📌 定義：找不到明確的定義位置');
+  }
+
+  parts.push('');
+
+  if (refSlice.length > 0) {
+    parts.push(`📎 引用 (${refSlice.length}${references.length > 30 ? `/${references.length}` : ''})：`);
+    parts.push(refSlice.join('\n'));
+  } else {
+    parts.push('📎 引用：無其他引用');
+  }
+
+  return { ok: true, output: parts.join('\n') };
+}
+
+// ── 精準修補檔案 ──
+
+/** 禁止 patch 的檔案名（靈魂文件） */
+const PATCH_FORBIDDEN_NAMES = new Set([
+  'SOUL.md', 'AWAKENING.md', 'IDENTITY.md',
+]);
+
+/** patch_file 允許的根目錄白名單 */
+const PATCH_ALLOWED_ROOTS = [
+  path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
+  '/Users/caijunchang/openclaw任務面版設計',
+];
+
+/** 檢查 patch_file 路徑安全性 */
+function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; reason?: string } {
+  let expanded = rawPath;
+  if (expanded.startsWith('~/') || expanded === '~') {
+    expanded = path.join(process.env.HOME || '/tmp', expanded.slice(1));
+  }
+  const resolved = path.resolve(expanded);
+  const basename = path.basename(resolved);
+
+  if (PATCH_FORBIDDEN_NAMES.has(basename)) {
+    return { safe: false, resolved, reason: `禁止修改靈魂文件 "${basename}"` };
+  }
+
+  for (const pattern of FORBIDDEN_PATH_PATTERNS) {
+    if (resolved.toLowerCase().includes(pattern.toLowerCase())) {
+      return { safe: false, resolved, reason: `禁止修改包含 "${pattern}" 的檔案` };
+    }
+  }
+
+  const inAllowed = PATCH_ALLOWED_ROOTS.some(root => resolved.startsWith(root));
+  if (!inAllowed) {
+    return { safe: false, resolved, reason: `路徑不在允許範圍。允許: ${PATCH_ALLOWED_ROOTS.join(', ')}` };
+  }
+
+  return { safe: true, resolved };
+}
+
+/**
+ * patch_file — 精準修補檔案（替換 / 插入 / 刪行）
+ *
+ * 三種模式：
+ * 1. replace:      { path, line, old, new }
+ * 2. insert_after: { path, line, insert_after }
+ * 3. delete_lines: { path, from_line, to_line }
+ */
+export async function handlePatchFile(action: Record<string, string>): Promise<ActionResult> {
+  const rawPath = action.path;
+  if (!rawPath) return { ok: false, output: 'patch_file 需要 path 參數' };
+
+  const check = isPatchPathSafe(rawPath);
+  if (!check.safe) return { ok: false, output: `🚫 ${check.reason}` };
+  const resolved = check.resolved;
+
+  if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${resolved}` };
+  if (fs.statSync(resolved).isDirectory()) return { ok: false, output: `這是目錄，不是檔案` };
+
+  const original = fs.readFileSync(resolved, 'utf8');
+  const lines = original.split('\n');
+
+  const hasOld = 'old' in action && 'new' in action;
+  const hasInsert = 'insert_after' in action;
+  const hasDelete = 'from_line' in action && 'to_line' in action;
+
+  let newLines: string[];
+  let diffSummary: string;
+
+  if (hasDelete) {
+    // ── 模式 3: delete_lines ──
+    const fromLine = parseInt(action.from_line, 10);
+    const toLine = parseInt(action.to_line, 10);
+    if (isNaN(fromLine) || isNaN(toLine) || fromLine < 1 || toLine < fromLine) {
+      return { ok: false, output: `from_line / to_line 無效（需要 1 <= from_line <= to_line）` };
+    }
+    if (toLine > lines.length) {
+      return { ok: false, output: `to_line(${toLine}) 超過檔案行數(${lines.length})` };
+    }
+    const deleteCount = toLine - fromLine + 1;
+    if (deleteCount > 50) {
+      return { ok: false, output: `單次最多刪除 50 行，要求刪除 ${deleteCount} 行` };
+    }
+
+    const deleted = lines.slice(fromLine - 1, toLine);
+    newLines = [...lines.slice(0, fromLine - 1), ...lines.slice(toLine)];
+    diffSummary = `刪除 L${fromLine}-L${toLine} (${deleteCount} 行):\n` +
+      deleted.map((l, i) => `  - L${fromLine + i}: ${l.slice(0, 80)}`).join('\n');
+
+  } else if (hasInsert) {
+    // ── 模式 2: insert_after ──
+    const lineNum = parseInt(action.line, 10);
+    if (isNaN(lineNum) || lineNum < 0 || lineNum > lines.length) {
+      return { ok: false, output: `line 無效（0 = 檔案開頭插入, 1-${lines.length} = 在該行之後插入）` };
+    }
+    const insertContent = action.insert_after;
+    const insertLines = insertContent.split('\n');
+    if (insertLines.length > 50) {
+      return { ok: false, output: `單次最多插入 50 行，要求插入 ${insertLines.length} 行` };
+    }
+
+    newLines = [...lines.slice(0, lineNum), ...insertLines, ...lines.slice(lineNum)];
+    diffSummary = `在 L${lineNum} 之後插入 ${insertLines.length} 行:\n` +
+      insertLines.slice(0, 5).map(l => `  + ${l.slice(0, 80)}`).join('\n') +
+      (insertLines.length > 5 ? `\n  ... 還有 ${insertLines.length - 5} 行` : '');
+
+  } else if (hasOld) {
+    // ── 模式 1: replace (old -> new) ──
+    const lineNum = parseInt(action.line, 10);
+    if (isNaN(lineNum) || lineNum < 1 || lineNum > lines.length) {
+      return { ok: false, output: `line 無效（需要 1-${lines.length}）` };
+    }
+
+    const oldText = action.old;
+    const newText = action.new;
+    const oldLines = oldText.split('\n');
+    const newTextLines = newText.split('\n');
+    if (oldLines.length > 50 || newTextLines.length > 50) {
+      return { ok: false, output: `單次修改不超過 50 行（old: ${oldLines.length}, new: ${newTextLines.length}）` };
+    }
+
+    const endLine = lineNum - 1 + oldLines.length;
+    if (endLine > lines.length) {
+      return { ok: false, output: `old 文字 (${oldLines.length} 行) 超過檔案範圍 (從 L${lineNum})` };
+    }
+    const actual = lines.slice(lineNum - 1, endLine);
+    const matches = oldLines.every((ol, i) => actual[i]?.includes(ol) || actual[i]?.trim() === ol.trim());
+    if (!matches) {
+      const preview = actual.slice(0, 3).map((l, i) => `  L${lineNum + i}: ${l.slice(0, 80)}`).join('\n');
+      return { ok: false, output: `old 文字不匹配。L${lineNum} 實際內容:\n${preview}` };
+    }
+
+    newLines = [
+      ...lines.slice(0, lineNum - 1),
+      ...newTextLines,
+      ...lines.slice(endLine),
+    ];
+    diffSummary = `替換 L${lineNum}${oldLines.length > 1 ? `-L${endLine}` : ''} (${oldLines.length} -> ${newTextLines.length} 行):\n` +
+      oldLines.slice(0, 3).map(l => `  - ${l.slice(0, 80)}`).join('\n') + '\n' +
+      newTextLines.slice(0, 3).map(l => `  + ${l.slice(0, 80)}`).join('\n') +
+      (oldLines.length > 3 ? `\n  ... (還有更多行)` : '');
+
+  } else {
+    return { ok: false, output: 'patch_file 需要指定模式: (old+new), (insert_after), 或 (from_line+to_line)' };
+  }
+
+  // 備份原檔
+  try {
+    fs.copyFileSync(resolved, resolved + '.bak');
+  } catch (e) {
+    return { ok: false, output: `備份失敗: ${(e as Error).message}` };
+  }
+
+  // 寫入修改
+  try {
+    fs.writeFileSync(resolved, newLines.join('\n'), 'utf8');
+    const linesDelta = newLines.length - lines.length;
+    const deltaStr = linesDelta > 0 ? `+${linesDelta}` : linesDelta === 0 ? '+-0' : `${linesDelta}`;
+    log.info(`[NEUXA-PatchFile] ${resolved} (${deltaStr} lines)`);
+    return {
+      ok: true,
+      output: `已修補 ${path.basename(resolved)} (${lines.length} -> ${newLines.length} 行, ${deltaStr})\n` +
+        `備份: ${path.basename(resolved)}.bak\n\n` +
+        `Diff:\n${diffSummary}`,
+    };
+  } catch (e) {
+    try { fs.copyFileSync(resolved + '.bak', resolved); } catch { /* best effort */ }
+    return { ok: false, output: `寫入失敗: ${(e as Error).message}（已嘗試恢復備份）` };
+  }
+}
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -1407,6 +1938,39 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     case 'analyze_code':
       result = await handleAnalyzeCode(action.path || '', action.question || action.content || '');
+      break;
+    case 'grep_project': {
+      const grepOpts: { ignore_case?: boolean; max_results?: number; file_pattern?: string } = {};
+      if (action.options) {
+        try {
+          const parsed = typeof action.options === 'string' ? JSON.parse(action.options) : action.options;
+          if (parsed.ignore_case) grepOpts.ignore_case = Boolean(parsed.ignore_case);
+          if (parsed.max_results) grepOpts.max_results = Number(parsed.max_results);
+          if (parsed.file_pattern) grepOpts.file_pattern = String(parsed.file_pattern);
+        } catch { /* ignore parse errors */ }
+      }
+      result = await handleGrepProject(action.pattern || '', action.path, grepOpts);
+      break;
+    }
+    case 'find_symbol':
+      result = await handleFindSymbol(action.symbol || '', action.type);
+      break;
+    case 'pty_exec': {
+      const answers: string[] = (() => {
+        try {
+          const raw = action.answers;
+          if (!raw) return [];
+          if (Array.isArray(raw)) return (raw as string[]).map(String);
+          const parsed: unknown = JSON.parse(raw);
+          return Array.isArray(parsed) ? (parsed as string[]).map(String) : [];
+        } catch { return []; }
+      })();
+      const timeout = Math.max(5, Math.min(120, parseInt(action.timeout || '30', 10)));
+      result = await handlePtyExec(action.command || action.cmd || '', answers, timeout);
+      break;
+    }
+    case 'patch_file':
+      result = await handlePatchFile(action);
       break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
