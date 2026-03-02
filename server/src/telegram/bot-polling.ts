@@ -1776,7 +1776,7 @@ async function heartbeatTick(): Promise<void> {
 
   try {
     // 第一輪思考
-    const MAX_HEARTBEAT_STEPS = 3;
+    const MAX_HEARTBEAT_STEPS = 5;
     let currentInput = heartbeatInput;
     const allResults: string[] = [];
     const hbBreaker = new ActionCircuitBreaker(2);
@@ -1784,7 +1784,7 @@ async function heartbeatTick(): Promise<void> {
     for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
       const isFollowUp = step > 0;
       const thinkInput = isFollowUp
-        ? `[系統回饋] 心跳 step ${step}/${MAX_HEARTBEAT_STEPS}：\n${allResults.slice(-3).join('\n')}\n\n按 HEARTBEAT.md 的步驟繼續：查完狀態 → 查任務板 → 最後一步寫報告到 notes/heartbeat-report.md（固定格式：時間、系統狀態、任務板、異常發現、建議）。`
+        ? `[系統回饋] 心跳 step ${step}/${MAX_HEARTBEAT_STEPS}：\n${allResults.slice(-3).join('\n')}\n\n按 HEARTBEAT.md 的步驟繼續：1.查健康 2.查任務板 3.做練習題（必做！先 ls 防重複，再挑一題完整做完）4.更新GROWTH.md 5.寫報告。`
         : currentInput;
 
       const reply = await xiaocaiThink(HEARTBEAT_CHAT_ID, thinkInput, xiaocaiMainModel, xiaocaiHistory);
