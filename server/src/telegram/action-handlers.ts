@@ -1027,27 +1027,51 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
 // ── 網頁搜尋與抓取 ──
 
 /** Google Custom Search — 小蔡用來搜網頁學技能 */
-async function handleWebSearch(query: string, limit: number = 5): Promise<ActionResult> {
+async function handleWebSearch(query: string, _limit: number = 5): Promise<ActionResult> {
   if (!query) return { ok: false, output: 'web_search 需要 query 參數' };
 
   const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
-  const cseId = process.env.GOOGLE_CSE_ID || '';
-  if (!apiKey || !cseId) return { ok: false, output: 'web_search 需要 GOOGLE_API_KEY + GOOGLE_CSE_ID（請老蔡設定）' };
+  if (!apiKey) return { ok: false, output: 'web_search 需要 GOOGLE_API_KEY' };
 
-  const num = Math.min(Math.max(limit, 1), 10);
-  const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(query)}&num=${num}`;
+  // 使用 Gemini Search Grounding — 不需要 CSE，只要 GOOGLE_API_KEY
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
-    if (!resp.ok) return { ok: false, output: `搜尋失敗: HTTP ${resp.status}` };
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `搜尋以下內容並整理結果（含標題、連結、摘要）：${query}` }] }],
+        tools: [{ google_search: {} }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      return { ok: false, output: `搜尋失敗: HTTP ${resp.status} ${errText.slice(0, 200)}` };
+    }
 
-    const data = await resp.json() as { items?: Array<{ title: string; link: string; snippet?: string }> };
-    const items = (data.items || []).map((item, i) =>
-      `${i + 1}. ${item.title}\n   ${item.link}\n   ${item.snippet || ''}`
-    ).join('\n\n');
+    const data = await resp.json() as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }, groundingMetadata?: {
+        groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
+        searchEntryPoint?: { renderedContent?: string };
+      } }>;
+    };
 
-    log.info(`[WebSearch] "${query}" → ${(data.items || []).length} results`);
-    return { ok: true, output: items || '沒有搜尋結果' };
+    const candidate = data.candidates?.[0];
+    const text = candidate?.content?.parts?.map(p => p.text || '').join('') || '';
+    const chunks = candidate?.groundingMetadata?.groundingChunks || [];
+
+    let output = text;
+    if (chunks.length > 0) {
+      output += '\n\n--- 來源 ---\n';
+      output += chunks.map((c, i) =>
+        `${i + 1}. ${c.web?.title || '?'}\n   ${c.web?.uri || ''}`
+      ).join('\n');
+    }
+
+    log.info(`[WebSearch] "${query}" → ${chunks.length} sources, ${text.length} chars`);
+    return { ok: true, output: output || '沒有搜尋結果' };
   } catch (e) {
     return { ok: false, output: `web_search 失敗: ${(e as Error).message}` };
   }
