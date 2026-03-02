@@ -20,7 +20,7 @@ export type ActionResult = { ok: boolean; output: string };
 
 /** 行动链提示：引导小蔡一次回复打包多个 action */
 const CHAIN_HINTS: Record<string, string> = {
-  read_file: '💡 读完了 → 现在一口气：write_file 写分析 + index_file 索引，两个一起发。',
+  read_file: '💡 读完了 → 现在一口气：(1) write_file 写分析 + index_file 索引，或 (2) code_eval 验证逻辑，两三个一起发。',
   write_file: '💡 写完了 → 马上 index_file 索引。如果还有下一题，一起发。',
   index_file: '💡 索引完了。继续下一题：read_file + 分析 + write_file 一口气做。',
   run_script: '💡 执行完了 → 分析结果 + write_file 写报告 + index_file，三个一起发。',
@@ -28,6 +28,8 @@ const CHAIN_HINTS: Record<string, string> = {
   web_search: '💡 搜到了 → web_fetch 读内容 + write_file 写笔记 + index_file，三个一起发。',
   web_fetch: '💡 读完了 → write_file 写笔记 + index_file 索引，两个一起发。',
   code_eval: '💡 执行完了 → write_file 写学习心得 + index_file 索引，两个一起发。',
+  ask_ai: '💡 諮詢完了 → 把建議整理成 write_file 筆記 + index_file 索引，兩個一起發。',
+  analyze_code: '💡 分析完了 → write_file 寫分析報告 + index_file 索引，兩個一起發。',
   query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
 };
 
@@ -1302,7 +1304,39 @@ async function handleCodeEval(code: string): Promise<ActionResult> {
     const output = outputs.length > 0 ? outputs.join('\n') : '(無輸出)';
     return { ok: true, output: output.slice(0, 3000) };  // 限制輸出長度
   } catch (err: unknown) {
-    return { ok: false, output: `執行錯誤: ${(err as Error).message}` };
+    return { ok: false, output: `執行錯誤: ${(err as Error).message}\n💡 Tip：code_eval 只支持純 JS 邏輯，不能用 require/import/fetch。需要跑腳本請用 run_script: node -e "..."` };
+  }
+}
+
+/** 分析 workspace 內的代碼文件 */
+async function handleAnalyzeCode(filePath: string, question: string): Promise<ActionResult> {
+  const workspace = process.env.NEUXA_WORKSPACE || path.join(process.env.HOME || '', '.openclaw', 'workspace');
+  const fullPath = path.resolve(workspace, filePath);
+  if (!fullPath.startsWith(workspace)) {
+    return { ok: false, output: '❌ 只能分析 workspace 目錄內的文件' };
+  }
+
+  try {
+    const content = await fs.promises.readFile(fullPath, 'utf-8');
+    if (content.length > 10000) {
+      return { ok: true, output: `📄 文件 ${filePath} 共 ${content.length} 字，太長了。請指定要分析的區段（用 read_file 先看結構）。` };
+    }
+    const lines = content.split('\n');
+    const summary = [
+      `📄 **${filePath}**`,
+      `行數：${lines.length}`,
+      `大小：${content.length} 字元`,
+      '',
+      '```',
+      content.substring(0, 3000),
+      content.length > 3000 ? '\n... (截斷)' : '',
+      '```',
+      '',
+      question ? `分析問題：${question}` : '請根據內容進行分析。',
+    ].join('\n');
+    return { ok: true, output: summary };
+  } catch (e: unknown) {
+    return { ok: false, output: `❌ 無法讀取 ${filePath}：${(e as Error).message}` };
   }
 }
 
@@ -1370,6 +1404,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     case 'code_eval':
       result = await handleCodeEval(action.code || action.content || '');
+      break;
+    case 'analyze_code':
+      result = await handleAnalyzeCode(action.path || '', action.question || action.content || '');
       break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
