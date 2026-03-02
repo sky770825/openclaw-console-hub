@@ -514,9 +514,8 @@ async function executeNextPendingTask(): Promise<void> {
     if (pendingTasks.length === 0) {
       consecutiveIdlePolls++;
       if (consecutiveIdlePolls >= IDLE_PATROL_THRESHOLD) {
-        log.info(`[AutoExecutor] 連續空閒 ${consecutiveIdlePolls} 次 (${Math.round(consecutiveIdlePolls * 15 / 60)} 分鐘)，觸發自主巡邏`);
-        await triggerIdlePatrol();
-        consecutiveIdlePolls = 0; // 巡邏後重新計數
+        // IdlePatrol 已關閉（老蔡 2026-03-02 指令）— 空閒就空閒，不自己建任務
+        consecutiveIdlePolls = 0;
       } else {
         log.info('[AutoExecutor] 沒有待執行的任務');
       }
