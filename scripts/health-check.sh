@@ -25,8 +25,7 @@ check_service "OpenClaw Server" "http://localhost:3011/api/health"
 # 2. n8n (本地)
 check_service "n8n (本地)" "http://localhost:5678"
 
-# 3. Ollama (本地 AI 模型)
-check_service "Ollama" "http://localhost:11434"
+# 3. Google AI（雲端 — 不需本地檢查）
 
 # 4. Supabase (需透過 action 檢查)
 echo "🟡 Supabase: 狀態將在下一步透過內部 action 檢查"

@@ -123,8 +123,6 @@ collect_service_status() {
     # 任務板後端 (3011)
     check_port_connectivity "任務板後端" "localhost" 3011 "$TASKBOARD_API_URL/api/health"
 
-    # Ollama (11434)
-    check_port_connectivity "Ollama 服務" "localhost" 11434 "http://localhost:11434/api/tags"
 }
 
 # --- 3. 日誌片段提取 ---
