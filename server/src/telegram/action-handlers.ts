@@ -18,6 +18,18 @@ const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
 export type ActionResult = { ok: boolean; output: string };
 
+/** 行动链提示：action 完成后，提示小蔡接下来可以做什么 */
+const CHAIN_HINTS: Record<string, string> = {
+  read_file: '💡 读完了，下一步：分析内容 → write_file 写结论。',
+  write_file: '💡 写完了，下一步：index_file 索引到知识库。',
+  index_file: '💡 索引完了。如果还有题目，继续下一题。',
+  run_script: '💡 执行完了，下一步：分析结果 → write_file 写报告。',
+  semantic_search: '💡 搜到了，下一步：read_file 深入阅读 → write_file 写摘要。',
+  web_search: '💡 搜到了，下一步：web_fetch 读内容 → write_file 写笔记。',
+  web_fetch: '💡 读完了，下一步：write_file 写笔记 → index_file 索引。',
+  query_supabase: '💡 查完了，有异常就 run_script 进一步诊断。',
+};
+
 // ── 任務操作 ──
 
 /** 建立任務 */
@@ -1230,45 +1242,71 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
   const type = action.action;
   log.info(`[NEUXA-Action] type=${type} path=${action.path || ''}${type === 'ask_ai' ? ` model=${action.model || '(none)'} promptLen=${(action.prompt || '').length} contextLen=${(action.context || '').length}` : ''}`);
 
+  let result: ActionResult;
+
   switch (type) {
     case 'create_task':
-      return { ok: true, output: await createTask(action.name || '未命名', action.description, action.owner) };
+      result = { ok: true, output: await createTask(action.name || '未命名', action.description, action.owner) };
+      break;
     case 'update_task':
       if (!action.id) return { ok: false, output: 'update_task 需要 id 參數' };
-      return { ok: true, output: await updateTask(action.id, action) };
+      result = { ok: true, output: await updateTask(action.id, action) };
+      break;
     case 'read_file':
-      return handleReadFile(action.path || '');
+      result = await handleReadFile(action.path || '');
+      break;
     case 'write_file':
-      return handleWriteFile(action.path || '', action.content || '');
+      result = await handleWriteFile(action.path || '', action.content || '');
+      break;
     case 'mkdir':
-      return handleMkdir(action.path || '');
+      result = await handleMkdir(action.path || '');
+      break;
     case 'move_file':
-      return handleMoveFile(action.from || '', action.to || '');
+      result = await handleMoveFile(action.from || '', action.to || '');
+      break;
     case 'list_dir':
-      return handleListDir(action.path || NEUXA_WORKSPACE);
+      result = await handleListDir(action.path || NEUXA_WORKSPACE);
+      break;
     case 'run_script':
-      return handleSafeRunScript(action.command || action.cmd || '');
+      result = await handleSafeRunScript(action.command || action.cmd || '');
+      break;
     case 'run_script_bg':
-      return { ok: false, output: '🛑 背景腳本不開放。用 run_script 跑輕量工具，或 create_task 派工。' };
+      result = { ok: false, output: '🛑 背景腳本不開放。用 run_script 跑輕量工具，或 create_task 派工。' };
+      break;
     case 'ask_ai':
-      return handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
+      result = await handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
+      break;
     case 'proxy_fetch':
-      return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
+      result = await handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
+      break;
     case 'query_supabase':
-      return handleQuerySupabase(action);
+      result = await handleQuerySupabase(action);
+      break;
     case 'semantic_search':
-      return handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      result = await handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      break;
     case 'index_file':
-      return handleIndexFile(action.path || '', action.category);
+      result = await handleIndexFile(action.path || '', action.category);
+      break;
     case 'reindex_knowledge':
-      return handleReindexKnowledge(action.mode || 'append');
+      result = await handleReindexKnowledge(action.mode || 'append');
+      break;
     case 'web_search':
-      return handleWebSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      result = await handleWebSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      break;
     case 'web_fetch':
-      return handleWebFetch(action.url || '');
+      result = await handleWebFetch(action.url || '');
+      break;
     default:
-      return { ok: false, output: `未知 action: ${type}` };
+      result = { ok: false, output: `未知 action: ${type}` };
   }
+
+  // 成功时追加 chain hint，引导小蔡连续行动
+  if (result.ok && CHAIN_HINTS[type]) {
+    result.output += '\n' + CHAIN_HINTS[type];
+  }
+
+  return result;
 }
 
 // ── 自動記憶 ──
