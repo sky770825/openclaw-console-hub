@@ -458,13 +458,48 @@ export async function handleAskGemini(
   }
 }
 
-/** NEUXA 諮詢 AI 代理 — 路由到 Claude CLI 或 Gemini API */
-export function handleAskAI(model: string, prompt: string, context?: string): Promise<ActionResult> {
+/** NEUXA 諮詢 AI 代理 — 路由到 Claude CLI 或 Gemini API，失敗自動升級 */
+export async function handleAskAI(model: string, prompt: string, context?: string): Promise<ActionResult> {
   const m = (model || 'flash').toLowerCase();
+
+  // 第一次嘗試：用指定的模型
+  let result: ActionResult;
   if (m.includes('claude') || m.includes('sonnet') || m.includes('opus') || m.includes('haiku')) {
-    return handleAskClaude(model, prompt, context);
+    result = await handleAskClaude(model, prompt, context);
+  } else {
+    result = await handleAskGemini(model, prompt, context);
   }
-  return handleAskGemini(model, prompt, context);
+
+  // 成功 → 直接回
+  if (result.ok) return result;
+
+  // 失敗 → 自動升級到 Anthropic API (Sonnet 4.6)
+  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!anthropicKey) {
+    log.warn(`[AskAI-Escalate] 原模型失敗且無 ANTHROPIC_API_KEY，無法升級`);
+    return result;
+  }
+
+  const escalateModel = 'claude-sonnet-4-6';
+  log.info(`[AskAI-Escalate] ${model} 失敗，自動升級到 ${escalateModel}`);
+
+  try {
+    const { callAnthropic } = await import('./model-registry.js');
+    const fullPrompt = context ? `${context}\n\n---\n\n${prompt}` : prompt;
+    const startTime = Date.now();
+    const reply = await callAnthropic(anthropicKey, escalateModel, '', [{ role: 'user', content: fullPrompt }], 4096, 90000);
+    const durationMs = Date.now() - startTime;
+
+    if (reply) {
+      log.info(`[AskAI-Escalate] ${escalateModel} 成功 replyLen=${reply.length} duration=${durationMs}ms`);
+      return { ok: true, output: `[${escalateModel} ⬆️ 自動升級 | ${durationMs}ms]\n${reply}` };
+    }
+  } catch (e) {
+    log.warn({ err: e }, `[AskAI-Escalate] ${escalateModel} 也失敗了`);
+  }
+
+  // 升級也失敗 → 回傳原始錯誤
+  return result;
 }
 
 /** 安全 Supabase 查詢代理：NEUXA 不需要 key，由 server 內部 client 處理 */

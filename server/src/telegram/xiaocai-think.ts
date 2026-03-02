@@ -486,7 +486,41 @@ export async function xiaocaiThink(
 
     return clean;
   } catch (e) {
-    log.error({ err: e }, '[XiaocaiAI] Gemini call failed');
+    log.error({ err: e }, `[XiaocaiAI] ${xiaocaiMainModel} call failed`);
+
+    // ── 自動升級：主模型失敗 → Opus 4.6 接棒 ──
+    const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+    if (anthropicKey) {
+      const escalateModel = 'claude-sonnet-4-6';
+      log.info(`[XiaocaiAI-Escalate] ${xiaocaiMainModel} 失敗，自動升級到 ${escalateModel}`);
+      try {
+        const msgs = [
+          ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
+          { role: 'user', content: userMessage || '請看這張圖片' },
+        ];
+        const escalateReply = await callAnthropic(anthropicKey, escalateModel, systemPrompt, msgs, 4096, 90000);
+        if (escalateReply) {
+          log.info(`[XiaocaiAI-Escalate] ${escalateModel} 成功 replyLen=${escalateReply.length}`);
+          const clean = escalateReply
+            .replace(/^#{1,6}\s*/gm, '')
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/^[-*]\s/gm, '• ')
+            .replace(/^---+$/gm, '')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+          history.push({ role: 'user', text: userMessage });
+          history.push({ role: 'model', text: clean });
+          if (history.length > 20) history.splice(0, history.length - 20);
+          xiaocaiHistory.set(chatId, history);
+          return clean;
+        }
+      } catch (e2) {
+        log.warn({ err: e2 }, `[XiaocaiAI-Escalate] ${escalateModel} 也失敗了`);
+      }
+    }
+
     return '靠，剛斷線了。你再傳一次，我馬上接。';
   }
 }
