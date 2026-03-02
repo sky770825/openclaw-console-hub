@@ -16,7 +16,7 @@ const execAsync = promisify(exec);
 const SUBSCRIPTION_ONLY_MODE = process.env.OPENCLAW_SUBSCRIPTION_ONLY !== 'false';
 
 // 確保 claude CLI 在 PATH 中，並移除 CLAUDECODE 避免 nested session 錯誤
-const ENHANCED_PATH = `/Users/caijunchang/.local/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
+const ENHANCED_PATH = `/Users/caijunchang/.local/bin:/opt/homebrew/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
 const CLAUDE_ENV = (() => {
   const env = { ...process.env, PATH: ENHANCED_PATH };
   delete (env as Record<string, unknown>).CLAUDECODE;
