@@ -33,6 +33,8 @@ const CHAIN_HINTS: Record<string, string> = {
   query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
   pty_exec: '💡 互動命令完成 → 檢查輸出是否正常，有問題再跑一次或 write_file 記錄結果。',
   patch_file: '💡 修補完了 → read_file 確認結果，或繼續 patch_file 改下一處。多處修改一起發。',
+  plan_project: '💡 計畫拆好了 → 子任務已進 draft，跟老蔡報告計畫摘要。有需要調整就 update_task。',
+  roadmap: '💡 路線圖操作完成 → 搭配 query_supabase 看任務進度，或 write_file 寫週報。',
 };
 
 // ── 任務操作 ──
@@ -1871,6 +1873,304 @@ export async function handlePatchFile(action: Record<string, string>): Promise<A
   }
 }
 
+// ── 任務拆解器（plan_project）──
+
+/** plan_project: 用 Gemini 拆解目標 → 子任務陣列 → 批次建入任務板 */
+async function handlePlanProject(action: Record<string, string>): Promise<ActionResult> {
+  const goal = (action.goal || '').trim();
+  if (!goal) return { ok: false, output: 'plan_project 需要 goal 參數（要做什麼）' };
+  if (goal.length > 500) return { ok: false, output: 'goal 太長，上限 500 字' };
+
+  const weeks = Math.min(Math.max(parseInt(action.weeks || '4', 10) || 4, 1), 52);
+  const detailLevel = ['low', 'medium', 'high'].includes(action.detail_level) ? action.detail_level : 'medium';
+
+  const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
+  if (!googleKey) return { ok: false, output: 'plan_project 需要 GOOGLE_API_KEY' };
+
+  const geminiPrompt = `你是專案規劃專家。請把以下目標拆成可執行的子任務。
+
+目標：${goal}
+時間：${weeks} 週
+細節程度：${detailLevel}（low=3-5個大任務, medium=6-10個, high=10-15個）
+
+回傳純 JSON 陣列（不要 markdown code block），每個元素：
+{
+  "name": "子任務名稱（30字以內）",
+  "description": "具體描述做什麼、怎麼驗收",
+  "priority": 1到5（5最高）,
+  "estimated_effort": "small|medium|large",
+  "dependencies": ["前置任務名稱（沒有就空陣列）"],
+  "week": 幾（1-${weeks}）
+}
+
+要求：
+- 最多 15 個子任務
+- 任務要具體可執行，不是空泛口號
+- 依賴關係要合理（前面的任務先完成才能做後面的）
+- 均勻分配到各週
+- 只回傳 JSON 陣列，不要其他文字`;
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: geminiPrompt }] }],
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.4 },
+        }),
+        signal: AbortSignal.timeout(60000),
+      }
+    );
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      return { ok: false, output: `Gemini 呼叫失敗: HTTP ${resp.status} ${errText.slice(0, 200)}` };
+    }
+
+    const data = await resp.json() as Record<string, unknown>;
+    const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
+    const contentObj = ((candidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> || {};
+    const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
+    const rawText = parts.map(p => (p.text as string) || '').join('').trim();
+
+    if (!rawText) return { ok: false, output: 'Gemini 回傳空結果' };
+
+    // 解析 JSON（處理 markdown code block 包裹）
+    let jsonStr = rawText;
+    const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
+
+    let tasks: Array<{
+      name: string;
+      description: string;
+      priority: number;
+      estimated_effort: string;
+      dependencies: string[];
+      week: number;
+    }>;
+
+    try {
+      tasks = JSON.parse(jsonStr);
+    } catch {
+      return { ok: false, output: `JSON 解析失敗。Gemini 原始回傳:\n${rawText.slice(0, 500)}` };
+    }
+
+    if (!Array.isArray(tasks)) {
+      return { ok: false, output: 'Gemini 回傳不是陣列格式' };
+    }
+
+    tasks = tasks.slice(0, 15);
+
+    const created: string[] = [];
+    const failed: string[] = [];
+    for (const t of tasks) {
+      const taskName = String(t.name || '').slice(0, 100);
+      if (!taskName) continue;
+      const desc = [
+        String(t.description || ''),
+        `預估工時: ${t.estimated_effort || 'medium'}`,
+        `優先級: ${t.priority || 3}/5`,
+        `週次: W${t.week || 1}/${weeks}`,
+        t.dependencies?.length ? `前置任務: ${t.dependencies.join(', ')}` : '',
+        `來源: plan_project → ${goal.slice(0, 50)}`,
+      ].filter(Boolean).join('\n');
+
+      const result = await createTask(taskName, desc, '小蔡');
+      if (result.includes('已建立')) {
+        created.push(`W${t.week || 1} [${t.estimated_effort || 'M'}] ${taskName}`);
+      } else {
+        failed.push(`${taskName}: ${result}`);
+      }
+    }
+
+    const effortMap: Record<string, number> = { small: 1, medium: 2, large: 4 };
+    const totalEffort = tasks.reduce((sum, t) => sum + (effortMap[t.estimated_effort] || 2), 0);
+    const weeklyBreakdown: Record<number, string[]> = {};
+    for (const t of tasks) {
+      const w = t.week || 1;
+      if (!weeklyBreakdown[w]) weeklyBreakdown[w] = [];
+      weeklyBreakdown[w].push(t.name);
+    }
+
+    const summary = [
+      `計畫拆解完成：「${goal}」`,
+      `總共 ${tasks.length} 個子任務，${weeks} 週，預估 ${totalEffort} 人天`,
+      '',
+      '--- 週次分配 ---',
+      ...Object.entries(weeklyBreakdown).sort(([a], [b]) => Number(a) - Number(b)).map(
+        ([w, names]) => `W${w}: ${names.join(' / ')}`
+      ),
+      '',
+      `已建立 ${created.length} 個任務（draft 狀態，等老蔡批准）`,
+      ...(failed.length > 0 ? [`建立失敗 ${failed.length} 個:\n${failed.join('\n')}`] : []),
+      '',
+      '--- 依賴關係 ---',
+      ...tasks.filter(t => t.dependencies?.length > 0).map(
+        t => `${t.name} ← 需要先完成: ${t.dependencies.join(', ')}`
+      ),
+    ];
+
+    log.info(`[PlanProject] goal="${goal.slice(0, 50)}" → ${created.length}/${tasks.length} tasks created`);
+    return { ok: true, output: summary.join('\n') };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, output: `plan_project 失敗: ${msg}` };
+  }
+}
+
+// ── 路線圖管理（roadmap）──
+
+const ROADMAPS_DIR = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'roadmaps');
+
+function isRoadmapNameSafe(name: string): { safe: boolean; reason?: string } {
+  if (!name || name.trim().length === 0) return { safe: false, reason: '名稱不能為空' };
+  if (name.length > 60) return { safe: false, reason: '名稱太長，上限 60 字' };
+  if (/[/\\.]\./.test(name) || name.includes('..')) return { safe: false, reason: '名稱不能包含 / \\ 或 ..' };
+  if (/[<>:"|?*]/.test(name)) return { safe: false, reason: '名稱包含非法字元' };
+  return { safe: true };
+}
+
+async function handleRoadmap(action: Record<string, string>): Promise<ActionResult> {
+  const mode = (action.mode || '').toLowerCase();
+  if (!['create', 'status', 'update', 'list'].includes(mode)) {
+    return { ok: false, output: 'roadmap 需要 mode 參數: create / status / update / list' };
+  }
+
+  fs.mkdirSync(ROADMAPS_DIR, { recursive: true });
+
+  if (mode === 'list') return handleRoadmapList();
+
+  const name = (action.name || '').trim();
+  const nameCheck = isRoadmapNameSafe(name);
+  if (!nameCheck.safe) return { ok: false, output: `路線圖名稱無效: ${nameCheck.reason}` };
+
+  switch (mode) {
+    case 'create': return handleRoadmapCreate(name, action);
+    case 'status': return handleRoadmapStatus(name);
+    case 'update': return handleRoadmapUpdate(name, action);
+    default: return { ok: false, output: `未知 roadmap mode: ${mode}` };
+  }
+}
+
+function handleRoadmapCreate(name: string, action: Record<string, string>): ActionResult {
+  const filePath = path.join(ROADMAPS_DIR, `${name}.json`);
+  if (fs.existsSync(filePath)) {
+    return { ok: false, output: `路線圖「${name}」已存在。用 mode=status 查看，或用 mode=update 更新。` };
+  }
+  const totalWeeks = Math.min(Math.max(parseInt(action.weeks || '4', 10) || 4, 1), 12);
+  let milestones: string[] = [];
+  try {
+    const raw = action.milestones;
+    if (raw) {
+      if (typeof raw === 'string') milestones = JSON.parse(raw);
+      else if (Array.isArray(raw)) milestones = (raw as string[]).map(String);
+    }
+  } catch { milestones = []; }
+  if (milestones.length === 0) milestones = ['MVP', '上線'];
+
+  const milestoneSchedule: Array<{ name: string; week: number; done: boolean }> = [];
+  for (let i = 0; i < milestones.length; i++) {
+    const week = Math.max(1, Math.round(((i + 1) / milestones.length) * totalWeeks));
+    milestoneSchedule.push({ name: milestones[i], week, done: false });
+  }
+  const weeklyGoals: Record<string, { goal: string; tasks: string[] }> = {};
+  for (let w = 1; w <= totalWeeks; w++) weeklyGoals[`W${w}`] = { goal: '', tasks: [] };
+
+  const rmObj = { name, createdAt: new Date().toISOString(), totalWeeks, currentWeek: 1, milestones: milestoneSchedule, weeklyGoals };
+  fs.writeFileSync(filePath, JSON.stringify(rmObj, null, 2), 'utf8');
+  const msSummary = milestoneSchedule.map(m => `W${m.week}: ${m.name}`).join(' → ');
+  log.info(`[Roadmap] created "${name}" ${totalWeeks}w milestones=${milestones.length}`);
+  return { ok: true, output: `路線圖「${name}」已建立\n總共 ${totalWeeks} 週\n里程碑: ${msSummary}\n檔案: ${filePath}\n下一步: 用 mode=update 設定每週目標，或 plan_project 拆子任務。` };
+}
+
+async function handleRoadmapStatus(name: string): Promise<ActionResult> {
+  const filePath = path.join(ROADMAPS_DIR, `${name}.json`);
+  if (!fs.existsSync(filePath)) return { ok: false, output: `路線圖「${name}」不存在。用 mode=list 看有哪些。` };
+
+  let rm: { name: string; createdAt: string; totalWeeks: number; currentWeek: number; milestones: Array<{ name: string; week: number; done: boolean }>; weeklyGoals: Record<string, { goal: string; tasks: string[] }> };
+  try { rm = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return { ok: false, output: `路線圖 JSON 解析失敗: ${filePath}` }; }
+
+  let taskDoneCount = 0; let taskTotalCount = 0;
+  const allTaskIds: string[] = [];
+  for (const wg of Object.values(rm.weeklyGoals)) { if (wg.tasks) allTaskIds.push(...wg.tasks); }
+  if (allTaskIds.length > 0) {
+    try {
+      const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=100`, { headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` }, signal: AbortSignal.timeout(5000) });
+      if (r.ok) {
+        const allTasks = (await r.json()) as Array<Record<string, unknown>>;
+        for (const tid of allTaskIds) { const task = allTasks.find(t => String(t.id || '').startsWith(tid)); if (task) { taskTotalCount++; if (task.status === 'done') taskDoneCount++; } }
+      }
+    } catch { /* ignore */ }
+  }
+
+  const totalMs = rm.milestones.length;
+  const doneMs = rm.milestones.filter(m => m.done).length;
+  const nextMs = rm.milestones.find(m => !m.done);
+  const rate = taskTotalCount > 0 ? Math.round((taskDoneCount / taskTotalCount) * 100) : 0;
+  const riskItems = rm.milestones.filter(m => !m.done && m.week <= rm.currentWeek);
+  const cwg = rm.weeklyGoals[`W${rm.currentWeek}`];
+
+  const lines = [
+    `路線圖「${rm.name}」狀態`, `建立: ${rm.createdAt.split('T')[0]}`, `進度: W${rm.currentWeek}/${rm.totalWeeks}`,
+    `里程碑: ${doneMs}/${totalMs} 完成`, `任務完成率: ${taskDoneCount}/${taskTotalCount} (${rate}%)`,
+    '', '--- 里程碑 ---', ...rm.milestones.map(m => `${m.done ? '[v]' : '[ ]'} W${m.week}: ${m.name}`),
+    '', `本週目標 (W${rm.currentWeek}): ${cwg?.goal || '（未設定）'}`, `本週任務: ${cwg?.tasks?.length || 0} 個`,
+    ...(nextMs ? [`下一里程碑: W${nextMs.week} ${nextMs.name}`] : []),
+    ...(riskItems.length > 0 ? ['', '--- 風險 ---', ...riskItems.map(ri => `已逾期: W${ri.week} ${ri.name}`)] : []),
+  ];
+  return { ok: true, output: lines.join('\n') };
+}
+
+function handleRoadmapUpdate(name: string, action: Record<string, string>): ActionResult {
+  const filePath = path.join(ROADMAPS_DIR, `${name}.json`);
+  if (!fs.existsSync(filePath)) return { ok: false, output: `路線圖「${name}」不存在。` };
+
+  let rm: { name: string; createdAt: string; totalWeeks: number; currentWeek: number; milestones: Array<{ name: string; week: number; done: boolean }>; weeklyGoals: Record<string, { goal: string; tasks: string[] }> };
+  try { rm = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return { ok: false, output: `路線圖 JSON 解析失敗: ${filePath}` }; }
+
+  const week = parseInt(action.week || String(rm.currentWeek), 10);
+  if (week < 1 || week > rm.totalWeeks) return { ok: false, output: `week 超出範圍 (1-${rm.totalWeeks})` };
+  const key = `W${week}`;
+  if (!rm.weeklyGoals[key]) rm.weeklyGoals[key] = { goal: '', tasks: [] };
+
+  const changes: string[] = [];
+  if (action.goal) { rm.weeklyGoals[key].goal = action.goal.slice(0, 200); changes.push(`目標: ${action.goal.slice(0, 50)}`); }
+  if (action.tasks) {
+    let newTasks: string[] = [];
+    try { const raw = action.tasks; if (typeof raw === 'string') newTasks = JSON.parse(raw); else if (Array.isArray(raw)) newTasks = (raw as string[]).map(String); } catch { /* ignore */ }
+    const existingCount = Object.values(rm.weeklyGoals).reduce((s: number, wg: { goal: string; tasks: string[] }) => s + (wg.tasks?.length || 0), 0);
+    if (existingCount + newTasks.length > 50) return { ok: false, output: `路線圖任務總數超過 50 個上限（目前 ${existingCount}，要新增 ${newTasks.length}）` };
+    rm.weeklyGoals[key].tasks = [...(rm.weeklyGoals[key].tasks || []), ...newTasks];
+    changes.push(`新增 ${newTasks.length} 個任務`);
+  }
+  if (action.current_week) { const nc = parseInt(action.current_week, 10); if (nc >= 1 && nc <= rm.totalWeeks) { rm.currentWeek = nc; changes.push(`當前週次 → W${nc}`); } }
+  if (action.milestone_done) { const ms = rm.milestones.find(m => m.name === action.milestone_done); if (ms) { ms.done = true; changes.push(`里程碑完成: ${ms.name}`); } }
+  if (changes.length === 0) return { ok: false, output: '沒有可更新的內容。可用參數: goal, tasks, current_week, milestone_done' };
+
+  fs.writeFileSync(filePath, JSON.stringify(rm, null, 2), 'utf8');
+  log.info(`[Roadmap] updated "${name}" W${week}: ${changes.join(', ')}`);
+  return { ok: true, output: `路線圖「${name}」W${week} 已更新:\n${changes.join('\n')}` };
+}
+
+function handleRoadmapList(): ActionResult {
+  if (!fs.existsSync(ROADMAPS_DIR)) return { ok: true, output: '目前沒有任何路線圖。用 mode=create 建立。' };
+  const files = fs.readdirSync(ROADMAPS_DIR).filter(f => f.endsWith('.json'));
+  if (files.length === 0) return { ok: true, output: '目前沒有任何路線圖。用 mode=create 建立。' };
+  const summaries: string[] = [];
+  for (const file of files) {
+    try {
+      const fd = JSON.parse(fs.readFileSync(path.join(ROADMAPS_DIR, file), 'utf8'));
+      const dm = (fd.milestones || []).filter((m: { done: boolean }) => m.done).length;
+      const tm = (fd.milestones || []).length;
+      const tc = Object.values(fd.weeklyGoals || {}).reduce((s: number, wg: unknown) => s + ((wg as { tasks?: string[] }).tasks?.length || 0), 0);
+      summaries.push(`${fd.name} | W${fd.currentWeek}/${fd.totalWeeks} | 里程碑 ${dm}/${tm} | 任務 ${tc} 個 | ${fd.createdAt?.split('T')[0] || '?'}`);
+    } catch { summaries.push(`${file}: （JSON 解析失敗）`); }
+  }
+  return { ok: true, output: `路線圖列表 (${files.length} 個):\n\n${summaries.join('\n')}` };
+}
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -1971,6 +2271,12 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     }
     case 'patch_file':
       result = await handlePatchFile(action);
+      break;
+    case 'plan_project':
+      result = await handlePlanProject(action);
+      break;
+    case 'roadmap':
+      result = await handleRoadmap(action);
       break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
