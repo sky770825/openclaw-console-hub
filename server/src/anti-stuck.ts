@@ -2,7 +2,7 @@
  * 防卡關機制（超時/重試/降級）
  * - 5 分鐘超時自動取消任務
  * - 失敗重試 2 次機制
- * - 模型降級策略：與 OpenClaw 一致（主力 Gemini → 備援 Claude/Kimi/Ollama）
+ * - 模型降級策略：主力 Gemini → 備援 Claude/Kimi
  * - Telegram 通知
  */
 
@@ -169,8 +169,8 @@ export class AntiStuckManager {
 
     switch (strategy) {
       case 'primary-to-next':
-        // 與 OpenClaw 一致：主力 → 下一備援（Gemini Flash → Claude Haiku → Kimi → Ollama）
-        fallbackInfo = { from: 'Gemini Flash', to: 'Claude Haiku / Kimi / Ollama' };
+        // 主力 → 下一備援（Gemini Flash → Claude Haiku → Kimi）
+        fallbackInfo = { from: 'Gemini Flash', to: 'Claude Haiku / Kimi' };
         break;
       case 'claude-to-gemini':
         fallbackInfo = { from: 'Claude', to: 'Gemini Flash' };

@@ -33,8 +33,6 @@ const POLL_INTERVAL_MS = 1500;
 const GET_UPDATES_TIMEOUT_SEC = 20;
 const FETCH_TIMEOUT_MS = 30000;
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
-const OLLAMA_BASE_URL = (process.env.OLLAMA_URL?.trim() || 'http://localhost:11434').replace(/\/+$/, '');
-let ollamaModel = process.env.OLLAMA_TELEGRAM_MODEL?.trim() || 'llama3.2:latest';
 let xiaocaiMainModel = 'gemini-2.5-flash';
 const TELEGRAM_STATE_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-control.json');
 const XIAOCAI_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
@@ -150,53 +148,6 @@ async function notifyOnce(kind: 'conflict' | 'unauthorized', detail: string): Pr
   );
 }
 
-// ── Ollama ──
-
-async function callOllamaGenerate(prompt: string): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
-  const body = {
-    model: ollamaModel,
-    prompt,
-    stream: false,
-    options: { num_predict: 256 },
-  };
-  const data = await fetchJsonWithTimeout(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }, 45000);
-  const text = String(asObj(data).response ?? '').trim();
-  if (!text) return { ok: false, message: 'Ollama 回覆為空（可能超時或模型無輸出）' };
-  return { ok: true, text };
-}
-
-function extractOllamaPrompt(text: string): string | null {
-  const t = text.trim();
-  if (!t) return null;
-  if (/^\/ollama(\s|$)/i.test(t)) return t.replace(/^\/ollama\s*/i, '').trim() || null;
-  if (!t.startsWith('/')) return t;
-  return null;
-}
-
-async function fetchOllamaTags(): Promise<string[]> {
-  const data = await fetchJsonWithTimeout(`${OLLAMA_BASE_URL}/api/tags`, {}, 8000);
-  const dobj = asObj(data);
-  const models = Array.isArray(dobj.models) ? (dobj.models as unknown[]) : [];
-  const names = models
-    .map((m) => {
-      const o = asObj(m);
-      return String(o.name ?? '');
-    })
-    .filter(Boolean);
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const n of names) {
-    if (seen.has(n)) continue;
-    seen.add(n);
-    out.push(n);
-  }
-  return out;
-}
-
 // ── 狀態持久化 ──
 
 function loadTelegramState(): void {
@@ -205,8 +156,6 @@ function loadTelegramState(): void {
     const raw = fs.readFileSync(TELEGRAM_STATE_PATH, 'utf8');
     const data: unknown = JSON.parse(raw);
     const dobj = asObj(data);
-    const m = String(dobj.ollamaModel ?? '').trim();
-    if (m) ollamaModel = m;
     const mm = String(dobj.xiaocaiMainModel ?? '').trim();
     if (mm) xiaocaiMainModel = mm;
   } catch {
@@ -218,7 +167,7 @@ function saveTelegramState(): void {
   try {
     const dir = path.dirname(TELEGRAM_STATE_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({ ollamaModel, xiaocaiMainModel, savedAt: new Date().toISOString() }, null, 2) + '\n', 'utf8');
+    fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({ xiaocaiMainModel, savedAt: new Date().toISOString() }, null, 2) + '\n', 'utf8');
   } catch {
     // ignore
   }
@@ -360,7 +309,7 @@ async function replyTasks(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
-const providerIcons: Record<string, string> = { Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓', Ollama: '🖥️' };
+const providerIcons: Record<string, string> = { Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
 
 async function replyModels(chatId: number): Promise<void> {
   const commanders = getCommanderModels();
@@ -385,7 +334,7 @@ async function replyModels(chatId: number): Promise<void> {
     `<b>目前：</b>${currentLabel}\n` +
     `<b>Provider：</b>${currentProvider}\n` +
     `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
-    `只顯示能當指揮官的模型\n子代理級（Ollama/Flash Lite）由 ask_ai 自動調用`;
+    `只顯示能當指揮官的模型\n子代理級（Flash Lite 等）由 ask_ai 自動調用`;
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML', replyMarkup: { inline_keyboard: rows } });
 }
 
@@ -412,7 +361,7 @@ async function replyModelsXiaocai(chatId: number): Promise<void> {
     `<b>目前：</b>${currentLabel}\n` +
     `<b>Provider：</b>${currentProvider}\n` +
     `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
-    `只顯示能當指揮官的模型\n子代理級（Ollama/Flash Lite）由 ask_ai 自動調用`;
+    `只顯示能當指揮官的模型\n子代理級（Flash Lite 等）由 ask_ai 自動調用`;
   await sendTelegramMessageToChat(chatId, text, { token: XIAOCAI_TOKEN, parseMode: 'HTML', replyMarkup: { inline_keyboard: rows } });
 }
 
@@ -1036,9 +985,9 @@ async function poll(): Promise<void> {
       if (text.startsWith('set:model:')) {
         const next = text.slice('set:model:'.length).trim();
         if (!next) { await replyModels(chatId); continue; }
-        ollamaModel = next;
+        xiaocaiMainModel = next;
         saveTelegramState();
-        await sendTelegramMessageToChat(chatId, `✅ 已切換 Ollama 模型為：<code>${ollamaModel}</code>`, { token: TOKEN, parseMode: 'HTML' });
+        await sendTelegramMessageToChat(chatId, `✅ 已切換主模型為：<code>${xiaocaiMainModel}</code>`, { token: TOKEN, parseMode: 'HTML' });
         continue;
       }
       if (text.startsWith('set:mainmodel:')) {
@@ -1167,9 +1116,9 @@ async function poll(): Promise<void> {
       if (cmd === '/model') {
         const next = text.replace(/^\/model\s*/i, '').trim();
         if (!next) { await replyModels(chatId); continue; }
-        ollamaModel = next;
+        xiaocaiMainModel = next;
         saveTelegramState();
-        await sendTelegramMessageToChat(chatId, `✅ 已切換 Ollama 模型為：<code>${ollamaModel}</code>`, { token: TOKEN, parseMode: 'HTML' });
+        await sendTelegramMessageToChat(chatId, `✅ 已切換主模型為：<code>${xiaocaiMainModel}</code>`, { token: TOKEN, parseMode: 'HTML' });
         continue;
       }
       if (cmd === '/status') { await replyStatus(chatId); continue; }
@@ -1188,18 +1137,7 @@ async function poll(): Promise<void> {
         await replyDeputy(chatId, arg || undefined);
         continue;
       }
-      // Ollama 聊天
-      const ollamaPrompt = extractOllamaPrompt(text);
-      if (ollamaPrompt) {
-        const prompt = (ollamaPrompt ?? '').trim();
-        if (!prompt) { await replyMenu(chatId, '📊 系統菜單'); continue; }
-        const clipped = prompt.length > 1200 ? prompt.slice(0, 1200) : prompt;
-        await sendTelegramMessageToChat(chatId, `🧠 <b>Ollama</b>（${ollamaModel}）思考中...`, { token: TOKEN, parseMode: 'HTML' });
-        const result = await callOllamaGenerate(clipped);
-        const reply = result.ok ? result.text : `⚠️ ${result.message}`;
-        await sendTelegramMessageToChat(chatId, reply.slice(0, 3500), { token: TOKEN });
-        continue;
-      }
+      // 非指令文字 → 顯示菜單
       if (cmd === '/codex' || cmd === '/codex-triage') {
         const issueText = text.replace(/^\/codex(-triage)?\s*/i, '').trim();
         if (!issueText) { await promptCodexTriage(chatId); } else { await startCodexTriage(chatId, issueText); }

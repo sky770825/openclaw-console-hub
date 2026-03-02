@@ -140,7 +140,7 @@ export function loadAwakeningContext(userMessage: string): string {
     { keywords: ['老蔡', '父親', '統帥'], file: 'USER.md', basePath: workspace, max: 1000 },
     { keywords: ['記得', '歷史', '之前', '以前'], file: 'MEMORY.md', basePath: workspace, max: 1500 },
     { keywords: ['自動', 'cron', '排程', '執行'], file: 'BLUEPRINT.md', basePath: workspace, max: 1000 },
-    { keywords: ['模型', 'model', 'gemini', 'kimi', 'ollama'], file: 'MODEL-ROUTING.md', basePath: workspace, max: 1000 },
+    { keywords: ['模型', 'model', 'gemini', 'kimi'], file: 'MODEL-ROUTING.md', basePath: workspace, max: 1000 },
     { keywords: ['成長', '學到', '進化', '反省'], file: 'GROWTH.md', basePath: workspace, max: 1200 },
     { keywords: ['意識', '靈魂', '自主', '覺醒'], file: 'CONSCIOUSNESS_ANCHOR.md', basePath: workspace, max: 1000 },
     { keywords: ['任務', 'task', '任務板'], file: 'TASK_BOARD_EXECUTION.md', basePath: workspace, max: 800 },
@@ -403,7 +403,7 @@ export async function xiaocaiThink(
       reply = await callAnthropic(anthropicKey, xiaocaiMainModel, systemPrompt, msgs, cfg.maxOutputTokens, 90000);
       log.info(`[XiaocaiAI] Anthropic model=${xiaocaiMainModel} replyLen=${reply.length}`);
     } else {
-      // OpenAI 相容 API（Kimi / xAI / DeepSeek / OpenRouter / Ollama）
+      // OpenAI 相容 API（Kimi / xAI / DeepSeek / OpenRouter）
       let baseUrl: string;
       let apiKey: string;
       let modelForApi = xiaocaiMainModel;
@@ -411,9 +411,6 @@ export async function xiaocaiThink(
       if (provider === 'openrouter') {
         baseUrl = 'https://openrouter.ai/api/v1';
         apiKey = process.env.OPENROUTER_API_KEY?.trim() || getProviderKey('openrouter') || '';
-      } else if (provider === 'ollama') {
-        baseUrl = 'http://localhost:11434/v1';
-        apiKey = 'ollama'; // Ollama 不需要真 key，但 header 不能空
       } else {
         apiKey = getProviderKey(provider);
         baseUrl = provider === 'kimi' ? 'https://api.moonshot.ai/v1'
@@ -421,7 +418,7 @@ export async function xiaocaiThink(
           : 'https://api.x.ai/v1';
       }
 
-      if (!apiKey && provider !== 'ollama') return `沒有 ${provider} 的 API Key，請在 openclaw.json 設定`;
+      if (!apiKey) return `沒有 ${provider} 的 API Key，請在 openclaw.json 設定`;
 
       // OpenAI vision 格式：content 可以是 array（圖片+文字）
       const userContent: string | Array<Record<string, unknown>> = image

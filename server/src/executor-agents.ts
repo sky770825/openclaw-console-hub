@@ -285,8 +285,8 @@ export class AgentExecutor {
     if (SUBSCRIPTION_ONLY_MODE) {
       if (agentType === 'openclaw') {
         return {
-          primary: 'ollama/qwen3:8b',
-          fallbacks: ['ollama/deepseek-r1:8b', 'ollama/llama3.2:latest'],
+          primary: 'google/gemini-2.5-flash-lite',
+          fallbacks: ['google/gemini-2.5-flash'],
         };
       }
       if (agentType === 'cursor') {
@@ -317,8 +317,8 @@ export class AgentExecutor {
 
     if (task.agent?.type === 'openclaw' || task.taskType === 'ops') {
       return {
-        primary: 'ollama/qwen3:8b',
-        fallbacks: ['ollama/deepseek-r1:8b', 'ollama/llama3.2:latest'],
+        primary: 'google/gemini-2.5-flash-lite',
+        fallbacks: ['google/gemini-2.5-flash'],
       };
     }
     return {
@@ -333,12 +333,10 @@ export class AgentExecutor {
   private static isZeroTokenTask(task: Task): boolean {
     const zeroTokenKeywords = [
       '磁碟空間監控',
-      'Ollama 健康檢查',
-      'Ollama健康檢查',
       '任務板執行統計',
       '技能庫整理',
       '舊任務自動封存',
-      '磁碟', 'disk', 'ollama',
+      '磁碟', 'disk',
     ];
     const taskName = task.name.toLowerCase();
     return zeroTokenKeywords.some(kw => taskName.includes(kw.toLowerCase()));
@@ -365,15 +363,6 @@ find /tmp -type f -mtime +7 -delete 2>/dev/null | head -5 && \
 echo "清理完成" && \
 echo "" && \
 echo "✅ 磁碟監控任務完成"`;
-    } else if (task.name.includes('Ollama') || task.name.includes('ollama')) {
-      command = `
-echo "=== 🏥 Ollama 健康檢查 ===" && \
-echo "測試模型: qwen3:8b..." && \
-curl -s http://localhost:11434/api/generate -d '{"model":"qwen3:8b","prompt":"hi","stream":false,"options":{"num_predict":1}}' -m 10 > /dev/null && echo "✅ qwen3:8b 正常" || echo "❌ qwen3:8b 異常" && \
-echo "測試模型: deepseek-r1:8b..." && \
-curl -s http://localhost:11434/api/generate -d '{"model":"deepseek-r1:8b","prompt":"hi","stream":false,"options":{"num_predict":1}}' -m 10 > /dev/null && echo "✅ deepseek-r1:8b 正常" || echo "❌ deepseek-r1:8b 異常" && \
-echo "" && \
-echo "✅ Ollama 健康檢查完成"`;
     } else if (task.name.includes('統計')) {
       command = `
 echo "=== 📊 任務板執行統計 ===" && \
@@ -468,8 +457,7 @@ echo "✅ 封存檢查完成"`;
     const timeout = options?.timeout || config.config.timeout || 300000;
     const modelPlan = this.selectModelPlan(task, agentType);
     const isSubscriptionPath =
-      modelPlan.primary.startsWith('subscription/') ||
-      modelPlan.primary.startsWith('ollama/');
+      modelPlan.primary.startsWith('subscription/');
 
     // 檢查是否為零 Token 維護任務
     if (this.isZeroTokenTask(task)) {

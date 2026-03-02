@@ -703,7 +703,7 @@ export async function handleProxyFetch(url: string, method: string, body: string
 const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
   // 系統診斷
   { pattern: /^curl\s+-s\s+http:\/\/localhost:3011\/api\//, desc: '本地 API 呼叫' },
-  { pattern: /^curl\s+-s\s+http:\/\/localhost:6333\//, desc: 'Qdrant 查詢' },
+  { pattern: /^curl\s+-s\s+https?:\/\/[a-z0-9.-]+\.supabase\.co\//, desc: 'Supabase 查詢' },
   { pattern: /^lsof\s+-i\s+:/, desc: '查 port 占用' },
   { pattern: /^ps\s+(aux|ef)/, desc: '查進程' },
   { pattern: /^docker\s+(ps|logs|inspect)/, desc: 'Docker 狀態' },

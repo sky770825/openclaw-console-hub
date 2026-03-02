@@ -35,7 +35,6 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // 子代理級（ask_ai 可派遣，全部免費/訂閱制）
   // 訂閱制 CLI：Claude Code、Codex、Cursor（不花 API 錢）
   // 免費額度：Gemini Lite、OpenRouter :free
-  // 本地：Ollama
   // 其他：xAI、Kimi、DeepSeek
   // ══════════════════════════════════════════
   // ── 訂閱制 CLI（Claude Code / Codex / Cursor）──
@@ -58,11 +57,6 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🆓 Llama 3.3 70B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'qwen/qwen3-coder:free', label: '🆓 Qwen3 Coder', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'mistralai/mistral-small-3.1-24b-instruct:free', label: '🆓 Mistral Small', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  // ── Ollama 本地 ──
-  { id: 'qwen3:8b', label: '🖥️ Qwen3 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
-  { id: 'deepseek-r1:8b', label: '🖥️ DeepSeek R1 8B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
-  { id: 'qwen3:4b', label: '🖥️ Qwen3 4B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
-  { id: 'qwen2.5:14b', label: '🖥️ Qwen2.5 14B', provider: 'Ollama', temperature: 0.85, maxOutputTokens: 4096, role: 'subagent' },
 ];
 
 /** 查詢模型配置，找不到就用預設值 */
@@ -116,7 +110,7 @@ export function getProviderKey(provider: string): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' | 'ollama' {
+export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' {
   // 先查 registry（最準確）
   const reg = MODEL_REGISTRY.find(m => m.id === modelId);
   if (reg) {
@@ -127,7 +121,6 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kim
     if (p === 'kimi') return 'kimi';
     if (p === 'xai') return 'xai';
     if (p === 'openrouter') return 'openrouter';
-    if (p === 'ollama') return 'ollama';
   }
   // fallback: 按 id prefix 判斷
   if (modelId.startsWith('claude')) return 'anthropic';
@@ -135,7 +128,6 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kim
   if (modelId.startsWith('grok')) return 'xai';
   if (modelId.startsWith('deepseek') && !modelId.includes('/')) return 'deepseek';
   if (modelId.includes('/') && modelId.includes(':free')) return 'openrouter';
-  if (modelId.startsWith('qwen') || modelId.startsWith('llama')) return 'ollama';
   return 'google';
 }
 

@@ -4,7 +4,7 @@
  * 
  * POST /api/tools/property-copy
  * 接收：{type: "住宅"|"法拍"|"商業", data: {address, size, rooms, price, features:[]}}
- * 呼叫 Ollama qwen3:8b 生成文案
+ * 呼叫 Gemini Flash 生成文案
  * 回傳：{591: string, 信義: string, 永慶: string}
  */
 
@@ -14,9 +14,9 @@ import { createLogger } from '../logger.js';
 const log = createLogger('property-api');
 const router = Router();
 
-// Ollama API 設定
-const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b';
+// Gemini API 設定
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 // 房源類型定義
 interface PropertyData {
@@ -94,33 +94,30 @@ ${data.age ? `- 屋齡：${data.age}` : ''}
   return stylePrompts[style] || stylePrompts['591'];
 }
 
-// 呼叫 Ollama API
-async function callOllama(prompt: string): Promise<string> {
+// 呼叫 Gemini API
+async function callGemini(prompt: string): Promise<string> {
   try {
-    const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GOOGLE_API_KEY}`;
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9,
-        },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.response || '';
+    const data = await response.json() as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    return data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
   } catch (error) {
-    log.error({ error }, 'Ollama API call failed');
+    log.error({ error }, 'Gemini API call failed');
     throw error;
   }
 }
@@ -174,18 +171,12 @@ router.post('/property-copy', async (req, res) => {
 
     const { type, data } = validation.data!;
 
-    // 檢查 Ollama 是否可用
-    try {
-      const healthCheck = await fetch(`${OLLAMA_HOST}/api/tags`, { method: 'GET' });
-      if (!healthCheck.ok) {
-        throw new Error('Ollama not available');
-      }
-    } catch (error) {
-      log.error({ error }, 'Ollama health check failed');
+    // 檢查 Gemini API Key 是否可用
+    if (!GOOGLE_API_KEY) {
       return res.status(503).json({
         error: 'Service Unavailable',
-        message: 'Ollama 服務未啟動或無法連線',
-        hint: '請確認 Ollama 已安裝並執行：ollama run qwen3:8b',
+        message: 'GOOGLE_API_KEY 未設定',
+        hint: '請在 .env 設定 GOOGLE_API_KEY',
       });
     }
 
@@ -197,11 +188,11 @@ router.post('/property-copy', async (req, res) => {
       styles.map(async (style) => {
         try {
           const prompt = generatePrompt(type, data, style);
-          const response = await callOllama(prompt);
+          const response = await callGemini(prompt);
           results[style] = response.trim();
         } catch (error) {
           log.error({ error, style }, `生成 ${style} 風格文案失敗`);
-          results[style] = `【生成失敗】請稍後再試，或檢查 Ollama 狀態`;
+          results[style] = `【生成失敗】請稍後再試`;
         }
       })
     );
@@ -231,31 +222,11 @@ router.post('/property-copy', async (req, res) => {
 // GET /api/tools/property-copy/health
 // 健康檢查端點
 router.get('/property-copy/health', async (_req, res) => {
-  try {
-    const response = await fetch(`${OLLAMA_HOST}/api/tags`, { method: 'GET' });
-    if (response.ok) {
-      const data = await response.json();
-      res.json({
-        status: 'ok',
-        ollama: 'connected',
-        model: OLLAMA_MODEL,
-        availableModels: data.models?.map((m: { name: string }) => m.name) || [],
-      });
-    } else {
-      res.status(503).json({
-        status: 'error',
-        ollama: 'disconnected',
-        model: OLLAMA_MODEL,
-      });
-    }
-  } catch (error) {
-    res.status(503).json({
-      status: 'error',
-      ollama: 'disconnected',
-      model: OLLAMA_MODEL,
-      error: String(error),
-    });
-  }
+  res.json({
+    status: GOOGLE_API_KEY ? 'ok' : 'no_api_key',
+    provider: 'gemini',
+    model: GEMINI_MODEL,
+  });
 });
 
 export default router;
