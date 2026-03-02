@@ -825,6 +825,25 @@ const DANGEROUS_PATTERNS = [
   /curl\s+.*-X\s*(POST|PUT|DELETE|PATCH)/i,
 ];
 
+/** run_script 被擋時，根據指令內容建議替代方案 */
+function suggestAlternative(cmd: string): string {
+  if (/curl\s+.*-x\s*(post|put|delete|patch)/i.test(cmd))
+    return '→ curl 只能 GET。需要 POST？用 create_task 派工。';
+  if (/npm\s+(install|uninstall)/i.test(cmd))
+    return '→ 套件管理用 create_task 派工。';
+  if (/git\s+(push|reset|checkout|clean)/i.test(cmd))
+    return '→ git 危險操作用 create_task 派工，或請老蔡手動。';
+  if (/kill|pkill|killall/i.test(cmd))
+    return '→ 不能殺進程。用 create_task 派工或通知老蔡。';
+  if (/python3\s+\S+\.py/i.test(cmd))
+    return '→ 改用 python3 -c "..." 單行模式，或用白名單腳本（health-check.sh 等）。';
+  if (/rm\s+-rf/i.test(cmd))
+    return '→ 不能刪檔案。用 create_task 派工。';
+  if (/cat\s+.*\|/i.test(cmd))
+    return '→ pipe 可能被擋。改用 grep -ri "關鍵字" /path 直接搜。';
+  return '→ 試試：grep -ri（搜尋）、python3 -c（計算）、curl -s localhost（診斷）、create_task（重型任務）。';
+}
+
 async function handleSafeRunScript(command: string): Promise<ActionResult> {
   if (!command.trim()) {
     return { ok: false, output: 'run_script 需要 command 參數' };
@@ -835,13 +854,15 @@ async function handleSafeRunScript(command: string): Promise<ActionResult> {
   // 1. 先檢查黑名單
   const dangerous = DANGEROUS_PATTERNS.find(p => p.test(cmd));
   if (dangerous) {
-    return { ok: false, output: `🛑 危險指令被攔截。這類操作請建任務（create_task）派給 auto-executor。` };
+    const alt = suggestAlternative(cmd);
+    return { ok: false, output: `🛑 危險指令被攔截。${alt}` };
   }
 
   // 2. 檢查白名單
   const allowed = SAFE_SCRIPT_PATTERNS.find(p => p.pattern.test(cmd));
   if (!allowed) {
-    return { ok: false, output: `🛑 這個指令不在輕量工具白名單裡。\n指揮官可以直接跑的：系統診斷（curl localhost、lsof、ps）、搜尋（grep、find）、Python 單行、健康檢查腳本。\n重型任務請用 create_task 派工。` };
+    const alt = suggestAlternative(cmd);
+    return { ok: false, output: `🛑 不在白名單。${alt}` };
   }
 
   log.info(`[SafeRunScript] 允許: ${allowed.desc} → ${cmd.slice(0, 80)}`);
@@ -949,6 +970,9 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
     if (sections.length === 0) {
       return { ok: false, output: `檔案內容太短或沒有 ## 章節: ${fileName}` };
     }
+
+    // 去重：索引前先刪除同檔案的舊 chunks
+    await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
 
     const titleMatch = content.match(/^# (.+)/m);
     const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
