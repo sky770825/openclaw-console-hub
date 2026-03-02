@@ -5,11 +5,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
-import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES } from './security.js';
+import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS } from './security.js';
 
 const log = createLogger('telegram');
 
@@ -17,6 +17,25 @@ const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localho
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
 export type ActionResult = { ok: boolean; output: string };
+
+/** 行动链提示：引导小蔡一次回复打包多个 action */
+const CHAIN_HINTS: Record<string, string> = {
+  read_file: '💡 读完了 → 现在一口气：(1) write_file 写分析 + index_file 索引，或 (2) code_eval 验证逻辑，两三个一起发。',
+  write_file: '💡 写完了 → 马上 index_file 索引。如果还有下一题，一起发。',
+  index_file: '💡 索引完了。继续下一题：read_file + 分析 + write_file 一口气做。',
+  run_script: '💡 执行完了 → 分析结果 + write_file 写报告 + index_file，三个一起发。',
+  semantic_search: '💡 搜到了 → read_file 读原文 + write_file 写摘要，两个一起发。',
+  web_search: '💡 搜到了 → web_fetch 读内容 + write_file 写笔记 + index_file，三个一起发。',
+  web_fetch: '💡 读完了 → write_file 写笔记 + index_file 索引，两个一起发。',
+  code_eval: '💡 执行完了 → write_file 写学习心得 + index_file 索引，两个一起发。',
+  ask_ai: '💡 諮詢完了 → 把建議整理成 write_file 筆記 + index_file 索引，兩個一起發。',
+  analyze_code: '💡 分析完了 → write_file 寫分析報告 + index_file 索引，兩個一起發。',
+  query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
+  pty_exec: '💡 互動命令完成 → 檢查輸出是否正常，有問題再跑一次或 write_file 記錄結果。',
+  patch_file: '💡 修補完了 → read_file 確認結果，或繼續 patch_file 改下一處。多處修改一起發。',
+  plan_project: '💡 計畫拆好了 → 子任務已進 draft，跟老蔡報告計畫摘要。有需要調整就 update_task。',
+  roadmap: '💡 路線圖操作完成 → 搭配 query_supabase 看任務進度，或 write_file 寫週報。',
+};
 
 // ── 任務操作 ──
 
@@ -825,6 +844,25 @@ const DANGEROUS_PATTERNS = [
   /curl\s+.*-X\s*(POST|PUT|DELETE|PATCH)/i,
 ];
 
+/** run_script 被擋時，根據指令內容建議替代方案 */
+function suggestAlternative(cmd: string): string {
+  if (/curl\s+.*-x\s*(post|put|delete|patch)/i.test(cmd))
+    return '→ curl 只能 GET。需要 POST？用 create_task 派工。';
+  if (/npm\s+(install|uninstall)/i.test(cmd))
+    return '→ 套件管理用 create_task 派工。';
+  if (/git\s+(push|reset|checkout|clean)/i.test(cmd))
+    return '→ git 危險操作用 create_task 派工，或請老蔡手動。';
+  if (/kill|pkill|killall/i.test(cmd))
+    return '→ 不能殺進程。用 create_task 派工或通知老蔡。';
+  if (/python3\s+\S+\.py/i.test(cmd))
+    return '→ 改用 python3 -c "..." 單行模式，或用白名單腳本（health-check.sh 等）。';
+  if (/rm\s+-rf/i.test(cmd))
+    return '→ 不能刪檔案。用 create_task 派工。';
+  if (/cat\s+.*\|/i.test(cmd))
+    return '→ pipe 可能被擋。改用 grep -ri "關鍵字" /path 直接搜。';
+  return '→ 試試：grep -ri（搜尋）、python3 -c（計算）、curl -s localhost（診斷）、create_task（重型任務）。';
+}
+
 async function handleSafeRunScript(command: string): Promise<ActionResult> {
   if (!command.trim()) {
     return { ok: false, output: 'run_script 需要 command 參數' };
@@ -835,17 +873,170 @@ async function handleSafeRunScript(command: string): Promise<ActionResult> {
   // 1. 先檢查黑名單
   const dangerous = DANGEROUS_PATTERNS.find(p => p.test(cmd));
   if (dangerous) {
-    return { ok: false, output: `🛑 危險指令被攔截。這類操作請建任務（create_task）派給 auto-executor。` };
+    const alt = suggestAlternative(cmd);
+    return { ok: false, output: `🛑 危險指令被攔截。${alt}` };
   }
 
   // 2. 檢查白名單
   const allowed = SAFE_SCRIPT_PATTERNS.find(p => p.pattern.test(cmd));
   if (!allowed) {
-    return { ok: false, output: `🛑 這個指令不在輕量工具白名單裡。\n指揮官可以直接跑的：系統診斷（curl localhost、lsof、ps）、搜尋（grep、find）、Python 單行、健康檢查腳本。\n重型任務請用 create_task 派工。` };
+    const alt = suggestAlternative(cmd);
+    return { ok: false, output: `🛑 不在白名單。${alt}` };
   }
 
   log.info(`[SafeRunScript] 允許: ${allowed.desc} → ${cmd.slice(0, 80)}`);
   return handleRunScript(cmd);
+}
+
+// ── PTY-like 互動式命令執行 ──
+
+/** pty_exec 命令白名單：只允許這些程式開頭 */
+const PTY_ALLOWED_COMMANDS = [
+  /^npm\s/i, /^yarn\s/i, /^pnpm\s/i,
+  /^node\s/i, /^python3\s/i, /^pip\s/i, /^pip3\s/i,
+  /^git\s/i, /^curl\s/i, /^brew\s/i,
+];
+
+/** pty_exec 禁止的危險模式 */
+const PTY_DANGEROUS_PATTERNS = [
+  /rm\s+-rf/i, /sudo\s/i, /chmod\s+777/i, /dd\s+if=/i, /mkfs/i,
+  />\s*\/dev\//i, /eval\s*\(/i,
+  /git\s+(push|force|reset\s+--hard|clean\s+-f)/i,
+  /\|\s*(sh|bash|zsh|eval)/i,
+  /;\s*(rm|sudo|dd|mkfs|chmod)/i,
+];
+
+/** 互動提示偵測模式 */
+const INTERACTIVE_PROMPT_PATTERNS = [
+  /\?\s*$/,
+  /\[Y\/n\]/i, /\[y\/N\]/i,
+  /\(yes\/no\)/i, /\(y\/n\)/i,
+  /continue\?/i, /proceed\?/i,
+  /password:/i, /passphrase:/i,
+  /confirm/i, /overwrite/i,
+  /do you want/i, /are you sure/i,
+  /enter\s+.*:/i, /press\s+enter/i,
+  /ok\s+to\s+proceed/i,
+];
+
+/**
+ * 處理 pty_exec action：用 spawn + pipe 模擬 PTY 互動行為
+ * 監聽 stdout/stderr，遇到互動提示自動從 answers 陣列依序回答
+ */
+export async function handlePtyExec(
+  command: string,
+  answers: string[] = [],
+  timeout = 30,
+): Promise<ActionResult> {
+  if (!command.trim()) {
+    return { ok: false, output: 'pty_exec 需要 command 參數' };
+  }
+
+  const cmd = command.trim();
+
+  // ── 安全檢查 1：命令白名單 ──
+  const isAllowed = PTY_ALLOWED_COMMANDS.some(p => p.test(cmd));
+  if (!isAllowed) {
+    return {
+      ok: false,
+      output: `🚫 pty_exec 白名單攔截：只允許 npm/yarn/pnpm/node/python3/pip/git/curl/brew 開頭的命令。收到: ${cmd.slice(0, 60)}`,
+    };
+  }
+
+  // ── 安全檢查 2：危險模式黑名單 ──
+  const dangerous = PTY_DANGEROUS_PATTERNS.find(p => p.test(cmd));
+  if (dangerous) {
+    return {
+      ok: false,
+      output: `🚫 pty_exec 危險指令攔截（${dangerous.source}）。git push/force、rm -rf、sudo 等一律禁止。`,
+    };
+  }
+
+  // ── 安全檢查 3：timeout 上限 120 秒 ──
+  const safeTimeout = Math.max(5, Math.min(120, timeout)) * 1000;
+
+  // ── cwd 限制在專案目錄 ──
+  const cwd = '/Users/caijunchang/openclaw任務面版設計';
+
+  log.info(`[PtyExec] 啟動: ${cmd.slice(0, 100)} | answers=${answers.length} | timeout=${safeTimeout / 1000}s`);
+
+  return new Promise((resolve) => {
+    let answerIndex = 0;
+    let output = '';
+    let lastChunk = '';
+    let promptCheckTimer: ReturnType<typeof setTimeout> | null = null;
+    let resolved = false;
+
+    const safeResolve = (result: ActionResult) => {
+      if (resolved) return;
+      resolved = true;
+      if (promptCheckTimer) clearTimeout(promptCheckTimer);
+      resolve(result);
+    };
+
+    const proc = spawn('sh', ['-c', cmd], {
+      cwd,
+      timeout: safeTimeout,
+      env: {
+        HOME: process.env.HOME,
+        PATH: process.env.PATH,
+        LANG: 'en_US.UTF-8',
+        TERM: 'dumb',
+        CI: '1',
+        NPM_CONFIG_YES: 'true',
+        NONINTERACTIVE: '1',
+      },
+    });
+
+    /** 檢查最近輸出是否包含互動提示，如果是就送出下一個 answer */
+    const checkAndRespond = () => {
+      if (!proc.stdin?.writable) return;
+      const isPrompt = INTERACTIVE_PROMPT_PATTERNS.some(p => p.test(lastChunk));
+      if (isPrompt) {
+        const answer = answerIndex < answers.length ? answers[answerIndex] : '';
+        answerIndex++;
+        log.info(`[PtyExec] 偵測到互動提示，回答 #${answerIndex}: "${answer.slice(0, 20)}"`);
+        try {
+          proc.stdin.write(answer + '\n');
+        } catch {
+          // stdin 已關閉，忽略
+        }
+        lastChunk = '';
+      }
+    };
+
+    /** 累積輸出，並在短暫停頓後檢查互動提示 */
+    const onData = (data: Buffer) => {
+      const text = data.toString();
+      output += text;
+      lastChunk += text;
+
+      if (lastChunk.length > 2000) {
+        lastChunk = lastChunk.slice(-2000);
+      }
+
+      if (promptCheckTimer) clearTimeout(promptCheckTimer);
+      promptCheckTimer = setTimeout(checkAndRespond, 200);
+    };
+
+    proc.stdout?.on('data', onData);
+    proc.stderr?.on('data', onData);
+
+    proc.on('close', (code) => {
+      const truncated = output.length > 5000
+        ? output.slice(0, 2000) + '\n\n... (截斷 ' + output.length + ' 字元) ...\n\n' + output.slice(-2500)
+        : output;
+
+      const result = sanitize(truncated.trim() || '（無輸出）') + `\nexit: ${code}`;
+      log.info(`[PtyExec] 完成: exit=${code} output=${output.length}字元 answers used=${answerIndex}/${answers.length}`);
+      safeResolve({ ok: code === 0, output: result });
+    });
+
+    proc.on('error', (e) => {
+      log.error({ err: e }, `[PtyExec] spawn 失敗`);
+      safeResolve({ ok: false, output: `pty_exec 啟動失敗: ${e.message}` });
+    });
+  });
 }
 
 // ── 語義搜尋（Google Embedding + Supabase pgvector）──
@@ -949,6 +1140,9 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
     if (sections.length === 0) {
       return { ok: false, output: `檔案內容太短或沒有 ## 章節: ${fileName}` };
     }
+
+    // 去重：索引前先刪除同檔案的舊 chunks
+    await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
 
     const titleMatch = content.match(/^# (.+)/m);
     const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
@@ -1199,6 +1393,784 @@ async function handleWebFetch(url: string): Promise<ActionResult> {
   }
 }
 
+// ── 沙盒代碼執行 ──
+
+/** 安全沙盒執行 JS/TS 代碼片段（學習用途） */
+async function handleCodeEval(code: string): Promise<ActionResult> {
+  if (!code.trim()) {
+    return { ok: false, output: 'code_eval 需要 code 參數' };
+  }
+
+  // 安全限制
+  const forbidden = [
+    /require\s*\(/i, /import\s+/i, /process\./i, /child_process/i,
+    /fs\./i, /path\./i, /http\./i, /net\./i, /eval\s*\(/i,
+    /Function\s*\(/i, /global\./i, /globalThis/i,
+  ];
+
+  const blocked = forbidden.find(p => p.test(code));
+  if (blocked) {
+    return { ok: false, output: `🛑 代碼包含禁止的 API（${blocked.source}）。code_eval 只能用純 JS 邏輯（變數、函數、迴圈、陣列操作等）。` };
+  }
+
+  // 限制代碼長度
+  if (code.length > 5000) {
+    return { ok: false, output: '🛑 代碼超過 5000 字元限制。' };
+  }
+
+  try {
+    // 用 vm 模組在沙盒中執行
+    const { createContext, runInNewContext } = await import('node:vm');
+
+    const outputs: string[] = [];
+    const sandbox = {
+      console: {
+        log: (...args: unknown[]) => { outputs.push(args.map(String).join(' ')); },
+        error: (...args: unknown[]) => { outputs.push('[ERROR] ' + args.map(String).join(' ')); },
+      },
+      JSON,
+      Math,
+      Date,
+      Array,
+      Object,
+      String,
+      Number,
+      Boolean,
+      Map,
+      Set,
+      RegExp,
+      parseInt,
+      parseFloat,
+      isNaN,
+      isFinite,
+    };
+
+    const ctx = createContext(sandbox);
+
+    const result = runInNewContext(code, ctx, {
+      timeout: 5000,  // 5 秒 timeout
+      displayErrors: true,
+    });
+
+    if (result !== undefined) {
+      outputs.push(`→ ${typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)}`);
+    }
+
+    const output = outputs.length > 0 ? outputs.join('\n') : '(無輸出)';
+    return { ok: true, output: output.slice(0, 3000) };  // 限制輸出長度
+  } catch (err: unknown) {
+    return { ok: false, output: `執行錯誤: ${(err as Error).message}\n💡 Tip：code_eval 只支持純 JS 邏輯，不能用 require/import/fetch。需要跑腳本請用 run_script: node -e "..."` };
+  }
+}
+
+/** 分析 workspace 內的代碼文件 */
+async function handleAnalyzeCode(filePath: string, question: string): Promise<ActionResult> {
+  const workspace = process.env.NEUXA_WORKSPACE || path.join(process.env.HOME || '', '.openclaw', 'workspace');
+  const fullPath = path.resolve(workspace, filePath);
+  if (!fullPath.startsWith(workspace)) {
+    return { ok: false, output: '❌ 只能分析 workspace 目錄內的文件' };
+  }
+
+  try {
+    const content = await fs.promises.readFile(fullPath, 'utf-8');
+    if (content.length > 10000) {
+      return { ok: true, output: `📄 文件 ${filePath} 共 ${content.length} 字，太長了。請指定要分析的區段（用 read_file 先看結構）。` };
+    }
+    const lines = content.split('\n');
+    const summary = [
+      `📄 **${filePath}**`,
+      `行數：${lines.length}`,
+      `大小：${content.length} 字元`,
+      '',
+      '```',
+      content.substring(0, 3000),
+      content.length > 3000 ? '\n... (截斷)' : '',
+      '```',
+      '',
+      question ? `分析問題：${question}` : '請根據內容進行分析。',
+    ].join('\n');
+    return { ok: true, output: summary };
+  } catch (e: unknown) {
+    return { ok: false, output: `❌ 無法讀取 ${filePath}：${(e as Error).message}` };
+  }
+}
+
+// ── grep_project & find_symbol ──
+
+/** 允許搜尋的目錄白名單 */
+const GREP_ALLOWED_DIRS = [
+  '/Users/caijunchang/openclaw任務面版設計/server/src/',
+  '/Users/caijunchang/openclaw任務面版設計/src/',
+  '/Users/caijunchang/openclaw任務面版設計/cookbook/',
+  '/Users/caijunchang/openclaw任務面版設計/scripts/',
+  path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
+];
+
+/** 路徑安全檢查：只允許搜尋白名單目錄 */
+function isGrepPathSafe(targetPath: string): { safe: boolean; resolved: string; reason?: string } {
+  const resolved = path.resolve(targetPath);
+  const forbidden = ['/etc', '/var', '/usr', '/bin', '/sbin', '/System', '/Library', '/private'];
+  for (const f of forbidden) {
+    if (resolved.startsWith(f)) {
+      return { safe: false, resolved, reason: `禁止搜尋系統目錄: ${f}` };
+    }
+  }
+  const allowed = GREP_ALLOWED_DIRS.some(d => resolved.startsWith(d));
+  if (!allowed) {
+    return { safe: false, resolved, reason: `路徑不在白名單。允許: server/src/, src/, cookbook/, scripts/, ~/.openclaw/workspace/` };
+  }
+  if (!fs.existsSync(resolved)) {
+    return { safe: false, resolved, reason: `目錄不存在: ${resolved}` };
+  }
+  return { safe: true, resolved };
+}
+
+/** 截斷過長的行 */
+function truncateLine(line: string, max: number): string {
+  return line.length > max ? line.slice(0, max) + '...' : line;
+}
+
+/** grep_project: 在專案目錄中搜尋文字模式 */
+async function handleGrepProject(
+  pattern: string,
+  searchPath?: string,
+  options?: { ignore_case?: boolean; max_results?: number; file_pattern?: string }
+): Promise<ActionResult> {
+  if (!pattern || pattern.trim().length < 2) {
+    return { ok: false, output: 'grep_project 需要 pattern 參數（至少 2 個字）' };
+  }
+
+  const targetDir = searchPath || '/Users/caijunchang/openclaw任務面版設計/server/src/';
+  const pathCheck = isGrepPathSafe(targetDir);
+  if (!pathCheck.safe) return { ok: false, output: `🚫 ${pathCheck.reason}` };
+
+  const ignoreCase = options?.ignore_case ?? false;
+  const maxResults = Math.min(Math.max(options?.max_results ?? 20, 1), 50);
+  const filePattern = options?.file_pattern || '';
+
+  // 優先用 rg（ripgrep），fallback grep -rn
+  let useRg = false;
+  try {
+    execSync('which rg', { stdio: 'pipe', timeout: 3000 });
+    useRg = true;
+  } catch { /* rg 不存在，用 grep */ }
+
+  let cmd: string;
+  const safePattern = pattern.replace(/'/g, "'\\''");
+
+  if (useRg) {
+    const flags = ['-n', '--no-heading', '--color=never', `--max-count=${maxResults * 2}`];
+    if (ignoreCase) flags.push('-i');
+    if (filePattern) flags.push(`--glob='${filePattern}'`);
+    cmd = `rg ${flags.join(' ')} '${safePattern}' '${pathCheck.resolved}'`;
+  } else {
+    const flags = ['-rn', '--color=never'];
+    if (ignoreCase) flags.push('-i');
+    if (filePattern) flags.push(`--include='${filePattern}'`);
+    cmd = `grep ${flags.join(' ')} '${safePattern}' '${pathCheck.resolved}'`;
+  }
+
+  try {
+    const raw = String(execSync(cmd, {
+      timeout: 10000,
+      maxBuffer: 1024 * 512,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }));
+
+    const lines = raw.trim().split('\n').filter(Boolean);
+    const trimmed = lines.slice(0, maxResults).map((l: string) => truncateLine(l, 200));
+    const total = lines.length;
+    const shown = trimmed.length;
+
+    const header = `🔍 grep_project「${pattern}」in ${targetDir}\n找到 ${total} 筆${total > shown ? `，顯示前 ${shown} 筆` : ''}：\n`;
+    return { ok: true, output: header + trimmed.join('\n') };
+  } catch (e: unknown) {
+    const err = e as { status?: number; stdout?: string; stderr?: string; message?: string };
+    if (err.status === 1) {
+      return { ok: true, output: `🔍 grep_project「${pattern}」in ${targetDir}\n沒有匹配結果。` };
+    }
+    if (err.message?.includes('TIMEOUT') || err.message?.includes('timed out')) {
+      return { ok: false, output: `grep_project 超時 (10s)。嘗試縮小搜尋範圍或更精確的 pattern。` };
+    }
+    return { ok: false, output: `grep_project 失敗: ${err.stderr || err.message || '未知錯誤'}` };
+  }
+}
+
+/** find_symbol: 搜尋函數/類別/介面/型別定義與引用 */
+async function handleFindSymbol(
+  symbol: string,
+  symbolType?: string
+): Promise<ActionResult> {
+  if (!symbol || symbol.trim().length < 2) {
+    return { ok: false, output: 'find_symbol 需要 symbol 參數（至少 2 個字）' };
+  }
+
+  const searchDirs = [
+    '/Users/caijunchang/openclaw任務面版設計/server/src/',
+    '/Users/caijunchang/openclaw任務面版設計/src/',
+  ];
+
+  const safeSymbol = symbol.replace(/'/g, "'\\''").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const defPatterns: string[] = [];
+  const t = (symbolType || '').toLowerCase();
+
+  if (!t || t === 'function') {
+    defPatterns.push(`(function|const|let|var)\\s+${safeSymbol}\\s*[=(]`);
+    defPatterns.push(`async\\s+function\\s+${safeSymbol}`);
+    defPatterns.push(`${safeSymbol}\\s*:\\s*\\(`);
+  }
+  if (!t || t === 'class') {
+    defPatterns.push(`class\\s+${safeSymbol}`);
+  }
+  if (!t || t === 'interface') {
+    defPatterns.push(`interface\\s+${safeSymbol}`);
+  }
+  if (!t || t === 'type') {
+    defPatterns.push(`type\\s+${safeSymbol}\\s*[=<]`);
+  }
+  defPatterns.push(`export\\s+(default\\s+)?(function|class|interface|type|const|let|var|async)\\s+${safeSymbol}`);
+
+  const refPattern = safeSymbol;
+
+  let useRg = false;
+  try {
+    execSync('which rg', { stdio: 'pipe', timeout: 3000 });
+    useRg = true;
+  } catch { /* fallback grep */ }
+
+  const definitions: string[] = [];
+  const references: string[] = [];
+
+  for (const dir of searchDirs) {
+    if (!fs.existsSync(dir)) continue;
+
+    for (const pat of defPatterns) {
+      const cmd = useRg
+        ? `rg -n --no-heading --color=never --glob='*.{ts,tsx,js,jsx}' '${pat}' '${dir}'`
+        : `grep -rn --color=never --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' -E '${pat}' '${dir}'`;
+      try {
+        const raw = String(execSync(cmd, { timeout: 10000, maxBuffer: 256 * 1024, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }));
+        const lines = raw.trim().split('\n').filter(Boolean);
+        for (const l of lines) {
+          const truncated = truncateLine(l, 200);
+          if (!definitions.includes(truncated)) definitions.push(truncated);
+        }
+      } catch { /* exit 1 = no match */ }
+    }
+
+    const refCmd = useRg
+      ? `rg -n --no-heading --color=never --glob='*.{ts,tsx,js,jsx}' '${refPattern}' '${dir}'`
+      : `grep -rn --color=never --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' '${refPattern}' '${dir}'`;
+    try {
+      const raw = String(execSync(refCmd, { timeout: 10000, maxBuffer: 256 * 1024, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }));
+      const lines = raw.trim().split('\n').filter(Boolean);
+      for (const l of lines) {
+        const truncated = truncateLine(l, 200);
+        if (!definitions.includes(truncated) && !references.includes(truncated)) {
+          references.push(truncated);
+        }
+      }
+    } catch { /* exit 1 = no match */ }
+  }
+
+  const defSlice = definitions.slice(0, 15);
+  const refSlice = references.slice(0, 30);
+
+  if (defSlice.length === 0 && refSlice.length === 0) {
+    return { ok: true, output: `🔍 find_symbol「${symbol}」${t ? `(type: ${t})` : ''}\n找不到任何定義或引用。確認名稱是否正確。` };
+  }
+
+  const parts: string[] = [`🔍 find_symbol「${symbol}」${t ? `(type: ${t})` : ''}\n`];
+
+  if (defSlice.length > 0) {
+    parts.push(`📌 定義 (${defSlice.length}${definitions.length > 15 ? `/${definitions.length}` : ''})：`);
+    parts.push(defSlice.join('\n'));
+  } else {
+    parts.push('📌 定義：找不到明確的定義位置');
+  }
+
+  parts.push('');
+
+  if (refSlice.length > 0) {
+    parts.push(`📎 引用 (${refSlice.length}${references.length > 30 ? `/${references.length}` : ''})：`);
+    parts.push(refSlice.join('\n'));
+  } else {
+    parts.push('📎 引用：無其他引用');
+  }
+
+  return { ok: true, output: parts.join('\n') };
+}
+
+// ── 精準修補檔案 ──
+
+/** 禁止 patch 的檔案名（靈魂文件） */
+const PATCH_FORBIDDEN_NAMES = new Set([
+  'SOUL.md', 'AWAKENING.md', 'IDENTITY.md',
+]);
+
+/** patch_file 允許的根目錄白名單 */
+const PATCH_ALLOWED_ROOTS = [
+  path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
+  '/Users/caijunchang/openclaw任務面版設計',
+];
+
+/** 檢查 patch_file 路徑安全性 */
+function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; reason?: string } {
+  let expanded = rawPath;
+  if (expanded.startsWith('~/') || expanded === '~') {
+    expanded = path.join(process.env.HOME || '/tmp', expanded.slice(1));
+  }
+  const resolved = path.resolve(expanded);
+  const basename = path.basename(resolved);
+
+  if (PATCH_FORBIDDEN_NAMES.has(basename)) {
+    return { safe: false, resolved, reason: `禁止修改靈魂文件 "${basename}"` };
+  }
+
+  for (const pattern of FORBIDDEN_PATH_PATTERNS) {
+    if (resolved.toLowerCase().includes(pattern.toLowerCase())) {
+      return { safe: false, resolved, reason: `禁止修改包含 "${pattern}" 的檔案` };
+    }
+  }
+
+  const inAllowed = PATCH_ALLOWED_ROOTS.some(root => resolved.startsWith(root));
+  if (!inAllowed) {
+    return { safe: false, resolved, reason: `路徑不在允許範圍。允許: ${PATCH_ALLOWED_ROOTS.join(', ')}` };
+  }
+
+  return { safe: true, resolved };
+}
+
+/**
+ * patch_file — 精準修補檔案（替換 / 插入 / 刪行）
+ *
+ * 三種模式：
+ * 1. replace:      { path, line, old, new }
+ * 2. insert_after: { path, line, insert_after }
+ * 3. delete_lines: { path, from_line, to_line }
+ */
+export async function handlePatchFile(action: Record<string, string>): Promise<ActionResult> {
+  const rawPath = action.path;
+  if (!rawPath) return { ok: false, output: 'patch_file 需要 path 參數' };
+
+  const check = isPatchPathSafe(rawPath);
+  if (!check.safe) return { ok: false, output: `🚫 ${check.reason}` };
+  const resolved = check.resolved;
+
+  if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${resolved}` };
+  if (fs.statSync(resolved).isDirectory()) return { ok: false, output: `這是目錄，不是檔案` };
+
+  const original = fs.readFileSync(resolved, 'utf8');
+  const lines = original.split('\n');
+
+  const hasOld = 'old' in action && 'new' in action;
+  const hasInsert = 'insert_after' in action;
+  const hasDelete = 'from_line' in action && 'to_line' in action;
+
+  let newLines: string[];
+  let diffSummary: string;
+
+  if (hasDelete) {
+    // ── 模式 3: delete_lines ──
+    const fromLine = parseInt(action.from_line, 10);
+    const toLine = parseInt(action.to_line, 10);
+    if (isNaN(fromLine) || isNaN(toLine) || fromLine < 1 || toLine < fromLine) {
+      return { ok: false, output: `from_line / to_line 無效（需要 1 <= from_line <= to_line）` };
+    }
+    if (toLine > lines.length) {
+      return { ok: false, output: `to_line(${toLine}) 超過檔案行數(${lines.length})` };
+    }
+    const deleteCount = toLine - fromLine + 1;
+    if (deleteCount > 50) {
+      return { ok: false, output: `單次最多刪除 50 行，要求刪除 ${deleteCount} 行` };
+    }
+
+    const deleted = lines.slice(fromLine - 1, toLine);
+    newLines = [...lines.slice(0, fromLine - 1), ...lines.slice(toLine)];
+    diffSummary = `刪除 L${fromLine}-L${toLine} (${deleteCount} 行):\n` +
+      deleted.map((l, i) => `  - L${fromLine + i}: ${l.slice(0, 80)}`).join('\n');
+
+  } else if (hasInsert) {
+    // ── 模式 2: insert_after ──
+    const lineNum = parseInt(action.line, 10);
+    if (isNaN(lineNum) || lineNum < 0 || lineNum > lines.length) {
+      return { ok: false, output: `line 無效（0 = 檔案開頭插入, 1-${lines.length} = 在該行之後插入）` };
+    }
+    const insertContent = action.insert_after;
+    const insertLines = insertContent.split('\n');
+    if (insertLines.length > 50) {
+      return { ok: false, output: `單次最多插入 50 行，要求插入 ${insertLines.length} 行` };
+    }
+
+    newLines = [...lines.slice(0, lineNum), ...insertLines, ...lines.slice(lineNum)];
+    diffSummary = `在 L${lineNum} 之後插入 ${insertLines.length} 行:\n` +
+      insertLines.slice(0, 5).map(l => `  + ${l.slice(0, 80)}`).join('\n') +
+      (insertLines.length > 5 ? `\n  ... 還有 ${insertLines.length - 5} 行` : '');
+
+  } else if (hasOld) {
+    // ── 模式 1: replace (old -> new) ──
+    const lineNum = parseInt(action.line, 10);
+    if (isNaN(lineNum) || lineNum < 1 || lineNum > lines.length) {
+      return { ok: false, output: `line 無效（需要 1-${lines.length}）` };
+    }
+
+    const oldText = action.old;
+    const newText = action.new;
+    const oldLines = oldText.split('\n');
+    const newTextLines = newText.split('\n');
+    if (oldLines.length > 50 || newTextLines.length > 50) {
+      return { ok: false, output: `單次修改不超過 50 行（old: ${oldLines.length}, new: ${newTextLines.length}）` };
+    }
+
+    const endLine = lineNum - 1 + oldLines.length;
+    if (endLine > lines.length) {
+      return { ok: false, output: `old 文字 (${oldLines.length} 行) 超過檔案範圍 (從 L${lineNum})` };
+    }
+    const actual = lines.slice(lineNum - 1, endLine);
+    const matches = oldLines.every((ol, i) => actual[i]?.includes(ol) || actual[i]?.trim() === ol.trim());
+    if (!matches) {
+      const preview = actual.slice(0, 3).map((l, i) => `  L${lineNum + i}: ${l.slice(0, 80)}`).join('\n');
+      return { ok: false, output: `old 文字不匹配。L${lineNum} 實際內容:\n${preview}` };
+    }
+
+    newLines = [
+      ...lines.slice(0, lineNum - 1),
+      ...newTextLines,
+      ...lines.slice(endLine),
+    ];
+    diffSummary = `替換 L${lineNum}${oldLines.length > 1 ? `-L${endLine}` : ''} (${oldLines.length} -> ${newTextLines.length} 行):\n` +
+      oldLines.slice(0, 3).map(l => `  - ${l.slice(0, 80)}`).join('\n') + '\n' +
+      newTextLines.slice(0, 3).map(l => `  + ${l.slice(0, 80)}`).join('\n') +
+      (oldLines.length > 3 ? `\n  ... (還有更多行)` : '');
+
+  } else {
+    return { ok: false, output: 'patch_file 需要指定模式: (old+new), (insert_after), 或 (from_line+to_line)' };
+  }
+
+  // 備份原檔
+  try {
+    fs.copyFileSync(resolved, resolved + '.bak');
+  } catch (e) {
+    return { ok: false, output: `備份失敗: ${(e as Error).message}` };
+  }
+
+  // 寫入修改
+  try {
+    fs.writeFileSync(resolved, newLines.join('\n'), 'utf8');
+    const linesDelta = newLines.length - lines.length;
+    const deltaStr = linesDelta > 0 ? `+${linesDelta}` : linesDelta === 0 ? '+-0' : `${linesDelta}`;
+    log.info(`[NEUXA-PatchFile] ${resolved} (${deltaStr} lines)`);
+    return {
+      ok: true,
+      output: `已修補 ${path.basename(resolved)} (${lines.length} -> ${newLines.length} 行, ${deltaStr})\n` +
+        `備份: ${path.basename(resolved)}.bak\n\n` +
+        `Diff:\n${diffSummary}`,
+    };
+  } catch (e) {
+    try { fs.copyFileSync(resolved + '.bak', resolved); } catch { /* best effort */ }
+    return { ok: false, output: `寫入失敗: ${(e as Error).message}（已嘗試恢復備份）` };
+  }
+}
+
+// ── 任務拆解器（plan_project）──
+
+/** plan_project: 用 Gemini 拆解目標 → 子任務陣列 → 批次建入任務板 */
+async function handlePlanProject(action: Record<string, string>): Promise<ActionResult> {
+  const goal = (action.goal || '').trim();
+  if (!goal) return { ok: false, output: 'plan_project 需要 goal 參數（要做什麼）' };
+  if (goal.length > 500) return { ok: false, output: 'goal 太長，上限 500 字' };
+
+  const weeks = Math.min(Math.max(parseInt(action.weeks || '4', 10) || 4, 1), 52);
+  const detailLevel = ['low', 'medium', 'high'].includes(action.detail_level) ? action.detail_level : 'medium';
+
+  const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
+  if (!googleKey) return { ok: false, output: 'plan_project 需要 GOOGLE_API_KEY' };
+
+  const geminiPrompt = `你是專案規劃專家。請把以下目標拆成可執行的子任務。
+
+目標：${goal}
+時間：${weeks} 週
+細節程度：${detailLevel}（low=3-5個大任務, medium=6-10個, high=10-15個）
+
+回傳純 JSON 陣列（不要 markdown code block），每個元素：
+{
+  "name": "子任務名稱（30字以內）",
+  "description": "具體描述做什麼、怎麼驗收",
+  "priority": 1到5（5最高）,
+  "estimated_effort": "small|medium|large",
+  "dependencies": ["前置任務名稱（沒有就空陣列）"],
+  "week": 幾（1-${weeks}）
+}
+
+要求：
+- 最多 15 個子任務
+- 任務要具體可執行，不是空泛口號
+- 依賴關係要合理（前面的任務先完成才能做後面的）
+- 均勻分配到各週
+- 只回傳 JSON 陣列，不要其他文字`;
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: geminiPrompt }] }],
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.4 },
+        }),
+        signal: AbortSignal.timeout(60000),
+      }
+    );
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      return { ok: false, output: `Gemini 呼叫失敗: HTTP ${resp.status} ${errText.slice(0, 200)}` };
+    }
+
+    const data = await resp.json() as Record<string, unknown>;
+    const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
+    const contentObj = ((candidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> || {};
+    const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
+    const rawText = parts.map(p => (p.text as string) || '').join('').trim();
+
+    if (!rawText) return { ok: false, output: 'Gemini 回傳空結果' };
+
+    // 解析 JSON（處理 markdown code block 包裹）
+    let jsonStr = rawText;
+    const codeBlockMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
+
+    let tasks: Array<{
+      name: string;
+      description: string;
+      priority: number;
+      estimated_effort: string;
+      dependencies: string[];
+      week: number;
+    }>;
+
+    try {
+      tasks = JSON.parse(jsonStr);
+    } catch {
+      return { ok: false, output: `JSON 解析失敗。Gemini 原始回傳:\n${rawText.slice(0, 500)}` };
+    }
+
+    if (!Array.isArray(tasks)) {
+      return { ok: false, output: 'Gemini 回傳不是陣列格式' };
+    }
+
+    tasks = tasks.slice(0, 15);
+
+    const created: string[] = [];
+    const failed: string[] = [];
+    for (const t of tasks) {
+      const taskName = String(t.name || '').slice(0, 100);
+      if (!taskName) continue;
+      const desc = [
+        String(t.description || ''),
+        `預估工時: ${t.estimated_effort || 'medium'}`,
+        `優先級: ${t.priority || 3}/5`,
+        `週次: W${t.week || 1}/${weeks}`,
+        t.dependencies?.length ? `前置任務: ${t.dependencies.join(', ')}` : '',
+        `來源: plan_project → ${goal.slice(0, 50)}`,
+      ].filter(Boolean).join('\n');
+
+      const result = await createTask(taskName, desc, '小蔡');
+      if (result.includes('已建立')) {
+        created.push(`W${t.week || 1} [${t.estimated_effort || 'M'}] ${taskName}`);
+      } else {
+        failed.push(`${taskName}: ${result}`);
+      }
+    }
+
+    const effortMap: Record<string, number> = { small: 1, medium: 2, large: 4 };
+    const totalEffort = tasks.reduce((sum, t) => sum + (effortMap[t.estimated_effort] || 2), 0);
+    const weeklyBreakdown: Record<number, string[]> = {};
+    for (const t of tasks) {
+      const w = t.week || 1;
+      if (!weeklyBreakdown[w]) weeklyBreakdown[w] = [];
+      weeklyBreakdown[w].push(t.name);
+    }
+
+    const summary = [
+      `計畫拆解完成：「${goal}」`,
+      `總共 ${tasks.length} 個子任務，${weeks} 週，預估 ${totalEffort} 人天`,
+      '',
+      '--- 週次分配 ---',
+      ...Object.entries(weeklyBreakdown).sort(([a], [b]) => Number(a) - Number(b)).map(
+        ([w, names]) => `W${w}: ${names.join(' / ')}`
+      ),
+      '',
+      `已建立 ${created.length} 個任務（draft 狀態，等老蔡批准）`,
+      ...(failed.length > 0 ? [`建立失敗 ${failed.length} 個:\n${failed.join('\n')}`] : []),
+      '',
+      '--- 依賴關係 ---',
+      ...tasks.filter(t => t.dependencies?.length > 0).map(
+        t => `${t.name} ← 需要先完成: ${t.dependencies.join(', ')}`
+      ),
+    ];
+
+    log.info(`[PlanProject] goal="${goal.slice(0, 50)}" → ${created.length}/${tasks.length} tasks created`);
+    return { ok: true, output: summary.join('\n') };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, output: `plan_project 失敗: ${msg}` };
+  }
+}
+
+// ── 路線圖管理（roadmap）──
+
+const ROADMAPS_DIR = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'roadmaps');
+
+function isRoadmapNameSafe(name: string): { safe: boolean; reason?: string } {
+  if (!name || name.trim().length === 0) return { safe: false, reason: '名稱不能為空' };
+  if (name.length > 60) return { safe: false, reason: '名稱太長，上限 60 字' };
+  if (/[/\\.]\./.test(name) || name.includes('..')) return { safe: false, reason: '名稱不能包含 / \\ 或 ..' };
+  if (/[<>:"|?*]/.test(name)) return { safe: false, reason: '名稱包含非法字元' };
+  return { safe: true };
+}
+
+async function handleRoadmap(action: Record<string, string>): Promise<ActionResult> {
+  const mode = (action.mode || '').toLowerCase();
+  if (!['create', 'status', 'update', 'list'].includes(mode)) {
+    return { ok: false, output: 'roadmap 需要 mode 參數: create / status / update / list' };
+  }
+
+  fs.mkdirSync(ROADMAPS_DIR, { recursive: true });
+
+  if (mode === 'list') return handleRoadmapList();
+
+  const name = (action.name || '').trim();
+  const nameCheck = isRoadmapNameSafe(name);
+  if (!nameCheck.safe) return { ok: false, output: `路線圖名稱無效: ${nameCheck.reason}` };
+
+  switch (mode) {
+    case 'create': return handleRoadmapCreate(name, action);
+    case 'status': return handleRoadmapStatus(name);
+    case 'update': return handleRoadmapUpdate(name, action);
+    default: return { ok: false, output: `未知 roadmap mode: ${mode}` };
+  }
+}
+
+function handleRoadmapCreate(name: string, action: Record<string, string>): ActionResult {
+  const filePath = path.join(ROADMAPS_DIR, `${name}.json`);
+  if (fs.existsSync(filePath)) {
+    return { ok: false, output: `路線圖「${name}」已存在。用 mode=status 查看，或用 mode=update 更新。` };
+  }
+  const totalWeeks = Math.min(Math.max(parseInt(action.weeks || '4', 10) || 4, 1), 12);
+  let milestones: string[] = [];
+  try {
+    const raw = action.milestones;
+    if (raw) {
+      if (typeof raw === 'string') milestones = JSON.parse(raw);
+      else if (Array.isArray(raw)) milestones = (raw as string[]).map(String);
+    }
+  } catch { milestones = []; }
+  if (milestones.length === 0) milestones = ['MVP', '上線'];
+
+  const milestoneSchedule: Array<{ name: string; week: number; done: boolean }> = [];
+  for (let i = 0; i < milestones.length; i++) {
+    const week = Math.max(1, Math.round(((i + 1) / milestones.length) * totalWeeks));
+    milestoneSchedule.push({ name: milestones[i], week, done: false });
+  }
+  const weeklyGoals: Record<string, { goal: string; tasks: string[] }> = {};
+  for (let w = 1; w <= totalWeeks; w++) weeklyGoals[`W${w}`] = { goal: '', tasks: [] };
+
+  const rmObj = { name, createdAt: new Date().toISOString(), totalWeeks, currentWeek: 1, milestones: milestoneSchedule, weeklyGoals };
+  fs.writeFileSync(filePath, JSON.stringify(rmObj, null, 2), 'utf8');
+  const msSummary = milestoneSchedule.map(m => `W${m.week}: ${m.name}`).join(' → ');
+  log.info(`[Roadmap] created "${name}" ${totalWeeks}w milestones=${milestones.length}`);
+  return { ok: true, output: `路線圖「${name}」已建立\n總共 ${totalWeeks} 週\n里程碑: ${msSummary}\n檔案: ${filePath}\n下一步: 用 mode=update 設定每週目標，或 plan_project 拆子任務。` };
+}
+
+async function handleRoadmapStatus(name: string): Promise<ActionResult> {
+  const filePath = path.join(ROADMAPS_DIR, `${name}.json`);
+  if (!fs.existsSync(filePath)) return { ok: false, output: `路線圖「${name}」不存在。用 mode=list 看有哪些。` };
+
+  let rm: { name: string; createdAt: string; totalWeeks: number; currentWeek: number; milestones: Array<{ name: string; week: number; done: boolean }>; weeklyGoals: Record<string, { goal: string; tasks: string[] }> };
+  try { rm = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return { ok: false, output: `路線圖 JSON 解析失敗: ${filePath}` }; }
+
+  let taskDoneCount = 0; let taskTotalCount = 0;
+  const allTaskIds: string[] = [];
+  for (const wg of Object.values(rm.weeklyGoals)) { if (wg.tasks) allTaskIds.push(...wg.tasks); }
+  if (allTaskIds.length > 0) {
+    try {
+      const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=100`, { headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` }, signal: AbortSignal.timeout(5000) });
+      if (r.ok) {
+        const allTasks = (await r.json()) as Array<Record<string, unknown>>;
+        for (const tid of allTaskIds) { const task = allTasks.find(t => String(t.id || '').startsWith(tid)); if (task) { taskTotalCount++; if (task.status === 'done') taskDoneCount++; } }
+      }
+    } catch { /* ignore */ }
+  }
+
+  const totalMs = rm.milestones.length;
+  const doneMs = rm.milestones.filter(m => m.done).length;
+  const nextMs = rm.milestones.find(m => !m.done);
+  const rate = taskTotalCount > 0 ? Math.round((taskDoneCount / taskTotalCount) * 100) : 0;
+  const riskItems = rm.milestones.filter(m => !m.done && m.week <= rm.currentWeek);
+  const cwg = rm.weeklyGoals[`W${rm.currentWeek}`];
+
+  const lines = [
+    `路線圖「${rm.name}」狀態`, `建立: ${rm.createdAt.split('T')[0]}`, `進度: W${rm.currentWeek}/${rm.totalWeeks}`,
+    `里程碑: ${doneMs}/${totalMs} 完成`, `任務完成率: ${taskDoneCount}/${taskTotalCount} (${rate}%)`,
+    '', '--- 里程碑 ---', ...rm.milestones.map(m => `${m.done ? '[v]' : '[ ]'} W${m.week}: ${m.name}`),
+    '', `本週目標 (W${rm.currentWeek}): ${cwg?.goal || '（未設定）'}`, `本週任務: ${cwg?.tasks?.length || 0} 個`,
+    ...(nextMs ? [`下一里程碑: W${nextMs.week} ${nextMs.name}`] : []),
+    ...(riskItems.length > 0 ? ['', '--- 風險 ---', ...riskItems.map(ri => `已逾期: W${ri.week} ${ri.name}`)] : []),
+  ];
+  return { ok: true, output: lines.join('\n') };
+}
+
+function handleRoadmapUpdate(name: string, action: Record<string, string>): ActionResult {
+  const filePath = path.join(ROADMAPS_DIR, `${name}.json`);
+  if (!fs.existsSync(filePath)) return { ok: false, output: `路線圖「${name}」不存在。` };
+
+  let rm: { name: string; createdAt: string; totalWeeks: number; currentWeek: number; milestones: Array<{ name: string; week: number; done: boolean }>; weeklyGoals: Record<string, { goal: string; tasks: string[] }> };
+  try { rm = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return { ok: false, output: `路線圖 JSON 解析失敗: ${filePath}` }; }
+
+  const week = parseInt(action.week || String(rm.currentWeek), 10);
+  if (week < 1 || week > rm.totalWeeks) return { ok: false, output: `week 超出範圍 (1-${rm.totalWeeks})` };
+  const key = `W${week}`;
+  if (!rm.weeklyGoals[key]) rm.weeklyGoals[key] = { goal: '', tasks: [] };
+
+  const changes: string[] = [];
+  if (action.goal) { rm.weeklyGoals[key].goal = action.goal.slice(0, 200); changes.push(`目標: ${action.goal.slice(0, 50)}`); }
+  if (action.tasks) {
+    let newTasks: string[] = [];
+    try { const raw = action.tasks; if (typeof raw === 'string') newTasks = JSON.parse(raw); else if (Array.isArray(raw)) newTasks = (raw as string[]).map(String); } catch { /* ignore */ }
+    const existingCount = Object.values(rm.weeklyGoals).reduce((s: number, wg: { goal: string; tasks: string[] }) => s + (wg.tasks?.length || 0), 0);
+    if (existingCount + newTasks.length > 50) return { ok: false, output: `路線圖任務總數超過 50 個上限（目前 ${existingCount}，要新增 ${newTasks.length}）` };
+    rm.weeklyGoals[key].tasks = [...(rm.weeklyGoals[key].tasks || []), ...newTasks];
+    changes.push(`新增 ${newTasks.length} 個任務`);
+  }
+  if (action.current_week) { const nc = parseInt(action.current_week, 10); if (nc >= 1 && nc <= rm.totalWeeks) { rm.currentWeek = nc; changes.push(`當前週次 → W${nc}`); } }
+  if (action.milestone_done) { const ms = rm.milestones.find(m => m.name === action.milestone_done); if (ms) { ms.done = true; changes.push(`里程碑完成: ${ms.name}`); } }
+  if (changes.length === 0) return { ok: false, output: '沒有可更新的內容。可用參數: goal, tasks, current_week, milestone_done' };
+
+  fs.writeFileSync(filePath, JSON.stringify(rm, null, 2), 'utf8');
+  log.info(`[Roadmap] updated "${name}" W${week}: ${changes.join(', ')}`);
+  return { ok: true, output: `路線圖「${name}」W${week} 已更新:\n${changes.join('\n')}` };
+}
+
+function handleRoadmapList(): ActionResult {
+  if (!fs.existsSync(ROADMAPS_DIR)) return { ok: true, output: '目前沒有任何路線圖。用 mode=create 建立。' };
+  const files = fs.readdirSync(ROADMAPS_DIR).filter(f => f.endsWith('.json'));
+  if (files.length === 0) return { ok: true, output: '目前沒有任何路線圖。用 mode=create 建立。' };
+  const summaries: string[] = [];
+  for (const file of files) {
+    try {
+      const fd = JSON.parse(fs.readFileSync(path.join(ROADMAPS_DIR, file), 'utf8'));
+      const dm = (fd.milestones || []).filter((m: { done: boolean }) => m.done).length;
+      const tm = (fd.milestones || []).length;
+      const tc = Object.values(fd.weeklyGoals || {}).reduce((s: number, wg: unknown) => s + ((wg as { tasks?: string[] }).tasks?.length || 0), 0);
+      summaries.push(`${fd.name} | W${fd.currentWeek}/${fd.totalWeeks} | 里程碑 ${dm}/${tm} | 任務 ${tc} 個 | ${fd.createdAt?.split('T')[0] || '?'}`);
+    } catch { summaries.push(`${file}: （JSON 解析失敗）`); }
+  }
+  return { ok: true, output: `路線圖列表 (${files.length} 個):\n\n${summaries.join('\n')}` };
+}
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -1206,45 +2178,116 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
   const type = action.action;
   log.info(`[NEUXA-Action] type=${type} path=${action.path || ''}${type === 'ask_ai' ? ` model=${action.model || '(none)'} promptLen=${(action.prompt || '').length} contextLen=${(action.context || '').length}` : ''}`);
 
+  let result: ActionResult;
+
   switch (type) {
     case 'create_task':
-      return { ok: true, output: await createTask(action.name || '未命名', action.description, action.owner) };
+      result = { ok: true, output: await createTask(action.name || '未命名', action.description, action.owner) };
+      break;
     case 'update_task':
       if (!action.id) return { ok: false, output: 'update_task 需要 id 參數' };
-      return { ok: true, output: await updateTask(action.id, action) };
+      result = { ok: true, output: await updateTask(action.id, action) };
+      break;
     case 'read_file':
-      return handleReadFile(action.path || '');
+      result = await handleReadFile(action.path || '');
+      break;
     case 'write_file':
-      return handleWriteFile(action.path || '', action.content || '');
+      result = await handleWriteFile(action.path || '', action.content || '');
+      break;
     case 'mkdir':
-      return handleMkdir(action.path || '');
+      result = await handleMkdir(action.path || '');
+      break;
     case 'move_file':
-      return handleMoveFile(action.from || '', action.to || '');
+      result = await handleMoveFile(action.from || '', action.to || '');
+      break;
     case 'list_dir':
-      return handleListDir(action.path || NEUXA_WORKSPACE);
+      result = await handleListDir(action.path || NEUXA_WORKSPACE);
+      break;
     case 'run_script':
-      return handleSafeRunScript(action.command || action.cmd || '');
+      result = await handleSafeRunScript(action.command || action.cmd || '');
+      break;
     case 'run_script_bg':
-      return { ok: false, output: '🛑 背景腳本不開放。用 run_script 跑輕量工具，或 create_task 派工。' };
+      result = { ok: false, output: '🛑 背景腳本不開放。用 run_script 跑輕量工具，或 create_task 派工。' };
+      break;
     case 'ask_ai':
-      return handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
+      result = await handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
+      break;
     case 'proxy_fetch':
-      return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
+      result = await handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
+      break;
     case 'query_supabase':
-      return handleQuerySupabase(action);
+      result = await handleQuerySupabase(action);
+      break;
     case 'semantic_search':
-      return handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      result = await handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      break;
     case 'index_file':
-      return handleIndexFile(action.path || '', action.category);
+      result = await handleIndexFile(action.path || '', action.category);
+      break;
     case 'reindex_knowledge':
-      return handleReindexKnowledge(action.mode || 'append');
+      result = await handleReindexKnowledge(action.mode || 'append');
+      break;
     case 'web_search':
-      return handleWebSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      result = await handleWebSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      break;
     case 'web_fetch':
-      return handleWebFetch(action.url || '');
+      result = await handleWebFetch(action.url || '');
+      break;
+    case 'code_eval':
+      result = await handleCodeEval(action.code || action.content || '');
+      break;
+    case 'analyze_code':
+      result = await handleAnalyzeCode(action.path || '', action.question || action.content || '');
+      break;
+    case 'grep_project': {
+      const grepOpts: { ignore_case?: boolean; max_results?: number; file_pattern?: string } = {};
+      if (action.options) {
+        try {
+          const parsed = typeof action.options === 'string' ? JSON.parse(action.options) : action.options;
+          if (parsed.ignore_case) grepOpts.ignore_case = Boolean(parsed.ignore_case);
+          if (parsed.max_results) grepOpts.max_results = Number(parsed.max_results);
+          if (parsed.file_pattern) grepOpts.file_pattern = String(parsed.file_pattern);
+        } catch { /* ignore parse errors */ }
+      }
+      result = await handleGrepProject(action.pattern || '', action.path, grepOpts);
+      break;
+    }
+    case 'find_symbol':
+      result = await handleFindSymbol(action.symbol || '', action.type);
+      break;
+    case 'pty_exec': {
+      const answers: string[] = (() => {
+        try {
+          const raw = action.answers;
+          if (!raw) return [];
+          if (Array.isArray(raw)) return (raw as string[]).map(String);
+          const parsed: unknown = JSON.parse(raw);
+          return Array.isArray(parsed) ? (parsed as string[]).map(String) : [];
+        } catch { return []; }
+      })();
+      const timeout = Math.max(5, Math.min(120, parseInt(action.timeout || '30', 10)));
+      result = await handlePtyExec(action.command || action.cmd || '', answers, timeout);
+      break;
+    }
+    case 'patch_file':
+      result = await handlePatchFile(action);
+      break;
+    case 'plan_project':
+      result = await handlePlanProject(action);
+      break;
+    case 'roadmap':
+      result = await handleRoadmap(action);
+      break;
     default:
-      return { ok: false, output: `未知 action: ${type}` };
+      result = { ok: false, output: `未知 action: ${type}` };
   }
+
+  // 成功时追加 chain hint，引导小蔡连续行动
+  if (result.ok && CHAIN_HINTS[type]) {
+    result.output += '\n' + CHAIN_HINTS[type];
+  }
+
+  return result;
 }
 
 // ── 自動記憶 ──

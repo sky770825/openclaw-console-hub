@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Menu, Search, Plus, Play, User, Bell, Moon, Sun, Lightbulb, Bot } from 'lucide-react';
+import { Menu, Search, Plus, Play, User, Bell, Moon, Sun, Lightbulb, Bot, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,12 +19,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { useSidebarContext } from './AppSidebar';
+import { useLocale } from '@/i18n/LocaleContext';
 import { mockUser } from '@/data/mock';
 import { getAlerts } from '@/services/api';
 import { cn } from '@/lib/utils';
 
 export function Topbar() {
   const { setMobileOpen } = useSidebarContext();
+  const { t, locale, setLocale } = useLocale();
   const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,7 +63,7 @@ export function Topbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="搜尋任務、執行紀錄、日誌..."
+              placeholder={t('topbar.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -96,7 +98,7 @@ export function Topbar() {
               onClick={() => navigate('/tasks?new=true')}
             >
               <Plus className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">新增任務</span>
+              <span className="hidden lg:inline">{t('topbar.newTask')}</span>
             </Button>
             <Button
               variant="outline"
@@ -107,12 +109,12 @@ export function Topbar() {
               onClick={() => navigate('/runs')}
             >
               <Play className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">立即執行</span>
+              <span className="hidden lg:inline">{t('topbar.runNow')}</span>
             </Button>
             <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden xl:flex" asChild>
               <Link to="/review">
                 <Lightbulb className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline">發想審核</span>
+                <span className="hidden xl:inline">{t('topbar.review')}</span>
               </Link>
             </Button>
             <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden xl:flex" asChild>
@@ -137,6 +139,23 @@ export function Topbar() {
               </span>
             )}
           </Button>
+
+          {/* Language: 中文 / English */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title={locale === 'zh' ? 'Switch to English' : '切換至中文'}>
+                <Languages className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setLocale('zh')}>
+                中文 {locale === 'zh' && '✓'}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocale('en')}>
+                English {locale === 'en' && '✓'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Dark mode toggle */}
           <Button
@@ -167,12 +186,12 @@ export function Topbar() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/settings')}>
-                設定
+                {t('topbar.settings')}
               </DropdownMenuItem>
-              <DropdownMenuItem>個人檔案</DropdownMenuItem>
+              <DropdownMenuItem>{t('topbar.profile')}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive">
-                登出
+                {t('topbar.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -183,14 +202,14 @@ export function Topbar() {
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent className="top-4 translate-y-0 sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="sr-only">搜尋</DialogTitle>
-            <DialogDescription className="sr-only">搜尋任務、執行紀錄、日誌</DialogDescription>
+            <DialogTitle className="sr-only">{t('topbar.searchTitle')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('topbar.searchPlaceholder')}</DialogDescription>
           </DialogHeader>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="搜尋任務、執行紀錄、日誌..."
+              placeholder={t('topbar.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {

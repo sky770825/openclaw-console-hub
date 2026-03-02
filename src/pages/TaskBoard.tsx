@@ -1471,7 +1471,14 @@ const TASK_TEMPLATE_PRESETS: TaskTemplatePreset[] = [
   },
 ];
 
-function NewTaskSheet({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (force?: boolean) => void }) {
+type NewTaskSheetProps = {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (force?: boolean) => void;
+  dynamicModelOptions: Record<TaskModelProvider, string[]>;
+};
+
+function NewTaskSheet({ open, onClose, onCreated, dynamicModelOptions }: NewTaskSheetProps) {
   const [form, setForm] = useState(DEFAULT_NEW_TASK);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('none');
@@ -2915,7 +2922,7 @@ export default function TaskBoard() {
         onDelete={handleDeleteTask}
       />
 
-      <NewTaskSheet open={newTaskSheetOpen} onClose={closeNewTaskSheet} onCreated={refreshTasks} />
+      <NewTaskSheet open={newTaskSheetOpen} onClose={closeNewTaskSheet} onCreated={refreshTasks} dynamicModelOptions={dynamicModelOptions} />
 
       <Dialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
         <DialogContent>

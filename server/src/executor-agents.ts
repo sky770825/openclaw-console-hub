@@ -1154,7 +1154,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
    */
   private static async executeSandboxScript(
     script: string,
-    timeoutMs: number = 120000
+    timeoutMs: number = 60000
   ): Promise<{ exitCode: number; stdout: string; stderr: string; durationMs: number }> {
     const startTime = Date.now();
 
@@ -1241,7 +1241,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
   private static async generateAndExecute(
     taskName: string,
     taskDescription: string,
-    timeoutMs: number = 120000
+    timeoutMs: number = 60000
   ): Promise<{
     exitCode: number;
     stdout: string;
@@ -1252,7 +1252,7 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
     retryCount: number;
     modelUsed: string;
   }> {
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = 1; // 最多重試 1 次，避免卡管線
     let lastError = '';
     let retryCount = 0;
     let lastScript = '';

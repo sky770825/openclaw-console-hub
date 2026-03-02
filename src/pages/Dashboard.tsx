@@ -42,6 +42,7 @@ import { getDashboardStats, getRuns, getAlerts, getAuditLogs, getAutoExecutorSta
 import type { Run, Alert, AuditLog } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useLocale } from '@/i18n/LocaleContext';
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms} 毫秒`;
@@ -124,6 +125,7 @@ function isSameAutoExecutor(a: AutoExecutorStatus | null, b: AutoExecutorStatus 
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useLocale();
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getDashboardStats>> | null>(null);
   const [recentFailedRuns, setRecentFailedRuns] = useState<Run[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -157,7 +159,7 @@ export default function Dashboard() {
     }
     loadData().catch((err) => {
       console.error('[Dashboard] loadData failed:', err);
-      toast.error('儀表板載入失敗，請重新整理');
+      toast.error(t('dashboard.loadFailed'));
     });
 
     // 每 10 秒更新一次 AutoExecutor 狀態
@@ -175,7 +177,7 @@ export default function Dashboard() {
     try {
       const result = await startAutoExecutor(30000); // 30 秒輪詢
       setAutoExecutor(result);
-      toast.success('AutoExecutor 已啟動');
+      toast.success(t('dashboard.autoExecutorStarted'));
     } catch (e) {
       toast.error('啟動失敗: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -188,7 +190,7 @@ export default function Dashboard() {
     try {
       const result = await stopAutoExecutor();
       setAutoExecutor(result);
-      toast.success('AutoExecutor 已停止');
+      toast.success(t('dashboard.autoExecutorStopped'));
     } catch (e) {
       toast.error('停止失敗: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -201,7 +203,7 @@ export default function Dashboard() {
     setIsStopping(true);
     try {
       await stopAutoExecutor();
-      toast.success('🚨 已緊急停止 AutoExecutor');
+      toast.success(t('dashboard.emergencyStopped'));
       const status = await getAutoExecutorStatus();
       setAutoExecutor(status);
     } catch (e) {
@@ -230,21 +232,21 @@ export default function Dashboard() {
   return (
     <PageContainer>
       <SectionHeader
-        title="艦橋總覽"
-        description="任務自動化系統總覽 · 與 OpenClaw Agent 板同步"
+        title={t('dashboard.title')}
+        description={t('dashboard.description')}
         icon="📊"
         action={
           <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" asChild>
               <Link to="/review" className="gap-1">
                 <Lightbulb className="h-4 w-4" />
-                發想審核
+                {t('dashboard.review')}
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/cursor" className="gap-1">
                 <Bot className="h-4 w-4" />
-                OpenClaw 任務板
+                {t('dashboard.openclawBoard')}
               </Link>
             </Button>
             <Button
@@ -269,7 +271,7 @@ export default function Dashboard() {
               }}
             >
               <RefreshCw className={cn('h-4 w-4', isForcingTelegramTest && 'animate-spin')} />
-              🧪 強制測試
+              {t('dashboard.forceTest')}
             </Button>
 
             <Button
@@ -279,7 +281,7 @@ export default function Dashboard() {
               onClick={() => setEmergencyDialogOpen(true)}
             >
               <AlertTriangle className="h-4 w-4" />
-              🚨 緊急停止
+              {t('dashboard.emergencyStop')}
             </Button>
           </div>
         }
@@ -293,12 +295,12 @@ export default function Dashboard() {
         className="oc-stats-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6"
       >
         {[
-          { title: "今日執行", value: stats.todayRuns, icon: Activity, variant: 'default' as const },
-          { title: "成功率", value: `${stats.successRate}%`, icon: CheckCircle, variant: 'success' as const },
-          { title: "失敗執行", value: stats.failedRuns, icon: XCircle, variant: (stats.failedRuns > 0 ? 'destructive' : 'default') as any },
-          { title: "平均耗時", value: formatDuration(stats.avgDuration), icon: Clock, variant: 'default' as const },
-          { title: "佇列深度", value: stats.queueDepth, icon: Layers, variant: (stats.queueDepth > 10 ? 'warning' : 'default') as any },
-          { title: "活躍任務", value: stats.activeTasks, icon: Zap, variant: 'accent' as const },
+          { title: t('dashboard.todayRuns'), value: stats.todayRuns, icon: Activity, variant: 'default' as const },
+          { title: t('dashboard.successRate'), value: `${stats.successRate}%`, icon: CheckCircle, variant: 'success' as const },
+          { title: t('dashboard.failedRuns'), value: stats.failedRuns, icon: XCircle, variant: (stats.failedRuns > 0 ? 'destructive' : 'default') as any },
+          { title: t('dashboard.avgDuration'), value: formatDuration(stats.avgDuration), icon: Clock, variant: 'default' as const },
+          { title: t('dashboard.queueDepth'), value: stats.queueDepth, icon: Layers, variant: (stats.queueDepth > 10 ? 'warning' : 'default') as any },
+          { title: t('dashboard.activeTasks'), value: stats.activeTasks, icon: Zap, variant: 'accent' as const },
         ].map((s) => (
           <motion.div
             key={s.title}
@@ -319,18 +321,18 @@ export default function Dashboard() {
           {/* Weekly Trend Chart */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">每週執行趨勢</CardTitle>
+              <CardTitle className="text-base font-medium">{t('dashboard.weeklyTrend')}</CardTitle>
             </CardHeader>
             <CardContent>
               <WeeklyChart data={stats.weeklyTrend} />
               <div className="flex items-center justify-center gap-6 mt-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ background: 'var(--oc-green)' }} />
-                  <span style={{ color: 'var(--oc-t3)' }}>成功</span>
+                  <span style={{ color: 'var(--oc-t3)' }}>{t('dashboard.success')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ background: 'var(--oc-red)' }} />
-                  <span style={{ color: 'var(--oc-t3)' }}>失敗</span>
+                  <span style={{ color: 'var(--oc-t3)' }}>{t('dashboard.failed')}</span>
                 </div>
               </div>
             </CardContent>
@@ -339,14 +341,14 @@ export default function Dashboard() {
           {/* 即時遙測 — ECharts + Scroll-Driven */}
           <Card className="sc-scroll-reveal">
             <CardContent className="pt-4">
-              <Suspense fallback={<div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground">載入圖表…</div>}>
+              <Suspense fallback={<div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground">{t('dashboard.loadingChart')}</div>}>
                 <TelemetryChart
-                  title="系統即時遙測"
+                  title={t('dashboard.telemetry')}
                   height={220}
                   series={[
-                    { name: "CPU 負載", color: "#22d3ee" },
-                    { name: "記憶體", color: "#fbbf24" },
-                    { name: "佇列速率", color: "#a78bfa" },
+                    { name: t('dashboard.cpuLoad'), color: "#22d3ee" },
+                    { name: t('dashboard.memory'), color: "#fbbf24" },
+                    { name: t('dashboard.queueRate'), color: "#a78bfa" },
                   ]}
                 />
               </Suspense>
@@ -357,7 +359,7 @@ export default function Dashboard() {
           {stats.agentStats && stats.agentStats.length > 0 && (
             <Card className="sc-scroll-reveal">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium">Agent 使用統計</CardTitle>
+                <CardTitle className="text-base font-medium">{t('dashboard.agentStats')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -376,17 +378,17 @@ export default function Dashboard() {
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span style={{ color: 'var(--oc-t3)' }}>執行</span>
+                          <span style={{ color: 'var(--oc-t3)' }}>{t('dashboard.runs')}</span>
                           <span className="font-semibold">{agent.runs}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span style={{ color: 'var(--oc-t3)' }}>成功率</span>
+                          <span style={{ color: 'var(--oc-t3)' }}>{t('dashboard.successRate')}</span>
                           <span className={agent.successRate >= 80 ? 'text-success' : agent.successRate >= 50 ? 'text-warning' : 'text-destructive'}>
                             {agent.successRate}%
                           </span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span style={{ color: 'var(--oc-t3)' }}>失敗</span>
+                          <span style={{ color: 'var(--oc-t3)' }}>{t('dashboard.failed')}</span>
                           <span className="text-destructive">{agent.failed}</span>
                         </div>
                       </div>
@@ -407,9 +409,9 @@ export default function Dashboard() {
           {/* Recent Failed Runs — Scroll-Driven */}
           <Card className="sc-scroll-reveal">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">近期失敗執行</CardTitle>
+              <CardTitle className="text-base font-medium">{t('dashboard.recentFailed')}</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => navigate('/runs?status=failed')}>
-                查看全部
+                {t('dashboard.viewAll')}
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </CardHeader>
@@ -417,7 +419,7 @@ export default function Dashboard() {
               {recentFailedRuns.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <CheckCircle className="h-8 w-8 text-success mb-2" />
-                  <p className="text-sm" style={{ color: 'var(--oc-t3)' }}>沒有失敗的執行！太棒了！🎉</p>
+                  <p className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.noFailedRuns')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -433,7 +435,7 @@ export default function Dashboard() {
                           <StatusBadge status={run.status} />
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
-                          {run.error?.message || '未知錯誤'}
+                          {run.error?.message || t('dashboard.unknownError')}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 ml-4 flex-shrink-0">
@@ -448,11 +450,11 @@ export default function Dashboard() {
                             e.stopPropagation();
                             try {
                               await api.rerun(run.id);
-                              toast.success('已加入重跑佇列');
+                              toast.success(t('dashboard.requeued'));
                               const runsData = await getRuns();
                               setRecentFailedRuns(runsData.filter(r => r.status === 'failed').slice(0, 5));
                             } catch (err) {
-                              toast.error(err instanceof Error ? err.message : '重跑失敗');
+                              toast.error(err instanceof Error ? err.message : t('dashboard.rerunFailed'));
                             }
                           }}
                         >
@@ -478,7 +480,7 @@ export default function Dashboard() {
                 ) : (
                   <WifiOff className="h-4 w-4 text-muted-foreground" />
                 )}
-                WebSocket 即時連線
+                {t('dashboard.wsLive')}
                 {ws.isConnected && (
                   <span className="inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                 )}
@@ -486,20 +488,20 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>狀態</span>
+                <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.status')}</span>
                 <span className={`text-sm font-medium ${ws.isConnected ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {ws.isConnected ? '已連接' : '未連接'}
+                  {ws.isConnected ? t('dashboard.connected') : t('dashboard.disconnected')}
                 </span>
               </div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>即時進度</span>
+                <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.liveProgress')}</span>
                 <span className="text-sm font-medium">
-                  {ws.progress ? ws.progress.message : '等待任務...'}
+                  {ws.progress ? ws.progress.message : t('dashboard.waitingTasks')}
                 </span>
               </div>
               {ws.logs.length > 0 && (
                 <div className="mt-3 pt-3 border-t">
-                  <p className="text-xs text-muted-foreground mb-2">最新日誌</p>
+                  <p className="text-xs text-muted-foreground mb-2">{t('dashboard.latestLogs')}</p>
                   <div className="text-xs space-y-1">
                     {ws.logs.slice(-3).map((log) => (
                       <div key={log.id} className="truncate">
@@ -525,7 +527,7 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <Bot className="h-4 w-4" />
-                自動執行器
+                {t('dashboard.autoExecutor')}
                 {autoExecutor?.isRunning && (
                   <span className="inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                 )}
@@ -535,22 +537,22 @@ export default function Dashboard() {
               {autoExecutor ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>狀態</span>
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.status')}</span>
                     <span className={`text-sm font-medium ${autoExecutor.isRunning ? 'text-green-500' : 'text-muted-foreground'}`}>
-                      {autoExecutor.isRunning ? '運行中' : '已停止'}
+                      {autoExecutor.isRunning ? t('dashboard.running') : t('dashboard.stopped')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>輪詢間隔</span>
-                    <span className="text-sm font-medium">{autoExecutor.pollIntervalMs / 1000} 秒</span>
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.pollInterval')}</span>
+                    <span className="text-sm font-medium">{autoExecutor.pollIntervalMs / 1000} {t('dashboard.seconds')}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>今日執行</span>
-                    <span className="text-sm font-medium">{autoExecutor.totalExecutedToday} 個</span>
+                    <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.todayCount')}</span>
+                    <span className="text-sm font-medium">{autoExecutor.totalExecutedToday}</span>
                   </div>
                   {autoExecutor.lastExecutedAt && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>上次執行</span>
+                      <span className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.lastRun')}</span>
                       <span className="text-sm font-medium">{formatRelativeTime(autoExecutor.lastExecutedAt)}</span>
                     </div>
                   )}
@@ -564,7 +566,7 @@ export default function Dashboard() {
                         disabled={isLoadingAutoExecutor}
                       >
                         <Square className="h-4 w-4 mr-1" />
-                        停止
+                        {t('dashboard.stop')}
                       </Button>
                     ) : (
                       <Button 
@@ -575,7 +577,7 @@ export default function Dashboard() {
                         disabled={isLoadingAutoExecutor}
                       >
                         <Play className="h-4 w-4 mr-1" />
-                        啟動
+                        {t('dashboard.start')}
                       </Button>
                     )}
                   </div>
@@ -593,20 +595,20 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
-                💰 今日預算
+                {t('dashboard.todayBudget')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">已花費</span>
+                  <span className="text-sm text-muted-foreground">{t('dashboard.spent')}</span>
                   <span className="text-2xl font-bold text-green-600">
                     ${dailyBudget.spent.toFixed(2)}
                   </span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">預算上限</span>
+                    <span className="text-muted-foreground">{t('dashboard.budgetLimit')}</span>
                     <span className="font-medium">${dailyBudget.limit.toFixed(2)}</span>
                   </div>
                   <div className="h-3 bg-muted rounded-full overflow-hidden">
@@ -619,7 +621,7 @@ export default function Dashboard() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
-                    剩餘 ${(dailyBudget.limit - dailyBudget.spent).toFixed(2)}
+                    {t('dashboard.remaining')} ${(dailyBudget.limit - dailyBudget.spent).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -629,9 +631,9 @@ export default function Dashboard() {
           {/* Open Alerts */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">未處理警報</CardTitle>
+              <CardTitle className="text-base font-medium">{t('dashboard.openAlerts')}</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => navigate('/alerts')}>
-                查看全部
+                {t('dashboard.viewAll')}
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </CardHeader>
@@ -639,7 +641,7 @@ export default function Dashboard() {
               {alerts.length === 0 ? (
                 <div className="flex flex-col items-center py-6 text-center">
                   <CheckCircle className="h-6 w-6 text-success mb-2" />
-                  <p className="text-sm" style={{ color: 'var(--oc-t3)' }}>沒有未處理的警報</p>
+                  <p className="text-sm" style={{ color: 'var(--oc-t3)' }}>{t('dashboard.noAlerts')}</p>
                 </div>
               ) : (
                 <ScrollArea className="h-48">
@@ -668,7 +670,7 @@ export default function Dashboard() {
           {/* Recent Activity / Audit */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">近期活動</CardTitle>
+              <CardTitle className="text-base font-medium">{t('dashboard.recentActivity')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-48">
@@ -711,15 +713,15 @@ export default function Dashboard() {
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div className="space-y-1">
-                <DialogTitle className="text-base font-semibold">確認緊急停止？</DialogTitle>
+                <DialogTitle className="text-base font-semibold">{t('dashboard.confirmEmergency')}</DialogTitle>
                 <DialogDescription className="text-xs sm:text-sm">
-                  此操作將立即停止所有正在執行的任務，包括 AutoExecutor 和 Autopilot。
+                  {t('dashboard.confirmEmergencyDesc')}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
-            ⚠️ 警告：此操作無法撤銷，進行中的任務將被強制終止。
+            {t('dashboard.confirmWarning')}
           </div>
           <DialogFooter className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
@@ -729,7 +731,7 @@ export default function Dashboard() {
               onClick={() => setEmergencyDialogOpen(false)}
               disabled={isStopping}
             >
-              取消
+              {t('dashboard.cancel')}
             </Button>
             <Button
               type="button"
@@ -738,7 +740,7 @@ export default function Dashboard() {
               onClick={handleEmergencyStop}
               disabled={isStopping}
             >
-              {isStopping ? '停止中…' : '確認緊急停止'}
+              {isStopping ? t('dashboard.stopping') : t('dashboard.confirmStop')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -11,6 +11,7 @@ import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
 import { useSpeculationRules, STARSHIP_PRERENDER_URLS } from "@/hooks/useSpeculationRules";
 import { useFederationPostMessageGuard } from "@/hooks/useFederationPostMessageGuard";
+import { LocaleProvider } from "@/i18n/LocaleContext";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -96,6 +97,7 @@ const App = () => (
     <PostMessageGuard />
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <LocaleProvider>
         <Toaster />
         <Sonner />
         <CoreAuthProvider>
@@ -158,6 +160,7 @@ const App = () => (
             </Suspense>
           </BrowserRouter>
         </CoreAuthProvider>
+        </LocaleProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>

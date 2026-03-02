@@ -134,8 +134,11 @@ const autoExecutorState: AutoExecutorState = {
 
 let autoExecutorInterval: NodeJS.Timeout | null = null;
 
-// ─── 並發鎖：防止多個 poll 同時執行 executeNextPendingTask ───
-let executorLocked = false;
+// ─── 並發槽位：最多同時執行 MAX_CONCURRENT 個任務 ───
+const MAX_CONCURRENT = 2; // 2 條線路同時跑
+interface ExecutorSlot { taskId: string; startedAt: number; }
+const activeSlots: ExecutorSlot[] = [];
+const SLOT_TIMEOUT_MS = 2 * 60 * 1000; // 單槽超時 2 分鐘
 
 // 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
@@ -194,7 +197,7 @@ async function cleanupStaleDoneTasks(): Promise<void> {
 let consecutiveIdlePolls = 0;
 const idlePatrolTimestamps: number[] = []; // 每小時最多 2 次
 const IDLE_PATROL_THRESHOLD = 20; // 20 polls × 15s ≈ 5 分鐘
-const IDLE_PATROL_HOURLY_LIMIT = 2;
+const IDLE_PATROL_HOURLY_LIMIT = 1;
 
 async function triggerIdlePatrol(): Promise<void> {
   const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
@@ -275,8 +278,13 @@ ${taskContext || '（無資料）'}
       return;
     }
 
+    // 清理 AI 回傳的 markdown code block（```json ... ```）
+    const cleaned = text
+      .replace(/`{1,3}json\s*\n?/g, '')
+      .replace(/\n?\s*`{1,3}(?=\s*$|\s*\n)/gm, '');
+
     // 提取 JSON array
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       log.warn(`[IdlePatrol] 無法解析 JSON: ${text.slice(0, 200)}`);
       return;
@@ -287,7 +295,7 @@ ${taskContext || '（無資料）'}
     // 建立任務（最多 3 個）
     const { createTask } = await import('../telegram/action-handlers.js');
     let created = 0;
-    for (const t of tasks.slice(0, 3)) {
+    for (const t of tasks.slice(0, 1)) {
       if (!t.name || !t.description) continue;
       const result = await createTask(`[巡邏] ${t.name}`, t.description, '小蔡');
       log.info(`[IdlePatrol] 建立任務: ${t.name} → ${result}`);
@@ -432,12 +440,23 @@ async function sendDispatchDigest(): Promise<void> {
 // ─── Core execution logic ───
 
 async function executeNextPendingTask(): Promise<void> {
-  // 並發鎖：如果上一個 poll 仍在執行，跳過這次
-  if (executorLocked) {
-    log.info('[AutoExecutor] 上一個任務仍在執行，跳過本次 poll');
+  // 並發槽位檢查：超時的槽位強制回收
+  const now = Date.now();
+  for (let i = activeSlots.length - 1; i >= 0; i--) {
+    const age = now - activeSlots[i].startedAt;
+    if (age > SLOT_TIMEOUT_MS) {
+      log.warn(`[AutoExecutor] ⚠️ 槽位 ${activeSlots[i].taskId} 已 ${Math.round(age / 1000)}s，強制回收`);
+      activeSlots.splice(i, 1);
+    }
+  }
+  // 所有槽位都滿 → 跳過本次 poll
+  if (activeSlots.length >= MAX_CONCURRENT) {
+    log.info(`[AutoExecutor] ${activeSlots.length}/${MAX_CONCURRENT} 槽位使用中，跳過本次 poll`);
     return;
   }
-  executorLocked = true;
+  // 佔一個槽位（先用 placeholder，拿到 taskId 後更新）
+  activeSlots.push({ taskId: '__pending__', startedAt: Date.now() });
+  let currentSlotTaskId = '__pending__';
   try {
     // 低頻清理：每 6 小時刪除超過 7 天的 done/failed 任務
     await cleanupStaleDoneTasks();
@@ -484,6 +503,8 @@ async function executeNextPendingTask(): Promise<void> {
         if (t.status !== 'ready') return false;
         // 跳過指派給老蔡的任務 — 需要老蔡本人處理
         if (t.owner === '老蔡') return false;
+        // 跳過已在並發槽位中的任務（避免同一任務跑兩次）
+        if (activeSlots.some(s => s.taskId === t.id)) return false;
         // 跳過標記為 manual-only 的任務（需人工執行，不交給 auto-executor）
         if (t.tags?.includes('manual-only')) return false;
         // AI分析 類任務限頻：每小時最多 5 個
@@ -494,14 +515,21 @@ async function executeNextPendingTask(): Promise<void> {
         if (autoExecutorState.dispatchMode) return true;
         return validateTaskForGate(t, 'ready').ok;
       })
-      .sort((a, b) => (a.priority || 3) - (b.priority || 3));
+      .sort((a, b) => {
+        // Fast Lane：快速任務（查詢/讀取/分析）優先，慢任務（build/deploy/code）靠後
+        const SLOW_PATTERNS = /\b(build|deploy|安裝|install|compile|重啟|restart|migration)\b/i;
+        const aIsSlow = SLOW_PATTERNS.test(a.name || '') || SLOW_PATTERNS.test(a.description || '');
+        const bIsSlow = SLOW_PATTERNS.test(b.name || '') || SLOW_PATTERNS.test(b.description || '');
+        if (aIsSlow !== bIsSlow) return aIsSlow ? 1 : -1; // 快任務排前面
+        // 同類別內按 priority 排序
+        return (a.priority || 3) - (b.priority || 3);
+      });
 
     if (pendingTasks.length === 0) {
       consecutiveIdlePolls++;
       if (consecutiveIdlePolls >= IDLE_PATROL_THRESHOLD) {
-        log.info(`[AutoExecutor] 連續空閒 ${consecutiveIdlePolls} 次 (${Math.round(consecutiveIdlePolls * 15 / 60)} 分鐘)，觸發自主巡邏`);
-        await triggerIdlePatrol();
-        consecutiveIdlePolls = 0; // 巡邏後重新計數
+        // IdlePatrol 已關閉（老蔡 2026-03-02 指令）— 空閒就空閒，不自己建任務
+        consecutiveIdlePolls = 0;
       } else {
         log.info('[AutoExecutor] 沒有待執行的任務');
       }
@@ -563,7 +591,11 @@ async function executeNextPendingTask(): Promise<void> {
       }
     }
 
-    log.info(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
+    // 更新槽位 placeholder 為實際 taskId
+    currentSlotTaskId = task.id;
+    const mySlot = activeSlots.find(s => s.taskId === '__pending__');
+    if (mySlot) mySlot.taskId = task.id;
+    log.info(`[AutoExecutor] 執行任務: ${task.name} (${task.id}) [槽位 ${activeSlots.length}/${MAX_CONCURRENT}]`);
 
     // Dispatch gate (remaining risk level handling)
     if (autoExecutorState.dispatchMode) {
@@ -836,7 +868,9 @@ async function executeNextPendingTask(): Promise<void> {
   } catch (e) {
     log.error('[AutoExecutor] 執行任務時發生錯誤:', e);
   } finally {
-    executorLocked = false;
+    // 釋放槽位：移除本次執行佔用的 slot（透過 taskId 或 placeholder）
+    const idx = activeSlots.findIndex(s => s.taskId === currentSlotTaskId || s.taskId === '__pending__');
+    if (idx >= 0) activeSlots.splice(idx, 1);
   }
 }
 
@@ -880,7 +914,11 @@ function stopAutoExecutor(): void {
 export const autoExecutorRouter = Router();
 
 autoExecutorRouter.get('/auto-executor/status', (_req, res) => {
-  res.json({ ok: true, ...autoExecutorState });
+  res.json({
+    ok: true,
+    ...autoExecutorState,
+    concurrency: { maxSlots: MAX_CONCURRENT, activeSlots: activeSlots.length, slots: activeSlots.map(s => ({ taskId: s.taskId, runningFor: Math.round((Date.now() - s.startedAt) / 1000) + 's' })) },
+  });
 });
 
 autoExecutorRouter.post('/auto-executor/start', (req, res) => {
