@@ -1155,7 +1155,8 @@ async function handleWebSearch(query: string, _limit: number = 5): Promise<Actio
     }
 
     log.info(`[WebSearch] "${query}" → ${chunks.length} sources, ${text.length} chars`);
-    return { ok: true, output: output || '沒有搜尋結果' };
+    const disclaimer = '\n\n⚠️ 以上是網路搜尋結果，未經驗證。不要直接當事實，要交叉比對多個來源再下結論。';
+    return { ok: true, output: (output || '沒有搜尋結果') + disclaimer };
   } catch (e) {
     return { ok: false, output: `web_search 失敗: ${(e as Error).message}` };
   }
