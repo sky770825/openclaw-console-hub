@@ -137,7 +137,7 @@ let autoExecutorInterval: NodeJS.Timeout | null = null;
 // ─── 並發鎖：防止多個 poll 同時執行 executeNextPendingTask ───
 let executorLocked = false;
 let executorLockedSince = 0;
-const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 分鐘超時（從 5 分鐘縮短，加速恢復）
 
 // 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
@@ -509,7 +509,15 @@ async function executeNextPendingTask(): Promise<void> {
         if (autoExecutorState.dispatchMode) return true;
         return validateTaskForGate(t, 'ready').ok;
       })
-      .sort((a, b) => (a.priority || 3) - (b.priority || 3));
+      .sort((a, b) => {
+        // Fast Lane：快速任務（查詢/讀取/分析）優先，慢任務（build/deploy/code）靠後
+        const SLOW_PATTERNS = /\b(build|deploy|安裝|install|compile|重啟|restart|migration)\b/i;
+        const aIsSlow = SLOW_PATTERNS.test(a.name || '') || SLOW_PATTERNS.test(a.description || '');
+        const bIsSlow = SLOW_PATTERNS.test(b.name || '') || SLOW_PATTERNS.test(b.description || '');
+        if (aIsSlow !== bIsSlow) return aIsSlow ? 1 : -1; // 快任務排前面
+        // 同類別內按 priority 排序
+        return (a.priority || 3) - (b.priority || 3);
+      });
 
     if (pendingTasks.length === 0) {
       consecutiveIdlePolls++;
