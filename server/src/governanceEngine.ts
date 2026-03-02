@@ -42,9 +42,9 @@ export interface CircuitBreakerState {
 }
 
 const DEFAULT_CB_CONFIG: CircuitBreakerConfig = {
-  failureThreshold: 3,
-  cooldownMs: 5 * 60 * 1000, // 5 分鐘
-  halfOpenAllowance: 1,
+  failureThreshold: 5,
+  cooldownMs: 60 * 1000, // 1 分鐘（之前 5 分鐘太久）
+  halfOpenAllowance: 2,
 };
 
 let cbConfig: CircuitBreakerConfig = { ...DEFAULT_CB_CONFIG };
