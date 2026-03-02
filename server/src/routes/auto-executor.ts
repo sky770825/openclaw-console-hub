@@ -275,8 +275,13 @@ ${taskContext || '（無資料）'}
       return;
     }
 
+    // 清理 AI 回傳的 markdown code block（```json ... ```）
+    const cleaned = text
+      .replace(/`{1,3}json\s*\n?/g, '')
+      .replace(/\n?\s*`{1,3}(?=\s*$|\s*\n)/gm, '');
+
     // 提取 JSON array
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       log.warn(`[IdlePatrol] 無法解析 JSON: ${text.slice(0, 200)}`);
       return;
