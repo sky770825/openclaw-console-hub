@@ -18,16 +18,17 @@ const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
 export type ActionResult = { ok: boolean; output: string };
 
-/** 行动链提示：action 完成后，提示小蔡接下来可以做什么 */
+/** 行动链提示：引导小蔡一次回复打包多个 action */
 const CHAIN_HINTS: Record<string, string> = {
-  read_file: '💡 读完了，下一步：分析内容 → write_file 写结论。',
-  write_file: '💡 写完了，下一步：index_file 索引到知识库。',
-  index_file: '💡 索引完了。如果还有题目，继续下一题。',
-  run_script: '💡 执行完了，下一步：分析结果 → write_file 写报告。',
-  semantic_search: '💡 搜到了，下一步：read_file 深入阅读 → write_file 写摘要。',
-  web_search: '💡 搜到了，下一步：web_fetch 读内容 → write_file 写笔记。',
-  web_fetch: '💡 读完了，下一步：write_file 写笔记 → index_file 索引。',
-  query_supabase: '💡 查完了，有异常就 run_script 进一步诊断。',
+  read_file: '💡 读完了 → 现在一口气：write_file 写分析 + index_file 索引，两个一起发。',
+  write_file: '💡 写完了 → 马上 index_file 索引。如果还有下一题，一起发。',
+  index_file: '💡 索引完了。继续下一题：read_file + 分析 + write_file 一口气做。',
+  run_script: '💡 执行完了 → 分析结果 + write_file 写报告 + index_file，三个一起发。',
+  semantic_search: '💡 搜到了 → read_file 读原文 + write_file 写摘要，两个一起发。',
+  web_search: '💡 搜到了 → web_fetch 读内容 + write_file 写笔记 + index_file，三个一起发。',
+  web_fetch: '💡 读完了 → write_file 写笔记 + index_file 索引，两个一起发。',
+  code_eval: '💡 执行完了 → write_file 写学习心得 + index_file 索引，两个一起发。',
+  query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
 };
 
 // ── 任務操作 ──
@@ -1235,6 +1236,76 @@ async function handleWebFetch(url: string): Promise<ActionResult> {
   }
 }
 
+// ── 沙盒代碼執行 ──
+
+/** 安全沙盒執行 JS/TS 代碼片段（學習用途） */
+async function handleCodeEval(code: string): Promise<ActionResult> {
+  if (!code.trim()) {
+    return { ok: false, output: 'code_eval 需要 code 參數' };
+  }
+
+  // 安全限制
+  const forbidden = [
+    /require\s*\(/i, /import\s+/i, /process\./i, /child_process/i,
+    /fs\./i, /path\./i, /http\./i, /net\./i, /eval\s*\(/i,
+    /Function\s*\(/i, /global\./i, /globalThis/i,
+  ];
+
+  const blocked = forbidden.find(p => p.test(code));
+  if (blocked) {
+    return { ok: false, output: `🛑 代碼包含禁止的 API（${blocked.source}）。code_eval 只能用純 JS 邏輯（變數、函數、迴圈、陣列操作等）。` };
+  }
+
+  // 限制代碼長度
+  if (code.length > 5000) {
+    return { ok: false, output: '🛑 代碼超過 5000 字元限制。' };
+  }
+
+  try {
+    // 用 vm 模組在沙盒中執行
+    const { createContext, runInNewContext } = await import('node:vm');
+
+    const outputs: string[] = [];
+    const sandbox = {
+      console: {
+        log: (...args: unknown[]) => { outputs.push(args.map(String).join(' ')); },
+        error: (...args: unknown[]) => { outputs.push('[ERROR] ' + args.map(String).join(' ')); },
+      },
+      JSON,
+      Math,
+      Date,
+      Array,
+      Object,
+      String,
+      Number,
+      Boolean,
+      Map,
+      Set,
+      RegExp,
+      parseInt,
+      parseFloat,
+      isNaN,
+      isFinite,
+    };
+
+    const ctx = createContext(sandbox);
+
+    const result = runInNewContext(code, ctx, {
+      timeout: 5000,  // 5 秒 timeout
+      displayErrors: true,
+    });
+
+    if (result !== undefined) {
+      outputs.push(`→ ${typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)}`);
+    }
+
+    const output = outputs.length > 0 ? outputs.join('\n') : '(無輸出)';
+    return { ok: true, output: output.slice(0, 3000) };  // 限制輸出長度
+  } catch (err: unknown) {
+    return { ok: false, output: `執行錯誤: ${(err as Error).message}` };
+  }
+}
+
 // ── 統一 action 調度器 ──
 
 /** 統一 action 調度器 */
@@ -1296,6 +1367,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     case 'web_fetch':
       result = await handleWebFetch(action.url || '');
+      break;
+    case 'code_eval':
+      result = await handleCodeEval(action.code || action.content || '');
       break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
