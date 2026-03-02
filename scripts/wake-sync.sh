@@ -153,7 +153,7 @@ cat <<HEADER
 | Google | gemini-3-flash-preview | 1000 req/day | ${QUOTA_3FLASH} |
 | Google | gemini-2.5-pro | 50 req/day | ${QUOTA_25PRO} |
 | Kimi | kimi-k2.5 | 免費無限 | ✅ 備援 |
-| Ollama | qwen3:8b | 本地無限 | ✅ 本地 |
+| Google | gemini-embedding-001 | 向量 Embedding | ✅ 免費 |
 
 > 🤖 **NEUXA 目前主模型**：\`${CURRENT_MODEL}\`
 > ⚠️ 如果 NEUXA 不回應 → 改 openclaw.json \`agents.defaults.model.primary\` 再 kill -HUP \$(pgrep openclaw-gateway)
