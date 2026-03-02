@@ -458,48 +458,97 @@ export async function handleAskGemini(
   }
 }
 
-/** NEUXA 諮詢 AI 代理 — 路由到 Claude CLI 或 Gemini API，失敗自動升級 */
+/** NEUXA 諮詢 AI 代理 — 階梯式升級鏈，失敗自動往上爬 */
 export async function handleAskAI(model: string, prompt: string, context?: string): Promise<ActionResult> {
   const m = (model || 'flash').toLowerCase();
+  const fullPrompt = context ? `${context}\n\n---\n\n${prompt}` : prompt;
+  const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
 
-  // 第一次嘗試：用指定的模型
-  let result: ActionResult;
-  if (m.includes('claude') || m.includes('sonnet') || m.includes('opus') || m.includes('haiku')) {
-    result = await handleAskClaude(model, prompt, context);
-  } else {
-    result = await handleAskGemini(model, prompt, context);
-  }
+  // 判斷起始模型
+  const isClaude = m.includes('claude') || m.includes('sonnet') || m.includes('opus') || m.includes('haiku');
 
-  // 成功 → 直接回
-  if (result.ok) return result;
+  // ── 階梯式升級鏈：CLI → Flash → Pro → 3 Pro → Sonnet API → Opus API ──
+  const ASK_AI_CHAIN: Array<{ id: string; type: 'cli' | 'gemini' | 'anthropic' }> = [
+    // 第 0 層：原始指定模型
+    ...(isClaude
+      ? [{ id: model, type: 'cli' as const }]
+      : [{ id: m.includes('pro') ? 'gemini-2.5-pro' : 'gemini-2.5-flash', type: 'gemini' as const }]),
+    // 第 1-4 層：逐步升級
+    { id: 'gemini-2.5-pro', type: 'gemini' },
+    { id: 'gemini-3-pro-preview', type: 'gemini' },
+    { id: 'claude-sonnet-4-6', type: 'anthropic' },
+    { id: 'claude-opus-4-6', type: 'anthropic' },
+  ];
+  // 去重（如果起始就是 pro 就跳過重複）
+  const seen = new Set<string>();
+  const chain = ASK_AI_CHAIN.filter(entry => {
+    if (seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
+  });
 
-  // 失敗 → 自動升級到 Anthropic API (Sonnet 4.6)
-  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!anthropicKey) {
-    log.warn(`[AskAI-Escalate] 原模型失敗且無 ANTHROPIC_API_KEY，無法升級`);
-    return result;
-  }
-
-  const escalateModel = 'claude-sonnet-4-6';
-  log.info(`[AskAI-Escalate] ${model} 失敗，自動升級到 ${escalateModel}`);
-
-  try {
-    const { callAnthropic } = await import('./model-registry.js');
-    const fullPrompt = context ? `${context}\n\n---\n\n${prompt}` : prompt;
+  /** 嘗試用指定模型呼叫 */
+  async function tryAskModel(entry: { id: string; type: string }): Promise<ActionResult> {
     const startTime = Date.now();
-    const reply = await callAnthropic(anthropicKey, escalateModel, '', [{ role: 'user', content: fullPrompt }], 4096, 90000);
-    const durationMs = Date.now() - startTime;
-
-    if (reply) {
-      log.info(`[AskAI-Escalate] ${escalateModel} 成功 replyLen=${reply.length} duration=${durationMs}ms`);
-      return { ok: true, output: `[${escalateModel} ⬆️ 自動升級 | ${durationMs}ms]\n${reply}` };
+    try {
+      if (entry.type === 'cli') {
+        return await handleAskClaude(entry.id, prompt, context);
+      } else if (entry.type === 'gemini') {
+        if (!googleKey) return { ok: false, output: '沒有 GOOGLE_API_KEY' };
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${entry.id}:generateContent?key=${googleKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+              generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
+            }),
+            signal: AbortSignal.timeout(90000),
+          }
+        );
+        if (!resp.ok) return { ok: false, output: `${entry.id} HTTP ${resp.status}` };
+        const data = await resp.json() as Record<string, unknown>;
+        const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
+        const contentObj = ((candidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> || {};
+        const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
+        const reply = parts.map(p => (p.text as string) || '').join('').trim();
+        const durationMs = Date.now() - startTime;
+        if (!reply) return { ok: false, output: `${entry.id} 空回覆` };
+        return { ok: true, output: `[${entry.id} | ${durationMs}ms]\n${reply}` };
+      } else {
+        // anthropic API
+        const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+        if (!anthropicKey) return { ok: false, output: '沒有 ANTHROPIC_API_KEY' };
+        const { callAnthropic } = await import('./model-registry.js');
+        const reply = await callAnthropic(anthropicKey, entry.id, '', [{ role: 'user', content: fullPrompt }], 4096, 90000);
+        const durationMs = Date.now() - startTime;
+        if (!reply) return { ok: false, output: `${entry.id} 空回覆` };
+        return { ok: true, output: `[${entry.id} | ${durationMs}ms]\n${reply}` };
+      }
+    } catch (e) {
+      log.warn({ err: e }, `[AskAI-Escalate] ${entry.id} failed`);
+      return { ok: false, output: `${entry.id} 錯誤: ${e instanceof Error ? e.message : String(e)}` };
     }
-  } catch (e) {
-    log.warn({ err: e }, `[AskAI-Escalate] ${escalateModel} 也失敗了`);
   }
 
-  // 升級也失敗 → 回傳原始錯誤
-  return result;
+  // ── 逐層嘗試升級鏈 ──
+  let lastResult: ActionResult = { ok: false, output: '所有模型都失敗了' };
+  for (let i = 0; i < chain.length; i++) {
+    const entry = chain[i];
+    if (i > 0) log.info(`[AskAI-Escalate] ⬆️ 升級到 ${entry.id}（第 ${i} 層）`);
+    const result = await tryAskModel(entry);
+    if (result.ok) {
+      if (i > 0) {
+        log.info(`[AskAI-Escalate] ✅ ${entry.id} 接棒成功`);
+        result.output = result.output.replace(/^\[/, '[⬆️ ');
+      }
+      return result;
+    }
+    log.warn(`[AskAI-Escalate] ${entry.id} 失敗，嘗試下一層...`);
+    lastResult = result;
+  }
+  return lastResult;
 }
 
 /** 安全 Supabase 查詢代理：NEUXA 不需要 key，由 server 內部 client 處理 */

@@ -345,182 +345,143 @@ export async function xiaocaiThink(
   const history = xiaocaiHistory.get(chatId) || [];
   const systemPrompt = buildSystemPrompt(soulCore, awakening, sysStatus, taskSnap, xiaocaiMainModel);
 
-  const provider = getModelProvider(xiaocaiMainModel);
-  log.info(`[XiaocaiAI] model=${xiaocaiMainModel} provider=${provider}`);
+  // ── 階梯式升級鏈：Flash → Pro → 3 Pro → Sonnet → Opus ──
+  const ESCALATION_CHAIN = [
+    xiaocaiMainModel,                          // 第 0 層：當前主模型
+    'gemini-2.5-pro',                          // 第 1 層：Google Pro
+    'gemini-3-pro-preview',                    // 第 2 層：Google 3 Pro
+    'claude-sonnet-4-6',                       // 第 3 層：Anthropic Sonnet（付費）
+    'claude-opus-4-6',                         // 第 4 層：Anthropic Opus（最貴，最強）
+  ];
+  // 去重（如果主模型已經是 Pro 就不重複）
+  const chain = [...new Set(ESCALATION_CHAIN)];
 
-  let reply = '';
-  try {
-    if (provider === 'google') {
-      // 組裝使用者訊息 parts（支援圖片 + 文字）
-      const userParts: Array<Record<string, unknown>> = [];
-      if (image) {
-        userParts.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-      }
-      userParts.push({ text: userMessage || '請看這張圖片' });
+  /** 嘗試用指定模型生成回覆 */
+  async function tryModel(modelId: string): Promise<string | null> {
+    const prov = getModelProvider(modelId);
+    try {
+      if (prov === 'google') {
+        const userParts: Array<Record<string, unknown>> = [];
+        if (image) userParts.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
+        userParts.push({ text: userMessage || '請看這張圖片' });
 
-      const contents = [
-        { role: 'user', parts: [{ text: systemPrompt }] },
-        { role: 'model', parts: [{ text: '老蔡，我在。剛掃了一眼系統狀態和任務板，有什麼想聊的還是要我看看什麼？' }] },
-        ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
-        { role: 'user', parts: userParts },
-      ];
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${xiaocaiMainModel}:generateContent?key=${GOOGLE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            generationConfig: { maxOutputTokens: getModelConfig(xiaocaiMainModel).maxOutputTokens, temperature: getModelConfig(xiaocaiMainModel).temperature },
-          }),
-          signal: AbortSignal.timeout(90000),
-        }
-      );
-      if (!resp.ok) {
-        log.warn(`[XiaocaiAI] Gemini HTTP ${resp.status} model=${xiaocaiMainModel}`);
-        return '欸，我腦袋剛當了一下，再說一次？';
-      }
-      const data = await resp.json() as Record<string, unknown>;
-      const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
-      const candidate = candidates[0] || {} as Record<string, unknown>;
-      const finishReason = (candidate.finishReason as string) || 'unknown';
-      const contentObj = (candidate.content || {}) as Record<string, unknown>;
-      const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
-      reply = parts.map(p => (p.text as string) || '').join('').trim();
-      log.info(`[XiaocaiAI] model=${xiaocaiMainModel} finishReason=${finishReason} replyLen=${reply.length}`);
-      if (finishReason === 'MAX_TOKENS') {
-        log.warn('[XiaocaiAI] 回覆被 maxOutputTokens 截斷！');
-      }
-    } else if (provider === 'anthropic') {
-      // Anthropic Claude API
-      const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim() || getProviderKey('Anthropic') || '';
-      if (!anthropicKey) return '沒有 Anthropic API Key，請在 .env 設定 ANTHROPIC_API_KEY';
-      const cfg = getModelConfig(xiaocaiMainModel);
-      const msgs = [
-        ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
-        { role: 'user', content: userMessage || '請看這張圖片' },
-      ];
-      reply = await callAnthropic(anthropicKey, xiaocaiMainModel, systemPrompt, msgs, cfg.maxOutputTokens, 90000);
-      log.info(`[XiaocaiAI] Anthropic model=${xiaocaiMainModel} replyLen=${reply.length}`);
-    } else {
-      // OpenAI 相容 API（Kimi / xAI / DeepSeek / OpenRouter）
-      let baseUrl: string;
-      let apiKey: string;
-      let modelForApi = xiaocaiMainModel;
-
-      if (provider === 'openrouter') {
-        baseUrl = 'https://openrouter.ai/api/v1';
-        apiKey = process.env.OPENROUTER_API_KEY?.trim() || getProviderKey('openrouter') || '';
-      } else {
-        apiKey = getProviderKey(provider);
-        baseUrl = provider === 'kimi' ? 'https://api.moonshot.ai/v1'
-          : provider === 'deepseek' ? 'https://api.deepseek.com/v1'
-          : 'https://api.x.ai/v1';
-      }
-
-      if (!apiKey) return `沒有 ${provider} 的 API Key，請在 openclaw.json 設定`;
-
-      // OpenAI vision 格式：content 可以是 array（圖片+文字）
-      const userContent: string | Array<Record<string, unknown>> = image
-        ? [
-            { type: 'image_url', image_url: { url: `data:${image.mimeType};base64,${image.base64}` } },
-            { type: 'text', text: userMessage || '請看這張圖片' },
-          ]
-        : userMessage;
-
-      const messages = [
-        ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
-        { role: 'user', content: userContent },
-      ];
-      reply = await callOpenAICompatible(baseUrl, apiKey, modelForApi, systemPrompt, messages as Array<{ role: string; content: string }>, getModelConfig(xiaocaiMainModel).maxOutputTokens, 90000);
-      log.info(`[XiaocaiAI] model=${xiaocaiMainModel} provider=${provider} replyLen=${reply.length}`);
-    }
-    if (!reply) {
-      log.warn(`[XiaocaiAI] 空回覆，重試一次 model=${xiaocaiMainModel}`);
-      // 重試一次：用更簡單的 prompt 讓 Gemini 不卡
-      try {
-        if (provider === 'google') {
-          const retryResp = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${xiaocaiMainModel}:generateContent?key=${GOOGLE_API_KEY}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [
-                  { role: 'user', parts: [{ text: `${systemPrompt}\n\n---\n老蔡說：${userMessage}\n\n請直接回覆老蔡。` }] },
-                ],
-                generationConfig: { maxOutputTokens: 2048, temperature: 0.8 },
-              }),
-              signal: AbortSignal.timeout(30000),
-            }
-          );
-          if (retryResp.ok) {
-            const retryData = await retryResp.json() as Record<string, unknown>;
-            const retryCandidates = (retryData.candidates || []) as Array<Record<string, unknown>>;
-            const retryContent = ((retryCandidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> | undefined;
-            const retryParts = ((retryContent || {}).parts || []) as Array<Record<string, unknown>>;
-            reply = retryParts.map(p => (p.text as string) || '').join('').trim();
-            log.info(`[XiaocaiAI] 重試結果 replyLen=${reply.length}`);
+        const contents = [
+          { role: 'user', parts: [{ text: systemPrompt }] },
+          { role: 'model', parts: [{ text: '老蔡，我在。剛掃了一眼系統狀態和任務板，有什麼想聊的還是要我看看什麼？' }] },
+          ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
+          { role: 'user', parts: userParts },
+        ];
+        const cfg = getModelConfig(modelId);
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GOOGLE_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              generationConfig: { maxOutputTokens: cfg.maxOutputTokens, temperature: cfg.temperature },
+            }),
+            signal: AbortSignal.timeout(90000),
           }
+        );
+        if (!resp.ok) {
+          log.warn(`[XiaocaiAI] Gemini HTTP ${resp.status} model=${modelId}`);
+          return null;
         }
-      } catch { /* 重試也失敗就算了 */ }
-      if (!reply) return '嗯…你再說一次，我剛沒接好。';
-    }
+        const data = await resp.json() as Record<string, unknown>;
+        const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
+        const candidate = candidates[0] || {} as Record<string, unknown>;
+        const finishReason = (candidate.finishReason as string) || 'unknown';
+        const contentObj = (candidate.content || {}) as Record<string, unknown>;
+        const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
+        const text = parts.map(p => (p.text as string) || '').join('').trim();
+        log.info(`[XiaocaiAI] model=${modelId} finishReason=${finishReason} replyLen=${text.length}`);
+        return text || null;
 
-    // 清理 markdown 符號
-    const clean = reply
-      .replace(/^#{1,6}\s*/gm, '')
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/\*(.+?)\*/g, '$1')
-      .replace(/`([^`]+)`/g, '$1')
-      .replace(/^[-*]\s/gm, '• ')
-      .replace(/^---+$/gm, '')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-
-    // 更新對話歷史
-    history.push({ role: 'user', text: userMessage });
-    history.push({ role: 'model', text: clean });
-    if (history.length > 20) history.splice(0, history.length - 20);
-    xiaocaiHistory.set(chatId, history);
-
-    return clean;
-  } catch (e) {
-    log.error({ err: e }, `[XiaocaiAI] ${xiaocaiMainModel} call failed`);
-
-    // ── 自動升級：主模型失敗 → Opus 4.6 接棒 ──
-    const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-    if (anthropicKey) {
-      const escalateModel = 'claude-sonnet-4-6';
-      log.info(`[XiaocaiAI-Escalate] ${xiaocaiMainModel} 失敗，自動升級到 ${escalateModel}`);
-      try {
+      } else if (prov === 'anthropic') {
+        const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim() || getProviderKey('Anthropic') || '';
+        if (!anthropicKey) return null;
+        const cfg = getModelConfig(modelId);
         const msgs = [
           ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
           { role: 'user', content: userMessage || '請看這張圖片' },
         ];
-        const escalateReply = await callAnthropic(anthropicKey, escalateModel, systemPrompt, msgs, 4096, 90000);
-        if (escalateReply) {
-          log.info(`[XiaocaiAI-Escalate] ${escalateModel} 成功 replyLen=${escalateReply.length}`);
-          const clean = escalateReply
-            .replace(/^#{1,6}\s*/gm, '')
-            .replace(/\*\*(.+?)\*\*/g, '$1')
-            .replace(/\*(.+?)\*/g, '$1')
-            .replace(/`([^`]+)`/g, '$1')
-            .replace(/^[-*]\s/gm, '• ')
-            .replace(/^---+$/gm, '')
-            .replace(/\n{3,}/g, '\n\n')
-            .trim();
-          history.push({ role: 'user', text: userMessage });
-          history.push({ role: 'model', text: clean });
-          if (history.length > 20) history.splice(0, history.length - 20);
-          xiaocaiHistory.set(chatId, history);
-          return clean;
-        }
-      } catch (e2) {
-        log.warn({ err: e2 }, `[XiaocaiAI-Escalate] ${escalateModel} 也失敗了`);
-      }
-    }
+        const text = await callAnthropic(anthropicKey, modelId, systemPrompt, msgs, cfg.maxOutputTokens, 90000);
+        log.info(`[XiaocaiAI] Anthropic model=${modelId} replyLen=${text.length}`);
+        return text || null;
 
-    return '靠，剛斷線了。你再傳一次，我馬上接。';
+      } else {
+        // OpenAI 相容 API（Kimi / xAI / DeepSeek / OpenRouter）
+        let baseUrl: string;
+        let apiKey: string;
+        if (prov === 'openrouter') {
+          baseUrl = 'https://openrouter.ai/api/v1';
+          apiKey = process.env.OPENROUTER_API_KEY?.trim() || getProviderKey('openrouter') || '';
+        } else {
+          apiKey = getProviderKey(prov);
+          baseUrl = prov === 'kimi' ? 'https://api.moonshot.ai/v1'
+            : prov === 'deepseek' ? 'https://api.deepseek.com/v1'
+            : 'https://api.x.ai/v1';
+        }
+        if (!apiKey) return null;
+        const userContent: string | Array<Record<string, unknown>> = image
+          ? [
+              { type: 'image_url', image_url: { url: `data:${image.mimeType};base64,${image.base64}` } },
+              { type: 'text', text: userMessage || '請看這張圖片' },
+            ]
+          : userMessage;
+        const messages = [
+          ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : h.role, content: h.text })),
+          { role: 'user', content: userContent },
+        ];
+        const text = await callOpenAICompatible(baseUrl, apiKey, modelId, systemPrompt, messages as Array<{ role: string; content: string }>, getModelConfig(modelId).maxOutputTokens, 90000);
+        log.info(`[XiaocaiAI] model=${modelId} provider=${prov} replyLen=${text.length}`);
+        return text || null;
+      }
+    } catch (e) {
+      log.warn({ err: e }, `[XiaocaiAI] ${modelId} failed`);
+      return null;
+    }
   }
+
+  // ── 逐層嘗試升級鏈 ──
+  let reply: string | null = null;
+  let usedModel = xiaocaiMainModel;
+
+  for (let i = 0; i < chain.length; i++) {
+    const modelId = chain[i];
+    if (i > 0) log.info(`[XiaocaiAI-Escalate] ⬆️ 升級到 ${modelId}（第 ${i} 層）`);
+
+    reply = await tryModel(modelId);
+    if (reply) {
+      usedModel = modelId;
+      break;
+    }
+    log.warn(`[XiaocaiAI-Escalate] ${modelId} 失敗，嘗試下一層...`);
+  }
+
+  if (!reply) return '所有模型都掛了…老蔡你看一下系統，我暫時腦袋空了。';
+
+  if (usedModel !== xiaocaiMainModel) {
+    log.info(`[XiaocaiAI-Escalate] ✅ ${usedModel} 接棒成功（原模型 ${xiaocaiMainModel}），自動切回不改設定`);
+  }
+
+  // 清理 markdown 符號
+  const clean = reply
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^[-*]\s/gm, '• ')
+    .replace(/^---+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  // 更新對話歷史
+  history.push({ role: 'user', text: userMessage });
+  history.push({ role: 'model', text: clean });
+  if (history.length > 20) history.splice(0, history.length - 20);
+  xiaocaiHistory.set(chatId, history);
+
+  return clean;
 }
