@@ -8,6 +8,18 @@ import { createLogger } from '../logger.js';
 
 const log = createLogger('telegram-util');
 
+/**
+ * 清理非 UTF-8 / Telegram 不接受的字元
+ * - 移除孤立 surrogate pairs（\uD800-\uDFFF）
+ * - 移除 C0/C1 控制字元（保留 \t \n \r）
+ * - 防止 Telegram 400 "strings must be encoded in UTF-8"
+ */
+function sanitizeUtf8(text: string): string {
+  return text
+    .replace(/[\uD800-\uDFFF]/g, '')                             // 孤立 surrogate
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\u0080-\uFFFF]/g, '');     // 非法控制字元
+}
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim();
 
@@ -40,13 +52,14 @@ export async function sendTelegramMessage(
     return;
   }
   try {
+    const safeText = sanitizeUtf8(text);
     const endpoint = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: TELEGRAM_CHAT_ID,
-        text,
+        text: safeText,
         disable_notification: options.silent ?? false,
         ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
       }),
@@ -78,13 +91,14 @@ export async function sendTelegramMessageToChat(
   const token = options.token?.trim() || process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() || TELEGRAM_BOT_TOKEN;
   if (!token) return;
   try {
+    const safeText = sanitizeUtf8(text);
     const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text,
+        text: safeText,
         disable_notification: options.silent ?? false,
         ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
         ...(options.replyMarkup ? { reply_markup: options.replyMarkup } : {}),
