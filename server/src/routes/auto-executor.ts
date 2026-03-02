@@ -134,10 +134,11 @@ const autoExecutorState: AutoExecutorState = {
 
 let autoExecutorInterval: NodeJS.Timeout | null = null;
 
-// ─── 並發鎖：防止多個 poll 同時執行 executeNextPendingTask ───
-let executorLocked = false;
-let executorLockedSince = 0;
-const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 分鐘超時（從 5 分鐘縮短，加速恢復）
+// ─── 並發槽位：最多同時執行 MAX_CONCURRENT 個任務 ───
+const MAX_CONCURRENT = 2; // 2 條線路同時跑
+interface ExecutorSlot { taskId: string; startedAt: number; }
+const activeSlots: ExecutorSlot[] = [];
+const SLOT_TIMEOUT_MS = 2 * 60 * 1000; // 單槽超時 2 分鐘
 
 // 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
@@ -439,20 +440,23 @@ async function sendDispatchDigest(): Promise<void> {
 // ─── Core execution logic ───
 
 async function executeNextPendingTask(): Promise<void> {
-  // 並發鎖：如果上一個 poll 仍在執行，跳過這次
-  if (executorLocked) {
-    // 超時保護：鎖超過 5 分鐘強制釋放（防止永久卡死）
-    const lockAge = executorLockedSince > 0 ? Date.now() - executorLockedSince : 0;
-    if (lockAge > LOCK_TIMEOUT_MS) {
-      log.warn(`[AutoExecutor] ⚠️ 鎖定已 ${Math.round(lockAge / 1000)}s，強制解鎖`);
-      executorLocked = false;
-    } else {
-      log.info('[AutoExecutor] 上一個任務仍在執行，跳過本次 poll');
-      return;
+  // 並發槽位檢查：超時的槽位強制回收
+  const now = Date.now();
+  for (let i = activeSlots.length - 1; i >= 0; i--) {
+    const age = now - activeSlots[i].startedAt;
+    if (age > SLOT_TIMEOUT_MS) {
+      log.warn(`[AutoExecutor] ⚠️ 槽位 ${activeSlots[i].taskId} 已 ${Math.round(age / 1000)}s，強制回收`);
+      activeSlots.splice(i, 1);
     }
   }
-  executorLocked = true;
-  executorLockedSince = Date.now();
+  // 所有槽位都滿 → 跳過本次 poll
+  if (activeSlots.length >= MAX_CONCURRENT) {
+    log.info(`[AutoExecutor] ${activeSlots.length}/${MAX_CONCURRENT} 槽位使用中，跳過本次 poll`);
+    return;
+  }
+  // 佔一個槽位（先用 placeholder，拿到 taskId 後更新）
+  activeSlots.push({ taskId: '__pending__', startedAt: Date.now() });
+  let currentSlotTaskId = '__pending__';
   try {
     // 低頻清理：每 6 小時刪除超過 7 天的 done/failed 任務
     await cleanupStaleDoneTasks();
@@ -499,6 +503,8 @@ async function executeNextPendingTask(): Promise<void> {
         if (t.status !== 'ready') return false;
         // 跳過指派給老蔡的任務 — 需要老蔡本人處理
         if (t.owner === '老蔡') return false;
+        // 跳過已在並發槽位中的任務（避免同一任務跑兩次）
+        if (activeSlots.some(s => s.taskId === t.id)) return false;
         // 跳過標記為 manual-only 的任務（需人工執行，不交給 auto-executor）
         if (t.tags?.includes('manual-only')) return false;
         // AI分析 類任務限頻：每小時最多 5 個
@@ -585,7 +591,11 @@ async function executeNextPendingTask(): Promise<void> {
       }
     }
 
-    log.info(`[AutoExecutor] 執行任務: ${task.name} (${task.id})`);
+    // 更新槽位 placeholder 為實際 taskId
+    currentSlotTaskId = task.id;
+    const mySlot = activeSlots.find(s => s.taskId === '__pending__');
+    if (mySlot) mySlot.taskId = task.id;
+    log.info(`[AutoExecutor] 執行任務: ${task.name} (${task.id}) [槽位 ${activeSlots.length}/${MAX_CONCURRENT}]`);
 
     // Dispatch gate (remaining risk level handling)
     if (autoExecutorState.dispatchMode) {
@@ -858,8 +868,9 @@ async function executeNextPendingTask(): Promise<void> {
   } catch (e) {
     log.error('[AutoExecutor] 執行任務時發生錯誤:', e);
   } finally {
-    executorLocked = false;
-    executorLockedSince = 0;
+    // 釋放槽位：移除本次執行佔用的 slot（透過 taskId 或 placeholder）
+    const idx = activeSlots.findIndex(s => s.taskId === currentSlotTaskId || s.taskId === '__pending__');
+    if (idx >= 0) activeSlots.splice(idx, 1);
   }
 }
 
@@ -903,7 +914,11 @@ function stopAutoExecutor(): void {
 export const autoExecutorRouter = Router();
 
 autoExecutorRouter.get('/auto-executor/status', (_req, res) => {
-  res.json({ ok: true, ...autoExecutorState });
+  res.json({
+    ok: true,
+    ...autoExecutorState,
+    concurrency: { maxSlots: MAX_CONCURRENT, activeSlots: activeSlots.length, slots: activeSlots.map(s => ({ taskId: s.taskId, runningFor: Math.round((Date.now() - s.startedAt) / 1000) + 's' })) },
+  });
 });
 
 autoExecutorRouter.post('/auto-executor/start', (req, res) => {
