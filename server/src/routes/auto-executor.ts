@@ -136,6 +136,8 @@ let autoExecutorInterval: NodeJS.Timeout | null = null;
 
 // ─── 並發鎖：防止多個 poll 同時執行 executeNextPendingTask ───
 let executorLocked = false;
+let executorLockedSince = 0;
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
 // 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
@@ -194,7 +196,7 @@ async function cleanupStaleDoneTasks(): Promise<void> {
 let consecutiveIdlePolls = 0;
 const idlePatrolTimestamps: number[] = []; // 每小時最多 2 次
 const IDLE_PATROL_THRESHOLD = 20; // 20 polls × 15s ≈ 5 分鐘
-const IDLE_PATROL_HOURLY_LIMIT = 2;
+const IDLE_PATROL_HOURLY_LIMIT = 1;
 
 async function triggerIdlePatrol(): Promise<void> {
   const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
@@ -292,7 +294,7 @@ ${taskContext || '（無資料）'}
     // 建立任務（最多 3 個）
     const { createTask } = await import('../telegram/action-handlers.js');
     let created = 0;
-    for (const t of tasks.slice(0, 3)) {
+    for (const t of tasks.slice(0, 1)) {
       if (!t.name || !t.description) continue;
       const result = await createTask(`[巡邏] ${t.name}`, t.description, '小蔡');
       log.info(`[IdlePatrol] 建立任務: ${t.name} → ${result}`);
@@ -439,10 +441,18 @@ async function sendDispatchDigest(): Promise<void> {
 async function executeNextPendingTask(): Promise<void> {
   // 並發鎖：如果上一個 poll 仍在執行，跳過這次
   if (executorLocked) {
-    log.info('[AutoExecutor] 上一個任務仍在執行，跳過本次 poll');
-    return;
+    // 超時保護：鎖超過 5 分鐘強制釋放（防止永久卡死）
+    const lockAge = executorLockedSince > 0 ? Date.now() - executorLockedSince : 0;
+    if (lockAge > LOCK_TIMEOUT_MS) {
+      log.warn(`[AutoExecutor] ⚠️ 鎖定已 ${Math.round(lockAge / 1000)}s，強制解鎖`);
+      executorLocked = false;
+    } else {
+      log.info('[AutoExecutor] 上一個任務仍在執行，跳過本次 poll');
+      return;
+    }
   }
   executorLocked = true;
+  executorLockedSince = Date.now();
   try {
     // 低頻清理：每 6 小時刪除超過 7 天的 done/failed 任務
     await cleanupStaleDoneTasks();
@@ -842,6 +852,7 @@ async function executeNextPendingTask(): Promise<void> {
     log.error('[AutoExecutor] 執行任務時發生錯誤:', e);
   } finally {
     executorLocked = false;
+    executorLockedSince = 0;
   }
 }
 
