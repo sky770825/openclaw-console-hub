@@ -10,21 +10,23 @@ import type {
   OpenClawRunRow,
 } from './openclawSupabase.js';
 
-// openclaw status: queued | in_progress | done
-// 主應用 status: draft | ready | running | review | done | blocked
+// openclaw status: queued | in_progress | done | pending_review
+// 主應用 status: draft | ready | running | review | done | blocked | pending_review
 const OC_TO_TASK_STATUS: Record<string, Task['status']> = {
   queued: 'ready',
   in_progress: 'running',
   done: 'done',
+  pending_review: 'review',
 };
 
 const TASK_TO_OC_STATUS: Record<string, string> = {
   draft: 'queued',
   ready: 'queued',
   running: 'in_progress',
-  review: 'in_progress',
+  review: 'pending_review',
   done: 'done',
   blocked: 'queued',
+  pending_review: 'pending_review',
 };
 
 const META_MARKER = '<!--OC_META:';

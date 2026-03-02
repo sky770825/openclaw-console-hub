@@ -4052,6 +4052,7 @@ server.listen(PORT, '127.0.0.1', () => {
     (async () => {
       try {
         const ocTasks = await fetchOpenClawTasks();
+        // pending_review 是等待老蔡審核的任務，不要重置
         const orphans = (ocTasks ?? []).filter((t) => t.status === 'in_progress');
         if (orphans.length > 0) {
           log.warn(`[StartupReconcile] 發現 ${orphans.length} 筆孤立 in_progress 任務，改回 queued`);
@@ -4061,6 +4062,11 @@ server.listen(PORT, '127.0.0.1', () => {
           }
         } else {
           log.info('[StartupReconcile] 無孤立任務，狀態乾淨');
+        }
+        // 確認 pending_review 任務不被重置
+        const pendingReviews = (ocTasks ?? []).filter((t) => t.status === 'pending_review');
+        if (pendingReviews.length > 0) {
+          log.info(`[StartupReconcile] 保留 ${pendingReviews.length} 筆 pending_review 任務（等待老蔡審核）`);
         }
       } catch (e) {
         log.error('[StartupReconcile] 失敗:', e);
