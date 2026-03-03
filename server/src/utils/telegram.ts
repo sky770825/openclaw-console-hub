@@ -22,6 +22,8 @@ function sanitizeUtf8(text: string): string {
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim();
+const TELEGRAM_GROUP_CHAT_ID = process.env.TELEGRAM_GROUP_CHAT_ID?.trim();
+const TELEGRAM_GROUP_BOT_TOKEN = process.env.TELEGRAM_GROUP_BOT_TOKEN?.trim();
 
 /** 是否已設定 Telegram（後端啟動時檢查用） */
 export function isTelegramConfigured(): boolean {
@@ -67,6 +69,20 @@ export async function sendTelegramMessage(
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
       log.error({ status: res.status, detail }, '[Telegram] send failed');
+    }
+    // 同步推送到協作群（靜默，不影響主流程）
+    const groupToken = TELEGRAM_GROUP_BOT_TOKEN || TELEGRAM_BOT_TOKEN;
+    if (TELEGRAM_GROUP_CHAT_ID && groupToken) {
+      fetch(`https://api.telegram.org/bot${groupToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_GROUP_CHAT_ID,
+          text: safeText,
+          disable_notification: true,
+          ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
+        }),
+      }).catch(() => {}); // 群推失敗不影響主推
     }
   } catch (error) {
     log.error({ err: error }, '[Telegram] Failed to send message');
