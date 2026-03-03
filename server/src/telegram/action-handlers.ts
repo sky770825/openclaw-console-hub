@@ -505,24 +505,27 @@ export async function handleAskGemini(
 
 /** NEUXA 諮詢 AI 代理 — 階梯式升級鏈，失敗自動往上爬 */
 export async function handleAskAI(model: string, prompt: string, context?: string): Promise<ActionResult> {
-  const m = (model || 'flash').toLowerCase();
+  const m = (model || 'claude').toLowerCase();
   const fullPrompt = context ? `${context}\n\n---\n\n${prompt}` : prompt;
   const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
 
   // 判斷起始模型
   const isClaude = m.includes('claude') || m.includes('sonnet') || m.includes('opus') || m.includes('haiku');
 
-  // ── 階梯式升級鏈：CLI → Flash → Pro → 3 Pro → Sonnet API → Opus API ──
+  // ── 階梯式升級鏈：CLI 訂閱制優先 → Gemini → API 付費兜底 ──
   const ASK_AI_CHAIN: Array<{ id: string; type: 'cli' | 'gemini' | 'anthropic' }> = [
     // 第 0 層：原始指定模型
     ...(isClaude
       ? [{ id: model, type: 'cli' as const }]
-      : [{ id: m.includes('pro') ? 'gemini-2.5-pro' : 'gemini-2.5-flash', type: 'gemini' as const }]),
-    // 第 1-4 層：逐步升級
+      : m.includes('pro')
+        ? [{ id: 'gemini-2.5-pro', type: 'gemini' as const }]
+        : [{ id: model, type: 'cli' as const }]),  // 預設走 CLI
+    // 第 1-5 層：CLI → Gemini → API 付費
+    { id: 'claude', type: 'cli' },
+    { id: 'haiku', type: 'cli' },
+    { id: 'gemini-2.5-flash', type: 'gemini' },
     { id: 'gemini-2.5-pro', type: 'gemini' },
-    { id: 'gemini-3-pro-preview', type: 'gemini' },
     { id: 'claude-sonnet-4-6', type: 'anthropic' },
-    { id: 'claude-opus-4-6', type: 'anthropic' },
   ];
   // 去重（如果起始就是 pro 就跳過重複）
   const seen = new Set<string>();

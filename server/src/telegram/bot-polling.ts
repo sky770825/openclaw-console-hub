@@ -35,7 +35,7 @@ const POLL_INTERVAL_MS = 1500;
 const GET_UPDATES_TIMEOUT_SEC = 20;
 const FETCH_TIMEOUT_MS = 30000;
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
-let xiaocaiMainModel = 'gemini-2.5-flash';
+let xiaocaiMainModel = 'claude-sonnet-cli';
 const TELEGRAM_STATE_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-control.json');
 const XIAOCAI_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
 
@@ -314,7 +314,7 @@ async function replyTasks(chatId: number, useToken = TOKEN): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
-const providerIcons: Record<string, string> = { Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
+const providerIcons: Record<string, string> = { 'Claude-CLI': '🔑', Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
 
 async function replyModels(chatId: number): Promise<void> {
   const commanders = getCommanderModels();

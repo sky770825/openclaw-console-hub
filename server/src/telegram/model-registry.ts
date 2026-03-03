@@ -37,9 +37,9 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // 免費額度：Gemini Lite、OpenRouter :free
   // 其他：xAI、Kimi、DeepSeek
   // ══════════════════════════════════════════
-  // ── 訂閱制 CLI（Claude Code / Codex / Cursor）──
-  { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
-  { id: 'claude-haiku-cli', label: '⚡ Claude Haiku (CLI)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  // ── 訂閱制 CLI（Claude Code / Codex / Cursor）——可當指揮官 + 子代理 ──
+  { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'claude-haiku-cli', label: '⚡ Claude Haiku (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   { id: 'codex-mini', label: '📦 Codex Mini (CLI)', provider: 'OpenAI-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── Google 免費額度 ──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
@@ -110,11 +110,12 @@ export function getProviderKey(provider: string): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' {
+export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'claude-cli' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' {
   // 先查 registry（最準確）
   const reg = MODEL_REGISTRY.find(m => m.id === modelId);
   if (reg) {
     const p = reg.provider.toLowerCase();
+    if (p === 'claude-cli') return 'claude-cli';
     if (p === 'google') return 'google';
     if (p === 'anthropic') return 'anthropic';
     if (p === 'deepseek') return 'deepseek';
@@ -123,6 +124,7 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'kim
     if (p === 'openrouter') return 'openrouter';
   }
   // fallback: 按 id prefix 判斷
+  if (modelId.endsWith('-cli')) return 'claude-cli';
   if (modelId.startsWith('claude')) return 'anthropic';
   if (modelId.startsWith('kimi')) return 'kimi';
   if (modelId.startsWith('grok')) return 'xai';

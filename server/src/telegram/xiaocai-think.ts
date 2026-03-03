@@ -1,9 +1,10 @@
 /**
- * 小蔡 AI 思考引擎 — system prompt 組裝 + 知識分層 + Gemini/Kimi/xAI 呼叫
+ * 小蔡 AI 思考引擎 — system prompt 組裝 + 知識分層 + Claude CLI/Gemini/Kimi/xAI 呼叫
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { getModelConfig, getModelProvider, getProviderKey, getAvailableModels, callOpenAICompatible, callAnthropic } from './model-registry.js';
 
@@ -396,13 +397,14 @@ export async function xiaocaiThink(
   const history = xiaocaiHistory.get(chatId) || [];
   const systemPrompt = buildSystemPrompt(soulCore, awakening, sysStatus, taskSnap, xiaocaiMainModel);
 
-  // ── 階梯式升級鏈：Flash → Pro → 3 Pro → Sonnet → Opus ──
+  // ── 階梯式升級鏈：CLI 訂閱制優先 → Gemini → API 付費最後 ──
   const ESCALATION_CHAIN = [
-    xiaocaiMainModel,                          // 第 0 層：當前主模型
-    'gemini-2.5-pro',                          // 第 1 層：Google Pro
-    'gemini-3-pro-preview',                    // 第 2 層：Google 3 Pro
-    'claude-sonnet-4-6',                       // 第 3 層：Anthropic Sonnet（付費）
-    'claude-opus-4-6',                         // 第 4 層：Anthropic Opus（最貴，最強）
+    xiaocaiMainModel,                          // 第 0 層：當前主模型（預設 claude-sonnet-cli）
+    'claude-sonnet-cli',                       // 第 1 層：Claude Sonnet CLI（訂閱制免費）
+    'claude-haiku-cli',                        // 第 2 層：Claude Haiku CLI（訂閱制免費）
+    'gemini-2.5-flash',                        // 第 3 層：Gemini Flash（免費額度）
+    'gemini-2.5-pro',                          // 第 4 層：Gemini Pro（免費額度）
+    'claude-sonnet-4-6',                       // 第 5 層：Anthropic Sonnet API（付費兜底）
   ];
   // 去重（如果主模型已經是 Pro 就不重複）
   const chain = [...new Set(ESCALATION_CHAIN)];
@@ -411,7 +413,40 @@ export async function xiaocaiThink(
   async function tryModel(modelId: string): Promise<string | null> {
     const prov = getModelProvider(modelId);
     try {
-      if (prov === 'google') {
+      if (prov === 'claude-cli') {
+        // ── Claude Code CLI 訂閱制（不花 API 錢）──
+        const claudeModel = modelId.includes('haiku') ? 'haiku' : modelId.includes('opus') ? 'opus' : 'sonnet';
+        const claudeBin = path.join(process.env.HOME || '/tmp', '.local', 'bin', 'claude');
+        // 組合 system prompt + history + user message
+        const cliPrompt = `${systemPrompt}\n\n--- 歷史對話 ---\n${history.map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}: ${h.text}`).join('\n')}\n\n--- 老蔡最新訊息 ---\n${userMessage}`;
+        const text = await new Promise<string | null>((resolve) => {
+          let stdout = '';
+          let stderr = '';
+          const child = spawn(claudeBin, ['-p', '--model', claudeModel, cliPrompt], {
+            env: { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}` },
+            cwd: process.env.HOME || '/tmp',
+            timeout: 90000,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+          child.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+          child.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+          const timer = setTimeout(() => { child.kill('SIGTERM'); resolve(null); }, 90000);
+          child.on('close', (code) => {
+            clearTimeout(timer);
+            const reply = stdout.trim();
+            if (code === 0 && reply) {
+              log.info(`[XiaocaiAI] Claude CLI model=${claudeModel} replyLen=${reply.length}`);
+              resolve(reply);
+            } else {
+              log.warn(`[XiaocaiAI] Claude CLI ${claudeModel} exitCode=${code} stderr=${stderr.slice(0, 200)}`);
+              resolve(null);
+            }
+          });
+          child.on('error', (err) => { clearTimeout(timer); log.warn(`[XiaocaiAI] Claude CLI spawn error: ${err.message}`); resolve(null); });
+        });
+        return text;
+
+      } else if (prov === 'google') {
         const userParts: Array<Record<string, unknown>> = [];
         if (image) userParts.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
         userParts.push({ text: userMessage || '請看這張圖片' });
