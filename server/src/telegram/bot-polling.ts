@@ -1620,6 +1620,13 @@ async function xiaocaiPoll(): Promise<void> {
               log.warn(`[Xiaocai-Chain] 🔒 阻擋重複失敗: ${action.action} ${action.path || ''}`);
               return `🔒 ${action.action}: 連續失敗 2 次，已跳過`;
             }
+            // 靈魂檔案保護：禁止寫入 SOUL.md / AGENTS.md / IDENTITY.md / BOOTSTRAP.md
+            const protectedFiles = ['SOUL.md', 'AGENTS.md', 'IDENTITY.md', 'BOOTSTRAP.md', 'AWAKENING.md'];
+            if ((action.action === 'write_file' || action.action === 'patch_file') &&
+                protectedFiles.some(f => (action.path || '').endsWith(f))) {
+              log.warn(`[Xiaocai-Chain] 🛡️ 攔截靈魂檔案寫入: ${action.action} ${action.path}`);
+              return `🔒 ${action.action}: 靈魂檔案 ${action.path} 禁止修改`;
+            }
             const result = await executeNEUXAAction(action);
             if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
             const icon = result.ok ? '✅' : '🚫';
@@ -1706,8 +1713,9 @@ async function xiaocaiPoll(): Promise<void> {
         appendInteractionLog(text, allActionResults, finalReply || '');
       }
 
-      // 自驅動（只有真正任務才跑，聊天不跑）
-      const isTaskMessage = text.length > 10 && /查|看|修|建|改|做|分析|部署|幫|搜|找|狀態|任務|報告|日報/.test(text);
+      // 自驅動（只有明確任務指令才跑，聊天不跑）
+      const TASK_PATTERNS = /查一下|幫我|麻煩|請你|執行|部署|修復|修改|建立|分析一下|掃描|報告|日報|任務板|健康檢查/;
+      const isTaskMessage = text.length > 8 && TASK_PATTERNS.test(text);
       const SELF_DRIVE_ENABLED = isTaskMessage;
 
       if (SELF_DRIVE_ENABLED && allActionResults.length > 0 && finalReply) {
@@ -1752,6 +1760,15 @@ async function xiaocaiPoll(): Promise<void> {
               if (!breaker.check(action)) {
                 driveResults.push(`🔒 ${action.action}: 連續失敗已阻擋`);
                 log.warn(`[XiaocaiSelfDrive] 🔒 阻擋: ${action.action} ${action.path || ''}`);
+                driveText = driveText.replace(jsonStr, '').trim();
+                continue;
+              }
+              // 靈魂檔案保護：禁止寫入 SOUL.md / AGENTS.md / IDENTITY.md / BOOTSTRAP.md
+              const soulFiles = ['SOUL.md', 'AGENTS.md', 'IDENTITY.md', 'BOOTSTRAP.md', 'AWAKENING.md'];
+              if ((action.action === 'write_file' || action.action === 'patch_file') &&
+                  soulFiles.some(f => (action.path || '').endsWith(f))) {
+                log.warn(`[XiaocaiSelfDrive] 🛡️ 攔截靈魂檔案寫入: ${action.action} ${action.path}`);
+                driveResults.push(`🔒 ${action.action}: 靈魂檔案 ${action.path} 禁止修改`);
                 driveText = driveText.replace(jsonStr, '').trim();
                 continue;
               }

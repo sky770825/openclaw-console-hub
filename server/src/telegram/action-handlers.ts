@@ -1136,9 +1136,28 @@ async function googleEmbed(text: string): Promise<number[] | null> {
   return data?.embedding?.values || null;
 }
 
+const semanticSearchCache = new Map<string, { ts: number; results: unknown[]; output: string }>();
+// 每 5 分鐘清理過期快取
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of semanticSearchCache) {
+    if (now - v.ts > 300_000) semanticSearchCache.delete(k);
+  }
+}, 300_000);
+
 async function handleSemanticSearch(query: string, limit: number = 5, mode: string = 'task'): Promise<ActionResult> {
   if (!query || query.trim().length < 2) {
     return { ok: false, output: 'semantic_search 需要 query 參數（至少 2 個字）' };
+  }
+
+  const safeLimit = Math.min(Math.max(1, limit), 10);
+
+  // ── 查詢快取（60 秒內相同 query 直接回傳）──
+  const cacheKey = `${query}::${mode}::${safeLimit}`;
+  const cached = semanticSearchCache.get(cacheKey);
+  if (cached && (Date.now() - cached.ts) < 60_000) {
+    log.info(`[SemanticSearch] cache hit: "${query}" → ${cached.results.length} results`);
+    return { ok: true, output: cached.output };
   }
 
   // 搜尋詞前處理：去掉中文常見停用詞，只保留關鍵詞
@@ -1153,7 +1172,6 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
     processedQuery = query.trim(); // 去完停用詞後太短，回退原始 query
   }
 
-  const safeLimit = Math.min(Math.max(1, limit), 10);
   const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : 'task';
 
   try {
@@ -1170,7 +1188,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       return { ok: false, output: 'Supabase 未連線，無法搜尋向量庫' };
     }
 
-    const fetchCount = Math.min(safeLimit * 3, 30); // 多取 3 倍供去重
+    const fetchCount = Math.min(safeLimit * 2, 20); // 多取 2 倍供去重
     const { data: rawResults, error } = await sb.rpc('match_embeddings', {
       query_embedding: JSON.stringify(queryVector),
       match_threshold: 0.5,
@@ -1219,7 +1237,12 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 
     const dedupNote = rawResults.length > results.length ? `（去重前 ${rawResults.length} 筆）` : '';
     log.info(`[SemanticSearch] query="${query}" processed="${processedQuery}" mode=${safeMode} → ${results.length} results${dedupNote} (top: ${(topSimilarity * 100).toFixed(0)}%)`);
-    return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆${dedupNote}，${safeMode} 模式）：\n\n${lines.join('\n\n')}` };
+    const outputText = `🔍 「${query}」相關知識（${results.length} 筆${dedupNote}，${safeMode} 模式）：\n\n${lines.join('\n\n')}`;
+
+    // 存入快取
+    semanticSearchCache.set(cacheKey, { ts: Date.now(), results, output: outputText });
+
+    return { ok: true, output: outputText };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, output: sanitize(`semantic_search 失敗: ${msg}`) };
