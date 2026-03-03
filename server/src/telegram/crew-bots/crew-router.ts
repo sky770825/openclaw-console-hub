@@ -19,7 +19,7 @@ const lastResponseTime = new Map<string, number>();
 const globalResponses: number[] = [];
 
 const COOLDOWN_MS = 30_000;          // 同一 bot 30 秒冷卻
-const GLOBAL_LIMIT_PER_MIN = 6;      // 全局每分鐘最多 6 次
+const GLOBAL_LIMIT_PER_MIN = 12;     // 全局每分鐘最多 12 次（支援多人點名）
 const GLOBAL_WINDOW_MS = 60_000;
 
 /**
@@ -91,12 +91,11 @@ export function routeMessage(
   // ─── 選擇回覆的 bot ───
   scores.sort((a, b) => b.score - a.score);
 
-  // 被直接點名 → 只有被點名的 bot 回（最多 1 個，省資源）
+  // 被直接點名 → 所有被點名的 bot 都回（點名多人各自回）
   const directMentions = scores.filter(s => s.score >= 10);
   if (directMentions.length > 0) {
     const responding = directMentions
-      .filter(s => !isCoolingDown(s.botId, now))
-      .slice(0, 1);
+      .filter(s => !isCoolingDown(s.botId, now));
     if (responding.length > 0) {
       for (const r of responding) recordResponse(r.botId, now);
       return { respondingBots: responding, filtered: false };
