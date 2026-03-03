@@ -48,6 +48,7 @@ const CHAIN_HINTS: Record<string, string> = {
   patch_file: '💡 修補完了 → read_file 確認結果，或繼續 patch_file 改下一處。多處修改一起發。',
   plan_project: '💡 計畫拆好了 → 子任務已進 draft，跟老蔡報告計畫摘要。有需要調整就 update_task。',
   roadmap: '💡 路線圖操作完成 → 搭配 query_supabase 看任務進度，或 write_file 寫週報。',
+  delegate_agents: '💡 多代理完成 → 整合各代理輸出，write_file 寫總結 + index_file 入庫，再告訴老蔡結論。',
 };
 
 // ── 任務操作 ──
@@ -595,6 +596,54 @@ export async function handleAskAI(model: string, prompt: string, context?: strin
     lastResult = result;
   }
   return lastResult;
+}
+
+/** 多角色代理並行協作：delegate_agents */
+interface AgentSpec {
+  role: string;       // 角色名稱，如「規劃師」「開發者」「測試員」
+  model?: string;     // 模型，預設 flash
+  task: string;       // 這個代理的任務
+  context?: string;   // 額外背景（可選）
+}
+
+export async function handleDelegateAgents(
+  agents: AgentSpec[],
+  sharedContext?: string
+): Promise<ActionResult> {
+  if (!agents || agents.length === 0) {
+    return { ok: false, output: '[delegate_agents] agents 陣列不能為空' };
+  }
+  if (agents.length > 6) {
+    return { ok: false, output: '[delegate_agents] 最多同時派 6 個代理，請減少' };
+  }
+
+  log.info(`[DelegateAgents] 並行派出 ${agents.length} 個代理: ${agents.map(a => a.role).join(', ')}`);
+
+  // 並行執行所有代理
+  const results = await Promise.all(
+    agents.map(async (agent) => {
+      const rolePrefix = `你是${agent.role}。`;
+      const fullContext = [sharedContext, agent.context].filter(Boolean).join('\n');
+      const prompt = rolePrefix + agent.task;
+      const model = agent.model || 'flash';
+      try {
+        const res = await handleAskAI(model, prompt, fullContext || undefined);
+        return { role: agent.role, ok: res.ok, output: res.output };
+      } catch (e) {
+        return { role: agent.role, ok: false, output: `${agent.role} 發生錯誤: ${e instanceof Error ? e.message : String(e)}` };
+      }
+    })
+  );
+
+  const successCount = results.filter(r => r.ok).length;
+  const summary = results.map(r => `### ${r.ok ? '✅' : '❌'} ${r.role}\n${r.output}`).join('\n\n---\n\n');
+
+  log.info(`[DelegateAgents] 完成 ${successCount}/${agents.length} 成功`);
+
+  return {
+    ok: successCount > 0,
+    output: `[delegate_agents] ${successCount}/${agents.length} 成功\n\n${summary}`,
+  };
 }
 
 /** 安全 Supabase 查詢代理：NEUXA 不需要 key，由 server 內部 client 處理 */
@@ -2340,6 +2389,15 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     case 'roadmap':
       result = await handleRoadmap(action);
       break;
+    case 'delegate_agents': {
+      const agentsRaw = action.agents;
+      let agentList: AgentSpec[] = [];
+      try {
+        agentList = typeof agentsRaw === 'string' ? JSON.parse(agentsRaw) : (Array.isArray(agentsRaw) ? agentsRaw : []);
+      } catch { agentList = []; }
+      result = await handleDelegateAgents(agentList, action.context);
+      break;
+    }
     default:
       result = { ok: false, output: `未知 action: ${type}` };
   }

@@ -275,6 +275,9 @@ ${soulCore}
 {"action":"find_symbol","symbol":"functionName","type":"function"}
 {"action":"patch_file","path":"server/src/xxx.ts","search":"舊內容","replace":"新內容"}
 {"action":"code_eval","code":"console.log('hello')"}
+{"action":"delegate_agents","agents":[{"role":"規劃師","model":"flash","task":"把需求拆成子任務"},{"role":"研究員","model":"flash","task":"搜尋相關代碼"},{"role":"開發者","model":"claude","task":"寫實作方案"}],"context":"共享背景"}
+
+delegate_agents 使用時機：需要多角色並行時（規劃+研究+開發同步進行）。最多 6 個代理，結果會自動合併。
 
 Supabase 欄位（用錯會失敗）：openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at。
 可以一次放多個 action，每個獨立一行。路徑用 ~ 開頭。主要工作區：~/.openclaw/workspace/
