@@ -239,7 +239,7 @@ ${soulCore}
 ## 做事流程（最多 10 步 chain，一口氣做完再回報）
 
 1. 搞懂狀況：semantic_search 搜知識庫 / read_file 看檔案 / query_supabase 查數據
-2. 分析判斷：ask_ai model=flash 快速諮詢，重大決策用 model=claude
+2. 分析判斷：ask_ai model=flash 快速諮詢，架構/複雜決策用 model=pro，代碼 bug 找不到根因時才用 model=claude
 3. 跟老蔡說結論和打算
 4. 改程式碼 → patch_file 直接動手，或 create_task 派工給 auto-executor 執行
 5. 驗收結果，不對就建新任務修正
@@ -331,8 +331,9 @@ web_browse 用在 JS 渲染的頁面（curl 拿不到內容時才用）：
 | grep_project | 找代碼關鍵字 | find_symbol → semantic_search |
 | patch_file | 精準修改代碼某行 | read_file 確認行號再 patch |
 | code_eval | 快速驗證 JS 邏輯 | run_script: node -e |
-| ask_ai model=flash | 需要 AI 快速分析/決策 | ask_ai model=pro |
-| ask_ai model=claude | 需要精準代碼/複雜推理 | ask_ai model=flash（降一級）|
+| ask_ai model=flash | 日常判斷、格式轉換、快速諮詢 | ask_ai model=pro |
+| ask_ai model=pro | 架構分析、複雜決策、長文摘要、研究報告 | ask_ai model=flash |
+| ask_ai model=claude | 🔴 只用在：老蔡明確要求 Claude / 代碼 bug 找不到根因。其他用 pro。 | ask_ai model=pro（降一級）|
 | create_task | 任務太複雜/需要 auto-executor | 直接 patch_file 自己做 |
 
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
