@@ -1,0 +1,95 @@
+{
+  "url": "https://google.com",
+  "hostname": "google.com",
+  "timestamp": "2026-02-27T05:38:42.060996",
+  "load_time": {
+    "status": "ok",
+    "load_time_seconds": 0.16,
+    "status_code": 200,
+    "size_bytes": 0
+  },
+  "ssl_certificate": {
+    "status": "ok",
+    "valid": true,
+    "issuer": [
+      [
+        [
+          "countryName",
+          "US"
+        ]
+      ],
+      [
+        [
+          "organizationName",
+          "Google Trust Services"
+        ]
+      ],
+      [
+        [
+          "commonName",
+          "WR2"
+        ]
+      ]
+    ],
+    "subject": [
+      [
+        [
+          "commonName",
+          "*.google.com"
+        ]
+      ]
+    ],
+    "not_before": "Jan 26 08:39:20 2026 GMT",
+    "not_after": "Apr 20 08:39:19 2026 GMT",
+    "days_until_expiry": 52,
+    "ssl_version": "TLSv1.2",
+    "cipher": "ECDHE-ECDSA-CHACHA20-POLY1305"
+  },
+  "security_headers": {
+    "status": "ok",
+    "security_score": "1/6",
+    "headers": {
+      "Strict-Transport-Security": "MISSING",
+      "Content-Security-Policy": "MISSING",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "MISSING",
+      "Referrer-Policy": "MISSING",
+      "Permissions-Policy": "MISSING"
+    },
+    "all_headers": {
+      "Date": "Thu, 26 Feb 2026 21:38:42 GMT",
+      "Expires": "-1",
+      "Cache-Control": "private, max-age=0",
+      "Content-Type": "text/html; charset=ISO-8859-1",
+      "Content-Security-Policy-Report-Only": "object-src 'none';base-uri 'self';script-src 'nonce-a3lz_Ol2bY56rebBH2fh9Q' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/other-hp",
+      "Reporting-Endpoints": "default=\"//www.google.com/httpservice/retry/jserror?ei=Yr2gafqjFu7l1e8P5cGcqQY&cad=crash&error=Page%20Crash&jsel=1&bver=2384\"",
+      "Accept-CH": "Sec-CH-Prefers-Color-Scheme",
+      "P3P": "CP=\"This is not a P3P policy! See g.co/p3phelp for more info.\"",
+      "Server": "gws",
+      "X-XSS-Protection": "0",
+      "X-Frame-Options": "SAMEORIGIN",
+      "Set-Cookie": "__Secure-STRP=AD6Dogt1uXpuis7dm3VJQoa9b83aw7AyckjRmlHXTuNFCr_PvwbV7poAzHr3dlq8zkBHCUbYQnGjw8Zcoxz9JY8jDi0BN3Fs0jnD; expires=Thu, 26-Feb-2026 21:43:42 GMT; path=/; domain=.google.com; Secure; SameSite=strict",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "Accept-Ranges": "none",
+      "Vary": "Accept-Encoding",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    }
+  },
+  "robots_txt": {
+    "status": "ok",
+    "exists": true,
+    "url": "https://google.com/robots.txt",
+    "line_count": 258,
+    "has_sitemap": true,
+    "content_preview": "User-agent: *\nUser-agent: Yandex\nDisallow: /search\nAllow: /search/about\nAllow: /search/howsearchworks\nDisallow: /sdch\nDisallow: /groups\nDisallow: /index.html?\nDisallow: /?\nAllow: /?hl="
+  },
+  "sitemap": {
+    "status": "ok",
+    "exists": true,
+    "url": "https://google.com/sitemap.xml",
+    "url_count": 19,
+    "size_bytes": 1717,
+    "content_preview": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sitemapindex xmlns=\"http://www.google.com/schemas/sitemap/0.84\">\n  <sitemap>\n    <loc>https://www.google.com/gmail/sitemap.xml</loc>\n  </sitemap>\n  <sitemap>\n    <loc>https://www.google.com/forms/sitemaps.xml</loc>\n  </sitemap>\n  <sitemap>\n    <loc>https://www.google.com/slides/sitemaps.xml</loc>\n  </sitemap>\n  <sitemap>\n    <loc>https://www.google.com/sheets/sitemaps.xml</loc>\n  </sitemap>\n  <sitemap>\n    <loc>https://www.google.com/drive/sitemap.xml</loc"
+  }
+}

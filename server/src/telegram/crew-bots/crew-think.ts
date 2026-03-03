@@ -238,6 +238,8 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
           ...process.env,
           HOME: process.env.HOME,
           PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}`,
+          CLAUDECODE: '',
+          CLAUDE_CODE: '',
         },
         cwd: process.env.HOME || '/tmp',
         timeout: CLAUDE_TIMEOUT_MS,

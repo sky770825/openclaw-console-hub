@@ -1477,12 +1477,21 @@ async function xiaocaiPoll(): Promise<void> {
 
       const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
       if (allowedChatId && String(chatId) !== allowedChatId) {
-        // 群組訊息：只有提到小蔡時才回覆，其他交給 crew bots
+        // 群組訊息：所有訊息都記進 history（小蔡看得到上下文），但只有提到小蔡才回覆
         if (chatId < 0) {
+          // 取得發訊者名稱
+          const fromUser = msg.from as Record<string, unknown> | undefined;
+          const senderName = (fromUser?.first_name as string) || (fromUser?.username as string) || '群友';
+          // 記進群組 history（小蔡能看到所有對話）
+          const groupHist = xiaocaiHistory.get(chatId) || [];
+          groupHist.push({ role: 'user', text: `[${senderName}] ${text}` });
+          if (groupHist.length > 30) groupHist.splice(0, groupHist.length - 30); // 保留最近 30 條
+          xiaocaiHistory.set(chatId, groupHist);
+
           const lowerText = text.toLowerCase();
           const mentionsXiaocai = lowerText.includes('小蔡') || lowerText.includes('@xiaoji_cai_bot');
-          if (!mentionsXiaocai) continue; // 沒提到小蔡 → 跳過
-          // 提到小蔡 → 小蔡本人回覆（走 xiaocaiThink）
+          if (!mentionsXiaocai) continue; // 沒提到小蔡 → 不回覆，但 history 已記錄
+          // 提到小蔡 → 小蔡本人回覆（走 xiaocaiThink，帶群組 history 上下文）
           log.info(`[XiaocaiBot] 群組提到小蔡，回覆 chatId=${chatId}`);
           const groupReply = await xiaocaiThink(chatId, text, xiaocaiMainModel, xiaocaiHistory, imageBase64 ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined);
           if (groupReply) {
