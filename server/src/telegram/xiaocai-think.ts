@@ -269,6 +269,7 @@ ${soulCore}
 {"action":"ask_ai","model":"claude","prompt":"問題","context":"背景資料"}
 {"action":"semantic_search","query":"怎麼重啟 server","limit":"5"}
 {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}
+{"action":"web_browse","url":"https://example.com"}
 {"action":"proxy_fetch","url":"https://...","method":"POST","body":"{}"}
 {"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
 {"action":"grep_project","pattern":"functionName","filePattern":"*.ts"}

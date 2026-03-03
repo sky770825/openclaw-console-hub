@@ -1153,7 +1153,40 @@ ${requirementSection}
 Output ONLY the raw bash script. No markdown fences, no explanation, no comments before the shebang.`;
 
     if (errorFeedback) {
+      // Phase 3: 智慧修復 — 用 Gemini 分析錯誤，生成修復建議，注入下一輪 prompt
+      let repairHint = '';
+      try {
+        const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+        if (GOOGLE_API_KEY) {
+          const analysisPrompt = `以下是一個 bash 腳本執行失敗的錯誤輸出。請分析：
+1. 失敗原因（一句話）
+2. 最可能的修復方式（具體指令或代碼）
+3. 應該避免什麼
+
+錯誤輸出：
+${errorFeedback.slice(0, 800)}
+
+請用中文回答，限 150 字以內。`;
+          const resp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: analysisPrompt }] }] }),
+              signal: AbortSignal.timeout(15000),
+            }
+          );
+          if (resp.ok) {
+            const data = await resp.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+            repairHint = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+          }
+        }
+      } catch { /* 分析失敗不影響重試 */ }
+
       prompt += `\n\nPREVIOUS ATTEMPT FAILED:\n${errorFeedback}\n\nFix the script to handle this error.`;
+      if (repairHint) {
+        prompt += `\n\nAI REPAIR ANALYSIS:\n${repairHint}`;
+      }
     }
 
     const resp = await fetch(

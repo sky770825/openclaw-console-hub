@@ -39,6 +39,7 @@ const CHAIN_HINTS: Record<string, string> = {
   run_script: '💡 执行完了 → 分析结果 + write_file 写报告 + index_file，三个一起发。',
   semantic_search: '💡 搜到了 → read_file 读原文 + write_file 写摘要，两个一起发。',
   web_search: '💡 搜到了 → web_fetch 读内容 + write_file 写笔记 + index_file，三个一起发。',
+  web_browse: '💡 瀏覽完了（真實瀏覽器）→ write_file 寫摘要 + index_file 索引，兩個一起發。比 web_fetch 更準確。',
   web_fetch: '💡 读完了 → write_file 写笔记 + index_file 索引，两个一起发。',
   code_eval: '💡 执行完了 → write_file 写学习心得 + index_file 索引，两个一起发。',
   ask_ai: '💡 諮詢完了 → 把建議整理成 write_file 筆記 + index_file 索引，兩個一起發。',
@@ -1460,6 +1461,28 @@ async function handleWebSearch(query: string, _limit: number = 5): Promise<Actio
 }
 
 /** 抓取網頁內容 — 封鎖內網，純文字截斷 4000 字 */
+/** 真正的瀏覽器渲染（playwright）— 看得到 JS 動態頁面 */
+async function handleWebBrowse(url: string): Promise<ActionResult> {
+  if (!url) return { ok: false, output: 'web_browse 需要 url 參數' };
+  if (!/^https?:\/\//i.test(url)) return { ok: false, output: '只允許 http/https URL' };
+  if (/^https?:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(url))
+    return { ok: false, output: '🚫 不允許存取內網地址' };
+
+  try {
+    const { browserService } = await import('../services/BrowserService.js');
+    if (!browserService.isAvailable()) {
+      return { ok: false, output: 'playwright 未安裝，請先執行: cd server && npm install playwright && npx playwright install chromium' };
+    }
+    const result = await browserService.browse(url);
+    const output = `[web_browse] ${result.title}\nURL: ${result.url}\n${'─'.repeat(40)}\n${result.text}`;
+    log.info(`[WebBrowse] ${url} → title="${result.title}" textLen=${result.text.length}${result.truncated ? ' (截斷)' : ''}`);
+    return { ok: true, output };
+  } catch (e) {
+    log.error({ err: e }, `[WebBrowse] 失敗 url=${url}`);
+    return { ok: false, output: `web_browse 失敗: ${(e as Error).message}` };
+  }
+}
+
 async function handleWebFetch(url: string): Promise<ActionResult> {
   if (!url) return { ok: false, output: 'web_fetch 需要 url 參數' };
 
@@ -2340,6 +2363,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     case 'web_search':
       result = await handleWebSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      break;
+    case 'web_browse':
+      result = await handleWebBrowse(action.url || '');
       break;
     case 'web_fetch':
       result = await handleWebFetch(action.url || '');

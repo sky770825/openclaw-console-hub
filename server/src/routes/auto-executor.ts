@@ -866,6 +866,43 @@ async function executeNextPendingTask(): Promise<void> {
       await notifyTaskSuccess(task.name, task.id, runId, result.durationMs);
       await notifyXiaocaiTaskResult(task.name, task.id, true, (result.output || '').replace(/\n+/g, ' ').trim().slice(0, 200), qualityInfo ? `${qualityInfo.grade} (${qualityInfo.score}/100)` : undefined);
       log.info(`[AutoExecutor] 任務完成: ${task.name}`);
+
+      // ── Phase 2: 任務後反思 — 自動將執行結果寫入知識庫 ──
+      setImmediate(async () => {
+        try {
+          const reflection = [
+            `# 任務反思：${task.name}`,
+            `執行時間：${new Date().toISOString()}`,
+            `品質：${qualityInfo.grade} (${qualityInfo.score}/100)`,
+            `原因：${qualityInfo.reason}`,
+            ``,
+            `## 任務描述`,
+            (task.description || '無').slice(0, 500),
+            ``,
+            `## 執行摘要`,
+            (result.output || '').replace(/\n+/g, ' ').trim().slice(0, 600),
+            ``,
+            `## 學到什麼`,
+            `任務「${task.name}」成功完成，品質${qualityInfo.grade}。`,
+            qualityInfo.checks
+              ? `通過的檢查項目：${(qualityInfo.checks as Array<{name: string; passed: boolean}>).filter(c => c.passed).map(c => c.name).join(', ')}`
+              : '',
+          ].filter(Boolean).join('\n');
+
+          const notesDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'notes');
+          const fileName = `reflection-${task.id}-${Date.now()}.md`;
+          const filePath = path.join(notesDir, fileName);
+          fs.mkdirSync(notesDir, { recursive: true });
+          fs.writeFileSync(filePath, reflection, 'utf8');
+
+          // 呼叫 index_file 入庫
+          const { handleIndexFile } = await import('../telegram/action-handlers.js');
+          await handleIndexFile(filePath, 'reflection');
+          log.info(`[Reflection] 任務反思已入庫: ${fileName}`);
+        } catch (e) {
+          log.warn(`[Reflection] 反思入庫失敗 (非阻塞): ${e instanceof Error ? e.message : String(e)}`);
+        }
+      });
     } catch (execError) {
       const errorMsg = String(execError);
 
