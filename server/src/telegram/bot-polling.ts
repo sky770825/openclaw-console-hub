@@ -66,7 +66,7 @@ const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
 // Action Circuit Breaker — 阻止同一個 action 連續失敗超過 N 次
 class ActionCircuitBreaker {
   private failMap = new Map<string, number>();
-  constructor(private maxFails = 2) {}
+  constructor(private maxFails = 4) {}
   private key(action: Record<string, string>): string {
     return `${action.action || ''}:${action.path || action.name || action.url || action.query || ''}`;
   }

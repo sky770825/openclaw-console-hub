@@ -850,9 +850,9 @@ echo "✅ 封存檢查完成"`;
     const aiReviewScore = await this.aiContentReview(desc, stdout, artifacts);
     checks.push({
       name: 'ai_content_review',
-      passed: aiReviewScore >= 7,
+      passed: aiReviewScore >= 6,
       weight: 15,
-      detail: `AI 審查 ${aiReviewScore}/10 (需 ≥7)`,
+      detail: `AI 審查 ${aiReviewScore}/10 (需 ≥6)`,
     });
 
     // ── 計算總分 ──

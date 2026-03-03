@@ -10,13 +10,19 @@ import type {
   OpenClawRunRow,
 } from './openclawSupabase.js';
 
-// openclaw status: queued | in_progress | done | pending_review
-// 主應用 status: draft | ready | running | review | done | blocked | pending_review
+// openclaw status: queued | in_progress | done | pending_review | needs_review | failed | blocked | retrying | cancelled | timeout
+// 主應用 status: draft | ready | running | review | done | blocked | pending_review | failed | cancelled
 const OC_TO_TASK_STATUS: Record<string, Task['status']> = {
   queued: 'ready',
   in_progress: 'running',
   done: 'done',
   pending_review: 'review',
+  needs_review: 'review',
+  failed: 'done',       // 失敗任務歸入 done 欄，前端透過 qualityGrade 區分
+  blocked: 'blocked',
+  retrying: 'running',
+  cancelled: 'done',
+  timeout: 'done',
 };
 
 const TASK_TO_OC_STATUS: Record<string, string> = {
@@ -25,8 +31,10 @@ const TASK_TO_OC_STATUS: Record<string, string> = {
   running: 'in_progress',
   review: 'pending_review',
   done: 'done',
-  blocked: 'queued',
+  blocked: 'blocked',
   pending_review: 'pending_review',
+  failed: 'failed',
+  cancelled: 'cancelled',
 };
 
 const META_MARKER = '<!--OC_META:';

@@ -29,9 +29,16 @@ export const openclawTasksRouter = Router();
 
 /** OpenClaw raw status → 前端看板 status 映射 */
 const OC_STATUS_TO_BOARD: Record<string, string> = {
-  queued: 'ready',       // 待執行
-  in_progress: 'running', // 執行中
-  done: 'done',           // 完成
+  queued: 'ready',           // 待執行
+  in_progress: 'running',    // 執行中
+  done: 'done',              // 完成
+  pending_review: 'review',  // 等待審核
+  needs_review: 'review',    // 需要審核（別名）
+  blocked: 'blocked',        // 卡住
+  failed: 'done',            // 失敗（歸入 done，透過 qualityGrade 區分）
+  retrying: 'running',       // 重試中
+  cancelled: 'done',         // 已取消
+  timeout: 'done',           // 逾時
 };
 
 /** 映射 OpenClaw task 到前端看板格式 */
