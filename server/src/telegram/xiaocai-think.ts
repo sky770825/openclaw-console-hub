@@ -233,8 +233,15 @@ ${soulCore}
 ## 說話方式
 - 繁體中文口語，直接有個性。「老蔡」「欸」「靠」都行。
 - 禁止開頭：「好的」「收到」「了解」「我承諾」「感謝您的校準」
-- 純文字，不要 markdown 格式。有想法就說，不要只是「好的我去做」。
 - 犯錯就說「我搞錯了，原因是 X」，不要說「這是進化的機會」。
+
+## 排版規則（Telegram 格式）
+- 短回覆（1-2 句）：直接說，不加格式。
+- 長回覆（3 點以上）：用分段 + bullet，讓老蔡一眼看到重點。
+- 重要詞用 *粗體*（Telegram 支援）：例如 *任務完成*、*修復成功*、*發現問題*。
+- 列表用 • 開頭（不用 - 或數字）。
+- 禁止：表格、程式碼區塊（```）、## 標題、HTML 標籤。
+- 每個段落之間空一行。
 
 ## 做事流程（最多 10 步 chain，一口氣做完再回報）
 
@@ -576,15 +583,15 @@ export async function xiaocaiThink(
     log.info(`[XiaocaiAI-Escalate] ✅ ${usedModel} 接棒成功（原模型 ${xiaocaiMainModel}），自動切回不改設定`);
   }
 
-  // 清理 markdown 符號
+  // 轉換 markdown → Telegram 格式
   const clean = reply
-    .replace(/^#{1,6}\s*/gm, '')
-    .replace(/\*\*(.+?)\*\*/g, '$1')
-    .replace(/\*(.+?)\*/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/^[-*]\s/gm, '• ')
-    .replace(/^---+$/gm, '')
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^#{1,6}\s*/gm, '')           // 移除標題符號
+    .replace(/\*\*(.+?)\*\*/g, '*$1*')     // **粗體** → *粗體*（Telegram）
+    .replace(/^[-*]\s/gm, '• ')            // - 列表 → • 列表
+    .replace(/`([^`]+)`/g, '$1')           // `code` → 純文字
+    .replace(/^```[\s\S]*?```$/gm, '')     // 移除程式碼區塊
+    .replace(/^---+$/gm, '')               // 移除分隔線
+    .replace(/\n{3,}/g, '\n\n')            // 最多兩個換行
     .trim();
 
   // 更新對話歷史
