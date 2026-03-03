@@ -1560,8 +1560,8 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
 
-      // ── 多步執行迴路（最多 3 輪連續行動）──
-      const MAX_CHAIN_STEPS = 3;  // 對話 chain 最多 3 步，超過就回覆讓老蔡判斷
+      // ── 多步執行迴路（最多 6 輪連續行動）──
+      const MAX_CHAIN_STEPS = 6;  // 對話 chain 最多 6 步，讓小蔡能完成查+分析+執行+驗證
       let currentInput = text;
       let finalReply = '';
       const allActionResults: string[] = [];
@@ -1741,7 +1741,7 @@ async function xiaocaiPoll(): Promise<void> {
           }
         }
 
-        for (let selfDrive = 0; selfDrive < 1; selfDrive++) {
+        for (let selfDrive = 0; selfDrive < 3; selfDrive++) {
           const driveReply = await xiaocaiThink(chatId,
             '[系統] 你剛才的行動已完成。現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給老蔡一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。',
             xiaocaiMainModel, xiaocaiHistory
@@ -1886,7 +1886,7 @@ async function heartbeatTick(): Promise<void> {
 
   try {
     // 第一輪思考
-    const MAX_HEARTBEAT_STEPS = 1;  // 心跳只做 1 步：查健康+任務板，不搞複雜 chain
+    const MAX_HEARTBEAT_STEPS = 3;  // 心跳 3 步：查健康+查任務板+做練習
     let currentInput = heartbeatInput;
     const allResults: string[] = [];
     const hbBreaker = new ActionCircuitBreaker(2);

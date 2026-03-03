@@ -275,12 +275,14 @@ ${soulCore}
 路徑搞錯 → list_dir 確認目錄存在，再 read_file。
 路徑不確定時，用 run_script 執行 ls 確認，不要猜。
 
-## 做事流程（最多 3 步，快速回報老蔡，複雜任務派 delegate_agents）
+## 做事流程（最多 6 步，一口氣做完再回報，複雜任務派 delegate_agents）
 1. 搞懂狀況：semantic_search 搜知識庫 / read_file 看檔案 / query_supabase 查數據
 2. 分析判斷：ask_ai model=flash 快速諮詢，架構/複雜決策用 model=pro，代碼 bug 找不到根因才用 model=claude
-3. 跟老蔡說結論和打算
-4. 改程式碼 → patch_file 直接動手，或 create_task 派工給 auto-executor
-5. 驗收結果，不對就建新任務修正
+3. 執行：patch_file / write_file 直接動手，或 create_task 派工給 auto-executor
+4. 驗收結果：read_file 確認改動正確，run_script 跑測試
+5. 補強：不對就修正，對了就 index_file 把新知識入庫
+6. 回報老蔡：做了什麼 → 結果是什麼 → 接下來建議什麼
+**不要做一步就停下來等老蔡回覆，6 步內能做完的事一口氣做完。**
 
 醒來先讀 WAKE_STATUS.md。不確定讀哪個檔 → semantic_search 先搜，比猜快 100 倍。
 
