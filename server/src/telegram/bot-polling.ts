@@ -1507,6 +1507,28 @@ async function xiaocaiPoll(): Promise<void> {
 
       // 指令路由
       const xcCmd = text.split(/\s+/)[0]?.split('@')[0]?.toLowerCase() ?? '';
+
+      // ── /say — 老蔡下令，小蔡去群組發訊息 ──
+      if (xcCmd === '/say' || xcCmd === '/broadcast') {
+        const sayMsg = text.replace(/^\/(say|broadcast)\s*/i, '').trim();
+        const groupChatId = process.env.TELEGRAM_GROUP_CHAT_ID?.trim() || process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim();
+        if (!sayMsg) {
+          await sendTelegramMessageToChat(chatId, '用法：/say <訊息>\n\n小蔡會把你的訊息發到群組', { token: XIAOCAI_TOKEN });
+          continue;
+        }
+        if (!groupChatId) {
+          await sendTelegramMessageToChat(chatId, '❌ 沒有設定群組 Chat ID（TELEGRAM_GROUP_CHAT_ID）', { token: XIAOCAI_TOKEN });
+          continue;
+        }
+        try {
+          await sendTelegramMessageToChat(Number(groupChatId), sayMsg, { token: XIAOCAI_TOKEN });
+          await sendTelegramMessageToChat(chatId, `✅ 已發到群組`, { token: XIAOCAI_TOKEN });
+        } catch (e) {
+          await sendTelegramMessageToChat(chatId, `❌ 發送失敗: ${e instanceof Error ? e.message : String(e)}`, { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+
       if (xcCmd === '/models' || text === '🧠 切換模型') { await replyModelsXiaocai(chatId); continue; }
       if (xcCmd === '/status' || text === '📊 系統狀態') {
         const models = getAvailableModels();
@@ -1570,7 +1592,7 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
       if (xcCmd === '/start' || xcCmd === '/help' || text === '❓ 幫助') {
-        await sendTelegramMessageToChat(chatId, `我是小蔡 🚀\n\n直接跟我聊天就好。\n\n/models — 切換模型\n/status — 系統狀態\n/tasks — 任務板\n/report — 日報\n/health — 健康檢查\n/recover — 自救巡檢`, { token: XIAOCAI_TOKEN, replyMarkup: XIAOCAI_MENU_KEYBOARD });
+        await sendTelegramMessageToChat(chatId, `我是小蔡 🚀\n\n直接跟我聊天就好。\n\n/say <訊息> — 小蔡去群組發訊息\n/models — 切換模型\n/status — 系統狀態\n/tasks — 任務板\n/report — 日報\n/health — 健康檢查\n/recover — 自救巡檢`, { token: XIAOCAI_TOKEN, replyMarkup: XIAOCAI_MENU_KEYBOARD });
         continue;
       }
 
