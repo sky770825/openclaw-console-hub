@@ -21,7 +21,7 @@ import { NEUXA_WORKSPACE } from './security.js';
 import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './action-handlers.js';
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
 import { getGlobalRateLimiter } from './action-rate-limiter.js';
-import { startCrewBots, stopCrewBots } from './crew-bots/index.js';
+import { startCrewBots, stopCrewBots, CREW_BOTS } from './crew-bots/index.js';
 
 const log = createLogger('telegram');
 
@@ -2011,13 +2011,17 @@ export function startTelegramStopPoll(): void {
     log.info(`[Heartbeat] 🫀 心跳已啟動，每 ${HEARTBEAT_INTERVAL_MS / 60000} 分鐘一次`);
   }
 
-  if (GROUP_TOKEN && GROUP_CHAT_ID) {
+  // Crew bots 啟用時跳過舊 groupPoll（避免同 token 做兩個 getUpdates 導致 409）
+  const crewEnabled = CREW_BOTS.some((b: { token: string }) => b.token);
+  if (GROUP_TOKEN && GROUP_CHAT_ID && !crewEnabled) {
     groupRunning = true;
     const gBotId = GROUP_TOKEN.split(':')[0] || '(unknown)';
     log.info(`[GroupBot] 啟動群組偵測 bot_id=${gBotId} chat=${GROUP_CHAT_ID}`);
     fetch(`https://api.telegram.org/bot${GROUP_TOKEN}/deleteWebhook?drop_pending_updates=false`)
       .catch(() => {})
       .finally(() => groupLoop());
+  } else if (crewEnabled) {
+    log.info('[GroupBot] Crew bots 已啟用，跳過舊 groupPoll');
   }
 
   // 啟動 NEUXA 星群 Crew Bots（6 個 AI bot）
