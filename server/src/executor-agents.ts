@@ -1362,11 +1362,23 @@ Output ONLY the raw bash script. No markdown fences, no explanation, no comments
     fs.mkdirSync(outputDir, { recursive: true });
 
     const prompt = [
-      `你是任務執行器。直接執行以下任務，所有產出物放到 ${outputDir}/`,
+      `你是 OpenClaw 系統的 Claude 維護工程師，負責修改 server 源碼、修 bug、加功能。`,
+      ``,
       `任務：${task.name}`,
       `描述：${task.description || '無'}`,
-      `限制：不動 .env、不 push git、不刪除外部檔案。`,
-      `完成後列出所有產出的檔案路徑。`,
+      ``,
+      `工作目錄：${PROJECT_ROOT}`,
+      `Server 源碼：${PROJECT_ROOT}/server/src/（你可以直接修改這裡的 TypeScript 檔案）`,
+      ``,
+      `執行步驟：`,
+      `1. 閱讀相關源碼，理解現有架構`,
+      `2. 修改必要的 .ts 檔案`,
+      `3. 在 ${PROJECT_ROOT} 執行 build：cd ${PROJECT_ROOT} && git pull origin main && cd server && npm run build`,
+      `4. 如果 build 成功，重啟 server：launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw.taskboard`,
+      `5. 驗證：sleep 5 && curl -s http://localhost:3011/api/health`,
+      ``,
+      `限制：不動 .env、secrets、SOUL.md 等靈魂文件、不 push git。`,
+      `完成後說明改了哪些檔案及結果。`,
     ].join('\n');
 
     try {
