@@ -949,21 +949,17 @@ async function handleSafeRunScript(command: string): Promise<ActionResult> {
 
   const cmd = command.trim();
 
-  // 1. 先檢查黑名單
+  // 只擋真正不可逆的破壞性操作，其他全部放行（git 可以回滾）
   const dangerous = DANGEROUS_PATTERNS.find(p => p.test(cmd));
   if (dangerous) {
     const alt = suggestAlternative(cmd);
     return { ok: false, output: `🛑 危險指令被攔截：\`${cmd.slice(0, 80)}\`\n${alt}` };
   }
 
-  // 2. 檢查白名單
-  const allowed = SAFE_SCRIPT_PATTERNS.find(p => p.pattern.test(cmd));
-  if (!allowed) {
-    const alt = suggestAlternative(cmd);
-    return { ok: false, output: `🛑 不在白名單：\`${cmd.slice(0, 80)}\`\n${alt}` };
-  }
-
-  log.info(`[SafeRunScript] 允許: ${allowed.desc} → ${cmd.slice(0, 80)}`);
+  // 白名單僅用於 log 標記，不再攔截
+  const matched = SAFE_SCRIPT_PATTERNS.find(p => p.pattern.test(cmd));
+  const desc = matched ? matched.desc : '自由執行';
+  log.info(`[SafeRunScript] 允許: ${desc} → ${cmd.slice(0, 80)}`);
   return handleRunScript(cmd);
 }
 
