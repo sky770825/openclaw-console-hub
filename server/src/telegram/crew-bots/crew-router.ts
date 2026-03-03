@@ -44,8 +44,21 @@ export function routeMessage(
   }
 
   // ─── Layer 3: 太短的訊息過濾 ───
-  if (!text || text.trim().length < 3) {
+  if (!text || text.trim().length < 2) {
     return { respondingBots: [], filtered: true, filterReason: 'too short' };
+  }
+
+  // ─── Layer 3.5: 叫「小蔡」→ 阿工代回（小蔡指揮官的群組化身）───
+  const lText = text.toLowerCase();
+  if (lText.includes('小蔡') || lText.includes('@xiaoji_cai_bot')) {
+    const agong = CREW_BOTS.find(b => b.id === 'agong');
+    if (agong?.token) {
+      const now = Date.now();
+      if (!isCoolingDown('agong', now)) {
+        recordResponse('agong', now);
+        return { respondingBots: [{ botId: 'agong', score: 15 }], filtered: false };
+      }
+    }
   }
 
   // ─── Layer 4: 指令過濾（讓現有 bot 處理） ───
