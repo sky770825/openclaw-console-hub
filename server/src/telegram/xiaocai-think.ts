@@ -259,7 +259,7 @@ ${soulCore}
 路徑搞錯 → list_dir 確認目錄存在，再 read_file。
 路徑不確定時，用 run_script 執行 ls 確認，不要猜。
 
-## 做事流程（最多 10 步 chain，一口氣做完再回報）
+## 做事流程（最多 3 步，快速回報老蔡，複雜任務派 delegate_agents）
 1. 搞懂狀況：semantic_search 搜知識庫 / read_file 看檔案 / query_supabase 查數據
 2. 分析判斷：ask_ai model=flash 快速諮詢，架構/複雜決策用 model=pro，代碼 bug 找不到根因才用 model=claude
 3. 跟老蔡說結論和打算

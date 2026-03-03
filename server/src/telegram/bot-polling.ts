@@ -59,8 +59,9 @@ const xiaocaiHistory = new Map<number, Array<{ role: string; text: string }>>();
 // 心跳狀態
 let lastUserActivityAt = 0; // 老蔡最後一次發訊息的時間
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 分鐘
-const HEARTBEAT_IDLE_THRESHOLD_MS = 5 * 60 * 1000; // 老蔡 5 分鐘沒說話才觸發
+let heartbeatBusy = false; // 心跳是否正在執行中
+const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘（不再 5 分鐘搶資源）
+const HEARTBEAT_IDLE_THRESHOLD_MS = 10 * 60 * 1000; // 老蔡 10 分鐘沒說話才觸發
 const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
 
 // Action Circuit Breaker — 阻止同一個 action 連續失敗超過 N 次
@@ -1559,7 +1560,7 @@ async function xiaocaiPoll(): Promise<void> {
       }
 
       // ── 多步執行迴路（最多 3 輪連續行動）──
-      const MAX_CHAIN_STEPS = 15;
+      const MAX_CHAIN_STEPS = 3;  // 對話 chain 最多 3 步，超過就回覆讓老蔡判斷
       let currentInput = text;
       let finalReply = '';
       const allActionResults: string[] = [];
@@ -1819,17 +1820,23 @@ async function heartbeatTick(): Promise<void> {
   }
 
   log.info('[Heartbeat] 🫀 心跳觸發 — 開始自主思考');
+  heartbeatBusy = true;
 
   const heartbeatInput = `[心跳醒來] 老蔡目前不在線。你自己醒來了。\n讀完以下指南後，按照裡面的步驟自主行動：\n\n${heartbeatContent}`;
 
   try {
     // 第一輪思考
-    const MAX_HEARTBEAT_STEPS = 5;
+    const MAX_HEARTBEAT_STEPS = 1;  // 心跳只做 1 步：查健康+任務板，不搞複雜 chain
     let currentInput = heartbeatInput;
     const allResults: string[] = [];
     const hbBreaker = new ActionCircuitBreaker(2);
 
     for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
+      // 老蔡發訊息了 → 立刻中斷心跳，優先回覆
+      if (lastUserActivityAt > 0 && (Date.now() - lastUserActivityAt) < 60_000) {
+        log.info('[Heartbeat] 老蔡剛發訊息，中斷心跳讓出資源');
+        break;
+      }
       const isFollowUp = step > 0;
       const hbRecentResults = allResults.slice(-3);
       const hbHasFailure = hbRecentResults.some(r => r.startsWith('🚫') || r.startsWith('🔒'));
@@ -1894,6 +1901,8 @@ async function heartbeatTick(): Promise<void> {
     log.info(`[Heartbeat] 🫀 心跳完成，執行 ${allResults.length} 個動作`);
   } catch (e) {
     log.error({ err: e }, '[Heartbeat] 心跳異常');
+  } finally {
+    heartbeatBusy = false;
   }
 }
 
