@@ -87,6 +87,8 @@ class ActionCircuitBreaker {
 // 群組 bot 狀態
 let groupOffset = 0;
 let groupRunning = false;
+let groupConsecutiveFailures = 0;
+let groupNextDelayMs = POLL_INTERVAL_MS;
 
 // ── 工具函數 ──
 
@@ -264,7 +266,7 @@ async function replyMenu(chatId: number, prefix?: string): Promise<void> {
 
 // ── 指令處理 ──
 
-async function replyStatus(chatId: number): Promise<void> {
+async function replyStatus(chatId: number, useToken = TOKEN): Promise<void> {
   const tasks = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/tasks`, {}, 4000)) as unknown;
   const runs = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/runs`, {}, 4000)) as unknown;
   const auto = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/auto-executor/status`, {}, 4000);
@@ -290,13 +292,13 @@ async function replyStatus(chatId: number): Promise<void> {
     `<b>Runs:</b> active=${activeRuns} total=${runList.length}\n` +
     `<b>AutoExecutor:</b> ${asObj(auto).isRunning === true ? 'ON' : 'OFF'}`;
 
-  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+  await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
-async function replyTasks(chatId: number): Promise<void> {
+async function replyTasks(chatId: number, useToken = TOKEN): Promise<void> {
   const tasks = (await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/tasks`, {}, 4000)) as unknown;
   if (!Array.isArray(tasks)) {
-    await sendTelegramMessageToChat(chatId, '⚠️ 任務板 API 無回應', { token: TOKEN, parseMode: 'HTML' });
+    await sendTelegramMessageToChat(chatId, '⚠️ 任務板 API 無回應', { token: useToken, parseMode: 'HTML' });
     return;
   }
   const ready = tasks.filter((t) => String(asObj(t).status ?? '') === 'ready').slice(0, 10);
@@ -306,7 +308,7 @@ async function replyTasks(chatId: number): Promise<void> {
     `<b>Ready:</b> ${ready.length}/${tasks.filter((t) => String(asObj(t).status ?? '') === 'ready').length}\n\n` +
     (lines.length ? lines.join('\n') : '目前沒有 ready 任務') +
     `\n\n面板：<code>${TASKBOARD_BASE_URL}</code>`;
-  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+  await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
 const providerIcons: Record<string, string> = { Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
@@ -650,13 +652,13 @@ async function replyReconcile(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
-async function replyWake(chatId: number): Promise<void> {
+async function replyWake(chatId: number, useToken = TOKEN): Promise<void> {
   const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/wake-report`, {}, 8000);
   const robj = asObj(result);
   const reports = Array.isArray(robj.reports) ? (robj.reports as unknown[]) : (Array.isArray(result) ? (result as unknown[]) : []);
   const unresolved = reports.filter((r) => !asObj(r).resolved);
   if (unresolved.length === 0) {
-    await sendTelegramMessageToChat(chatId, '🔔 <b>甦醒報告</b>\n\n目前沒有未解決的甦醒報告 ✅', { token: TOKEN, parseMode: 'HTML' });
+    await sendTelegramMessageToChat(chatId, '🔔 <b>甦醒報告</b>\n\n目前沒有未解決的甦醒報告 ✅', { token: useToken, parseMode: 'HTML' });
     return;
   }
   const lines = unresolved.slice(0, 5).map((r, i) => {
@@ -668,7 +670,7 @@ async function replyWake(chatId: number): Promise<void> {
     `<b>未解決：</b> ${unresolved.length}\n\n` +
     lines.join('\n') +
     (unresolved.length > 5 ? `\n...共 ${unresolved.length} 筆` : '');
-  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+  await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
 async function replyCmdMenu(chatId: number): Promise<void> {
@@ -1174,13 +1176,24 @@ async function groupPoll(): Promise<void> {
     const res = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
+      groupConsecutiveFailures++;
+      groupNextDelayMs = Math.min(60000, POLL_INTERVAL_MS * Math.pow(2, Math.min(groupConsecutiveFailures - 1, 5)));
       if (res.status === 409) {
         log.warn('[GroupBot] 409 Conflict — 另一個 polling 在跑，等待重試');
+      } else if (res.status === 401) {
+        // 401 只每 60 秒 log 一次，避免洗版
+        const now = Date.now();
+        if (now - lastUnauthorizedNotifyAt > 60000) {
+          log.error({ status: res.status }, '[GroupBot] 401 Unauthorized — token 失效或已被踢出，退避重試');
+          lastUnauthorizedNotifyAt = now;
+        }
       } else {
         log.error({ status: res.status, detail: detail.slice(0, 200) }, '[GroupBot] getUpdates failed');
       }
       return;
     }
+    groupConsecutiveFailures = 0;
+    groupNextDelayMs = POLL_INTERVAL_MS;
     const json = await res.json() as { ok?: boolean; result?: Array<Record<string, unknown>> };
     if (!json.ok || !Array.isArray(json.result)) return;
 
@@ -1241,9 +1254,9 @@ async function groupPoll(): Promise<void> {
         continue;
       }
 
-      if (text === 'group:status' || text === '/status') { await replyStatus(chatId); continue; }
-      if (text === 'group:tasks' || text === '/tasks') { await replyTasks(chatId); continue; }
-      if (text === 'group:wake' || text === '/wake') { await replyWake(chatId); continue; }
+      if (text === 'group:status' || text === '/status') { await replyStatus(chatId, GROUP_TOKEN); continue; }
+      if (text === 'group:tasks' || text === '/tasks') { await replyTasks(chatId, GROUP_TOKEN); continue; }
+      if (text === 'group:wake' || text === '/wake') { await replyWake(chatId, GROUP_TOKEN); continue; }
 
       if (text === 'group:deputy_on' || text === '/deputy on') {
         const enabled = true;
@@ -1300,7 +1313,7 @@ async function groupPoll(): Promise<void> {
 function groupLoop(): void {
   if (!groupRunning) return;
   groupPoll().finally(() => {
-    if (groupRunning) setTimeout(groupLoop, POLL_INTERVAL_MS);
+    if (groupRunning) setTimeout(groupLoop, groupNextDelayMs);
   });
 }
 
