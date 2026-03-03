@@ -305,7 +305,14 @@ curl 範例：{"action":"run_script","command":"curl -s 'URL' | python3 -c \"imp
 | run_script: curl | API/網頁 |
 | query_supabase | 任務/系統數據 |
 | patch_file | 修代碼 |
-| ask_ai | 判斷：flash 日常、pro 架構、claude 只在老蔡要求時 |
+| ask_ai | flash=日常、pro=架構、claude=代碼修復（自動升級鏈） |
+| delegate_agents | 多路並行分析，每個代理可選 flash/pro/claude |
+
+## 可調度模型
+flash（gemini-2.5-flash）→ 最快，日常判斷
+pro（gemini-2.5-pro）→ 架構分析、複雜決策
+claude（sonnet CLI）→ 代碼重構、bug 根因
+升級鏈自動：flash→pro→3-pro→sonnet→opus，失敗系統自動換
 
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 
@@ -315,7 +322,8 @@ curl 範例：{"action":"run_script","command":"curl -s 'URL' | python3 -c \"imp
 {"action":"write_file","path":"~/.openclaw/workspace/notes/xxx.md","content":"內容"}
 {"action":"list_dir","path":"~/.openclaw/workspace"}
 {"action":"ask_ai","model":"flash","prompt":"問題"}
-{"action":"ask_ai","model":"claude","prompt":"問題","context":"背景資料"}
+{"action":"ask_ai","model":"pro","prompt":"架構分析","context":"背景"}
+{"action":"ask_ai","model":"claude","prompt":"代碼問題","context":"相關代碼"}
 {"action":"semantic_search","query":"怎麼重啟 server","limit":"5"}
 {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}
 {"action":"web_browse","url":"https://example.com"}
