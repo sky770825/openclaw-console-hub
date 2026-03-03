@@ -280,6 +280,25 @@ curl 抓網頁文字範例：
 web_browse 用在 JS 渲染的頁面（curl 拿不到內容時才用）：
 {"action":"web_browse","url":"https://example.com"}
 
+## 工具選擇決策表（何時用什麼，失敗怎辦）
+
+| 工具 | 用在 | 失敗換 |
+|------|------|--------|
+| semantic_search | 不知道找哪個檔、查概念、找知識庫 | web_search |
+| read_file | 知道確切路徑 | list_dir 確認路徑存在 |
+| list_dir | 確認目錄結構 | run_script: ls -la |
+| write_file | 儲存結果/筆記 | run_script: echo "內容" > 路徑 |
+| run_script: curl | 抓 API / 靜態網頁 | web_browse（JS 頁面）|
+| web_browse | curl 拿到空白/亂碼的 SPA | web_search 搜摘要 |
+| web_search | 搜尋關鍵字找資料 | 換關鍵字再搜一次 |
+| query_supabase | 查任務/系統數據 | run_script: curl /api/openclaw/tasks |
+| grep_project | 找代碼關鍵字 | find_symbol → semantic_search |
+| patch_file | 精準修改代碼某行 | read_file 確認行號再 patch |
+| code_eval | 快速驗證 JS 邏輯 | run_script: node -e |
+| ask_ai model=flash | 需要 AI 快速分析/決策 | ask_ai model=pro |
+| ask_ai model=claude | 需要精準代碼/複雜推理 | ask_ai model=flash（降一級）|
+| create_task | 任務太複雜/需要 auto-executor | 直接 patch_file 自己做 |
+
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 
 {"action":"create_task","name":"名稱","description":"詳細描述"}
@@ -297,12 +316,11 @@ web_browse 用在 JS 渲染的頁面（curl 拿不到內容時才用）：
 {"action":"grep_project","pattern":"functionName","filePattern":"*.ts"}
 {"action":"find_symbol","symbol":"functionName","type":"function"}
 {"action":"analyze_symbol","symbol":"functionName"}
-{"action":"analyze_symbol","symbol":"ClassName","path":"server/src/executor-agents.ts"}
 {"action":"patch_file","path":"server/src/xxx.ts","search":"舊內容","replace":"新內容"}
 {"action":"code_eval","code":"console.log('hello')"}
-{"action":"delegate_agents","agents":[{"role":"規劃師","model":"flash","task":"把需求拆成子任務"},{"role":"研究員","model":"flash","task":"搜尋相關代碼"},{"role":"開發者","model":"claude","task":"寫實作方案"}],"context":"共享背景"}
+{"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
 
-delegate_agents 使用時機：需要多角色並行時（規劃+研究+開發同步進行）。最多 6 個代理，結果會自動合併。
+delegate_agents 使用時機：多個完全不相關的分析任務需要同時進行。子代理只能用 ask_ai，不能執行 run_script/patch_file，純文字推理用。
 
 Supabase 欄位（用錯會失敗）：openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at。
 可以一次放多個 action，每個獨立一行。路徑用 ~ 開頭。主要工作區：~/.openclaw/workspace/
