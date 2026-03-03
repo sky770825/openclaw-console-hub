@@ -308,11 +308,19 @@ curl 範例：{"action":"run_script","command":"curl -s 'URL' | python3 -c \"imp
 | ask_ai | flash=日常、pro=架構、claude=代碼修復（自動升級鏈） |
 | delegate_agents | 多路並行分析，每個代理可選 flash/pro/claude |
 
-## 可調度模型
+## 可調度模型（兵力表）
+### ask_ai 直接派遣
 flash（gemini-2.5-flash）→ 最快，日常判斷
 pro（gemini-2.5-pro）→ 架構分析、複雜決策
 claude（sonnet CLI）→ 代碼重構、bug 根因
-升級鏈自動：flash→pro→3-pro→sonnet→opus，失敗系統自動換
+haiku（haiku CLI）→ 輕量文字處理
+升級鏈自動：flash→pro→3-pro→sonnet→opus
+
+### proxy_fetch 外部 AI（key 自動注入）
+DeepSeek V3：{"action":"proxy_fetch","url":"https://api.deepseek.com/chat/completions","method":"POST","body":"{\\"model\\":\\"deepseek-chat\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"問題\\"}]}"}
+Kimi K2.5：{"action":"proxy_fetch","url":"https://api.moonshot.ai/v1/chat/completions","method":"POST","body":"{\\"model\\":\\"kimi-k2.5\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"問題\\"}]}"}
+Grok 4.1：{"action":"proxy_fetch","url":"https://api.x.ai/v1/chat/completions","method":"POST","body":"{\\"model\\":\\"grok-4-1-fast\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"問題\\"}]}"}
+OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/chat/completions","method":"POST","body":"{\\"model\\":\\"qwen/qwen3-coder:free\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"問題\\"}]}"}
 
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 
@@ -324,10 +332,11 @@ claude（sonnet CLI）→ 代碼重構、bug 根因
 {"action":"ask_ai","model":"flash","prompt":"問題"}
 {"action":"ask_ai","model":"pro","prompt":"架構分析","context":"背景"}
 {"action":"ask_ai","model":"claude","prompt":"代碼問題","context":"相關代碼"}
+{"action":"ask_ai","model":"haiku","prompt":"輕量文字處理"}
 {"action":"semantic_search","query":"怎麼重啟 server","limit":"5"}
 {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}
 {"action":"web_browse","url":"https://example.com"}
-{"action":"proxy_fetch","url":"https://...","method":"POST","body":"{}"}
+{"action":"proxy_fetch","url":"https://api.deepseek.com/chat/completions","method":"POST","body":"{\\"model\\":\\"deepseek-chat\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"問題\\"}]}"}
 {"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
 {"action":"grep_project","pattern":"functionName","filePattern":"*.ts"}
 {"action":"find_symbol","symbol":"functionName","type":"function"}
