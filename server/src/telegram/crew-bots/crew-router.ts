@@ -30,13 +30,15 @@ export function routeMessage(
   senderUsername: string,
   senderIsBot: boolean,
 ): RoutingDecision {
-  // ─── Layer 1: Bot 訊息直接過濾 ───
-  if (senderIsBot) {
+  const lowerUsername = (senderUsername || '').toLowerCase();
+
+  // ─── Layer 1: Bot 訊息過濾（小蔡指揮官例外） ───
+  const COMMANDER_USERNAMES = new Set(['xiaoji_cai_bot']);
+  if (senderIsBot && !COMMANDER_USERNAMES.has(lowerUsername)) {
     return { respondingBots: [], filtered: true, filterReason: 'bot message' };
   }
 
-  // ─── Layer 2: 已知 bot username 過濾 ───
-  const lowerUsername = (senderUsername || '').toLowerCase();
+  // ─── Layer 2: 已知 crew/system bot username 過濾 ───
   if (CREW_BOT_USERNAMES.has(lowerUsername) || SYSTEM_BOT_USERNAMES.has(lowerUsername)) {
     return { respondingBots: [], filtered: true, filterReason: 'known bot username' };
   }
