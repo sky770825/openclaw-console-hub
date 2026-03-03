@@ -1193,7 +1193,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 // ── 向量索引（Google Embedding + Supabase pgvector）──
 
 /** 單檔快速索引：把一個 .md 檔案切 chunk → embed → 寫入 Supabase */
-async function handleIndexFile(filePath: string, category?: string): Promise<ActionResult> {
+export async function handleIndexFile(filePath: string, category?: string): Promise<ActionResult> {
   if (!filePath || !filePath.endsWith('.md')) {
     return { ok: false, output: 'index_file 需要 .md 檔案路徑' };
   }
