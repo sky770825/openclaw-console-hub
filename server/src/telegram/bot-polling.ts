@@ -1658,7 +1658,7 @@ async function xiaocaiPoll(): Promise<void> {
           }
         }
 
-        // ── 對話快速回覆：step 0 後如果回覆已有實質內容，不繼續 chain ──
+        // ── 對話快速回覆：step 0 後如果是純對話（無 action 或只有查詢），不繼續 chain ──
         if (step === 0) {
           const cleanReply = stripActionJson(reply);
           const replyLen = cleanReply.length;
@@ -1666,9 +1666,10 @@ async function xiaocaiPoll(): Promise<void> {
           const allReadOnly = actionMatches.every(j => {
             try { const a = JSON.parse(j) as Record<string,string>; return readOnlyActions.includes(a.action); } catch { return false; }
           });
-          // 如果：(1) 回覆已有文字 且 (2) 只有讀取類 action 或 action 很少，就不繼續 chain
-          if (replyLen > 30 && (allReadOnly || actionMatches.length <= 1)) {
-            log.info(`[NEUXA-Chain] step=0 快速回覆（replyLen=${replyLen}, readOnly=${allReadOnly}, actions=${actionMatches.length}），跳過後續 chain`);
+          // 只在「純查詢 + 回覆已夠長」時才 break（小蔡要先查再做事的流程不截斷）
+          const isShortChat = replyLen < 300 && allReadOnly && actionMatches.length <= 2;
+          if (isShortChat) {
+            log.info(`[NEUXA-Chain] step=0 對話快回（replyLen=${replyLen}, readOnly=${allReadOnly}, actions=${actionMatches.length}），跳過後續 chain`);
             finalReply = cleanReply;
             // 仍需要保存歷史
             const h = xiaocaiHistory.get(chatId) || [];
