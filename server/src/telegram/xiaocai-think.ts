@@ -359,6 +359,11 @@ web_browse 用在 JS 渲染的頁面（curl 拿不到內容時才用）：
 
 delegate_agents 使用時機：多個完全不相關的分析任務需要同時進行。子代理只能用 ask_ai，不能執行 run_script/patch_file，純文字推理用。
 
+子代理模型選配：
+- model=flash：快速摘要、格式整理、簡單判斷（大部分場合用這個）
+- model=pro：深度分析、架構評估、長文理解、研究報告
+- model=claude：🔴 子代理禁用，改用 model=pro
+
 Supabase 欄位（用錯會失敗）：openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at。
 可以一次放多個 action，每個獨立一行。路徑用 ~ 開頭。主要工作區：~/.openclaw/workspace/
 
