@@ -10,7 +10,20 @@ CREATE TABLE IF NOT EXISTS public.openclaw_tasks (
   id text PRIMARY KEY,
   title text NOT NULL,
   cat text DEFAULT 'feature' CHECK (cat IN ('bugfix','learn','feature','improve')),
-  status text DEFAULT 'queued' CHECK (status IN ('queued','in_progress','done')),
+  status text DEFAULT 'queued' CHECK (
+    status IN (
+      'queued',
+      'in_progress',
+      'done',
+      'pending_review',
+      'needs_review',
+      'failed',
+      'blocked',
+      'retrying',
+      'cancelled',
+      'timeout'
+    )
+  ),
   progress integer DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
   auto boolean DEFAULT false,
   from_review_id text,

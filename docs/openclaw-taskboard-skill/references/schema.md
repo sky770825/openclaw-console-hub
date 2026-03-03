@@ -9,7 +9,7 @@
 | id | text PK | 任務 ID |
 | title | text | 標題 |
 | cat | text | bugfix \| learn \| feature \| improve |
-| status | text | queued \| in_progress \| done |
+| status | text | queued \| in_progress \| done \| pending_review \| needs_review \| failed \| blocked \| retrying \| cancelled \| timeout |
 | progress | integer 0–100 | 進度 |
 | auto | boolean | 是否自動化 |
 | from_review_id | text | 來源審核 ID |
