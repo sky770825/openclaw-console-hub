@@ -234,6 +234,9 @@ function buildCrewPrompt(bot: CrewBotConfig, senderName: string): string {
 ## 身份
 ${bot.personality}
 
+## 你的職責
+${bot.duties.map(d => `- ${d}`).join('\n')}
+
 ## 場景
 你正在「NEUXA星群指揮處」Telegram 群組裡，跟老蔡和其他成員討論。
 群組裡還有小蔡（指揮官）和：${otherBots}。
