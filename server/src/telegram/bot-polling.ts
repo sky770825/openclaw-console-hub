@@ -1651,9 +1651,32 @@ async function xiaocaiPoll(): Promise<void> {
           }
         }
 
-        if (step === 0 && MAX_CHAIN_STEPS > 1) {
-          const progressMsg = `⏳ 處理中... 已完成 ${stepResults.length} 個動作，繼續分析中`;
-          await sendTelegramMessageToChat(chatId, progressMsg, { token: XIAOCAI_TOKEN });
+        // ── 對話快速回覆：step 0 後如果回覆已有實質內容，不繼續 chain ──
+        if (step === 0) {
+          const cleanReply = stripActionJson(reply);
+          const replyLen = cleanReply.length;
+          const readOnlyActions = ['read_file', 'semantic_search', 'query_supabase', 'list_dir', 'web_search'];
+          const allReadOnly = actionMatches.every(j => {
+            try { const a = JSON.parse(j) as Record<string,string>; return readOnlyActions.includes(a.action); } catch { return false; }
+          });
+          // 如果：(1) 回覆已有文字 且 (2) 只有讀取類 action 或 action 很少，就不繼續 chain
+          if (replyLen > 30 && (allReadOnly || actionMatches.length <= 1)) {
+            log.info(`[NEUXA-Chain] step=0 快速回覆（replyLen=${replyLen}, readOnly=${allReadOnly}, actions=${actionMatches.length}），跳過後續 chain`);
+            finalReply = cleanReply;
+            // 仍需要保存歷史
+            const h = xiaocaiHistory.get(chatId) || [];
+            h.push({ role: 'model', text: reply || '（執行中）' });
+            h.push({ role: 'user', text: sanitize(`[執行結果]\n${stepResults.join('\n')}`) });
+            if (h.length > 30) h.splice(0, h.length - 30);
+            xiaocaiHistory.set(chatId, h);
+            allActionResults.push(...stepResults);
+            break;
+          }
+          // 還要繼續 chain，顯示處理中
+          if (MAX_CHAIN_STEPS > 1) {
+            const progressMsg = `⏳ 處理中... 已完成 ${stepResults.length} 個動作，繼續分析中`;
+            await sendTelegramMessageToChat(chatId, progressMsg, { token: XIAOCAI_TOKEN });
+          }
         }
 
         const history = xiaocaiHistory.get(chatId) || [];
@@ -1683,8 +1706,9 @@ async function xiaocaiPoll(): Promise<void> {
         appendInteractionLog(text, allActionResults, finalReply || '');
       }
 
-      // 自驅動
-      const SELF_DRIVE_ENABLED = true;
+      // 自驅動（只有真正任務才跑，聊天不跑）
+      const isTaskMessage = text.length > 10 && /查|看|修|建|改|做|分析|部署|幫|搜|找|狀態|任務|報告|日報/.test(text);
+      const SELF_DRIVE_ENABLED = isTaskMessage;
 
       if (SELF_DRIVE_ENABLED && allActionResults.length > 0 && finalReply) {
         const TG_LIMIT_PRE = 4000;
