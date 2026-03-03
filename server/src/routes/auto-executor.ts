@@ -884,8 +884,8 @@ async function executeNextPendingTask(): Promise<void> {
             ``,
             `## 學到什麼`,
             `任務「${task.name}」成功完成，品質${qualityInfo.grade}。`,
-            qualityInfo.checks
-              ? `通過的檢查項目：${(qualityInfo.checks as Array<{name: string; passed: boolean}>).filter(c => c.passed).map(c => c.name).join(', ')}`
+            (qualityInfo as Record<string, unknown>).checks
+              ? `通過的檢查項目：${((qualityInfo as Record<string, unknown>).checks as Array<{name: string; passed: boolean}>).filter(c => c.passed).map(c => c.name).join(', ')}`
               : '',
           ].filter(Boolean).join('\n');
 

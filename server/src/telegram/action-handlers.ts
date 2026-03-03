@@ -1956,7 +1956,7 @@ async function handleAnalyzeSymbol(symbol: string, filePath?: string): Promise<A
             ts.isClassDeclaration(parent) ||
             ts.isInterfaceDeclaration(parent) ||
             ts.isTypeAliasDeclaration(parent) ||
-            ts.isVariableDeclarator(parent as import('typescript').Node)
+            ts.isVariableDeclaration(parent as import('typescript').Node)
           ) && (parent as { name?: import('typescript').Node }).name === node;
 
           if (!isDefNode) {
