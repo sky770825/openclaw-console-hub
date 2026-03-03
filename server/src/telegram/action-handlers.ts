@@ -1150,6 +1150,78 @@ setInterval(() => {
   }
 }, 300_000);
 
+// ── 查詢意圖自動分類 ──
+function classifyQueryIntent(q: string): 'task' | 'code' | 'history' {
+  const lw = q.toLowerCase();
+  const codeKw = ['api', 'endpoint', 'function', 'error', 'bug', 'crash', 'typescript', 'react', 'node', 'express',
+    'database', 'query', 'sql', 'supabase', '函數', '錯誤', '代碼', '程式', '呼叫', '返回', '異常', 'import', 'export'];
+  const histKw = ['歷史', '過去', '之前', '曾經', '回顧', '發生過', '記錄', '日誌', '上次', '昨天', '上週'];
+  if (codeKw.some(k => lw.includes(k))) return 'code';
+  if (histKw.some(k => lw.includes(k))) return 'history';
+  return 'task';
+}
+
+// ── 停用詞（50+ 中文常見填充詞）──
+const STOP_WORD_LIST = [
+  '的', '是', '要', '嗎', '怎麼', '我', '了', '吧', '就', '還', '也', '都', '嗯', '喔',
+  '在', '有', '這', '那', '不', '和', '跟', '把', '被', '讓', '給', '到', '從', '對',
+  '可以', '能', '會', '應該', '需要', '想', '請', '麻煩', '幫', '看看', '一下',
+  '什麼', '哪', '為什麼', '如何', '怎樣', '多少', '幾', '呢', '啊', '唉', '欸',
+  '然後', '所以', '但是', '不過', '而且', '或者', '如果',
+];
+
+function removeStopWords(q: string): string {
+  let result = q.trim();
+  for (const sw of STOP_WORD_LIST) {
+    result = result.split(sw).join(' ');
+  }
+  return result.replace(/\s+/g, ' ').trim();
+}
+
+// ── 同義詞擴展（中英技術術語）──
+const SYNONYM_MAP: Record<string, string[]> = {
+  '部署': ['deploy', '上線', '發佈'],
+  '錯誤': ['error', 'bug', '異常', '失敗'],
+  '測試': ['test', '檢測', 'verify'],
+  '配置': ['config', 'setup', '設定', '設置'],
+  '效能': ['performance', '速度', 'optimize', '優化'],
+  '資料庫': ['database', 'db', 'supabase', 'postgres'],
+  '任務': ['task', 'job', '工作', '待辦'],
+  '知識': ['knowledge', '文件', 'docs', '文檔'],
+  '重啟': ['restart', 'reboot', '重新啟動'],
+  '模型': ['model', 'llm', 'ai', '大模型'],
+  '向量': ['vector', 'embedding', '嵌入'],
+  '搜尋': ['search', 'query', '查詢', '找'],
+};
+
+function expandQueryWithSynonyms(q: string): string {
+  let expanded = q;
+  for (const [term, syns] of Object.entries(SYNONYM_MAP)) {
+    if (q.includes(term)) {
+      expanded += ' ' + syns.slice(0, 2).join(' '); // 最多加 2 個同義詞
+    }
+  }
+  return expanded.trim();
+}
+
+// ── 多因子重排名 ──
+function computeRelevanceScore(r: any, queryLower: string): number {
+  const vecScore = (r.similarity || 0) * 0.50;  // 向量相似度 50%
+  // 關鍵詞精確命中 25%
+  const titleHit = (r.doc_title || '').toLowerCase().includes(queryLower) ||
+    (r.section_title || '').toLowerCase().includes(queryLower);
+  const contentHit = (r.content || '').toLowerCase().includes(queryLower);
+  const kwScore = titleHit ? 0.25 : (contentHit ? 0.12 : 0);
+  // 文件新鮮度 10%
+  const daysSince = Math.max(0, (Date.now() - new Date(r.indexed_at || r.date || 0).getTime()) / 86400000);
+  const freshScore = (1 - Math.min(1, daysSince / 90)) * 0.10;
+  // Zone 偏好 10%（hot > cold）
+  const zoneScore = r.zone === 'hot' ? 0.10 : (r.zone === 'cold' ? 0.03 : 0.05);
+  // Pinned 加成 5%
+  const pinScore = r.is_pinned ? 0.05 : 0;
+  return vecScore + kwScore + freshScore + zoneScore + pinScore;
+}
+
 async function handleSemanticSearch(query: string, limit: number = 5, mode: string = 'task'): Promise<ActionResult> {
   if (!query || query.trim().length < 2) {
     return { ok: false, output: 'semantic_search 需要 query 參數（至少 2 個字）' };
@@ -1165,38 +1237,31 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
     return { ok: true, output: cached.output };
   }
 
-  // 搜尋詞前處理：去掉中文常見停用詞，只保留關鍵詞
-  const STOP_WORDS = /[\u7684\u662f\u8981\u55ce\u600e\u9ebc\u6211\u4e86\u4e86\u5417\u5c31\u4e86\u5c31\u4e86]/g;
-  const stopWordList = ['的', '是', '要', '嗎', '怎麼', '我', '了', '吧', '就', '還', '也', '都', '嗯', '喔'];
-  let processedQuery = query.trim();
-  for (const sw of stopWordList) {
-    processedQuery = processedQuery.split(sw).join(' ');
-  }
-  processedQuery = processedQuery.replace(/\s+/g, ' ').trim();
-  if (processedQuery.length < 2) {
-    processedQuery = query.trim(); // 去完停用詞後太短，回退原始 query
-  }
+  // 1. 前處理：停用詞去除 + 同義詞擴展
+  let processedQuery = removeStopWords(query);
+  if (processedQuery.length < 2) processedQuery = query.trim();
+  const expandedQuery = expandQueryWithSynonyms(processedQuery);
 
-  const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : 'task';
+  // 2. 意圖自動分類（mode 未指定時自動偵測）
+  const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : classifyQueryIntent(query);
 
   try {
-    // 1. Google Embedding（使用前處理後的 query）
-    const queryVector = await googleEmbed(processedQuery);
+    // 3. Google Embedding（使用擴展後的 query 提升召回率）
+    const queryVector = await googleEmbed(expandedQuery);
     if (!queryVector) {
       return { ok: false, output: 'Embedding 失敗: 確認 GOOGLE_API_KEY 已設定' };
     }
 
-    // 2. Supabase pgvector RPC 搜尋（支援三種模式：task/code/history）
-    // 多取一些結果供去重使用
+    // 4. Supabase pgvector RPC 搜尋
     const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
     if (!hasSb() || !sb) {
       return { ok: false, output: 'Supabase 未連線，無法搜尋向量庫' };
     }
 
-    const fetchCount = Math.min(safeLimit * 2, 20); // 多取 2 倍供去重
+    const fetchCount = Math.min(safeLimit * 3, 30); // 多取 3 倍供去重+重排名
     const { data: rawResults, error } = await sb.rpc('match_embeddings', {
       query_embedding: JSON.stringify(queryVector),
-      match_threshold: 0.5,
+      match_threshold: 0.45,
       match_count: fetchCount,
       search_mode: safeMode,
     });
@@ -1209,14 +1274,14 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
     }
 
-    // 3. Hard cutoff：最高相似度 < 0.40 視為低品質，直接拒回（0.55 太嚴，很多有用結果被擋）
+    // 5. Hard cutoff：最高相似度 < 0.35 視為低品質
     const topSimilarity = rawResults[0].similarity || 0;
-    if (topSimilarity < 0.40) {
-      log.info(`[SemanticSearch] query="${query}" top=${(topSimilarity * 100).toFixed(0)}% < 40% cutoff → rejected`);
-      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topSimilarity * 100).toFixed(0)}%，低於門檻 40%）` };
+    if (topSimilarity < 0.35) {
+      log.info(`[SemanticSearch] query="${query}" top=${(topSimilarity * 100).toFixed(0)}% < 35% cutoff → rejected`);
+      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topSimilarity * 100).toFixed(0)}%，低於門檻）` };
     }
 
-    // 4. 去重：同一 file_name（或 doc_title）只保留 similarity 最高的那一條
+    // 6. 去重：同一 file_name 只保留最高分
     const seen = new Map<string, any>();
     for (const r of rawResults) {
       const key = r.file_name || r.doc_title || String(r.id);
@@ -1225,23 +1290,28 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
         seen.set(key, r);
       }
     }
+
+    // 7. 多因子重排名（向量 50% + 關鍵詞 25% + 新鮮度 10% + zone 10% + pinned 5%）
+    const queryLower = processedQuery.toLowerCase();
     const results = Array.from(seen.values())
-      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
+      .map(r => ({ ...r, _score: computeRelevanceScore(r, queryLower) }))
+      .sort((a, b) => b._score - a._score)
       .slice(0, safeLimit);
 
-    // 5. 格式化結果
+    // 8. 格式化結果
     const lines = results.map((r: any, i: number) => {
-      const score = ((r.similarity || 0) * 100).toFixed(0);
+      const vecPct = ((r.similarity || 0) * 100).toFixed(0);
+      const rankPct = ((r._score || 0) * 100).toFixed(0);
       const title = r.doc_title || r.file_name || '未知';
       const section = r.section_title || '';
       const category = r.category || '';
       const content = String(r.content || '').slice(0, 400);
       const filePath = r.file_path || '';
-      return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, ${score}%相關)\n📁 ${filePath}\n${content}`;
+      return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, 向量${vecPct}% 綜合${rankPct}%)\n📁 ${filePath}\n${content}`;
     });
 
     const dedupNote = rawResults.length > results.length ? `（去重前 ${rawResults.length} 筆）` : '';
-    log.info(`[SemanticSearch] query="${query}" processed="${processedQuery}" mode=${safeMode} → ${results.length} results${dedupNote} (top: ${(topSimilarity * 100).toFixed(0)}%)`);
+    log.info(`[SemanticSearch] query="${query}" expanded="${expandedQuery.slice(0, 80)}" mode=${safeMode} → ${results.length} results${dedupNote} (top vec: ${(topSimilarity * 100).toFixed(0)}%, top rank: ${((results[0]?._score || 0) * 100).toFixed(0)}%)`);
     const outputText = `🔍 「${query}」相關知識（${results.length} 筆${dedupNote}，${safeMode} 模式）：\n\n${lines.join('\n\n')}`;
 
     // 存入快取
@@ -1297,7 +1367,8 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
       const secTitleMatch = section.match(/^## (.+)/m);
       const secTitle = secTitleMatch ? secTitleMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
 
-      const embedText = `[${docTitle} | ${secTitle}] ${section.slice(0, 500)}`;
+      // 上下文充實：doc 標題 + 分類 + section 標題 + 內容（800 chars），提升語義精準度
+      const embedText = `[${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}`;
       const vector = await googleEmbed(embedText);
       if (!vector) continue;
 
@@ -1430,7 +1501,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
           const section = sections[i].trim();
           const secMatch = section.match(/^## (.+)/m);
           const secTitle = secMatch ? secMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
-          const embedText = `[${docTitle} | ${secTitle}] ${section.slice(0, 500)}`;
+          const embedText = `[${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}`;
 
           const vector = await googleEmbed(embedText);
           if (!vector) continue;
