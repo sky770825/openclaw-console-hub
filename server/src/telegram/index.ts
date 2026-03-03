@@ -9,3 +9,4 @@ export { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_P
 export { executeNEUXAAction, createTask, appendInteractionLog } from './action-handlers.js';
 export type { ActionResult } from './action-handlers.js';
 export { xiaocaiThink, loadSoulCore, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
+export { startCrewBots, stopCrewBots, CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-bots/index.js';

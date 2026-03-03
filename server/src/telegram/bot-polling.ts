@@ -21,6 +21,7 @@ import { NEUXA_WORKSPACE } from './security.js';
 import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './action-handlers.js';
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
 import { getGlobalRateLimiter } from './action-rate-limiter.js';
+import { startCrewBots, stopCrewBots } from './crew-bots/index.js';
 
 const log = createLogger('telegram');
 
@@ -2018,6 +2019,9 @@ export function startTelegramStopPoll(): void {
       .catch(() => {})
       .finally(() => groupLoop());
   }
+
+  // 啟動 NEUXA 星群 Crew Bots（6 個 AI bot）
+  startCrewBots();
 }
 
 export function stopTelegramStopPoll(): void {
@@ -2025,6 +2029,7 @@ export function stopTelegramStopPoll(): void {
   groupRunning = false;
   xiaocaiRunning = false;
   if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+  stopCrewBots();
 }
 
 /** 手動觸發心跳（繞過活躍檢查） */
