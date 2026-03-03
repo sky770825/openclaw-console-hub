@@ -60,11 +60,10 @@ export function loadSoulCore(): string {
 
   const soulFiles: Array<[string, number]> = [
     ['SOUL.md', 3000],
-    ['AGENTS.md', 8000],
-    ['BOOTSTRAP.md', 1000],
-    ['IDENTITY.md', 1500],
-    ['SYSTEM-RESOURCES.md', 3000],
-    ['CODEBASE-INDEX.md', 3000],
+    ['AGENTS.md', 3000],   // 只取核心行為規則，不需要全文
+    ['BOOTSTRAP.md', 800],
+    ['IDENTITY.md', 800],
+    // SYSTEM-RESOURCES / CODEBASE-INDEX 已由 system prompt 路徑基準表取代，不再載入
   ];
   for (const [file, max] of soulFiles) {
     const content = readFileSlice(path.join(workspace, file), max);
@@ -93,9 +92,9 @@ export function loadSoulCore(): string {
     if (fs.existsSync(sessionsDir)) {
       const sessions = fs.readdirSync(sessionsDir)
         .filter(f => f.endsWith('.md'))
-        .sort().reverse().slice(0, 4);
+        .sort().reverse().slice(0, 2);  // 只載入最近 2 個 session（省 token）
       for (const file of sessions) {
-        const content = readFileSlice(path.join(sessionsDir, file), 1500);
+        const content = readFileSlice(path.join(sessionsDir, file), 800);
         if (content) chunks.push(`=== ${file} ===\n${content}`);
       }
     }
