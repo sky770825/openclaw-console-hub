@@ -74,23 +74,28 @@ const FORBIDDEN_WRITE_PATHS = [
 function classifyExecutionLevel(taskName: string, taskDescription: string): 'sandbox' | 'workspace' | 'readonly-project' {
   const combined = `${taskName}\n${taskDescription}`.toLowerCase();
 
-  // 修改源碼 / 修復 bug → workspace（可寫 workspace + 專案源碼）
+  // 修改源碼 / 修復 bug → workspace
   if (/修復|修改|fix|修正|patch|改進|upgrade|更新.*\.ts|改.*prompt|改.*score|改.*model/i.test(combined)) {
     return 'workspace';
   }
 
-  // 明確需要系統變更的任務 → workspace（可寫 workspace 安全子目錄）
-  if (/建立腳本|建立工具|重建.*腳本|寫入.*workspace|deploy.*script|create.*script|write.*tool/i.test(combined)) {
+  // 任務前綴：落地/開發/實作/基建/進化/整合/部署/合併/重構/撰寫/建立/安裝/補齊 → workspace
+  if (/【落地】|【開發】|【基建】|【進化】|【整合】|【架構】|【實戰】|【撥亂反正】|【計畫】|【自動化】/i.test(combined)) {
     return 'workspace';
   }
 
-  // 分析/掃描/研究型任務 → 唯讀專案（可以讀真正的源碼）
-  if (/分析|研究|掃描|調查|review|analyze|scan|inspect|audit|check|monitor|investigate/i.test(combined)) {
+  // 關鍵動詞：實作/部署/安裝/建立/整合/撰寫/重啟/執行/合併/補齊/落地/開發/設計並實作 → workspace
+  if (/實作|部署|安裝|整合|撰寫|合併|補齊|落地|開發|建立腳本|建立工具|重建.*腳本|寫入.*workspace|deploy.*script|create.*script|write.*tool/i.test(combined)) {
+    return 'workspace';
+  }
+
+  // 分析/掃描/研究/拆解/診斷型任務 → 唯讀專案
+  if (/分析|研究|掃描|調查|拆解|診斷|review|analyze|scan|inspect|audit|check|monitor|investigate/i.test(combined)) {
     return 'readonly-project';
   }
 
-  // 其他 → sandbox（最安全）
-  return 'sandbox';
+  // 其他 → workspace（預設給予工作空間，沙盒限制太多已造成大量失敗）
+  return 'workspace';
 }
 
 /** Agent 執行器配置 */
