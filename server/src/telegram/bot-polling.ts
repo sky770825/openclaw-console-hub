@@ -586,10 +586,10 @@ async function startCodexTriage(chatId: number, issueText: string): Promise<void
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
-async function replyHealth(chatId: number): Promise<void> {
+async function replyHealth(chatId: number, useToken = TOKEN): Promise<void> {
   const health = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/health`, {}, 8000);
   if (!health) {
-    await sendTelegramMessageToChat(chatId, '⚠️ 健康檢查 API 無回應', { token: TOKEN, parseMode: 'HTML' });
+    await sendTelegramMessageToChat(chatId, '⚠️ 健康檢查 API 無回應', { token: useToken, parseMode: 'HTML' });
     return;
   }
   const h = asObj(health);
@@ -607,7 +607,7 @@ async function replyHealth(chatId: number): Promise<void> {
     `<b>AutoExecutor：</b> ${ae.isRunning === true ? '🟢 ON' : '🔴 OFF'}\n` +
     `<b>Dispatch：</b> ${ae.dispatchMode === true ? '🟢 ON' : '🔴 OFF'}\n` +
     `<b>記憶體：</b> ${mem.heapUsed ?? '?'}/${mem.heapTotal ?? '?'} MB`;
-  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+  await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
 async function replyDispatchToggle(chatId: number): Promise<void> {
@@ -629,14 +629,14 @@ async function replyDispatchToggle(chatId: number): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
 
-async function replyReport(chatId: number): Promise<void> {
-  await sendTelegramMessageToChat(chatId, '📋 正在生成日報，請稍候...', { token: TOKEN, parseMode: 'HTML' });
+async function replyReport(chatId: number, useToken = TOKEN): Promise<void> {
+  await sendTelegramMessageToChat(chatId, '📋 正在生成日報，請稍候...', { token: useToken, parseMode: 'HTML' });
   const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/daily-report?notify=1`, {}, 30000);
   const robj = asObj(result);
   const text = robj.ok
     ? '📋 <b>日報已生成並發送到 Telegram</b>'
     : `⚠️ <b>日報生成失敗</b>\n\n<code>${String(robj.message ?? robj.error ?? 'unknown').slice(0, 500)}</code>`;
-  await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
+  await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
 async function replyReconcile(chatId: number): Promise<void> {
@@ -1237,6 +1237,10 @@ async function groupPoll(): Promise<void> {
               { text: '🎯 任務板', callback_data: 'group:tasks' },
             ],
             [
+              { text: '🏥 健康檢查', callback_data: 'group:health' },
+              { text: '📋 日報', callback_data: 'group:report' },
+            ],
+            [
               { text: '🤖 小蔡暫代 ON', callback_data: 'group:deputy_on' },
               { text: '🛑 小蔡暫代 OFF', callback_data: 'group:deputy_off' },
             ],
@@ -1257,6 +1261,8 @@ async function groupPoll(): Promise<void> {
       if (text === 'group:status' || text === '/status') { await replyStatus(chatId, GROUP_TOKEN); continue; }
       if (text === 'group:tasks' || text === '/tasks') { await replyTasks(chatId, GROUP_TOKEN); continue; }
       if (text === 'group:wake' || text === '/wake') { await replyWake(chatId, GROUP_TOKEN); continue; }
+      if (text === 'group:health' || text === '/health') { await replyHealth(chatId, GROUP_TOKEN); continue; }
+      if (text === 'group:report' || text === '/report') { await replyReport(chatId, GROUP_TOKEN); continue; }
 
       if (text === 'group:deputy_on' || text === '/deputy on') {
         const enabled = true;
@@ -1840,9 +1846,13 @@ async function heartbeatTick(): Promise<void> {
     // 心跳完成通知（發到老蔡的 chat，讓他回來看得到）
     if (allResults.length > 0) {
       const ownerChatId = getAllowChatId();
+      const summary = `🫀 自主心跳\n${allResults.map(r => r.replace(/<[^>]*>/g, '').slice(0, 100)).join('\n')}`;
       if (ownerChatId) {
-        const summary = `🫀 自主心跳\n${allResults.map(r => r.replace(/<[^>]*>/g, '').slice(0, 100)).join('\n')}`;
         await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN });
+      }
+      // 同步推到群組（讓群組也能看到心跳動態）
+      if (GROUP_TOKEN && GROUP_CHAT_ID) {
+        await sendTelegramMessageToChat(Number(GROUP_CHAT_ID), summary, { token: GROUP_TOKEN }).catch(() => {});
       }
       appendInteractionLog('[心跳]', allResults, '自主巡邏完成');
     }

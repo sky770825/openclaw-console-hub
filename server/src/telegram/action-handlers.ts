@@ -2223,6 +2223,14 @@ function handleRoadmapList(): ActionResult {
 
 // ── 統一 action 調度器 ──
 
+/** 展開路徑中的 ~ 為 HOME 目錄 */
+function expandTilde(p: string): string {
+  if (!p) return p;
+  if (p.startsWith('~/')) return path.join(process.env.HOME || '/tmp', p.slice(2));
+  if (p === '~') return process.env.HOME || '/tmp';
+  return p;
+}
+
 /** 統一 action 調度器 */
 export async function executeNEUXAAction(action: Record<string, string>): Promise<ActionResult> {
   const type = action.action;
@@ -2239,19 +2247,19 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       result = { ok: true, output: await updateTask(action.id, action) };
       break;
     case 'read_file':
-      result = await handleReadFile(action.path || '');
+      result = await handleReadFile(expandTilde(action.path || ''));
       break;
     case 'write_file':
-      result = await handleWriteFile(action.path || '', action.content || '');
+      result = await handleWriteFile(expandTilde(action.path || ''), action.content || '');
       break;
     case 'mkdir':
-      result = await handleMkdir(action.path || '');
+      result = await handleMkdir(expandTilde(action.path || ''));
       break;
     case 'move_file':
-      result = await handleMoveFile(action.from || '', action.to || '');
+      result = await handleMoveFile(expandTilde(action.from || ''), expandTilde(action.to || ''));
       break;
     case 'list_dir':
-      result = await handleListDir(action.path || NEUXA_WORKSPACE);
+      result = await handleListDir(expandTilde(action.path || NEUXA_WORKSPACE));
       break;
     case 'run_script':
       result = await handleSafeRunScript(action.command || action.cmd || '');
