@@ -1080,12 +1080,13 @@ async function googleEmbed(text: string): Promise<number[] | null> {
   return data?.embedding?.values || null;
 }
 
-async function handleSemanticSearch(query: string, limit: number = 5): Promise<ActionResult> {
+async function handleSemanticSearch(query: string, limit: number = 5, mode: string = 'task'): Promise<ActionResult> {
   if (!query || query.trim().length < 2) {
     return { ok: false, output: 'semantic_search 需要 query 參數（至少 2 個字）' };
   }
 
   const safeLimit = Math.min(Math.max(1, limit), 10);
+  const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : 'task';
 
   try {
     // 1. Google Embedding
@@ -1094,7 +1095,7 @@ async function handleSemanticSearch(query: string, limit: number = 5): Promise<A
       return { ok: false, output: 'Embedding 失敗: 確認 GOOGLE_API_KEY 已設定' };
     }
 
-    // 2. Supabase pgvector RPC 搜尋
+    // 2. Supabase pgvector RPC 搜尋（支援三種模式：task/code/history）
     const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
     if (!hasSb() || !sb) {
       return { ok: false, output: 'Supabase 未連線，無法搜尋向量庫' };
@@ -1104,6 +1105,7 @@ async function handleSemanticSearch(query: string, limit: number = 5): Promise<A
       query_embedding: JSON.stringify(queryVector),
       match_threshold: 0.3,
       match_count: safeLimit,
+      search_mode: safeMode,
     });
 
     if (error) {
@@ -1125,8 +1127,8 @@ async function handleSemanticSearch(query: string, limit: number = 5): Promise<A
       return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, ${score}%相關)\n📁 ${filePath}\n${content}`;
     });
 
-    log.info(`[SemanticSearch] query="${query}" → ${results.length} results (top: ${((results[0].similarity || 0) * 100).toFixed(0)}%)`);
-    return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆）：\n\n${lines.join('\n\n')}` };
+    log.info(`[SemanticSearch] query="${query}" mode=${safeMode} → ${results.length} results (top: ${((results[0].similarity || 0) * 100).toFixed(0)}%)`);
+    return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆，${safeMode} 模式）：\n\n${lines.join('\n\n')}` };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, output: sanitize(`semantic_search 失敗: ${msg}`) };
@@ -1183,6 +1185,19 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
       const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
       const pointId = parseInt(hash.slice(0, 15), 16);
 
+      // 推斷 content_type 和 zone
+      const inferredContentType = (() => {
+        if (['soul', 'identity'].includes(cat)) return 'soul';
+        if (['cookbook', 'sop', 'instruction'].includes(cat)) return 'sop';
+        if (cat === 'codebase') return 'codebase';
+        if (cat === 'reports') return 'diagnosis';
+        if (cat === 'proposals') return 'plan';
+        if (cat === 'learning') return 'exercise';
+        return 'reference';
+      })();
+      const inferredZone = ['reports', 'proposals'].includes(cat) ? 'cold' : 'hot';
+      const isPinned = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md'].includes(fileName);
+
       const { error } = await sb.from('openclaw_embeddings').upsert({
         id: pointId,
         doc_title: docTitle,
@@ -1197,6 +1212,11 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
         size: section.length,
         date: new Date().toISOString().split('T')[0],
         embedding: JSON.stringify(vector),
+        status: 'active',
+        content_type: inferredContentType,
+        zone: inferredZone,
+        is_pinned: isPinned,
+        indexed_at: new Date().toISOString(),
       }, { onConflict: 'id' });
 
       if (!error) indexed++;
@@ -2242,7 +2262,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       result = await handleQuerySupabase(action);
       break;
     case 'semantic_search':
-      result = await handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10));
+      result = await handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10), action.mode || 'task');
       break;
     case 'index_file':
       result = await handleIndexFile(action.path || '', action.category);
