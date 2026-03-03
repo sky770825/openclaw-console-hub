@@ -89,12 +89,12 @@ export function routeMessage(
   // ─── 選擇回覆的 bot ───
   scores.sort((a, b) => b.score - a.score);
 
-  // 被直接點名 → 只有被點名的 bot 回
+  // 被直接點名 → 只有被點名的 bot 回（最多 1 個，省資源）
   const directMentions = scores.filter(s => s.score >= 10);
   if (directMentions.length > 0) {
     const responding = directMentions
       .filter(s => !isCoolingDown(s.botId, now))
-      .slice(0, 2);
+      .slice(0, 1);
     if (responding.length > 0) {
       for (const r of responding) recordResponse(r.botId, now);
       return { respondingBots: responding, filtered: false };
@@ -102,7 +102,7 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'mentioned bot cooling down' };
   }
 
-  // 最高分 >= 5 → 該 bot 回，第二名在 2 分內也可回
+  // 最高分 >= 5 → 只有最高分的 1 個 bot 回（不再允許 2 個同時回）
   const top = scores[0];
   if (!top || top.score < 5) {
     return { respondingBots: [], filtered: true, filterReason: 'no relevant expertise' };
@@ -111,10 +111,6 @@ export function routeMessage(
   const responding: Array<{ botId: string; score: number }> = [];
   if (!isCoolingDown(top.botId, now)) {
     responding.push(top);
-  }
-  const second = scores[1];
-  if (second && second.score >= 5 && (top.score - second.score) <= 2 && !isCoolingDown(second.botId, now)) {
-    responding.push(second);
   }
 
   if (responding.length > 0) {

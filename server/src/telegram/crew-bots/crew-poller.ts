@@ -12,12 +12,12 @@ import { crewThink, pushHistory } from './crew-think.js';
 
 const log = createLogger('crew-poller');
 
-const POLL_INTERVAL_MS = 3000;          // 每 3 秒 poll 一次
+const POLL_INTERVAL_MS = 6000;          // 每 6 秒 poll 一次（省資源）
 const GET_UPDATES_TIMEOUT_SEC = 15;     // Telegram long polling timeout
 const FETCH_TIMEOUT_MS = 25_000;        // fetch 超時
-const STAGGER_DELAY_MS = 500;           // bot 之間交錯啟動
-const RESPONSE_DELAY_BASE_MS = 3000;    // 回覆延遲基底
-const RESPONSE_DELAY_RAND_MS = 2000;    // 額外隨機延遲
+const STAGGER_DELAY_MS = 800;           // bot 之間交錯啟動
+const RESPONSE_DELAY_BASE_MS = 2000;    // 回覆延遲基底
+const RESPONSE_DELAY_RAND_MS = 3000;    // 額外隨機延遲
 
 interface BotState {
   offset: number;

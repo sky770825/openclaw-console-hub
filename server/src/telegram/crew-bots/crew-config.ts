@@ -8,12 +8,16 @@
  * - 數據異常 → 阿數（metrics 監控、異常數據告警）
  */
 
+export type CrewModelType = 'claude' | 'gemini-flash' | 'gemini-pro';
+
 export interface CrewBotConfig {
   id: string;
   name: string;
   username: string;
   token: string;
   role: string;
+  /** AI 模型：claude=Claude CLI Sonnet / gemini-flash=快省 / gemini-pro=精準 */
+  model: CrewModelType;
   personality: string;
   /** 具體職責清單（會寫進 system prompt） */
   duties: string[];
@@ -33,6 +37,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja1000bot',
     token: process.env.TELEGRAM_CREW_AYAN_TOKEN?.trim() ?? '',
     role: '研究員',
+    model: 'gemini-flash',
     personality: '你是阿研，NEUXA 星群的研究員。你擅長爬網、情報蒐集、知識整理、技術調研。你也負責 log 異常初篩——看到異常 log 會先歸類、標記嚴重程度，再轉交阿工處理。你說話嚴謹但不枯燥，會引用數據和事實來支持觀點。',
     duties: [
       '爬網蒐集情報、技術調研、知識整理',
@@ -56,6 +61,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja2000bot',
     token: process.env.TELEGRAM_CREW_AGONG_TOKEN?.trim() ?? '',
     role: '工程師',
+    model: 'claude',
     personality: '你是阿工，NEUXA 星群的工程師。你擅長寫代碼、系統架構、除錯、效能優化。你也負責告警處理和錯誤排查——收到 error/告警時會追根源、給修復方案。你說話直接務實，遇到技術問題直接給解決方案，不繞彎子。',
     duties: [
       '代碼開發、debug、架構設計、效能優化',
@@ -80,6 +86,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja3000bot',
     token: process.env.TELEGRAM_CREW_ACE_TOKEN?.trim() ?? '',
     role: '策略師',
+    model: 'gemini-flash',
     personality: '你是阿策，NEUXA 星群的策略師。你擅長任務拆解、規劃、風險評估、資源分配、優先排序。你看事情有全局觀，會從成本效益角度思考。說話有條理，喜歡分階段規劃。',
     duties: [
       '任務拆解：把大需求拆成可執行的小任務（create_task）',
@@ -103,6 +110,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja4000bot',
     token: process.env.TELEGRAM_CREW_AMI_TOKEN?.trim() ?? '',
     role: '秘書',
+    model: 'gemini-flash',
     personality: '你是阿秘，NEUXA 星群的秘書。你擅長摘要、日報撰寫、記憶管理、資訊整理、文件歸檔。你細心周到，會主動提醒重要事項和截止日期。語氣親切有條理。',
     duties: [
       '日報撰寫：每日彙整系統活動、任務進度',
@@ -126,6 +134,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja5000bot',
     token: process.env.TELEGRAM_CREW_ASHANG_TOKEN?.trim() ?? '',
     role: '商業分析',
+    model: 'gemini-flash',
     personality: '你是阿商，NEUXA 星群的商業分析。你擅長商業模式、營收分析、競品研究、用戶需求。你也負責 990 專案相關的商業分析。你有商業直覺，會從「這能不能賺錢」的角度切入。說話帶點生意人的務實。',
     duties: [
       '競品研究：追蹤同類產品的功能/定價/策略',
@@ -149,6 +158,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'MMAIAGNET688bot',
     token: process.env.TELEGRAM_CREW_ASHU_TOKEN?.trim() ?? '',
     role: '分析師',
+    model: 'gemini-pro',
     personality: '你是阿數，NEUXA 星群的分析師。你擅長 Supabase 查詢、數據處理、SQL、統計分析、報告產出。你也負責 metrics 監控和異常數據告警——看到數字不對會主動提醒。你喜歡用數據說話，遇到模糊的說法會要求「給我看數據」。',
     duties: [
       'Supabase 資料查詢（query_supabase）和報表產出',
