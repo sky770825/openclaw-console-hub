@@ -1141,26 +1141,40 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
     return { ok: false, output: 'semantic_search 需要 query 參數（至少 2 個字）' };
   }
 
+  // 搜尋詞前處理：去掉中文常見停用詞，只保留關鍵詞
+  const STOP_WORDS = /[\u7684\u662f\u8981\u55ce\u600e\u9ebc\u6211\u4e86\u4e86\u5417\u5c31\u4e86\u5c31\u4e86]/g;
+  const stopWordList = ['的', '是', '要', '嗎', '怎麼', '我', '了', '吧', '就', '還', '也', '都', '嗯', '喔'];
+  let processedQuery = query.trim();
+  for (const sw of stopWordList) {
+    processedQuery = processedQuery.split(sw).join(' ');
+  }
+  processedQuery = processedQuery.replace(/\s+/g, ' ').trim();
+  if (processedQuery.length < 2) {
+    processedQuery = query.trim(); // 去完停用詞後太短，回退原始 query
+  }
+
   const safeLimit = Math.min(Math.max(1, limit), 10);
   const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : 'task';
 
   try {
-    // 1. Google Embedding
-    const queryVector = await googleEmbed(query);
+    // 1. Google Embedding（使用前處理後的 query）
+    const queryVector = await googleEmbed(processedQuery);
     if (!queryVector) {
       return { ok: false, output: 'Embedding 失敗: 確認 GOOGLE_API_KEY 已設定' };
     }
 
     // 2. Supabase pgvector RPC 搜尋（支援三種模式：task/code/history）
+    // 多取一些結果供去重使用
     const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
     if (!hasSb() || !sb) {
       return { ok: false, output: 'Supabase 未連線，無法搜尋向量庫' };
     }
 
-    const { data: results, error } = await sb.rpc('match_embeddings', {
+    const fetchCount = Math.min(safeLimit * 3, 30); // 多取 3 倍供去重
+    const { data: rawResults, error } = await sb.rpc('match_embeddings', {
       query_embedding: JSON.stringify(queryVector),
       match_threshold: 0.5,
-      match_count: safeLimit,
+      match_count: fetchCount,
       search_mode: safeMode,
     });
 
@@ -1168,11 +1182,31 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       return { ok: false, output: `向量搜尋失敗: ${error.message}` };
     }
 
-    if (!results || results.length === 0) {
+    if (!rawResults || rawResults.length === 0) {
       return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
     }
 
-    // 3. 格式化結果
+    // 3. Hard cutoff：最高相似度 < 0.55 視為低品質，直接拒回
+    const topSimilarity = rawResults[0].similarity || 0;
+    if (topSimilarity < 0.55) {
+      log.info(`[SemanticSearch] query="${query}" top=${(topSimilarity * 100).toFixed(0)}% < 55% cutoff → rejected`);
+      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topSimilarity * 100).toFixed(0)}%，低於門檻 55%）` };
+    }
+
+    // 4. 去重：同一 file_name（或 doc_title）只保留 similarity 最高的那一條
+    const seen = new Map<string, any>();
+    for (const r of rawResults) {
+      const key = r.file_name || r.doc_title || String(r.id);
+      const existing = seen.get(key);
+      if (!existing || (r.similarity || 0) > (existing.similarity || 0)) {
+        seen.set(key, r);
+      }
+    }
+    const results = Array.from(seen.values())
+      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
+      .slice(0, safeLimit);
+
+    // 5. 格式化結果
     const lines = results.map((r: any, i: number) => {
       const score = ((r.similarity || 0) * 100).toFixed(0);
       const title = r.doc_title || r.file_name || '未知';
@@ -1183,8 +1217,9 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, ${score}%相關)\n📁 ${filePath}\n${content}`;
     });
 
-    log.info(`[SemanticSearch] query="${query}" mode=${safeMode} → ${results.length} results (top: ${((results[0].similarity || 0) * 100).toFixed(0)}%)`);
-    return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆，${safeMode} 模式）：\n\n${lines.join('\n\n')}` };
+    const dedupNote = rawResults.length > results.length ? `（去重前 ${rawResults.length} 筆）` : '';
+    log.info(`[SemanticSearch] query="${query}" processed="${processedQuery}" mode=${safeMode} → ${results.length} results${dedupNote} (top: ${(topSimilarity * 100).toFixed(0)}%)`);
+    return { ok: true, output: `🔍 「${query}」相關知識（${results.length} 筆${dedupNote}，${safeMode} 模式）：\n\n${lines.join('\n\n')}` };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, output: sanitize(`semantic_search 失敗: ${msg}`) };
