@@ -3,6 +3,8 @@
  * 純 Supabase CRUD，不含 run/execution 邏輯
  *
  * GET    /tasks       — 列出任務（含 in-memory fallback）
+ *        ?sort=hot|rising|controversial|top|new  — Moltbook Feed 排名算法排序
+ *        ?timeFilter=hour|day|week|month|year|all — Top 模式的時間過濾
  * POST   /tasks       — 新增任務
  * PATCH  /tasks/:id   — 更新任務
  * DELETE /tasks/:id   — 刪除任務
@@ -22,6 +24,7 @@ import {
 import { tasks } from '../store.js';
 import type { Task } from '../types.js';
 import { scanTaskPayload } from '../promptGuard.js';
+import { rankTasks, isValidSortMode } from '../utils/task-ranking.js';
 
 const log = createLogger('openclaw-tasks-route');
 
@@ -73,7 +76,9 @@ function mapToBoard(oc: any) {
 }
 
 // GET /api/openclaw/tasks
-openclawTasksRouter.get('/', async (_req, res) => {
+// 支持 ?sort=hot|rising|controversial|top|new 排名排序
+// 支持 ?timeFilter=hour|day|week|month|year|all（僅對 sort=top 生效）
+openclawTasksRouter.get('/', async (req, res) => {
   try {
     if (!hasSupabase()) {
       log.error('[OpenClaw] GET /tasks: Supabase not connected');
@@ -96,6 +101,15 @@ openclawTasksRouter.get('/', async (_req, res) => {
       }));
     }
     const mapped = (data ?? []).map((oc) => mapToBoard(oc as any));
+
+    // 排名排序：根據 ?sort= 參數應用 Moltbook Feed 排名算法
+    const sortMode = String(req.query.sort ?? '').toLowerCase();
+    if (sortMode && isValidSortMode(sortMode)) {
+      const timeFilter = String(req.query.timeFilter ?? 'all').toLowerCase();
+      rankTasks(mapped, sortMode, { timeFilter });
+      log.info(`[OpenClaw] GET /tasks: sorted by "${sortMode}"${sortMode === 'top' ? ` (timeFilter=${timeFilter})` : ''}, ${mapped.length} tasks`);
+    }
+
     res.json(mapped);
   } catch (e) {
     log.error('[OpenClaw] GET /tasks error:', e);

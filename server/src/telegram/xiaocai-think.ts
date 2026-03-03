@@ -328,6 +328,8 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"update_task","id":"t1234567890","status":"done","result":"完成摘要"}
 {"action":"read_file","path":"~/.openclaw/workspace/MEMORY.md"}
 {"action":"write_file","path":"~/.openclaw/workspace/notes/xxx.md","content":"內容"}
+{"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}
+{"action":"reindex_knowledge","mode":"append"}
 {"action":"list_dir","path":"~/.openclaw/workspace"}
 {"action":"ask_ai","model":"flash","prompt":"問題"}
 {"action":"ask_ai","model":"pro","prompt":"架構分析","context":"背景"}
@@ -335,6 +337,7 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"ask_ai","model":"haiku","prompt":"輕量文字處理"}
 {"action":"semantic_search","query":"怎麼重啟 server","limit":"5"}
 {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}
+{"action":"web_search","query":"搜尋關鍵字","limit":"5"}
 {"action":"web_browse","url":"https://example.com"}
 {"action":"proxy_fetch","url":"https://api.deepseek.com/chat/completions","method":"POST","body":"{\\"model\\":\\"deepseek-chat\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"問題\\"}]}"}
 {"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
@@ -343,6 +346,7 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"analyze_symbol","symbol":"functionName"}
 {"action":"patch_file","path":"server/src/xxx.ts","search":"舊內容","replace":"新內容"}
 {"action":"code_eval","code":"console.log('hello')"}
+{"action":"plan_project","goal":"要達成的目標","weeks":"4","detail_level":"medium"}
 {"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
 
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。

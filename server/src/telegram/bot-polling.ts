@@ -20,6 +20,7 @@ import { getModelConfig, getAvailableModels, getModelsGrouped, getCommanderModel
 import { NEUXA_WORKSPACE } from './security.js';
 import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './action-handlers.js';
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
+import { getGlobalRateLimiter } from './action-rate-limiter.js';
 
 const log = createLogger('telegram');
 
@@ -1565,6 +1566,7 @@ async function xiaocaiPoll(): Promise<void> {
       let finalReply = '';
       const allActionResults: string[] = [];
       const breaker = new ActionCircuitBreaker(2);
+      const rateLimiter = getGlobalRateLimiter();
       const recentStepSigs: string[] = []; // 重複 action 偵測
 
       for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
@@ -1572,10 +1574,10 @@ async function xiaocaiPoll(): Promise<void> {
 
         // 分析最近失敗的 action，生成替代策略提示
         const recentResults = allActionResults.slice(-3);
-        const hasFailures = recentResults.some(r => r.startsWith('🚫') || r.startsWith('🔒'));
+        const hasFailures = recentResults.some(r => r.startsWith('🚫') || r.startsWith('🔒') || r.startsWith('⏱️'));
         const failedActions = recentResults
-          .filter(r => r.startsWith('🚫') || r.startsWith('🔒'))
-          .map(r => r.replace(/^[🚫🔒]\s*/, '').split(':')[0].trim());
+          .filter(r => r.startsWith('🚫') || r.startsWith('🔒') || r.startsWith('⏱️'))
+          .map(r => r.replace(/^[🚫🔒⏱️]\s*/, '').split(':')[0].trim());
 
         // 替代路徑建議表
         const ALTERNATIVE_MAP: Record<string, string> = {
@@ -1599,7 +1601,7 @@ async function xiaocaiPoll(): Promise<void> {
           : '';
 
         const thinkInput = isFollowUp
-          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${recentResults.join('\n')}${failureGuidance}\n\n判斷下一步：\n- ❌ 失敗了 → 看上方替代路徑，選一條換試。最多換 2 次，2 次都失敗再告訴老蔡。\n- 🔒 被阻擋 → 換完全不同的工具或方法，不要用同一個 action\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，跟老蔡說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做`
+          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${recentResults.join('\n')}${failureGuidance}\n\n判斷下一步：\n- ❌ 失敗了 → 看上方替代路徑，選一條換試。最多換 2 次，2 次都失敗再告訴老蔡。\n- 🔒 被阻擋 → 換完全不同的工具或方法，不要用同一個 action\n- ⏱️ 限速了 → 這個 action 呼叫太頻繁，等一下或換其他 action 先做別的事\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，跟老蔡說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做`
           : currentInput;
 
         // 第一輪帶圖片，後續 follow-up 不帶
@@ -1620,6 +1622,12 @@ async function xiaocaiPoll(): Promise<void> {
               log.warn(`[Xiaocai-Chain] 🔒 阻擋重複失敗: ${action.action} ${action.path || ''}`);
               return `🔒 ${action.action}: 連續失敗 2 次，已跳過`;
             }
+            // 滑動窗口限速檢查（CircuitBreaker 之後、執行之前）
+            if (!rateLimiter.isAllowed(action.action)) {
+              const msg = rateLimiter.formatBlockMessage(action.action);
+              log.warn(`[Xiaocai-Chain] ⏱️ 限速阻擋: ${msg}`);
+              return `⏱️ ${msg}`;
+            }
             // 靈魂檔案保護：禁止寫入 SOUL.md / AGENTS.md / IDENTITY.md / BOOTSTRAP.md
             const protectedFiles = ['SOUL.md', 'AGENTS.md', 'IDENTITY.md', 'BOOTSTRAP.md', 'AWAKENING.md'];
             if ((action.action === 'write_file' || action.action === 'patch_file') &&
@@ -1628,6 +1636,7 @@ async function xiaocaiPoll(): Promise<void> {
               return `🔒 ${action.action}: 靈魂檔案 ${action.path} 禁止修改`;
             }
             const result = await executeNEUXAAction(action);
+            rateLimiter.record(action.action); // 記錄呼叫（不管成功失敗都計數）
             if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
             const icon = result.ok ? '✅' : '🚫';
             const label = action.action === 'create_task' ? `任務「${action.name}」` : action.action;
@@ -1764,6 +1773,14 @@ async function xiaocaiPoll(): Promise<void> {
                 driveText = driveText.replace(jsonStr, '').trim();
                 continue;
               }
+              // 滑動窗口限速檢查
+              if (!rateLimiter.isAllowed(action.action)) {
+                const rlMsg = rateLimiter.formatBlockMessage(action.action);
+                driveResults.push(`⏱️ ${rlMsg}`);
+                log.warn(`[XiaocaiSelfDrive] ⏱️ 限速阻擋: ${rlMsg}`);
+                driveText = driveText.replace(jsonStr, '').trim();
+                continue;
+              }
               // 靈魂檔案保護：禁止寫入 SOUL.md / AGENTS.md / IDENTITY.md / BOOTSTRAP.md
               const soulFiles = ['SOUL.md', 'AGENTS.md', 'IDENTITY.md', 'BOOTSTRAP.md', 'AWAKENING.md'];
               if ((action.action === 'write_file' || action.action === 'patch_file') &&
@@ -1774,6 +1791,7 @@ async function xiaocaiPoll(): Promise<void> {
                 continue;
               }
               const result = await executeNEUXAAction(action);
+              rateLimiter.record(action.action); // 記錄呼叫
               if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
               const icon = result.ok ? '✅' : '🚫';
               const driveMax = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
@@ -1906,7 +1924,16 @@ async function heartbeatTick(): Promise<void> {
             log.warn(`[Heartbeat] 🔒 阻擋: ${action.action} ${action.path || ''}`);
             continue;
           }
+          // 滑動窗口限速檢查（心跳共用全域限速器）
+          const hbRateLimiter = getGlobalRateLimiter();
+          if (!hbRateLimiter.isAllowed(action.action)) {
+            const hbRlMsg = hbRateLimiter.formatBlockMessage(action.action);
+            allResults.push(`⏱️ ${hbRlMsg}`);
+            log.warn(`[Heartbeat] ⏱️ 限速阻擋: ${hbRlMsg}`);
+            continue;
+          }
           const result = await executeNEUXAAction(action);
+          hbRateLimiter.record(action.action); // 記錄呼叫
           if (result.ok) hbBreaker.recordSuccess(action); else hbBreaker.recordFailure(action);
           const icon = result.ok ? '✅' : '🚫';
           const maxOutput = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
