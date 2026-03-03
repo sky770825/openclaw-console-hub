@@ -77,6 +77,7 @@ export function requiredAccessLevel(req: Request): AccessLevel {
 
   // Admin-only endpoints
   if (path === '/features' && method === 'PATCH') return 'admin';
+  if (path.startsWith('/admin/')) return 'admin';
   if (
     path === '/openclaw/restart-gateway' ||
     path === '/n8n/trigger-webhook' ||

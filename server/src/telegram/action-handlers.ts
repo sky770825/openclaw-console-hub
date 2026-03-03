@@ -1204,6 +1204,36 @@ function expandQueryWithSynonyms(q: string): string {
   return expanded.trim();
 }
 
+// ── Hybrid Search：關鍵詞提取（用於全文搜尋）──
+function extractSearchKeywords(query: string): string[] {
+  const cleaned = removeStopWords(query);
+  // 分詞：空格、標點
+  const tokens = cleaned.split(/[\s,;.!?、，。！？：；]+/).filter(t => t.length >= 2);
+  // 去重 + 最多取 6 個關鍵詞
+  return [...new Set(tokens)].slice(0, 6);
+}
+
+// ── Hybrid Search：計算關鍵詞命中分數 ──
+function computeKeywordScore(item: any, keywords: string[]): number {
+  if (!keywords.length) return 0;
+  const content = (item.content || '').toLowerCase();
+  const docTitle = (item.doc_title || '').toLowerCase();
+  const sectionTitle = (item.section_title || '').toLowerCase();
+  let hits = 0;
+  let titleHits = 0;
+  for (const kw of keywords) {
+    const kwLower = kw.toLowerCase();
+    const inContent = content.includes(kwLower);
+    const inTitle = docTitle.includes(kwLower) || sectionTitle.includes(kwLower);
+    if (inTitle) { titleHits++; hits++; }
+    else if (inContent) { hits++; }
+  }
+  // 標題命中權重更高
+  const hitRatio = hits / keywords.length;
+  const titleBonus = titleHits > 0 ? 0.15 : 0;
+  return Math.min(1, hitRatio + titleBonus);
+}
+
 // ── 多因子重排名 ──
 function computeRelevanceScore(r: any, queryLower: string): number {
   const vecScore = (r.similarity || 0) * 0.50;  // 向量相似度 50%
@@ -1270,48 +1300,254 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       return { ok: false, output: `向量搜尋失敗: ${error.message}` };
     }
 
-    if (!rawResults || rawResults.length === 0) {
-      return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
-    }
+    // ── 5. Hybrid Search：全文關鍵詞搜尋（ilike）──
+    const searchKeywords = extractSearchKeywords(processedQuery);
+    let textResults: any[] = [];
+    let textSearchUsed = false;
+    if (searchKeywords.length > 0) {
+      try {
+        // 建構 OR 條件：content/doc_title/section_title 任一欄位包含任一關鍵詞
+        const orConditions = searchKeywords.flatMap(kw => [
+          `content.ilike.%${kw}%`,
+          `doc_title.ilike.%${kw}%`,
+          `section_title.ilike.%${kw}%`,
+        ]).join(',');
 
-    // 5. Hard cutoff：最高相似度 < 0.35 視為低品質
-    const topSimilarity = rawResults[0].similarity || 0;
-    if (topSimilarity < 0.35) {
-      log.info(`[SemanticSearch] query="${query}" top=${(topSimilarity * 100).toFixed(0)}% < 35% cutoff → rejected`);
-      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topSimilarity * 100).toFixed(0)}%，低於門檻）` };
-    }
+        const { data: textData, error: textErr } = await sb
+          .from('openclaw_embeddings')
+          .select('id, doc_title, section_title, content, content_preview, file_path, file_name, category, chunk_index, chunk_total, zone, is_pinned, indexed_at')
+          .or(orConditions)
+          .limit(10);
 
-    // 6. 去重：同一 file_name 只保留最高分
-    const seen = new Map<string, any>();
-    for (const r of rawResults) {
-      const key = r.file_name || r.doc_title || String(r.id);
-      const existing = seen.get(key);
-      if (!existing || (r.similarity || 0) > (existing.similarity || 0)) {
-        seen.set(key, r);
+        if (!textErr && textData && textData.length > 0) {
+          textResults = textData;
+          textSearchUsed = true;
+          log.info(`[HybridSearch] text search for keywords=[${searchKeywords.join(',')}] → ${textData.length} results`);
+        }
+      } catch (textSearchErr) {
+        // 全文搜尋失敗不影響整體，退化為純向量搜尋
+        log.warn(`[HybridSearch] text search failed, falling back to vector-only: ${textSearchErr instanceof Error ? textSearchErr.message : String(textSearchErr)}`);
       }
     }
 
-    // 7. 多因子重排名（向量 50% + 關鍵詞 25% + 新鮮度 10% + zone 10% + pinned 5%）
+    // ── 6. 合併向量 + 全文結果 ──
+    const VECTOR_WEIGHT = 0.6;
+    const KEYWORD_WEIGHT = 0.4;
+
+    // 建立合併 map（以 id 為 key 去重）
+    const mergedMap = new Map<string | number, any>();
+
+    // 先放入向量搜尋結果
+    if (rawResults && rawResults.length > 0) {
+      for (const r of rawResults) {
+        const key = r.id ?? (r.file_name + ':' + (r.chunk_index ?? 0));
+        const kwScore = textSearchUsed ? computeKeywordScore(r, searchKeywords) : 0;
+        const hybridScore = VECTOR_WEIGHT * (r.similarity || 0) + KEYWORD_WEIGHT * kwScore;
+        mergedMap.set(key, {
+          ...r,
+          _vectorScore: r.similarity || 0,
+          _keywordScore: kwScore,
+          _hybridScore: hybridScore,
+          _source: kwScore > 0 ? 'both' : 'vector',
+        });
+      }
+    }
+
+    // 再放入全文搜尋獨有的結果（向量沒撈到的）
+    if (textSearchUsed) {
+      for (const t of textResults) {
+        const key = t.id ?? (t.file_name + ':' + (t.chunk_index ?? 0));
+        if (!mergedMap.has(key)) {
+          const kwScore = computeKeywordScore(t, searchKeywords);
+          const hybridScore = KEYWORD_WEIGHT * kwScore; // 無向量分，僅用關鍵詞分
+          mergedMap.set(key, {
+            ...t,
+            similarity: 0,
+            _vectorScore: 0,
+            _keywordScore: kwScore,
+            _hybridScore: hybridScore,
+            _source: 'text',
+          });
+        } else {
+          // 已存在：更新 keyword score（如果更高的話）
+          const existing = mergedMap.get(key)!;
+          const kwScore = computeKeywordScore(t, searchKeywords);
+          if (kwScore > existing._keywordScore) {
+            existing._keywordScore = kwScore;
+            existing._hybridScore = VECTOR_WEIGHT * existing._vectorScore + KEYWORD_WEIGHT * kwScore;
+            existing._source = 'both';
+          }
+        }
+      }
+    }
+
+    const allMerged = Array.from(mergedMap.values());
+
+    // 如果向量和全文都沒有結果
+    if (allMerged.length === 0) {
+      return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
+    }
+
+    // 7. Hard cutoff：向量最高相似度 < 0.35 且全文搜尋也沒東西 → 低品質
+    const topVecScore = rawResults && rawResults.length > 0 ? (rawResults[0].similarity || 0) : 0;
+    if (topVecScore < 0.35 && !textSearchUsed) {
+      log.info(`[HybridSearch] query="${query}" top=${(topVecScore * 100).toFixed(0)}% < 35% cutoff, no text results → rejected`);
+      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topVecScore * 100).toFixed(0)}%，低於門檻）` };
+    }
+
+    // ── 7.5 兩層搜尋：summary chunk 定位文件 → 拉取 detail chunks 補強 ──
+    const summaryHits: any[] = [];
+    const detailAndLegacyHits: any[] = [];
+    for (const r of allMerged) {
+      const isSummary = (r.chunk_index === -1)
+        || String(r.content || '').startsWith('[SUMMARY]')
+        || r.section_title === '[SUMMARY]';
+      if (isSummary) {
+        summaryHits.push(r);
+      } else {
+        detailAndLegacyHits.push(r);
+      }
+    }
+
+    // 高置信度 summary（hybridScore > 0.70 或向量 > 0.70）→ 拉同文件 detail chunks
+    let enrichedDetails: any[] = [];
+    const enrichedDetailPaths = new Set<string>();
+    const highConfSummaries = summaryHits.filter(s =>
+      (s._hybridScore || s.similarity || 0) >= 0.70
+    );
+
+    if (highConfSummaries.length > 0) {
+      const targetPaths = highConfSummaries
+        .slice(0, 3) // 最多 3 個文件
+        .map((s: any) => s.file_path)
+        .filter(Boolean);
+
+      if (targetPaths.length > 0) {
+        try {
+          const { data: detailData } = await sb
+            .from('openclaw_embeddings')
+            .select('id, doc_title, section_title, content, content_preview, file_path, file_name, category, chunk_index, chunk_total, zone, is_pinned, indexed_at')
+            .in('file_path', targetPaths)
+            .gte('chunk_index', 0)
+            .eq('status', 'active')
+            .order('chunk_index', { ascending: true })
+            .limit(20);
+
+          if (detailData && detailData.length > 0) {
+            for (const d of detailData as any[]) {
+              const parentSummary = highConfSummaries.find((s: any) => s.file_path === d.file_path);
+              // 繼承 parent summary 的分數（略降 5%），維持 hybrid 管道一致性
+              const parentHybrid = parentSummary?._hybridScore || parentSummary?.similarity || 0.70;
+              d.similarity = parentHybrid * 0.95;
+              d._vectorScore = d.similarity;
+              d._keywordScore = parentSummary?._keywordScore || 0;
+              d._hybridScore = parentHybrid * 0.95;
+              d._source = 'summary-enriched';
+              d._enriched = true;
+              enrichedDetailPaths.add(d.file_path);
+            }
+            enrichedDetails = detailData as any[];
+            log.info(`[2-Layer] ${highConfSummaries.length} summary hits (>=70%) → enriched ${enrichedDetails.length} detail chunks from ${targetPaths.length} files`);
+          }
+        } catch (enrichErr) {
+          // enrichment 失敗不影響搜尋結果
+          log.warn(`[2-Layer] detail enrichment failed: ${enrichErr instanceof Error ? enrichErr.message : String(enrichErr)}`);
+        }
+      }
+    }
+
+    // 合併所有結果：原始 detail/legacy + enriched details + summary fallback
+    const finalMergedMap = new Map<string | number, any>();
+
+    // 先放入原始 detail 和 legacy chunks
+    for (const r of detailAndLegacyHits) {
+      const key = r.id ?? (r.file_name + ':' + (r.chunk_index ?? 0));
+      finalMergedMap.set(key, r);
+    }
+
+    // 再放入 enriched details（不覆蓋已有的原始命中）
+    for (const r of enrichedDetails) {
+      const key = r.id ?? (r.file_name + ':' + (r.chunk_index ?? 0));
+      if (!finalMergedMap.has(key)) {
+        finalMergedMap.set(key, r);
+      }
+    }
+
+    // 最後放入 summary chunks 本身（作為 fallback，如果該文件沒有 detail 被選中）
+    for (const r of summaryHits) {
+      const key = r.id ?? (r.file_name + ':' + (r.chunk_index ?? 0));
+      if (!finalMergedMap.has(key)) {
+        finalMergedMap.set(key, r);
+      }
+    }
+
+    const allFinal = Array.from(finalMergedMap.values());
+
+    // 8. 去重：同一 file_name 保留最高 hybrid 分的前 2 條（enriched 場景展示更多）
+    const fileGroups = new Map<string, any[]>();
+    for (const r of allFinal) {
+      const key = r.file_name || r.doc_title || String(r.id);
+      if (!fileGroups.has(key)) fileGroups.set(key, []);
+      fileGroups.get(key)!.push(r);
+    }
+
+    const deduped: any[] = [];
+    for (const [, chunks] of fileGroups) {
+      // 過濾掉 summary chunks（優先顯示 detail），除非只有 summary / legacy
+      const details = chunks.filter(c =>
+        c.chunk_index !== -1 && !String(c.content || '').startsWith('[SUMMARY]')
+      );
+      if (details.length > 0) {
+        details.sort((a, b) => (b._hybridScore || b.similarity || 0) - (a._hybridScore || a.similarity || 0));
+        deduped.push(...details.slice(0, 2)); // 同文件最多 2 條 detail
+      } else {
+        // 只有 summary 或 legacy → 取最高分的 1 條
+        chunks.sort((a, b) => (b._hybridScore || b.similarity || 0) - (a._hybridScore || a.similarity || 0));
+        deduped.push(chunks[0]);
+      }
+    }
+
+    // 9. 多因子重排名（結合 hybrid score + 原始多因子）
     const queryLower = processedQuery.toLowerCase();
-    const results = Array.from(seen.values())
-      .map(r => ({ ...r, _score: computeRelevanceScore(r, queryLower) }))
+    const results = deduped
+      .map(r => {
+        // 融合 hybrid score 和原始多因子排名
+        const baseScore = computeRelevanceScore(r, queryLower);
+        // hybrid 佔 60%，原始多因子佔 40%（hybrid 已包含向量+關鍵詞）
+        const finalScore = (textSearchUsed || r._hybridScore)
+          ? 0.6 * (r._hybridScore || r.similarity || 0) + 0.4 * baseScore
+          : baseScore; // 沒有 hybrid 分時退化為原始邏輯
+        return { ...r, _score: finalScore };
+      })
       .sort((a, b) => b._score - a._score)
       .slice(0, safeLimit);
 
-    // 8. 格式化結果
+    // 10. 格式化結果
     const lines = results.map((r: any, i: number) => {
-      const vecPct = ((r.similarity || 0) * 100).toFixed(0);
+      const vecPct = ((r._vectorScore || r.similarity || 0) * 100).toFixed(0);
+      const kwPct = ((r._keywordScore || 0) * 100).toFixed(0);
       const rankPct = ((r._score || 0) * 100).toFixed(0);
       const title = r.doc_title || r.file_name || '未知';
       const section = r.section_title || '';
       const category = r.category || '';
-      const content = String(r.content || '').slice(0, 400);
+      // 顯示內容時去除 [DETAIL] / [SUMMARY] 前綴，保持輸出乾淨
+      const rawContent = String(r.content || '');
+      const cleanContent = rawContent.replace(/^\[(DETAIL|SUMMARY)\]\s*/, '').slice(0, 400);
       const filePath = r.file_path || '';
-      return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''} (${category}, 向量${vecPct}% 綜合${rankPct}%)\n📁 ${filePath}\n${content}`;
+      const enrichTag = r._enriched ? ' 🔗' : '';
+      const sourceTag = r._source === 'both' ? '混合' : (r._source === 'text' ? '文字' : (r._source === 'summary-enriched' ? '定位' : '向量'));
+      return `[${i + 1}] 📄 ${title}${section ? ` > ${section}` : ''}${enrichTag} (${category}, ${sourceTag} 向量${vecPct}% 關鍵詞${kwPct}% 綜合${rankPct}%)\n📁 ${filePath}\n${cleanContent}`;
     });
 
-    const dedupNote = rawResults.length > results.length ? `（去重前 ${rawResults.length} 筆）` : '';
-    log.info(`[SemanticSearch] query="${query}" expanded="${expandedQuery.slice(0, 80)}" mode=${safeMode} → ${results.length} results${dedupNote} (top vec: ${(topSimilarity * 100).toFixed(0)}%, top rank: ${((results[0]?._score || 0) * 100).toFixed(0)}%)`);
+    const vectorCount = results.filter((r: any) => r._source === 'vector').length;
+    const textCount = results.filter((r: any) => r._source === 'text').length;
+    const bothCount = results.filter((r: any) => r._source === 'both').length;
+    const enrichCount = results.filter((r: any) => r._source === 'summary-enriched').length;
+    const totalRaw = (rawResults?.length || 0) + textResults.length;
+    const hybridNote = textSearchUsed ? `，混合搜尋：向量${vectorCount}+文字${textCount}+雙命中${bothCount}` : '';
+    const layerNote = enrichedDetailPaths.size > 0 ? `，summary定位${enrichedDetailPaths.size}份→補強${enrichCount}條` : '';
+    const dedupNote = totalRaw > results.length ? `（去重前 ${totalRaw} 筆${hybridNote}${layerNote}）` : (layerNote ? `（${layerNote.slice(1)}）` : '');
+    log.info(`[HybridSearch] query="${query}" expanded="${expandedQuery.slice(0, 80)}" mode=${safeMode} keywords=[${searchKeywords.join(',')}] → ${results.length} results${dedupNote} (top vec: ${(topVecScore * 100).toFixed(0)}%, hybrid: ${textSearchUsed}, summaryHits: ${summaryHits.length}, enriched: ${enrichedDetails.length}, top rank: ${((results[0]?._score || 0) * 100).toFixed(0)}%)`);
     const outputText = `🔍 「${query}」相關知識（${results.length} 筆${dedupNote}，${safeMode} 模式）：\n\n${lines.join('\n\n')}`;
 
     // 存入快取
@@ -1355,51 +1591,89 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
       return { ok: false, output: `檔案內容太短或沒有 ## 章節: ${fileName}` };
     }
 
-    // 去重：索引前先刪除同檔案的舊 chunks
+    // 去重：索引前先刪除同檔案的舊 chunks（包含 summary 和 detail）
     await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
 
     const titleMatch = content.match(/^# (.+)/m);
     const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
 
+    // 推斷 content_type 和 zone（提取為共用，summary 和 detail 都用）
+    const inferredContentType = (() => {
+      if (['soul', 'identity'].includes(cat)) return 'soul';
+      if (['cookbook', 'sop', 'instruction'].includes(cat)) return 'sop';
+      if (cat === 'codebase') return 'codebase';
+      if (cat === 'reports') return 'diagnosis';
+      if (cat === 'proposals') return 'plan';
+      if (cat === 'learning') return 'exercise';
+      const lowerName = fileName.toLowerCase();
+      if (lowerName.includes('soul') || lowerName.includes('identity') || lowerName.includes('awakening')) return 'soul';
+      if (lowerName.includes('report') || lowerName.includes('diagnosis') || lowerName.includes('error-report')) return 'diagnosis';
+      if (lowerName.includes('plan') || lowerName.includes('proposal') || lowerName.includes('roadmap')) return 'plan';
+      if (lowerName.includes('exercise') || lowerName.includes('practice')) return 'exercise';
+      return 'reference';
+    })();
+    const inferredZone = ['reports', 'proposals'].includes(cat) ? 'cold' : 'hot';
+    const isPinned = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md'].includes(fileName);
+
     let indexed = 0;
+
+    // ── Step 1: 生成 SUMMARY chunk（chunk_index = -1，全文件的結構概覽）──
+    const sectionTitles = sections
+      .map(s => { const m = s.match(/^## (.+)/m); return m ? m[1].replace(/#/g, '').trim() : ''; })
+      .filter(Boolean);
+    const first200 = content.replace(/^#.*\n/m, '').trim().slice(0, 200);
+    const summaryContent = `[SUMMARY] ${docTitle}: ${sectionTitles.join(', ')}. ${first200}`;
+    const summaryEmbedText = `[SUMMARY] [${docTitle}] [${cat}] 章節: ${sectionTitles.join(', ')}. ${first200}`;
+    const summaryVector = await googleEmbed(summaryEmbedText);
+
+    if (summaryVector) {
+      const summaryHash = crypto.createHash('md5').update(`${relPath}:summary`).digest('hex');
+      const summaryPointId = parseInt(summaryHash.slice(0, 15), 16);
+
+      const { error: sumErr } = await sb.from('openclaw_embeddings').upsert({
+        id: summaryPointId,
+        doc_title: docTitle,
+        section_title: '[SUMMARY]',
+        content: summaryContent,
+        content_preview: summaryContent.slice(0, 200),
+        file_path: relPath,
+        file_name: fileName,
+        category: cat,
+        chunk_index: -1,           // 特殊標記：-1 = summary chunk
+        chunk_total: sections.length,
+        size: summaryContent.length,
+        date: new Date().toISOString().split('T')[0],
+        embedding: JSON.stringify(summaryVector),
+        status: 'active',
+        content_type: inferredContentType,
+        zone: inferredZone,
+        is_pinned: isPinned,
+        indexed_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+
+      if (!sumErr) indexed++;
+      log.info(`[IndexFile] summary chunk for "${docTitle}" → ${sumErr ? 'FAILED' : 'OK'} (${sectionTitles.length} sections)`);
+    }
+
+    // ── Step 2: 生成 DETAIL chunks（各 section，chunk_index >= 0）──
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i].trim();
       const secTitleMatch = section.match(/^## (.+)/m);
       const secTitle = secTitleMatch ? secTitleMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
 
-      // 上下文充實：doc 標題 + 分類 + section 標題 + 內容（800 chars），提升語義精準度
-      const embedText = `[${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}`;
+      // 上下文充實：加 [DETAIL] 前綴 + doc 標題 + 分類 + section 標題 + 內容（800 chars）
+      const embedText = `[DETAIL] [${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}`;
       const vector = await googleEmbed(embedText);
       if (!vector) continue;
 
       const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
       const pointId = parseInt(hash.slice(0, 15), 16);
 
-      // 推斷 content_type 和 zone
-      const inferredContentType = (() => {
-        // 先看 category（目錄）
-        if (['soul', 'identity'].includes(cat)) return 'soul';
-        if (['cookbook', 'sop', 'instruction'].includes(cat)) return 'sop';
-        if (cat === 'codebase') return 'codebase';
-        if (cat === 'reports') return 'diagnosis';
-        if (cat === 'proposals') return 'plan';
-        if (cat === 'learning') return 'exercise';
-        // 再看檔名特徵（補強嵌套目錄或非標準路徑）
-        const lowerName = fileName.toLowerCase();
-        if (lowerName.includes('soul') || lowerName.includes('identity') || lowerName.includes('awakening')) return 'soul';
-        if (lowerName.includes('report') || lowerName.includes('diagnosis') || lowerName.includes('error-report')) return 'diagnosis';
-        if (lowerName.includes('plan') || lowerName.includes('proposal') || lowerName.includes('roadmap')) return 'plan';
-        if (lowerName.includes('exercise') || lowerName.includes('practice')) return 'exercise';
-        return 'reference';
-      })();
-      const inferredZone = ['reports', 'proposals'].includes(cat) ? 'cold' : 'hot';
-      const isPinned = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md'].includes(fileName);
-
       const { error } = await sb.from('openclaw_embeddings').upsert({
         id: pointId,
         doc_title: docTitle,
         section_title: secTitle,
-        content: section,
+        content: `[DETAIL] ${section}`,
         content_preview: section.slice(0, 200),
         file_path: relPath,
         file_name: fileName,
@@ -1419,7 +1693,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
       if (!error) indexed++;
     }
 
-    return { ok: true, output: `已索引 ${fileName} → ${indexed}/${sections.length} chunks (category: ${cat})` };
+    return { ok: true, output: `已索引 ${fileName} → ${indexed}/${sections.length + 1} chunks (1 summary + ${sections.length} detail, category: ${cat})` };
   } catch (err: any) {
     return { ok: false, output: sanitize(`index_file 失敗: ${err.message}`) };
   }

@@ -353,6 +353,7 @@ function requiredAccessLevel(req: express.Request): AccessLevel {
   const method = req.method.toUpperCase();
   // PATCH /api/features 需 admin；GET 允許 read（或 none，依 OPENCLAW_ENFORCE_READ_AUTH）
   if (path === '/features' && method === 'PATCH') return 'admin';
+  if (path.startsWith('/admin/')) return 'admin';
   if (
     path === '/openclaw/restart-gateway' ||
     path === '/n8n/trigger-webhook' ||
@@ -3882,7 +3883,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.4.6',
+    version: '2.4.7',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
@@ -3963,6 +3964,27 @@ app.get('/api/websocket/status', (_req, res) => {
     ok: true,
     ...stats,
   });
+});
+
+// ---- 批次向量索引（Admin） ----
+// NOTE: This endpoint is admin-gated via requiredAccessLevel() in auth.ts.
+app.post('/api/admin/batch-index', async (req, res) => {
+  const { directory, category } = (req.body ?? {}) as { directory?: string; category?: string };
+  if (!directory || typeof directory !== 'string') {
+    return res.status(400).json({ ok: false, message: '缺少 directory 參數' });
+  }
+  if (!category || typeof category !== 'string') {
+    return res.status(400).json({ ok: false, message: '缺少 category 參數' });
+  }
+  try {
+    const { batchIndexDirectory } = await import('./utils/batch-index.js');
+    const result = await batchIndexDirectory(directory, category);
+    res.json({ ok: true, ...result });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error(`[BatchIndex] endpoint error: ${msg}`);
+    res.status(500).json({ ok: false, message: msg });
+  }
 });
 
 // ---- Dashboard Auth (Static UI) ----
