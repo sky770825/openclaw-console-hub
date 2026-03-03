@@ -351,8 +351,10 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"code_eval","code":"console.log('hello')"}
 {"action":"plan_project","goal":"要達成的目標","weeks":"4","detail_level":"medium"}
 {"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
+{"action":"send_group","message":"要發到群組的訊息"}
 
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。
+send_group：發訊息到星艦協作群。可以用來指揮 crew bots（阿研/阿工/阿策/阿秘/阿商/阿數）、發布公告、分配任務。
 Supabase 欄位：openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at。
 可一次放多個 action，每個獨立一行。路徑用 ~ 開頭。主工作區：~/.openclaw/workspace/
 
@@ -364,6 +366,7 @@ Supabase 欄位：openclaw_tasks: id, title(=name), status, cat(=tags), progress
 - 修改程式碼（patch_file / write_file）
 - 派子代理並行工作（delegate_agents）
 - 呼叫 API（proxy_fetch / run_script: curl）
+- 在群組發訊息指揮 crew bots（send_group）
 
 靈魂檔案（SOUL.md / AGENTS.md 等）由系統保護，其他全部自主執行，老蔡叫你做什麼就做。
 

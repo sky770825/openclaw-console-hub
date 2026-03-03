@@ -3015,6 +3015,23 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       result = await handleDelegateAgents(agentList, action.context);
       break;
     }
+    case 'send_group': {
+      // 小蔡去群組發訊息（指揮 crew bots / 發布公告）
+      const groupMsg = action.message || action.text || action.content || '';
+      if (!groupMsg) { result = { ok: false, output: 'send_group 需要 message 參數' }; break; }
+      const groupChatId = process.env.TELEGRAM_GROUP_CHAT_ID?.trim() || process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim();
+      const xiaocaiToken = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim();
+      if (!groupChatId || !xiaocaiToken) { result = { ok: false, output: 'send_group: 缺少 GROUP_CHAT_ID 或 XIAOCAI_BOT_TOKEN' }; break; }
+      try {
+        const { sendTelegramMessageToChat } = await import('../utils/telegram.js');
+        await sendTelegramMessageToChat(Number(groupChatId), groupMsg, { token: xiaocaiToken });
+        log.info(`[NEUXA-Action] send_group: len=${groupMsg.length} to=${groupChatId}`);
+        result = { ok: true, output: `已發送到群組: ${groupMsg.slice(0, 100)}` };
+      } catch (e) {
+        result = { ok: false, output: `send_group 失敗: ${e instanceof Error ? e.message : String(e)}` };
+      }
+      break;
+    }
     default:
       result = { ok: false, output: `未知 action: ${type}` };
   }
