@@ -418,7 +418,21 @@ export async function xiaocaiThink(
     log.warn(`[XiaocaiAI-Escalate] ${modelId} 失敗，嘗試下一層...`);
   }
 
-  if (!reply) return '所有模型都掛了…老蔡你看一下系統，我暫時腦袋空了。';
+  if (!reply) {
+    // 主動通知老蔡（透過 control bot）
+    const controlToken = process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() ?? '';
+    const ownerChatId = (process.env.TELEGRAM_OWNER_CHAT_ID?.trim() || process.env.LAOCAI_CHAT_ID?.trim()) ?? '';
+    if (controlToken && ownerChatId) {
+      const alertMsg = `🚨 小蔡模型全掛警報\n\n升級鏈 ${chain.join(' → ')} 全部失敗。\n\n請檢查：\n1. GOOGLE_API_KEY 額度\n2. ANTHROPIC_API_KEY 額度\n3. openclaw.json 模型設定`;
+      fetch(`https://api.telegram.org/bot${controlToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: ownerChatId, text: alertMsg }),
+      }).catch(() => {/* 通知失敗不影響主流程 */});
+    }
+    log.error('[XiaocaiAI] 所有模型全掛，已嘗試升級鏈:', chain.join(' → '));
+    return '所有模型都掛了…老蔡你看一下系統，我暫時腦袋空了。';
+  }
 
   if (usedModel !== xiaocaiMainModel) {
     log.info(`[XiaocaiAI-Escalate] ✅ ${usedModel} 接棒成功（原模型 ${xiaocaiMainModel}），自動切回不改設定`);

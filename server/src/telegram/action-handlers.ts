@@ -70,18 +70,28 @@ export async function createTask(name: string, description?: string, owner?: str
     const blocked = FORBIDDEN_TASK_PATTERNS.find(p => p.test(combined));
     if (blocked) return `🛑 安全攔截：任務涉及核心資產（${blocked.source}），禁止建立。只有老蔡能動這些。`;
 
-    // 防重复：检查是否已有同名 + 非 done 的任务
-    const checkR = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=100`, {
+    // 防重複：同名任務（任何狀態）30 分鐘內不重建，避免殭屍循環
+    const checkR = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=200`, {
       headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
     });
     if (checkR.ok) {
       const existing = (await checkR.json()) as Array<Record<string, unknown>>;
+      const thirtyMinAgo = Date.now() - 30 * 60_000;
       const dup = existing.find((t: Record<string, unknown>) => {
         const tName = String(t.name || t.title || '');
         const tStatus = String(t.status || '');
-        return tName === trimmedName && tStatus !== 'done' && tStatus !== 'failed';
+        const updatedAt = new Date(String(t.updatedAt || t.updated_at || 0)).getTime();
+        // 非 done 同名 → 阻擋（永遠）
+        if (tName === trimmedName && tStatus !== 'done') return true;
+        // failed 但 30 分鐘內 → 也阻擋（防卡死循環）
+        if (tName === trimmedName && tStatus === 'failed' && updatedAt > thirtyMinAgo) return true;
+        return false;
       });
-      if (dup) return `已存在同名任務 (ID: ${dup.id}, status: ${dup.status})，不重複建立`;
+      if (dup) {
+        const dupStatus = String(dup.status);
+        if (dupStatus === 'failed') return `同名任務最近剛失敗 (ID: ${dup.id})，30 分鐘內禁止重建。請改名或等待。`;
+        return `已存在同名任務 (ID: ${dup.id}, status: ${dupStatus})，不重複建立`;
+      }
     }
 
     // 小蔡建的任務進 draft，需老蔡批准才變 ready 讓 auto-executor 執行

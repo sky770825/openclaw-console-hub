@@ -192,6 +192,35 @@ async function cleanupStaleDoneTasks(): Promise<void> {
   }
 }
 
+// ─── 殭屍任務清理（in_progress 超時）───
+// 每次 poll 都檢查：in_progress 超過 5 分鐘 → 標 failed（記憶體槽位被清了但 DB 沒更新）
+const ZOMBIE_TASK_TIMEOUT_MS = 5 * 60_000; // 5 分鐘
+
+async function cleanupZombieRunningTasks(): Promise<void> {
+  if (!hasSupabase() || !supabase) return;
+  try {
+    const cutoff = new Date(Date.now() - ZOMBIE_TASK_TIMEOUT_MS).toISOString();
+    const { data: zombies, error } = await supabase
+      .from('openclaw_tasks')
+      .select('id, title')
+      .eq('status', 'in_progress')
+      .lt('updated_at', cutoff);
+
+    if (error || !zombies || zombies.length === 0) return;
+
+    const ids = zombies.map((t: { id: string }) => t.id);
+    await supabase
+      .from('openclaw_tasks')
+      .update({ status: 'failed', updated_at: new Date().toISOString() })
+      .in('id', ids);
+
+    const names = zombies.map((t: { title: string }) => t.title).join(', ');
+    log.warn(`[ZombieCleanup] 清除 ${ids.length} 個殭屍任務 → failed: ${names}`);
+  } catch (e) {
+    log.warn('[ZombieCleanup] 清理異常:', e);
+  }
+}
+
 // ─── 空閒巡邏（Idle Patrol）───
 // AutoExecutor 連續空閒一段時間後，用 Gemini 生成巡邏任務讓系統持續運轉
 let consecutiveIdlePolls = 0;
@@ -460,6 +489,8 @@ async function executeNextPendingTask(): Promise<void> {
   try {
     // 低頻清理：每 6 小時刪除超過 7 天的 done/failed 任務
     await cleanupStaleDoneTasks();
+    // 每次 poll 清殭屍：in_progress 超過 5 分鐘 → failed
+    await cleanupZombieRunningTasks();
 
     if (!hasSupabase() || !supabase) {
       log.warn('[AutoExecutor] Supabase 未連線，無法執行任務');
