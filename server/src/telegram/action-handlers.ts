@@ -16,6 +16,19 @@ const log = createLogger('telegram');
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
+/**
+ * 專案根目錄 — 統一單一來源，不再寫死路徑
+ * 優先順序：env OPENCLAW_PROJECT_ROOT → server/ 往上兩層 → 舊路徑 fallback
+ */
+const PROJECT_ROOT: string = (() => {
+  if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
+  // server/dist/telegram/action-handlers.js → 往上 3 層 = 專案根目錄
+  const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
+  if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
+  // fallback（向後相容）
+  return '/Users/caijunchang/openclaw任務面版設計';
+})();
+
 export type ActionResult = { ok: boolean; output: string };
 
 /** 行动链提示：引导小蔡一次回复打包多个 action */
@@ -106,8 +119,8 @@ async function updateTask(id: string, updates: Record<string, unknown>): Promise
 
 /** 常見相對路徑前綴 → 自動補全對應的絕對路徑 */
 const PATH_PREFIXES: [string, string][] = [
-  ['server/', '/Users/caijunchang/openclaw任務面版設計/server/'],
-  ['src/', '/Users/caijunchang/openclaw任務面版設計/src/'],
+  ['server/', `${PROJECT_ROOT}/server/`],
+  ['src/', `${PROJECT_ROOT}/src/`],
   ['cookbook/', `${NEUXA_WORKSPACE}/cookbook/`],
   ['armory/', `${NEUXA_WORKSPACE}/armory/`],
   ['scripts/', `${NEUXA_WORKSPACE}/scripts/`],
@@ -141,12 +154,12 @@ export async function handleReadFile(actionPath: string): Promise<ActionResult> 
       }
       // 再試專案根目錄
       if (!fs.existsSync(resolved)) {
-        const projCandidate = path.join('/Users/caijunchang/openclaw任務面版設計', actionPath);
+        const projCandidate = path.join(PROJECT_ROOT, actionPath);
         if (fs.existsSync(projCandidate)) resolved = projCandidate;
       }
     }
 
-    if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${actionPath}（提醒：workspace 檔案用 ~/.openclaw/workspace/ 前綴，專案檔案用絕對路徑 /Users/caijunchang/openclaw任務面版設計/...）` };
+    if (!fs.existsSync(resolved)) return { ok: false, output: `檔案不存在: ${actionPath}（提醒：workspace 檔案用 ~/.openclaw/workspace/ 前綴，專案檔案用絕對路徑 ${PROJECT_ROOT}/...）` };
     const stat = fs.statSync(resolved);
     if (stat.isDirectory()) return { ok: false, output: `這是目錄，不是檔案。用 list_dir 看目錄內容。` };
     const content = fs.readFileSync(resolved, 'utf8');
@@ -956,7 +969,7 @@ export async function handlePtyExec(
   const safeTimeout = Math.max(5, Math.min(120, timeout)) * 1000;
 
   // ── cwd 限制在專案目錄 ──
-  const cwd = '/Users/caijunchang/openclaw任務面版設計';
+  const cwd = PROJECT_ROOT;
 
   log.info(`[PtyExec] 啟動: ${cmd.slice(0, 100)} | answers=${answers.length} | timeout=${safeTimeout / 1000}s`);
 
@@ -1499,10 +1512,10 @@ async function handleAnalyzeCode(filePath: string, question: string): Promise<Ac
 
 /** 允許搜尋的目錄白名單 */
 const GREP_ALLOWED_DIRS = [
-  '/Users/caijunchang/openclaw任務面版設計/server/src/',
-  '/Users/caijunchang/openclaw任務面版設計/src/',
-  '/Users/caijunchang/openclaw任務面版設計/cookbook/',
-  '/Users/caijunchang/openclaw任務面版設計/scripts/',
+  `${PROJECT_ROOT}/server/src/`,
+  `${PROJECT_ROOT}/src/`,
+  `${PROJECT_ROOT}/cookbook/`,
+  `${PROJECT_ROOT}/scripts/`,
   path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
 ];
 
@@ -1540,7 +1553,7 @@ async function handleGrepProject(
     return { ok: false, output: 'grep_project 需要 pattern 參數（至少 2 個字）' };
   }
 
-  const targetDir = searchPath || '/Users/caijunchang/openclaw任務面版設計/server/src/';
+  const targetDir = searchPath || `${PROJECT_ROOT}/server/src/`;
   const pathCheck = isGrepPathSafe(targetDir);
   if (!pathCheck.safe) return { ok: false, output: `🚫 ${pathCheck.reason}` };
 
@@ -1607,8 +1620,8 @@ async function handleFindSymbol(
   }
 
   const searchDirs = [
-    '/Users/caijunchang/openclaw任務面版設計/server/src/',
-    '/Users/caijunchang/openclaw任務面版設計/src/',
+    `${PROJECT_ROOT}/server/src/`,
+    `${PROJECT_ROOT}/src/`,
   ];
 
   const safeSymbol = symbol.replace(/'/g, "'\\''").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1712,7 +1725,7 @@ const PATCH_FORBIDDEN_NAMES = new Set([
 /** patch_file 允許的根目錄白名單 */
 const PATCH_ALLOWED_ROOTS = [
   path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
-  '/Users/caijunchang/openclaw任務面版設計',
+  PROJECT_ROOT,
 ];
 
 /** 檢查 patch_file 路徑安全性 */
