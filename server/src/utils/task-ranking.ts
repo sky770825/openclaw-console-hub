@@ -1,7 +1,7 @@
 /**
  * 任務排名算法 — 移植自 Moltbook Feed (@moltbook/feed)
  *
- * 5 種排序：Hot / Rising / Controversial / Top / New
+ * 6 種排序：Hot / Rising / Controversial / Top / New / Best
  *
  * 適配對應：
  *   votes  → priority (1-5)，priority 越高 = 越重要 = 越多「票」
@@ -11,7 +11,7 @@
  *   score  → priority（原始分數）
  */
 
-export type RankingSortMode = 'hot' | 'rising' | 'controversial' | 'top' | 'new';
+export type RankingSortMode = 'hot' | 'rising' | 'controversial' | 'top' | 'new' | 'best';
 
 /** 所有排名函數需要的最小任務欄位 */
 export interface RankableTask {
@@ -106,6 +106,44 @@ function controversialScore(task: RankableTask): number {
 }
 
 /**
+ * Best 排名（Wilson Score Confidence Interval）
+ * 公式：Reddit "Best" 排序算法，考慮統計信賴區間
+ *
+ * 適配：
+ *   upvotes   = priority（1-5，越高代表越多信任票）
+ *   downvotes = 根據 status 動態計算：
+ *               - failed / cancelled → priority 的反向值（6 - priority），表示負面權重
+ *               - 其他狀態 → 0（無負面權重）
+ *
+ * 優勢：小樣本（低 priority）不會被高估，高 priority 排名更穩定
+ *        失敗/取消的任務會被自然壓低
+ *
+ * 結果：高分排前面
+ */
+function wilsonScore(task: RankableTask): number {
+  const priority = getPriority(task);
+  const status = task.status ?? '';
+
+  // 映射 upvotes：直接使用 priority
+  const up = priority;
+
+  // 映射 downvotes：失敗/取消的任務獲得負面權重
+  const failedStatuses = ['failed', 'cancelled', 'canceled', 'error'];
+  const down = failedStatuses.includes(status) ? 6 - priority : 0;
+
+  const n = up + down;
+  if (n === 0) return 0;
+
+  const z = 1.96; // 95% confidence interval
+  const p = up / n;
+  const left = p + (z * z) / (2 * n);
+  const right = z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n);
+  const under = 1 + (z * z) / n;
+
+  return (left - right) / under;
+}
+
+/**
  * Top 排名
  * 純分數排序，支持時間過濾
  *
@@ -157,7 +195,7 @@ function isWithinTimeFilter(
  * 對任務陣列進行排名排序
  *
  * @param tasks   - 任務列表（會被原地排序）
- * @param mode    - 排序模式：hot | rising | controversial | top | new
+ * @param mode    - 排序模式：hot | rising | controversial | top | new | best
  * @param options - 可選：timeFilter（僅對 top 模式生效）
  * @returns 排序後的任務陣列（同一個引用）
  */
@@ -213,6 +251,19 @@ export function rankTasks<T extends RankableTask>(
       return tasks;
     }
 
+    case 'best':
+      // Best：Wilson Score 降序，同分按時間新排前
+      return tasks.sort((a, b) => {
+        const diff = wilsonScore(b) - wilsonScore(a);
+        if (Math.abs(diff) < 0.0001) {
+          // 同分時，newer first
+          const aTime = new Date(getCreatedAt(a) ?? 0).getTime();
+          const bTime = new Date(getCreatedAt(b) ?? 0).getTime();
+          return bTime - aTime;
+        }
+        return diff;
+      });
+
     case 'new':
       // New：純按建立時間倒序
       return tasks.sort((a, b) => {
@@ -234,6 +285,7 @@ export function isValidSortMode(mode: unknown): mode is RankingSortMode {
     mode === 'rising' ||
     mode === 'controversial' ||
     mode === 'top' ||
-    mode === 'new'
+    mode === 'new' ||
+    mode === 'best'
   );
 }
