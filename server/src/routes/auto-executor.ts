@@ -209,13 +209,21 @@ async function cleanupZombieRunningTasks(): Promise<void> {
     if (error || !zombies || zombies.length === 0) return;
 
     const ids = zombies.map((t: { id: string }) => t.id);
+    // 取出目前 activeSlots 中的 taskId，避免誤殺仍在執行中的任務
+    const activeSlotTaskIds = new Set(activeSlots.map((s: ExecutorSlot) => String(s.taskId)));
+    // 只清理不在 activeSlots 中的真正殭屍
+    const trulyZombieIds = ids.filter((id: string) => !activeSlotTaskIds.has(id));
+    if (trulyZombieIds.length === 0) return;
+
     await supabase
       .from('openclaw_tasks')
       .update({ status: 'failed', updated_at: new Date().toISOString() })
-      .in('id', ids);
+      .in('id', trulyZombieIds);
 
-    const names = zombies.map((t: { title: string }) => t.title).join(', ');
-    log.warn(`[ZombieCleanup] 清除 ${ids.length} 個殭屍任務 → failed: ${names}`);
+    const names = zombies
+      .filter((t: { id: string }) => trulyZombieIds.includes(t.id))
+      .map((t: { title: string }) => t.title).join(', ');
+    log.warn(`[ZombieCleanup] 清除 ${trulyZombieIds.length} 個殭屍任務 → failed: ${names}`);
   } catch (e) {
     log.warn('[ZombieCleanup] 清理異常:', e);
   }
@@ -474,8 +482,10 @@ async function executeNextPendingTask(): Promise<void> {
   for (let i = activeSlots.length - 1; i >= 0; i--) {
     const age = now - activeSlots[i].startedAt;
     if (age > SLOT_TIMEOUT_MS) {
-      log.warn(`[AutoExecutor] ⚠️ 槽位 ${activeSlots[i].taskId} 已 ${Math.round(age / 1000)}s，強制回收`);
+      const removedId = activeSlots[i].taskId;
+      log.warn(`[AutoExecutor] ⚠️ 槽位 ${removedId} 已 ${Math.round(age / 1000)}s，強制回收`);
       activeSlots.splice(i, 1);
+      activeTaskIds.delete(removedId);
     }
   }
   // 所有槽位都滿 → 跳過本次 poll
@@ -491,6 +501,22 @@ async function executeNextPendingTask(): Promise<void> {
     await cleanupStaleDoneTasks();
     // 每次 poll 清殭屍：in_progress 超過 5 分鐘 → failed
     await cleanupZombieRunningTasks();
+    // pendingReviews 超時清理（3天未審核 → 自動移除）
+    const PENDING_REVIEW_TIMEOUT_MS = 3 * 24 * 60 * 60 * 1000;
+    const reviewNowMs = Date.now();
+    if (autoExecutorState?.pendingReviews && autoExecutorState.pendingReviews.length > 0) {
+      const expiredReviews = autoExecutorState.pendingReviews.filter((r: any) => {
+        const queuedAt = new Date(r.queuedAt || r.createdAt || 0).getTime();
+        return (reviewNowMs - queuedAt) > PENDING_REVIEW_TIMEOUT_MS;
+      });
+      if (expiredReviews.length > 0) {
+        autoExecutorState.pendingReviews = autoExecutorState.pendingReviews.filter((r: any) => {
+          const queuedAt = new Date(r.queuedAt || r.createdAt || 0).getTime();
+          return (reviewNowMs - queuedAt) <= PENDING_REVIEW_TIMEOUT_MS;
+        });
+        log.warn(`[AutoDispatch] ${expiredReviews.length} 個待審任務超過 3 天，已自動移除`);
+      }
+    }
 
     if (!hasSupabase() || !supabase) {
       log.warn('[AutoExecutor] Supabase 未連線，無法執行任務');

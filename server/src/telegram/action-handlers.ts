@@ -1187,12 +1187,19 @@ async function handleIndexFile(filePath: string, category?: string): Promise<Act
 
       // 推斷 content_type 和 zone
       const inferredContentType = (() => {
+        // 先看 category（目錄）
         if (['soul', 'identity'].includes(cat)) return 'soul';
         if (['cookbook', 'sop', 'instruction'].includes(cat)) return 'sop';
         if (cat === 'codebase') return 'codebase';
         if (cat === 'reports') return 'diagnosis';
         if (cat === 'proposals') return 'plan';
         if (cat === 'learning') return 'exercise';
+        // 再看檔名特徵（補強嵌套目錄或非標準路徑）
+        const lowerName = fileName.toLowerCase();
+        if (lowerName.includes('soul') || lowerName.includes('identity') || lowerName.includes('awakening')) return 'soul';
+        if (lowerName.includes('report') || lowerName.includes('diagnosis') || lowerName.includes('error-report')) return 'diagnosis';
+        if (lowerName.includes('plan') || lowerName.includes('proposal') || lowerName.includes('roadmap')) return 'plan';
+        if (lowerName.includes('exercise') || lowerName.includes('practice')) return 'exercise';
         return 'reference';
       })();
       const inferredZone = ['reports', 'proposals'].includes(cat) ? 'cold' : 'hot';
