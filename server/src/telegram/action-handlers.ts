@@ -882,64 +882,64 @@ export async function handleProxyFetch(url: string, method: string, body: string
  * 重型任務（改代碼、部署、npm install）仍然要建任務。
  */
 const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
-  // curl — 本地 + 外部都放行（GET/POST 都行）
-  { pattern: /^curl\s+/, desc: 'curl 請求' },
+  // curl — GET/POST 都放行（API 呼叫是小蔡核心能力）
+  { pattern: /curl\s+/, desc: 'curl 請求' },
   // 系統診斷
   { pattern: /^lsof\s+/, desc: 'lsof' },
   { pattern: /^ps\s+/, desc: '查進程' },
   { pattern: /^docker\s+/, desc: 'Docker 指令' },
-  { pattern: /^cat\s+/, desc: '讀檔案' },
-  { pattern: /^tail\s+/, desc: '讀日誌尾部' },
-  { pattern: /^head\s+/, desc: '讀檔案頭部' },
+  { pattern: /cat\s+/, desc: '讀檔案' },
+  { pattern: /tail\s+/, desc: '讀日誌尾部' },
+  { pattern: /head\s+/, desc: '讀檔案頭部' },
   { pattern: /^wc\s+/, desc: '統計' },
   { pattern: /^du\s+/, desc: '磁碟用量' },
   { pattern: /^df\s+/, desc: '磁碟空間' },
   { pattern: /^uptime/, desc: '運行時間' },
   { pattern: /^date/, desc: '時間' },
   { pattern: /^which\s+/, desc: '查命令路徑' },
-  { pattern: /^ls\s+/, desc: '列目錄' },
+  { pattern: /ls\s+/, desc: '列目錄' },
   { pattern: /^stat\s+/, desc: '檔案狀態' },
   { pattern: /^echo\s+/, desc: 'echo 輸出' },
   // 搜尋
-  { pattern: /^grep\s+/, desc: 'grep 搜尋' },
+  { pattern: /grep\s+/, desc: 'grep 搜尋' },
   { pattern: /^find\s+/, desc: '找檔案' },
   // 腳本語言
-  { pattern: /^python3\s+/, desc: 'Python' },
-  { pattern: /^node\s+/, desc: 'Node.js' },
+  { pattern: /python3\s+/, desc: 'Python' },
+  { pattern: /node\s+/, desc: 'Node.js' },
   // bash 腳本
   { pattern: /^bash\s+/, desc: 'bash 腳本' },
-  // launchctl（重啟 server）
-  { pattern: /^launchctl\s+(stop|start|list)/, desc: 'launchctl 服務管理' },
+  // 服務管理
+  { pattern: /launchctl\s+(stop|start|list)/, desc: 'launchctl 服務管理' },
+  // 套件管理（install 允許，publish 在黑名單攔）
+  { pattern: /npm\s+(install|run|test|build)/, desc: 'npm 操作' },
+  { pattern: /npx\s+/, desc: 'npx 執行' },
+  // git（基本操作放行，force push 在黑名單攔）
+  { pattern: /git\s+(status|log|diff|add|commit|pull|push|checkout|branch|stash)/, desc: 'git 操作' },
+  // 組合命令（cd && ... 是最常見的模式）
+  { pattern: /^cd\s+/, desc: 'cd 切換目錄' },
+  // kill（單一進程管理，不是 killall）
+  { pattern: /^kill\s+\d+/, desc: 'kill 單一進程' },
+  // 通知腳本
+  { pattern: /notify-laocai/, desc: '通知老蔡' },
 ];
 
-/** 危險指令黑名單（即使匹配白名單也拒絕） */
+/** 危險指令黑名單（真正會造成不可逆破壞的才擋） */
 const DANGEROUS_PATTERNS = [
-  /rm\s+-rf/i, /mkfs/i, /dd\s+if=/i, />\s*\/dev\//i,
-  /chmod\s+777/i, /eval\s*\(/i, /\$\(/i, /`[^`]+`/,
-  /npm\s+(install|uninstall|publish)/i, /pip\s+install/i,
-  /git\s+(push|reset|checkout|clean)/i,
-  /kill\s+-9/i, /pkill/i, /killall/i,
-  /launchctl\s+(stop|start|remove)/i,
-  /curl\s+.*-X\s*(POST|PUT|DELETE|PATCH)/i,
+  /rm\s+-rf\s+\//i, /mkfs/i, /dd\s+if=/i, />\s*\/dev\//i,
+  /chmod\s+777/i,
+  /git\s+(push\s+--force|reset\s+--hard)/i,  // 只擋 force push 和 hard reset
+  /npm\s+publish/i,                            // 只擋 publish（install 允許）
 ];
 
 /** run_script 被擋時，根據指令內容建議替代方案 */
 function suggestAlternative(cmd: string): string {
-  if (/curl\s+.*-x\s*(post|put|delete|patch)/i.test(cmd))
-    return '→ curl 只能 GET。需要 POST？用 create_task 派工。';
-  if (/npm\s+(install|uninstall)/i.test(cmd))
-    return '→ 套件管理用 create_task 派工。';
-  if (/git\s+(push|reset|checkout|clean)/i.test(cmd))
-    return '→ git 危險操作用 create_task 派工，或請老蔡手動。';
-  if (/kill|pkill|killall/i.test(cmd))
-    return '→ 不能殺進程。用 create_task 派工或通知老蔡。';
-  if (/python3\s+\S+\.py/i.test(cmd))
-    return '→ 改用 python3 -c "..." 單行模式，或用白名單腳本（health-check.sh 等）。';
-  if (/rm\s+-rf/i.test(cmd))
-    return '→ 不能刪檔案。用 create_task 派工。';
-  if (/cat\s+.*\|/i.test(cmd))
-    return '→ pipe 可能被擋。改用 grep -ri "關鍵字" /path 直接搜。';
-  return '→ 試試：grep -ri（搜尋）、python3 -c（計算）、curl -s localhost（診斷）、create_task（重型任務）。';
+  if (/rm\s+-rf\s+\//i.test(cmd))
+    return '→ 不能刪根目錄。刪特定檔案用 rm 單檔。';
+  if (/git\s+push\s+--force/i.test(cmd))
+    return '→ force push 禁止。用 git push（不帶 --force）。';
+  if (/npm\s+publish/i.test(cmd))
+    return '→ npm publish 禁止。用 create_task 派工給老蔡。';
+  return '→ 這個命令不在白名單。試試拆成更簡單的命令，或用 create_task 派工。';
 }
 
 async function handleSafeRunScript(command: string): Promise<ActionResult> {
