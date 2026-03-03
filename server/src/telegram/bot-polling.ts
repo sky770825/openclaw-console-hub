@@ -1568,8 +1568,37 @@ async function xiaocaiPoll(): Promise<void> {
 
       for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
         const isFollowUp = step > 0;
+
+        // 分析最近失敗的 action，生成替代策略提示
+        const recentResults = allActionResults.slice(-3);
+        const hasFailures = recentResults.some(r => r.startsWith('🚫') || r.startsWith('🔒'));
+        const failedActions = recentResults
+          .filter(r => r.startsWith('🚫') || r.startsWith('🔒'))
+          .map(r => r.replace(/^[🚫🔒]\s*/, '').split(':')[0].trim());
+
+        // 替代路徑建議表
+        const ALTERNATIVE_MAP: Record<string, string> = {
+          'read_file': '改用 semantic_search 搜關鍵字，或 list_dir 確認路徑',
+          'grep_project': '改用 find_symbol 或 semantic_search mode=code',
+          'run_script': '改用 query_supabase 查資料，或 read_file 讀 log',
+          'web_fetch': '改用 web_search 搜其他來源，或 semantic_search 查知識庫',
+          'semantic_search': '改用 read_file 直接讀檔，或換關鍵字重搜',
+          'query_supabase': '改用 run_script: curl localhost:3011/api/health 確認 server 狀態',
+          'patch_file': '改用 code_eval 驗證邏輯後再試，或 create_task 給 cursor agent 處理',
+          'write_file': '確認路徑正確後重試，或改寫到 workspace/notes/ 路徑',
+        };
+
+        const altHints = failedActions
+          .map(action => ALTERNATIVE_MAP[action] ? `  - ${action} 失敗 → ${ALTERNATIVE_MAP[action]}` : '')
+          .filter(Boolean)
+          .join('\n');
+
+        const failureGuidance = hasFailures && altHints
+          ? `\n\n🔄 **替代路徑建議**（失敗了換這些試）：\n${altHints}`
+          : '';
+
         const thinkInput = isFollowUp
-          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${allActionResults.slice(-3).join('\n')}\n\n判斷下一步：\n- ❌ 失敗了 → 分析原因，最多重試 1 次，不要死磕\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，用自然語言跟老蔡說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做\n你的終點不是「我執行了」，而是「老蔡能根據你的結論做決定」。`
+          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${recentResults.join('\n')}${failureGuidance}\n\n判斷下一步：\n- ❌ 失敗了 → 看上方替代路徑，選一條換試。最多換 2 次，2 次都失敗再告訴老蔡。\n- 🔒 被阻擋 → 換完全不同的工具或方法，不要用同一個 action\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，跟老蔡說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做`
           : currentInput;
 
         // 第一輪帶圖片，後續 follow-up 不帶
@@ -1802,8 +1831,13 @@ async function heartbeatTick(): Promise<void> {
 
     for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
       const isFollowUp = step > 0;
+      const hbRecentResults = allResults.slice(-3);
+      const hbHasFailure = hbRecentResults.some(r => r.startsWith('🚫') || r.startsWith('🔒'));
+      const hbFailureNote = hbHasFailure
+        ? `\n⚠️ 有步驟失敗。失敗的直接跳過，換做下一步。不要在失敗的步驟上重試超過 1 次。`
+        : '';
       const thinkInput = isFollowUp
-        ? `[系統回饋] 心跳 step ${step}/${MAX_HEARTBEAT_STEPS}：\n${allResults.slice(-3).join('\n')}\n\n按 HEARTBEAT.md 的步驟繼續：1.查健康 2.查任務板 3.做練習題（必做！先 ls 防重複，再挑一題完整做完）4.更新GROWTH.md 5.寫報告。`
+        ? `[系統回饋] 心跳 step ${step}/${MAX_HEARTBEAT_STEPS}：\n${hbRecentResults.join('\n')}${hbFailureNote}\n\n按 HEARTBEAT.md 的步驟繼續：1.查健康 2.查任務板 3.做練習題（必做！先 ls 防重複，再挑一題完整做完）4.更新GROWTH.md 5.寫報告。`
         : currentInput;
 
       const reply = await xiaocaiThink(HEARTBEAT_CHAT_ID, thinkInput, xiaocaiMainModel, xiaocaiHistory);
