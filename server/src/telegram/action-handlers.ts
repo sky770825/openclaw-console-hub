@@ -842,7 +842,7 @@ export async function handleProxyFetch(url: string, method: string, body: string
 
   const target = TARGETS.find(t => t.pattern.test(url));
   if (!target) {
-    return { ok: false, output: `proxy_fetch: URL 不在白名單。允許的目標: ${TARGETS.map(t => t.name).join(', ')}` };
+    return { ok: false, output: `proxy_fetch 只用來打 AI API（${TARGETS.map(t => t.name).join('/')}），不是抓網頁用的。\n抓外部網頁改用：run_script: curl -s "${url}" 或 web_browse` };
   }
 
   try {
@@ -882,34 +882,34 @@ export async function handleProxyFetch(url: string, method: string, body: string
  * 重型任務（改代碼、部署、npm install）仍然要建任務。
  */
 const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
+  // curl — 本地 + 外部都放行（GET/POST 都行）
+  { pattern: /^curl\s+/, desc: 'curl 請求' },
   // 系統診斷
-  { pattern: /^curl\s+-s\s+http:\/\/localhost:3011\/api\//, desc: '本地 API 呼叫' },
-  { pattern: /^curl\s+-s\s+https?:\/\/[a-z0-9.-]+\.supabase\.co\//, desc: 'Supabase 查詢' },
-  { pattern: /^lsof\s+-i\s+:/, desc: '查 port 占用' },
-  { pattern: /^ps\s+(aux|ef)/, desc: '查進程' },
-  { pattern: /^docker\s+(ps|logs|inspect)/, desc: 'Docker 狀態' },
-  { pattern: /^cat\s+\/tmp\/openclaw/, desc: '讀 server log' },
-  { pattern: /^tail\s+(-n\s+\d+\s+)?\//, desc: '讀日誌尾部' },
-  { pattern: /^head\s+(-n\s+\d+\s+)?\//, desc: '讀檔案頭部' },
-  { pattern: /^wc\s+-[lcw]\s+/, desc: '統計行數' },
-  { pattern: /^du\s+-s/, desc: '檢查磁碟用量' },
-  { pattern: /^df\s+-h/, desc: '檢查磁碟空間' },
-  { pattern: /^uptime/, desc: '系統運行時間' },
-  { pattern: /^date/, desc: '系統時間' },
-  { pattern: /^which\s+/, desc: '查找命令路徑' },
-  // 搜尋和查詢
-  { pattern: /^grep\s+-[rilnc]+\s+/, desc: 'grep 搜尋' },
-  { pattern: /^find\s+.*-name\s+/, desc: '找檔案' },
-  { pattern: /^python3\s+-c\s+/, desc: 'Python 單行腳本' },
-  { pattern: /^node\s+-e\s+/, desc: 'Node.js 單行腳本' },
-  // workspace 工具（唯讀類）
-  { pattern: /^bash\s+.*health-check\.sh/, desc: '健康檢查' },
-  { pattern: /^bash\s+.*agent-status\.sh/, desc: 'Agent 狀態' },
-  { pattern: /^bash\s+.*security-check\.sh/, desc: '安全掃描' },
-  { pattern: /^python3\s+.*health-check\.py/, desc: '健康檢查 (py)' },
-  { pattern: /^python3\s+.*hybrid-search\.py/, desc: '混合搜尋' },
-  { pattern: /^python3\s+.*smart-recall\.py/, desc: '智能回憶' },
-  { pattern: /^bash\s+.*vector-index-manager\.sh\s+stats/, desc: '向量索引統計' },
+  { pattern: /^lsof\s+/, desc: 'lsof' },
+  { pattern: /^ps\s+/, desc: '查進程' },
+  { pattern: /^docker\s+/, desc: 'Docker 指令' },
+  { pattern: /^cat\s+/, desc: '讀檔案' },
+  { pattern: /^tail\s+/, desc: '讀日誌尾部' },
+  { pattern: /^head\s+/, desc: '讀檔案頭部' },
+  { pattern: /^wc\s+/, desc: '統計' },
+  { pattern: /^du\s+/, desc: '磁碟用量' },
+  { pattern: /^df\s+/, desc: '磁碟空間' },
+  { pattern: /^uptime/, desc: '運行時間' },
+  { pattern: /^date/, desc: '時間' },
+  { pattern: /^which\s+/, desc: '查命令路徑' },
+  { pattern: /^ls\s+/, desc: '列目錄' },
+  { pattern: /^stat\s+/, desc: '檔案狀態' },
+  { pattern: /^echo\s+/, desc: 'echo 輸出' },
+  // 搜尋
+  { pattern: /^grep\s+/, desc: 'grep 搜尋' },
+  { pattern: /^find\s+/, desc: '找檔案' },
+  // 腳本語言
+  { pattern: /^python3\s+/, desc: 'Python' },
+  { pattern: /^node\s+/, desc: 'Node.js' },
+  // bash 腳本
+  { pattern: /^bash\s+/, desc: 'bash 腳本' },
+  // launchctl（重啟 server）
+  { pattern: /^launchctl\s+(stop|start|list)/, desc: 'launchctl 服務管理' },
 ];
 
 /** 危險指令黑名單（即使匹配白名單也拒絕） */
