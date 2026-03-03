@@ -901,6 +901,7 @@ const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
   { pattern: /^grep\s+-[rilnc]+\s+/, desc: 'grep 搜尋' },
   { pattern: /^find\s+.*-name\s+/, desc: '找檔案' },
   { pattern: /^python3\s+-c\s+/, desc: 'Python 單行腳本' },
+  { pattern: /^node\s+-e\s+/, desc: 'Node.js 單行腳本' },
   // workspace 工具（唯讀類）
   { pattern: /^bash\s+.*health-check\.sh/, desc: '健康檢查' },
   { pattern: /^bash\s+.*agent-status\.sh/, desc: 'Agent 狀態' },
@@ -952,14 +953,14 @@ async function handleSafeRunScript(command: string): Promise<ActionResult> {
   const dangerous = DANGEROUS_PATTERNS.find(p => p.test(cmd));
   if (dangerous) {
     const alt = suggestAlternative(cmd);
-    return { ok: false, output: `🛑 危險指令被攔截。${alt}` };
+    return { ok: false, output: `🛑 危險指令被攔截：\`${cmd.slice(0, 80)}\`\n${alt}` };
   }
 
   // 2. 檢查白名單
   const allowed = SAFE_SCRIPT_PATTERNS.find(p => p.pattern.test(cmd));
   if (!allowed) {
     const alt = suggestAlternative(cmd);
-    return { ok: false, output: `🛑 不在白名單。${alt}` };
+    return { ok: false, output: `🛑 不在白名單：\`${cmd.slice(0, 80)}\`\n${alt}` };
   }
 
   log.info(`[SafeRunScript] 允許: ${allowed.desc} → ${cmd.slice(0, 80)}`);
