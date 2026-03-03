@@ -1477,8 +1477,19 @@ async function xiaocaiPoll(): Promise<void> {
 
       const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
       if (allowedChatId && String(chatId) !== allowedChatId) {
-        // 群組訊息靜默跳過（crew bots 會處理）
-        if (chatId < 0) continue;
+        // 群組訊息：只有提到小蔡時才回覆，其他交給 crew bots
+        if (chatId < 0) {
+          const lowerText = text.toLowerCase();
+          const mentionsXiaocai = lowerText.includes('小蔡') || lowerText.includes('@xiaoji_cai_bot');
+          if (!mentionsXiaocai) continue; // 沒提到小蔡 → 跳過
+          // 提到小蔡 → 小蔡本人回覆（走 xiaocaiThink）
+          log.info(`[XiaocaiBot] 群組提到小蔡，回覆 chatId=${chatId}`);
+          const groupReply = await xiaocaiThink(chatId, text, xiaocaiMainModel, xiaocaiHistory, imageBase64 ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined);
+          if (groupReply) {
+            await sendTelegramMessageToChat(chatId, groupReply, { token: XIAOCAI_TOKEN });
+          }
+          continue;
+        }
         await sendTelegramMessageToChat(chatId, '⚠️ 未授權的使用者', { token: XIAOCAI_TOKEN });
         continue;
       }

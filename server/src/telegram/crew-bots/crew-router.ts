@@ -48,17 +48,10 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'too short' };
   }
 
-  // ─── Layer 3.5: 叫「小蔡」→ 阿工代回（小蔡指揮官的群組化身）───
+  // ─── Layer 3.5: 叫「小蔡」→ 跳過（由小蔡本人 bot-polling 回覆）───
   const lText = text.toLowerCase();
   if (lText.includes('小蔡') || lText.includes('@xiaoji_cai_bot')) {
-    const agong = CREW_BOTS.find(b => b.id === 'agong');
-    if (agong?.token) {
-      const now = Date.now();
-      if (!isCoolingDown('agong', now)) {
-        recordResponse('agong', now);
-        return { respondingBots: [{ botId: 'agong', score: 15 }], filtered: false };
-      }
-    }
+    return { respondingBots: [], filtered: true, filterReason: 'xiaocai handles directly' };
   }
 
   // ─── Layer 4: 指令過濾（讓現有 bot 處理） ───
