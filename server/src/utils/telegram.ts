@@ -70,20 +70,7 @@ export async function sendTelegramMessage(
       const detail = await res.text().catch(() => '');
       log.error({ status: res.status, detail }, '[Telegram] send failed');
     }
-    // 同步推送到協作群（靜默，不影響主流程）
-    const groupToken = TELEGRAM_GROUP_BOT_TOKEN || TELEGRAM_BOT_TOKEN;
-    if (TELEGRAM_GROUP_CHAT_ID && groupToken) {
-      fetch(`https://api.telegram.org/bot${groupToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_GROUP_CHAT_ID,
-          text: safeText,
-          disable_notification: true,
-          ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
-        }),
-      }).catch(() => {}); // 群推失敗不影響主推
-    }
+    // 群推已移除 — n8n 負責群組回報，不需要重複推送
   } catch (error) {
     log.error({ err: error }, '[Telegram] Failed to send message');
   }
