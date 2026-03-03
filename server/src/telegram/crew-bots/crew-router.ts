@@ -32,9 +32,9 @@ export function routeMessage(
 ): RoutingDecision {
   const lowerUsername = (senderUsername || '').toLowerCase();
 
-  // ─── Layer 1: Bot 訊息過濾（小蔡指揮官例外） ───
-  const COMMANDER_USERNAMES = new Set(['xiaoji_cai_bot']);
-  if (senderIsBot && !COMMANDER_USERNAMES.has(lowerUsername)) {
+  // ─── Layer 1: Bot 訊息過濾（小蔡 + 匿名管理員例外） ───
+  const ALLOWED_BOT_USERNAMES = new Set(['xiaoji_cai_bot', 'groupanonymousbot']);
+  if (senderIsBot && !ALLOWED_BOT_USERNAMES.has(lowerUsername)) {
     return { respondingBots: [], filtered: true, filterReason: 'bot message' };
   }
 

@@ -1477,6 +1477,8 @@ async function xiaocaiPoll(): Promise<void> {
 
       const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
       if (allowedChatId && String(chatId) !== allowedChatId) {
+        // 群組訊息靜默跳過（crew bots 會處理）
+        if (chatId < 0) continue;
         await sendTelegramMessageToChat(chatId, '⚠️ 未授權的使用者', { token: XIAOCAI_TOKEN });
         continue;
       }
