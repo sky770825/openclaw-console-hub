@@ -114,9 +114,20 @@ git push origin main
 # 4. 也推到 xiaoji（小蔡的 mirror）
 git push xiaoji main
 
-# 5. 通知老蔡（必做！）
+# 5. 老蔡目錄 pull + build（讓 server 生效！）
+cd /Users/caijunchang/openclaw任務面版設計 && git pull origin main && cd server && npm run build
+
+# 6. 重啟 server
+launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw.taskboard
+
+# 7. 通知老蔡（必做！）
 bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 ```
+
+> ⚠️ **兩個目錄說明**
+> - `openclaw-console-hub-main/` — 小蔡開發目錄（寫代碼在這）
+> - `openclaw任務面版設計/` — **server 實際執行目錄**（launchd 跑這）
+> - 改完代碼 push 後，**老蔡目錄也要 pull + build**，否則 server 跑的還是舊版。
 
 ---
 
