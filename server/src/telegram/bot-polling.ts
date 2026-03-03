@@ -1956,18 +1956,20 @@ async function heartbeatTick(): Promise<void> {
       xiaocaiHistory.set(HEARTBEAT_CHAT_ID, history);
     }
 
-    // 心跳完成通知（發到老蔡的 chat，讓他回來看得到）
+    // 心跳完成 — 只有異常時才推 Telegram，正常靜默（避免吵老蔡）
     if (allResults.length > 0) {
-      const ownerChatId = getAllowChatId();
-      const summary = `🫀 自主心跳\n${allResults.map(r => r.replace(/<[^>]*>/g, '').slice(0, 100)).join('\n')}`;
-      if (ownerChatId) {
-        await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN });
+      const hasError = allResults.some(r => r.includes('🚫') || r.includes('🔒') || r.includes('失敗') || r.includes('error') || r.includes('異常'));
+      if (hasError) {
+        const ownerChatId = getAllowChatId();
+        const summary = `🚨 心跳異常\n${allResults.map(r => r.replace(/<[^>]*>/g, '').slice(0, 100)).join('\n')}`;
+        if (ownerChatId) {
+          await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN });
+        }
+        if (GROUP_TOKEN && GROUP_CHAT_ID) {
+          await sendTelegramMessageToChat(Number(GROUP_CHAT_ID), summary, { token: GROUP_TOKEN }).catch(() => {});
+        }
       }
-      // 同步推到群組（讓群組也能看到心跳動態）
-      if (GROUP_TOKEN && GROUP_CHAT_ID) {
-        await sendTelegramMessageToChat(Number(GROUP_CHAT_ID), summary, { token: GROUP_TOKEN }).catch(() => {});
-      }
-      appendInteractionLog('[心跳]', allResults, '自主巡邏完成');
+      appendInteractionLog('[心跳]', allResults, hasError ? '心跳異常' : '心跳正常');
     }
 
     log.info(`[Heartbeat] 🫀 心跳完成，執行 ${allResults.length} 個動作`);
