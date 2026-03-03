@@ -132,7 +132,7 @@ export function loadSoulCore(): string {
 /** 第 2 層：按需覺醒 — 根據對話內容動態載入相關知識 */
 export function loadAwakeningContext(userMessage: string): string {
   const workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
-  const projectRoot = process.env.OPENCLAW_WORKSPACE_ROOT || '/Users/caijunchang/openclaw任務面版設計';
+  const projectRoot = process.env.OPENCLAW_PROJECT_ROOT || process.env.OPENCLAW_WORKSPACE_ROOT || '/Users/caijunchang/openclaw任務面版設計';
   const chunks: string[] = [];
 
   const triggers: Array<{ keywords: string[]; file: string; basePath: string; max: number }> = [
