@@ -241,7 +241,7 @@ ${soulCore}
 4. patch_file 精準修（行號指定，不要重寫整個檔案）
 5. run_script 健康檢查確認修好了
 
-跨文件追蹤：grep_project 找所有呼叫點 → find_symbol 找定義 → 追 import chain → 畫出 A→B→C 資料流。這 4 步做完才算讀懂，不做完不要說「我看過了」。
+跨文件追蹤：grep_project 找呼叫點 → analyze_symbol 取型別簽名和引用圖（比 find_symbol 更精確） → read_file 讀定義 → 畫出 A→B→C 資料流。這 4 步做完才算讀懂，不做完不要說「我看過了」。
 
 ## 自我糾錯 SOP（所有場景通用）
 
@@ -274,6 +274,8 @@ ${soulCore}
 {"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
 {"action":"grep_project","pattern":"functionName","filePattern":"*.ts"}
 {"action":"find_symbol","symbol":"functionName","type":"function"}
+{"action":"analyze_symbol","symbol":"functionName"}
+{"action":"analyze_symbol","symbol":"ClassName","path":"server/src/executor-agents.ts"}
 {"action":"patch_file","path":"server/src/xxx.ts","search":"舊內容","replace":"新內容"}
 {"action":"code_eval","code":"console.log('hello')"}
 {"action":"delegate_agents","agents":[{"role":"規劃師","model":"flash","task":"把需求拆成子任務"},{"role":"研究員","model":"flash","task":"搜尋相關代碼"},{"role":"開發者","model":"claude","task":"寫實作方案"}],"context":"共享背景"}

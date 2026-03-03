@@ -44,6 +44,7 @@ const CHAIN_HINTS: Record<string, string> = {
   code_eval: '💡 执行完了 → write_file 写学习心得 + index_file 索引，两个一起发。',
   ask_ai: '💡 諮詢完了 → 把建議整理成 write_file 筆記 + index_file 索引，兩個一起發。',
   analyze_code: '💡 分析完了 → write_file 寫分析報告 + index_file 索引，兩個一起發。',
+  analyze_symbol: '💡 AST 分析完了 → 有型別和引用圖了，write_file 寫重構計畫 + index_file 索引。比 find_symbol 更精確。',
   query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
   pty_exec: '💡 互動命令完成 → 檢查輸出是否正常，有問題再跑一次或 write_file 記錄結果。',
   patch_file: '💡 修補完了 → read_file 確認結果，或繼續 patch_file 改下一處。多處修改一起發。',
@@ -1828,6 +1829,184 @@ async function handleFindSymbol(
   return { ok: true, output: parts.join('\n') };
 }
 
+// ── AST 語法樹分析 ──
+
+/**
+ * analyze_symbol: 用 TypeScript compiler API 做真正的 AST 分析
+ * 能找到函式簽名、型別、繼承鏈、跨檔案引用圖
+ */
+async function handleAnalyzeSymbol(symbol: string, filePath?: string): Promise<ActionResult> {
+  if (!symbol || symbol.trim().length < 2) {
+    return { ok: false, output: 'analyze_symbol 需要 symbol 參數' };
+  }
+
+  try {
+    const ts = await import('typescript');
+    const searchRoots = filePath
+      ? [path.resolve(PROJECT_ROOT, filePath)]
+      : [
+          path.join(PROJECT_ROOT, 'server', 'src'),
+          path.join(PROJECT_ROOT, 'src'),
+        ];
+
+    // 收集所有 .ts/.tsx 檔案
+    function collectTsFiles(dir: string): string[] {
+      if (!fs.existsSync(dir)) return [];
+      const results: string[] = [];
+      const walk = (d: string) => {
+        try {
+          for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+            const full = path.join(d, entry.name);
+            if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules' && entry.name !== 'dist') {
+              walk(full);
+            } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
+              results.push(full);
+            }
+          }
+        } catch { /* skip inaccessible dirs */ }
+      };
+      if (fs.statSync(dir).isFile()) return [dir];
+      walk(dir);
+      return results;
+    }
+
+    const allFiles: string[] = [];
+    for (const root of searchRoots) allFiles.push(...collectTsFiles(root));
+
+    if (allFiles.length === 0) {
+      return { ok: false, output: `analyze_symbol: 找不到 TypeScript 檔案在 ${searchRoots.join(', ')}` };
+    }
+
+    // 建立 TypeScript program（不做型別檢查，只做 AST 解析）
+    const program = ts.createProgram(allFiles, {
+      target: ts.ScriptTarget.ES2020,
+      module: ts.ModuleKind.ESNext,
+      noEmit: true,
+      skipLibCheck: true,
+    });
+
+    const definitions: string[] = [];
+    const references: string[] = [];
+    const signatureInfo: string[] = [];
+
+    for (const sourceFile of program.getSourceFiles()) {
+      if (sourceFile.fileName.includes('node_modules')) continue;
+
+      const checker = program.getTypeChecker();
+      const relPath = path.relative(PROJECT_ROOT, sourceFile.fileName);
+
+      // 遍歷 AST 節點
+      function visit(node: import('typescript').Node) {
+        // 定義偵測
+        const isNamedDecl = (
+          ts.isFunctionDeclaration(node) ||
+          ts.isClassDeclaration(node) ||
+          ts.isInterfaceDeclaration(node) ||
+          ts.isTypeAliasDeclaration(node) ||
+          ts.isVariableDeclaration(node) ||
+          ts.isMethodDeclaration(node) ||
+          ts.isPropertyDeclaration(node)
+        );
+
+        if (isNamedDecl) {
+          const name = (node as { name?: { getText(): string } }).name?.getText();
+          if (name === symbol) {
+            const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart());
+            const preview = node.getText().slice(0, 200).replace(/\n/g, ' ');
+
+            // 取型別資訊
+            let typeInfo = '';
+            try {
+              if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
+                const sig = checker.getSignatureFromDeclaration(node as import('typescript').SignatureDeclaration);
+                if (sig) {
+                  const params = sig.parameters.map(p => {
+                    const t = checker.typeToString(checker.getTypeOfSymbolAtLocation(p, node));
+                    return `${p.name}: ${t}`;
+                  }).join(', ');
+                  const ret = checker.typeToString(sig.getReturnType());
+                  typeInfo = ` | (${params}) => ${ret}`;
+                }
+              } else if (ts.isVariableDeclaration(node) && (node as import('typescript').VariableDeclaration).initializer) {
+                const t = checker.getTypeAtLocation(node);
+                typeInfo = ` | type: ${checker.typeToString(t)}`;
+              } else if (ts.isClassDeclaration(node)) {
+                const heritage = (node as import('typescript').ClassDeclaration).heritageClauses
+                  ?.map(h => h.getText())
+                  .join(' ') || '';
+                if (heritage) typeInfo = ` | ${heritage}`;
+              }
+            } catch { /* 型別分析失敗不阻塞 */ }
+
+            const entry = `${relPath}:${line + 1}${typeInfo}\n  ${preview}`;
+            if (!definitions.includes(entry)) {
+              definitions.push(entry);
+              if (typeInfo) signatureInfo.push(`📐 ${symbol}${typeInfo}`);
+            }
+          }
+        }
+
+        // 引用偵測（識別符使用）
+        if (ts.isIdentifier(node) && node.getText() === symbol) {
+          const parent = node.parent;
+          // 跳過自身定義
+          const isDefNode = parent && (
+            ts.isFunctionDeclaration(parent) ||
+            ts.isClassDeclaration(parent) ||
+            ts.isInterfaceDeclaration(parent) ||
+            ts.isTypeAliasDeclaration(parent) ||
+            ts.isVariableDeclarator(parent as import('typescript').Node)
+          ) && (parent as { name?: import('typescript').Node }).name === node;
+
+          if (!isDefNode) {
+            const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart());
+            const lineText = sourceFile.text.split('\n')[line]?.trim().slice(0, 120) || '';
+            const entry = `${relPath}:${line + 1}  ${lineText}`;
+            if (!references.includes(entry) && references.length < 30) {
+              references.push(entry);
+            }
+          }
+        }
+
+        ts.forEachChild(node, visit);
+      }
+
+      visit(sourceFile);
+    }
+
+    const parts: string[] = [`🔬 analyze_symbol「${symbol}」（AST 語法樹分析）\n`];
+
+    if (signatureInfo.length > 0) {
+      parts.push('📐 型別簽名：');
+      parts.push([...new Set(signatureInfo)].join('\n'));
+      parts.push('');
+    }
+
+    if (definitions.length > 0) {
+      parts.push(`📌 定義 (${definitions.length})：`);
+      parts.push(definitions.slice(0, 5).join('\n\n'));
+    } else {
+      parts.push('📌 定義：找不到（可能是外部套件或型別推斷）');
+    }
+
+    parts.push('');
+
+    if (references.length > 0) {
+      parts.push(`📎 跨檔引用 (${references.length})：`);
+      parts.push(references.slice(0, 20).join('\n'));
+    } else {
+      parts.push('📎 引用：此 symbol 無其他引用（或只在定義檔內）');
+    }
+
+    parts.push(`\n掃描檔案數：${allFiles.length}`);
+
+    return { ok: true, output: parts.join('\n') };
+  } catch (e) {
+    log.error({ err: e }, '[AnalyzeSymbol] AST 分析失敗');
+    return { ok: false, output: `analyze_symbol 失敗: ${(e as Error).message}` };
+  }
+}
+
 // ── 精準修補檔案 ──
 
 /** 禁止 patch 的檔案名（靈魂文件） */
@@ -2391,6 +2570,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     }
     case 'find_symbol':
       result = await handleFindSymbol(action.symbol || '', action.type);
+      break;
+    case 'analyze_symbol':
+      result = await handleAnalyzeSymbol(action.symbol || '', action.path);
       break;
     case 'pty_exec': {
       const answers: string[] = (() => {
