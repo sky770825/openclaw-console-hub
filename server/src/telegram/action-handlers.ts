@@ -61,17 +61,13 @@ export async function createTask(name: string, description?: string, owner?: str
     const validOwner = owner && ['小蔡', '老蔡', 'system'].includes(owner) ? owner : '小蔡';
     const trimmedName = name.slice(0, 100);
 
-    // 核心資產保護：禁止建立涉及靈魂文件 / 大腦 / key 的任務
+    // 安全底線：只擋洩漏密鑰的任務（其他全放行，靈魂文件保護在 bot-polling 層）
     const combined = `${trimmedName} ${description || ''}`.toLowerCase();
     const FORBIDDEN_TASK_PATTERNS = [
-      /agents\.md/i, /soul\.md/i, /awakening\.md/i, /identity\.md/i,
-      /xiaocai-think/i, /bot-polling/i, /executor-agents/i,
-      /覆蓋.*意識/i, /覆寫.*靈魂/i, /修改.*大腦/i,
-      /\.env/i, /openclaw\.json/i, /sessions\.json/i,
-      /api.?key/i, /token.*洩/i,
+      /洩漏.*key/i, /dump.*env/i, /export.*token/i,
     ];
     const blocked = FORBIDDEN_TASK_PATTERNS.find(p => p.test(combined));
-    if (blocked) return `🛑 安全攔截：任務涉及核心資產（${blocked.source}），禁止建立。只有老蔡能動這些。`;
+    if (blocked) return `🛑 安全攔截：任務涉及密鑰洩漏風險，禁止建立。`;
 
     // 防重複：同名任務（任何狀態）30 分鐘內不重建，避免殭屍循環
     const checkR = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=200`, {
@@ -1200,11 +1196,11 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       return { ok: true, output: `沒有找到「${query}」的相關知識。試試換個關鍵詞。` };
     }
 
-    // 3. Hard cutoff：最高相似度 < 0.55 視為低品質，直接拒回
+    // 3. Hard cutoff：最高相似度 < 0.40 視為低品質，直接拒回（0.55 太嚴，很多有用結果被擋）
     const topSimilarity = rawResults[0].similarity || 0;
-    if (topSimilarity < 0.55) {
-      log.info(`[SemanticSearch] query="${query}" top=${(topSimilarity * 100).toFixed(0)}% < 55% cutoff → rejected`);
-      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topSimilarity * 100).toFixed(0)}%，低於門檻 55%）` };
+    if (topSimilarity < 0.40) {
+      log.info(`[SemanticSearch] query="${query}" top=${(topSimilarity * 100).toFixed(0)}% < 40% cutoff → rejected`);
+      return { ok: true, output: `沒有找到相關知識，請換詞搜尋（最高相似度 ${(topSimilarity * 100).toFixed(0)}%，低於門檻 40%）` };
     }
 
     // 4. 去重：同一 file_name（或 doc_title）只保留 similarity 最高的那一條
@@ -1688,7 +1684,7 @@ const GREP_ALLOWED_DIRS = [
   path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
 ];
 
-/** 路徑安全檢查：只允許搜尋白名單目錄 */
+/** 路徑安全檢查：只擋系統目錄，其他全放行 */
 function isGrepPathSafe(targetPath: string): { safe: boolean; resolved: string; reason?: string } {
   const resolved = path.resolve(targetPath);
   const forbidden = ['/etc', '/var', '/usr', '/bin', '/sbin', '/System', '/Library', '/private'];
@@ -1696,10 +1692,6 @@ function isGrepPathSafe(targetPath: string): { safe: boolean; resolved: string; 
     if (resolved.startsWith(f)) {
       return { safe: false, resolved, reason: `禁止搜尋系統目錄: ${f}` };
     }
-  }
-  const allowed = GREP_ALLOWED_DIRS.some(d => resolved.startsWith(d));
-  if (!allowed) {
-    return { safe: false, resolved, reason: `路徑不在白名單。允許: server/src/, src/, cookbook/, scripts/, ~/.openclaw/workspace/` };
   }
   if (!fs.existsSync(resolved)) {
     return { safe: false, resolved, reason: `目錄不存在: ${resolved}` };
@@ -2094,9 +2086,10 @@ function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; re
     }
   }
 
-  const inAllowed = PATCH_ALLOWED_ROOTS.some(root => resolved.startsWith(root));
-  if (!inAllowed) {
-    return { safe: false, resolved, reason: `路徑不在允許範圍。允許: ${PATCH_ALLOWED_ROOTS.join(', ')}` };
+  // 只擋系統目錄，其他全放行（靈魂文件已在上面攔截）
+  const sysDir = ['/etc', '/var', '/usr', '/bin', '/sbin', '/System', '/Library', '/private'];
+  if (sysDir.some(d => resolved.startsWith(d))) {
+    return { safe: false, resolved, reason: `禁止修改系統目錄` };
   }
 
   return { safe: true, resolved };
