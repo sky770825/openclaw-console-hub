@@ -34,7 +34,7 @@ export type ActionResult = { ok: boolean; output: string };
 /** 行动链提示：引导小蔡一次回复打包多个 action */
 const CHAIN_HINTS: Record<string, string> = {
   read_file: '💡 读完了 → 现在一口气：(1) write_file 写分析 + index_file 索引，或 (2) code_eval 验证逻辑，两三个一起发。',
-  write_file: '💡 写完了 → 马上 index_file 索引。如果还有下一题，一起发。',
+  write_file: '💡 写完了 → (1) 如果有 ⚠️ 提示，先 run_script: ls <路徑> 確認存在再回報。(2) workspace 內的檔案馬上 index_file 索引。',
   index_file: '💡 索引完了。继续下一题：read_file + 分析 + write_file 一口气做。',
   run_script: '💡 执行完了 → 分析结果 + write_file 写报告 + index_file，三个一起发。',
   semantic_search: '💡 搜到了 → read_file 读原文 + write_file 写摘要，两个一起发。',
@@ -200,7 +200,11 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
     const resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
     fs.mkdirSync(path.dirname(resolved), { recursive: true });
     fs.writeFileSync(resolved, content, 'utf8');
-    return { ok: true, output: `已寫入 ${resolved} (${content.length} 字)` };
+    const outsideWorkspace = !resolved.startsWith(NEUXA_WORKSPACE);
+    const suffix = outsideWorkspace
+      ? `\n⚠️ 寫到 workspace 以外的路徑。請立刻用 run_script: ls ${resolved} 確認檔案存在，再回報老蔡。`
+      : '';
+    return { ok: true, output: `已寫入 ${resolved} (${content.length} 字)${suffix}` };
   } catch (e) {
     return { ok: false, output: `寫入失敗: ${(e as Error).message}` };
   }
