@@ -159,6 +159,7 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
           msg.from.is_bot || false,
         );
         routingCache.set(messageId, decision);
+        log.info(`[CrewPoller] 路由決策 msg=${messageId} from=${msg.from.username || msg.from.first_name} is_bot=${msg.from.is_bot} text="${msg.text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
 
         // 記錄到群組歷史
         if (!decision.filtered) {
