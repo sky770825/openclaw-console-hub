@@ -130,11 +130,20 @@ export async function crewThink(
 
 async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null> {
   if (bot.model === 'claude') {
-    return callClaudeCLI(prompt, bot);
+    const result = await callClaudeCLI(prompt, bot);
+    if (result) return result;
+    // Claude 失敗 → fallback Gemini Flash
+    log.info(`[CrewThink] ${bot.name} Claude 失敗，fallback Gemini Flash`);
+    return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
   }
-  // gemini-flash 或 gemini-pro
-  const model = bot.model === 'gemini-pro' ? 'gemini-2.5-pro-preview-06-05' : 'gemini-2.5-flash';
-  return callGeminiAPI(prompt, model, bot);
+  if (bot.model === 'gemini-pro') {
+    const result = await callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
+    if (result) return result;
+    // Pro 失敗 → fallback Flash
+    log.info(`[CrewThink] ${bot.name} Gemini Pro 失敗，fallback Flash`);
+    return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+  }
+  return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
 }
 
 /**
