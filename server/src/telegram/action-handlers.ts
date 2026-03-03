@@ -1158,7 +1158,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 
     const { data: results, error } = await sb.rpc('match_embeddings', {
       query_embedding: JSON.stringify(queryVector),
-      match_threshold: 0.3,
+      match_threshold: 0.5,
       match_count: safeLimit,
       search_mode: safeMode,
     });
