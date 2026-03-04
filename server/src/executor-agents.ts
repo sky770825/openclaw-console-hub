@@ -9,6 +9,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import type { AgentType, Task, Run, AgentExecutorConfig } from './types.js';
+import { CREW_BOTS, type CrewBotConfig } from './telegram/crew-bots/crew-config.js';
 
 const log = createLogger('executor-agents');
 
@@ -245,6 +246,39 @@ export class AgentSelector {
 
     // 預設使用 OpenClaw
     return 'openclaw';
+  }
+
+  /**
+   * 根據 task.domain + task.tech 選出最匹配的 crew bot（Phase 1: log only）
+   */
+  static selectCrewBot(task: Task): CrewBotConfig | null {
+    if (!task.domain && (!task.tech || task.tech.length === 0)) return null;
+
+    let bestBot: CrewBotConfig | null = null;
+    let bestScore = 0;
+
+    for (const bot of CREW_BOTS) {
+      if (!bot.token) continue;
+      let score = 0;
+
+      // domain 精確匹配 +10
+      if (task.domain && bot.domain === task.domain) score += 10;
+
+      // tech 交集匹配 +3 per hit
+      if (task.tech && bot.techKeywords) {
+        for (const t of task.tech) {
+          if (bot.techKeywords.some(bk => bk === t || t.includes(bk) || bk.includes(t))) {
+            score += 3;
+          }
+        }
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestBot = bot;
+      }
+    }
+    return bestBot;
   }
 
   /**

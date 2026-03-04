@@ -84,6 +84,14 @@ export interface Task {
     primary: string;
     fallbacks?: string[];
   };
+  /** 職能領域（派工用） */
+  domain?: 'engineering' | 'intelligence' | 'data' | 'strategy' | 'business' | 'operations';
+  /** 技術標籤（派工匹配用，如 ['react', 'testing', 'security']） */
+  tech?: string[];
+  /** 最大重試次數（預設 3） */
+  maxRetries?: number;
+  /** 當前重試次數 */
+  retryCount?: number;
   updatedAt: string;
   createdAt: string;
   /** 來源發想審核 ID（由「通過+轉任務」產生） */

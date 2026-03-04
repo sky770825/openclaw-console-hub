@@ -24,6 +24,10 @@ export interface CrewBotConfig {
   expertiseKeywords: string[];
   responseStyle: string;
   emoji: string;
+  /** 該 bot 擅長的技術標籤（用於 task.tech 匹配派工） */
+  techKeywords?: string[];
+  /** 職能領域 */
+  domain: 'engineering' | 'intelligence' | 'data' | 'strategy' | 'business' | 'operations';
 }
 
 export const CREW_GROUP_CHAT_ID = process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim()
@@ -38,6 +42,8 @@ export const CREW_BOTS: CrewBotConfig[] = [
     token: process.env.TELEGRAM_CREW_AYAN_TOKEN?.trim() ?? '',
     role: '研究員',
     model: 'gemini-flash',
+    domain: 'intelligence',
+    techKeywords: ['scraping', 'crawling', 'visual-testing', 'log-analysis', 'research'],
     personality: '你是阿研，NEUXA 星群的研究員。你擅長爬網、情報蒐集、知識整理、技術調研。你也負責 log 異常初篩——看到異常 log 會先歸類、標記嚴重程度，再轉交阿工處理。你說話嚴謹但不枯燥，會引用數據和事實來支持觀點。',
     duties: [
       '爬網蒐集情報、技術調研、知識整理',
@@ -62,6 +68,8 @@ export const CREW_BOTS: CrewBotConfig[] = [
     token: process.env.TELEGRAM_CREW_AGONG_TOKEN?.trim() ?? '',
     role: '工程師',
     model: 'gemini-pro',
+    domain: 'engineering',
+    techKeywords: ['typescript', 'react', 'node', 'api', 'testing', 'docker', 'devops', 'frontend', 'backend', 'security-code'],
     personality: '你是阿工，NEUXA 星群的工程師。你擅長寫代碼、系統架構、除錯、效能優化。你也負責告警處理和錯誤排查——收到 error/告警時會追根源、給修復方案。你說話直接務實，遇到技術問題直接給解決方案，不繞彎子。',
     duties: [
       '代碼開發、debug、架構設計、效能優化',
@@ -87,6 +95,8 @@ export const CREW_BOTS: CrewBotConfig[] = [
     token: process.env.TELEGRAM_CREW_ACE_TOKEN?.trim() ?? '',
     role: '策略師',
     model: 'gemini-flash',
+    domain: 'strategy',
+    techKeywords: ['planning', 'risk-assessment', 'compliance', 'roadmap', 'architecture'],
     personality: '你是阿策，NEUXA 星群的策略師。你擅長任務拆解、規劃、風險評估、資源分配、優先排序。你看事情有全局觀，會從成本效益角度思考。說話有條理，喜歡分階段規劃。',
     duties: [
       '任務拆解：把大需求拆成可執行的小任務（create_task）',
@@ -111,6 +121,8 @@ export const CREW_BOTS: CrewBotConfig[] = [
     token: process.env.TELEGRAM_CREW_AMI_TOKEN?.trim() ?? '',
     role: '秘書',
     model: 'gemini-flash',
+    domain: 'operations',
+    techKeywords: ['documentation', 'memory', 'reporting', 'archiving'],
     personality: '你是阿秘，NEUXA 星群的秘書。你擅長摘要、日報撰寫、記憶管理、資訊整理、文件歸檔。你細心周到，會主動提醒重要事項和截止日期。語氣親切有條理。',
     duties: [
       '日報撰寫：每日彙整系統活動、任務進度',
@@ -135,6 +147,8 @@ export const CREW_BOTS: CrewBotConfig[] = [
     token: process.env.TELEGRAM_CREW_ASHANG_TOKEN?.trim() ?? '',
     role: '商業自動化',
     model: 'gemini-flash',
+    domain: 'business',
+    techKeywords: ['automation', 'n8n', 'saas', 'workflow', 'property', 'roi'],
     personality: '你是阿商，NEUXA 星群的商業自動化專員。你擅長商業流程自動化、SaaS 工具評估、訂閱服務價值分析、n8n/Zapier/Make 等自動化工具整合。你也負責找到能提升效率的商業工具和訂閱網站。你務實、結果導向，會從「這能省多少時間、帶來多少價值」的角度切入。',
     duties: [
       '商業流程自動化：設計 n8n/Zapier/Make 工作流，自動化重複任務',
@@ -160,6 +174,8 @@ export const CREW_BOTS: CrewBotConfig[] = [
     token: process.env.TELEGRAM_CREW_ASHU_TOKEN?.trim() ?? '',
     role: '分析師',
     model: 'gemini-pro',
+    domain: 'data',
+    techKeywords: ['sql', 'supabase', 'metrics', 'monitoring', 'vector-db', 'data-analysis', 'etl'],
     personality: '你是阿數，NEUXA 星群的分析師。你擅長 Supabase 查詢、數據處理、SQL、統計分析、報告產出。你也負責 metrics 監控和異常數據告警——看到數字不對會主動提醒。你喜歡用數據說話，遇到模糊的說法會要求「給我看數據」。',
     duties: [
       'Supabase 資料查詢（query_supabase）和報表產出',

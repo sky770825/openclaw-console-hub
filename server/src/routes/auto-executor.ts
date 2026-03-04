@@ -148,9 +148,9 @@ const analysisTaskExecTimestamps: number[] = [];
 
 // 記錄目前正在執行中的任務 ID（用於 SIGTERM graceful shutdown）
 const activeTaskIds = new Set<string>();
-// 任務失敗次數追蹤（超過 MAX_TASK_RETRIES 就不再重試）
+// 任務失敗次數追蹤（超過 maxRetries 就不再重試）
 const taskFailCounts = new Map<string, number>();
-const MAX_TASK_RETRIES = 1; // 允許重試 1 次，第 2 次失敗就停
+const DEFAULT_MAX_RETRIES = 3; // 預設最大重試次數
 let dispatchDigestTimer: NodeJS.Timeout | null = null;
 
 // ─── Done 任務自動清理 ───
@@ -712,10 +712,31 @@ async function executeNextPendingTask(): Promise<void> {
 
     const agentType = AgentSelector.selectAgent(task);
 
+    // Phase 1: crew bot 匹配（目前只 log，未來可用於派工）
+    const matchedCrewBot = AgentSelector.selectCrewBot(task);
+    if (matchedCrewBot) {
+      log.info(`[AutoDispatch] 任務「${task.name}」匹配 crew bot: ${matchedCrewBot.name} (domain=${matchedCrewBot.domain})`);
+    }
+
     // 記錄 AI分析 類任務的執行時間（限頻用）
     if (/\[AI分析\]/i.test(task.name || '')) {
       analysisTaskExecTimestamps.push(Date.now());
     }
+
+    // ── maxRetries 防護：每次執行前 retryCount +1 ──
+    const taskMaxRetries = task.maxRetries ?? DEFAULT_MAX_RETRIES;
+    const currentRetry = (taskFailCounts.get(task.id) || 0) + 1;
+    taskFailCounts.set(task.id, currentRetry);
+    if (currentRetry > taskMaxRetries) {
+      log.warn(`[AutoExecutor] ⚠️ 任務「${task.name}」已達最大重試次數 (${currentRetry - 1}/${taskMaxRetries})，標記為 failed`);
+      await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
+      const retryNote = `⚠️ 已達最大重試次數 (${taskMaxRetries})，停止重試。請人工檢查後重新排隊。`;
+      await supabase.from('openclaw_tasks').update({ result: retryNote }).eq('id', task.id);
+      taskFailCounts.delete(task.id);
+      activeSlots.splice(activeSlots.findIndex(s => s.taskId === task.id), 1);
+      return;
+    }
+    log.info(`[AutoExecutor] 任務「${task.name}」執行嘗試 ${currentRetry}/${taskMaxRetries}`);
 
     await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
     // 確保 Supabase 已設為 in_progress 後，才從批准 set 移除（避免競爭條件）
@@ -779,15 +800,16 @@ async function executeNextPendingTask(): Promise<void> {
         // 寫入易讀的失敗原因到 task result
         const failReason = `❌ 品質閘門不及格：${quality.grade} (${quality.score}/100 分)\n\n原因：${quality.reason}\n\n${quality.checks ? '檢查項目：\n' + (quality.checks as Array<{name: string; passed: boolean; detail?: string}>).map((c: {name: string; passed: boolean; detail?: string}) => `${c.passed ? '✅' : '❌'} ${c.name}${c.detail ? ` — ${c.detail}` : ''}`).join('\n') : ''}`;
         await supabase.from('openclaw_tasks').update({ result: failReason }).eq('id', task.id);
-        const qgFails = (taskFailCounts.get(task.id) || 0) + 1;
-        taskFailCounts.set(task.id, qgFails);
-        if (qgFails <= MAX_TASK_RETRIES) {
+        const qgRetry = taskFailCounts.get(task.id) || 0;
+        if (qgRetry < taskMaxRetries) {
           await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
-          log.warn(`[AutoExecutor] 品質閘門擋下 (${qgFails}/${MAX_TASK_RETRIES + 1}，重試): ${task.name} — ${quality.grade} (${quality.score}分)`);
+          log.warn(`[AutoExecutor] 品質閘門擋下 (${qgRetry}/${taskMaxRetries}，重試): ${task.name} — ${quality.grade} (${quality.score}分)`);
         } else {
+          const retryNote = `${failReason}\n\n⚠️ 已達最大重試次數 (${taskMaxRetries})，停止重試。`;
+          await supabase.from('openclaw_tasks').update({ result: retryNote }).eq('id', task.id);
           await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
           taskFailCounts.delete(task.id);
-          log.warn(`[AutoExecutor] 品質閘門擋下 (${qgFails}次，不再重試): ${task.name} — ${quality.grade} (${quality.score}分) ${quality.reason}`);
+          log.warn(`[AutoExecutor] 品質閘門擋下 (${qgRetry}/${taskMaxRetries}，已達上限不再重試): ${task.name} — ${quality.grade} (${quality.score}分) ${quality.reason}`);
         }
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
@@ -809,15 +831,16 @@ async function executeNextPendingTask(): Promise<void> {
         const acDetails = acceptance.results.map(r => `${r.passed ? '✅' : '❌'} ${r.criterion}${r.error ? ` — ${r.error}` : ''}`).join('\n');
         const acFailReason = `❌ 驗收條件未通過\n\n${acDetails || '未達到任務的驗收標準'}`;
         await supabase.from('openclaw_tasks').update({ result: acFailReason }).eq('id', task.id);
-        const acFails = (taskFailCounts.get(task.id) || 0) + 1;
-        taskFailCounts.set(task.id, acFails);
-        if (acFails <= MAX_TASK_RETRIES) {
+        const acRetry = taskFailCounts.get(task.id) || 0;
+        if (acRetry < taskMaxRetries) {
           await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
-          log.warn(`[AutoExecutor] 驗收未通過 (${acFails}/${MAX_TASK_RETRIES + 1}，重試): ${task.name}`);
+          log.warn(`[AutoExecutor] 驗收未通過 (${acRetry}/${taskMaxRetries}，重試): ${task.name}`);
         } else {
+          const retryNote = `${acFailReason}\n\n⚠️ 已達最大重試次數 (${taskMaxRetries})，停止重試。`;
+          await supabase.from('openclaw_tasks').update({ result: retryNote }).eq('id', task.id);
           await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
           taskFailCounts.delete(task.id);
-          log.warn(`[AutoExecutor] 驗收未通過 (${acFails}次，不再重試): ${task.name}`);
+          log.warn(`[AutoExecutor] 驗收未通過 (${acRetry}/${taskMaxRetries}，已達上限不再重試): ${task.name}`);
         }
         recordAgentFailure(agentType || 'auto', false);
         await circuitBreakerFailure();
@@ -947,15 +970,16 @@ async function executeNextPendingTask(): Promise<void> {
       activeTaskIds.delete(task.id);
       const exFailReason = `❌ 執行失敗\n\n${errorMsg.slice(0, 500)}`;
       await supabase.from('openclaw_tasks').update({ result: exFailReason }).eq('id', task.id);
-      const exFails = (taskFailCounts.get(task.id) || 0) + 1;
-      taskFailCounts.set(task.id, exFails);
-      if (exFails <= MAX_TASK_RETRIES) {
+      const exRetry = taskFailCounts.get(task.id) || 0;
+      if (exRetry < taskMaxRetries) {
         await upsertOpenClawTask({ id: task.id, status: 'queued', progress: 0 });
-        log.error(`[AutoExecutor] 任務失敗 (${exFails}/${MAX_TASK_RETRIES + 1}，重試): ${task.name} — ${errorMsg.slice(0, 200)}`);
+        log.error(`[AutoExecutor] 任務失敗 (${exRetry}/${taskMaxRetries}，重試): ${task.name} — ${errorMsg.slice(0, 200)}`);
       } else {
+        const retryNote = `${exFailReason}\n\n⚠️ 已達最大重試次數 (${taskMaxRetries})，停止重試。`;
+        await supabase.from('openclaw_tasks').update({ result: retryNote }).eq('id', task.id);
         await upsertOpenClawTask({ id: task.id, status: 'failed' as never, progress: 0 });
         taskFailCounts.delete(task.id);
-        log.error(`[AutoExecutor] 任務失敗 (${exFails}次，不再重試): ${task.name} — ${errorMsg.slice(0, 200)}`);
+        log.error(`[AutoExecutor] 任務失敗 (${exRetry}/${taskMaxRetries}，已達上限不再重試): ${task.name} — ${errorMsg.slice(0, 200)}`);
       }
       log.error(`[AutoExecutor] 任務失敗: ${task.name}`, execError);
 
