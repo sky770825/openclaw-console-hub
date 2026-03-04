@@ -2183,7 +2183,11 @@ async function handleGrepProject(
     return { ok: false, output: 'grep_project 需要 pattern 參數（至少 2 個字）' };
   }
 
-  const targetDir = searchPath || `${PROJECT_ROOT}/server/src/`;
+  let targetDir = searchPath || `${PROJECT_ROOT}/server/src/`;
+  // 自動修正：如果 searchPath 以 server/src 開頭，不重複拼接
+  if (searchPath && searchPath.startsWith('server/') && !searchPath.startsWith('/')) {
+    targetDir = `${PROJECT_ROOT}/${searchPath}`;
+  }
   const pathCheck = isGrepPathSafe(targetDir);
   if (!pathCheck.safe) return { ok: false, output: `🚫 ${pathCheck.reason}` };
 
