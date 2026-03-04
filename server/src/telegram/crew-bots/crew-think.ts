@@ -46,11 +46,13 @@ export function pushHistory(entry: CrewHistoryEntry): void {
 
 /**
  * 完整 AI 思考 — 依 bot.model 選擇引擎
+ * mode: 'auto'（預設，討論用 Flash、執行 action 才升級）/ 'full'（直接用原配模型）
  */
 export async function crewThink(
   bot: CrewBotConfig,
   userMessage: string,
   senderName: string,
+  mode: 'auto' | 'full' = 'auto',
 ): Promise<string | null> {
   // 靈魂核心（快取，不重複讀）
   const soulCore = loadSoulCoreOnce();
@@ -72,12 +74,17 @@ export async function crewThink(
   let finalReply = '';
   const allActionResults: string[] = [];
 
+  // 模型策略：auto 模式下，step 0 一律 Flash（省額度），有 action 才升級原配模型
+  let useFullModel = mode === 'full';
+
   for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
     const input = step === 0
       ? fullPrompt
       : `[系統回饋] 你上一步的 action 執行結果：\n${allActionResults.slice(-5).join('\n')}\n\n請繼續處理，或給出最終回覆（不帶 action JSON）。`;
 
-    const reply = await callAI(input, bot);
+    const reply = useFullModel
+      ? await callAI(input, bot)
+      : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
     if (!reply) {
       if (step === 0) return null;
       break;
@@ -90,6 +97,12 @@ export async function crewThink(
     if (!actions || actions.length === 0) {
       finalReply = cleanReply;
       break;
+    }
+
+    // 有 action → 後續步驟升級到原配模型（Claude/Pro）
+    if (!useFullModel) {
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} 偵測到 action，升級到 ${bot.model} 模型`);
+      useFullModel = true;
     }
 
     // 執行 actions
