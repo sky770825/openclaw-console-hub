@@ -24,7 +24,7 @@ const patrolTasks: PatrolTask[] = [
   {
     botId: 'ayan',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
-      '{"action":"run_script","command":"tail -50 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n\n' +
+      '{"action":"run_script","command":"tail -50 ~/.openclaw/logs/server.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n\n' +
       '拿到結果後，分析有無異常。有異常就報告嚴重程度，沒異常就說「巡邏完畢，系統正常」。',
     lastRun: 0,
   },
