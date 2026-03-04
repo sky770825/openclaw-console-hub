@@ -354,8 +354,15 @@ export async function handleListDir(actionPath: string): Promise<ActionResult> {
   if (!check.safe) return { ok: false, output: `🚫 ${check.reason}` };
 
   try {
-    const resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
-    if (!fs.existsSync(resolved)) return { ok: false, output: `目錄不存在: ${actionPath}` };
+    let resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
+    // fallback：workspace 找不到就試專案根目錄
+    if (!fs.existsSync(resolved) && !path.isAbsolute(actionPath)) {
+      const altResolved = path.resolve(PROJECT_ROOT, actionPath);
+      if (fs.existsSync(altResolved)) {
+        resolved = altResolved;
+      }
+    }
+    if (!fs.existsSync(resolved)) return { ok: false, output: `目錄不存在: ${actionPath}（已嘗試 ${NEUXA_WORKSPACE} 和 ${PROJECT_ROOT}）` };
     const entries = fs.readdirSync(resolved, { withFileTypes: true });
     const lines = entries.slice(0, 50).map(e => {
       const suffix = e.isDirectory() ? '/' : '';
