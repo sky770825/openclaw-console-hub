@@ -6,6 +6,9 @@
 import { CREW_BOTS, CREW_BOT_USERNAMES, SYSTEM_BOT_USERNAMES } from './crew-config.js';
 import type { CrewBotConfig } from './crew-config.js';
 
+/** 管理員 username（享有與小蔡相同的低門檻 + 全員集合權限） */
+const ADMIN_USERNAMES = new Set(['gousmaaa', 'sky770825']);
+
 export interface RoutingDecision {
   respondingBots: Array<{ botId: string; score: number }>;
   filtered: boolean;
@@ -38,9 +41,11 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'bot message' };
   }
 
-  // ─── Layer 2: 已知 crew/system bot username 過濾（小蔡指揮官例外） ───
+  // ─── Layer 2: 已知 crew/system bot username 過濾（指揮官例外） ───
   const isXiaocaiCommand = senderIsBot && lowerUsername === 'xiaoji_cai_bot';
-  if (!isXiaocaiCommand && (CREW_BOT_USERNAMES.has(lowerUsername) || SYSTEM_BOT_USERNAMES.has(lowerUsername))) {
+  const isAdmin = ADMIN_USERNAMES.has(lowerUsername);
+  const isCommander = isXiaocaiCommand || isAdmin; // 管理員 = 指揮官權限
+  if (!isCommander && (CREW_BOT_USERNAMES.has(lowerUsername) || SYSTEM_BOT_USERNAMES.has(lowerUsername))) {
     return { respondingBots: [], filtered: true, filterReason: 'known bot username' };
   }
 
@@ -63,16 +68,17 @@ export function routeMessage(
   while (globalResponses.length > 0 && now - globalResponses[0] > GLOBAL_WINDOW_MS) {
     globalResponses.shift();
   }
-  if (!isXiaocaiCommand && globalResponses.length >= GLOBAL_LIMIT_PER_MIN) {
+  if (!isCommander && globalResponses.length >= GLOBAL_LIMIT_PER_MIN) {
     return { respondingBots: [], filtered: true, filterReason: 'global rate limit' };
   }
 
-  // ─── 指揮官全員集合 — 小蔡發的訊息含「各位」「大家」「全員」→ 所有 bot 回覆 ───
-  if (isXiaocaiCommand) {
-    const ALL_HANDS_KEYWORDS = ['各位', '大家', '全員', '所有人', '夥伴們', '請大家', '全體'];
-    const isAllHands = ALL_HANDS_KEYWORDS.some(kw => lText.includes(kw));
+  // ─── 指揮官全員集合 — 指揮官（小蔡/管理員）含「各位」「大家」「全員」→ 所有 bot 回覆 ───
+  const ALL_HANDS_KEYWORDS = ['各位', '大家', '全員', '所有人', '夥伴們', '請大家', '全體', '在嗎'];
+  const isAllHands = ALL_HANDS_KEYWORDS.some(kw => lText.includes(kw));
 
-    if (isAllHands) {
+  if (isCommander && isAllHands) {
+    // 指揮官全員集合
+    {
       const allBots = CREW_BOTS
         .filter(b => b.token)
         .map(b => ({ botId: b.id, score: 20 }));
@@ -122,16 +128,28 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'mentioned bot cooling down' };
   }
 
-  // 指揮官指令門檻降低：score >= 2 就回；一般訊息 score >= 5
+  // 一般用戶「全員集合」— 非指揮官但包含「各位」「大家」等 → 最多回 3 個 bot（需冷卻檢查）
+  if (!isCommander && isAllHands) {
+    const allBots = CREW_BOTS
+      .filter(b => b.token && !isCoolingDown(b.id, now))
+      .slice(0, 3) // 一般用戶最多觸發 3 個
+      .map(b => ({ botId: b.id, score: 15 }));
+    if (allBots.length > 0) {
+      for (const r of allBots) recordResponse(r.botId, now);
+      return { respondingBots: allBots, filtered: false };
+    }
+  }
+
+  // 指揮官門檻 2 / 一般訊息門檻 3（從 5 降到 3）
   // 指揮官模式允許多個 bot 回覆（score >= 2 的都回）
-  const scoreThreshold = isXiaocaiCommand ? 2 : 5;
+  const scoreThreshold = isCommander ? 2 : 3;
   const top = scores[0];
   if (!top || top.score < scoreThreshold) {
     return { respondingBots: [], filtered: true, filterReason: 'no relevant expertise' };
   }
 
   const responding: Array<{ botId: string; score: number }> = [];
-  if (isXiaocaiCommand) {
+  if (isCommander) {
     // 指揮官模式：所有過門檻的 bot 都回
     for (const s of scores) {
       if (s.score >= scoreThreshold && !isCoolingDown(s.botId, now)) {
