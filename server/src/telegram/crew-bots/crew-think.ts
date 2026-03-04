@@ -18,9 +18,18 @@ import { CREW_BOTS } from './crew-config.js';
 const log = createLogger('crew-think');
 
 const CLAUDE_TIMEOUT_MS = 90_000;
-const GEMINI_TIMEOUT_MS = 30_000;       // Gemini API 快很多
+const GEMINI_TIMEOUT_MS = 45_000;       // 加大 timeout 配合 4096 token 輸出
 const MAX_CHAIN_STEPS = 6;
 const MAX_ACTION_OUTPUT = 4000;
+
+// ── 合法 action 白名單（防止幻覺 action）──
+const VALID_ACTIONS = new Set([
+  'create_task', 'update_task', 'read_file', 'write_file', 'list_dir',
+  'run_script', 'ask_ai', 'semantic_search', 'query_supabase',
+  'grep_project', 'find_symbol', 'analyze_symbol', 'patch_file',
+  'code_eval', 'index_file', 'reindex_knowledge', 'web_search',
+  'web_browse', 'proxy_fetch', 'delegate_agents', 'mkdir', 'move_file',
+]);
 
 // ── Claude 併發鎖 ──
 let claudeRunning = 0;
@@ -75,9 +84,18 @@ export async function crewThink(
   const botMemory = loadBotMemory(bot.id, userMessage);
 
   const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, awakening, sysStatus, taskSnap, botMemory);
-  const recentChat = groupHistory.slice(-10)
-    .map(h => `[${h.fromName || (h.role === 'model' ? 'bot' : '用戶')}] ${h.text}`)
-    .join('\n');
+  const MAX_HISTORY_CHARS = 3000;
+  const recentEntries = groupHistory.slice(-15).map(h => {
+    const name = h.fromName || (h.role === 'user' ? '用戶' : 'bot');
+    const text = h.text.length > 200 ? h.text.slice(0, 200) + '…' : h.text;
+    return `[${name}] ${text}`;
+  });
+  // 從舊的開始刪到不超過限制
+  let recentChat = recentEntries.join('\n');
+  while (recentChat.length > MAX_HISTORY_CHARS && recentEntries.length > 1) {
+    recentEntries.shift();
+    recentChat = recentEntries.join('\n');
+  }
 
   const fullPrompt = `${systemPrompt}\n\n## 最近群組對話\n${recentChat}\n\n## 新訊息\n[${senderName}] ${userMessage}`;
 
@@ -127,6 +145,11 @@ export async function crewThink(
     for (const jsonStr of actions) {
       try {
         const action = JSON.parse(jsonStr) as Record<string, string>;
+        if (!VALID_ACTIONS.has(action.action)) {
+          allActionResults.push(`🚫 未知 action: ${action.action}（可用：semantic_search, read_file, query_supabase 等）`);
+          log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 幻覺 action=${action.action}`);
+          continue;
+        }
         const result = await executeNEUXAAction(action);
         const output = result.output.length > MAX_ACTION_OUTPUT
           ? result.output.slice(0, MAX_ACTION_OUTPUT) + '...'
@@ -160,12 +183,57 @@ export async function crewThink(
   // 品質評分（追蹤用）
   scoreReply(bot, userMessage, clean, allActionResults);
 
+  // 任務自動回報（bot 做完事，自動記錄到任務系統）
+  autoReportTask(bot, userMessage, allActionResults, clean);
+
   return { reply: clean || null, actionResults: allActionResults };
 }
 
-// ── 品質評分 ──
+// ── 任務自動回報 ──
+
+/**
+ * 自動回報任務 — bot 執行了有意義的 action 後，自動在任務系統建立紀錄
+ * 條件：至少有 1 個成功的 write/patch/create_task action
+ */
+function autoReportTask(
+  bot: CrewBotConfig,
+  userMessage: string,
+  actionResults: string[],
+  reply: string,
+): void {
+  try {
+    // 只有真正做了事（write/patch/create_task 成功）才回報
+    const productiveActions = actionResults.filter(r =>
+      r.startsWith('✅') &&
+      (r.includes('write_file') || r.includes('patch_file') || r.includes('create_task'))
+    );
+    if (productiveActions.length === 0) return;
+
+    const taskName = `[${bot.name}] ${userMessage.slice(0, 40).replace(/\n/g, ' ')}`;
+    const taskResult = productiveActions.map(a => a.slice(0, 80)).join('; ');
+
+    // 透過 executeNEUXAAction 建立已完成的任務
+    executeNEUXAAction({
+      action: 'create_task',
+      name: taskName,
+      description: `${bot.name}自動完成：${reply.slice(0, 100)}`,
+      status: 'done',
+      result: taskResult.slice(0, 200),
+      owner: bot.name,
+    }).catch(() => {});
+
+    log.info(`[CrewAutoReport] ${bot.emoji} ${bot.name} 自動回報任務: ${taskName.slice(0, 50)}`);
+  } catch {
+    // 失敗不影響主流程
+  }
+}
+
+// ── 品質評分（10 分制） ──
 
 const GENERIC_PHRASES = ['建議你', '可以試試', '你可以', '建議查看', '你可以試試', '可以嘗試'];
+const WRITE_ACTIONS = ['write_file', 'patch_file', 'create_task'];
+const DATA_ACTIONS = ['query_supabase', 'run_script'];
+const KNOWLEDGE_CITE_PHRASES = ['根據', '知識庫', '查詢結果', '搜尋結果', '根據知識', '根據資料', '查到', '找到'];
 
 function scoreReply(
   bot: CrewBotConfig,
@@ -173,6 +241,7 @@ function scoreReply(
   finalReply: string,
   allActionResults: string[],
 ): void {
+  // 原始 5 分
   const hasAction = allActionResults.length > 0 ? 1 : 0;
   const hasSemanticSearch = allActionResults.some(r => r.includes('semantic_search')) ? 1 : 0;
   const hasSubstance = finalReply.length > 30 ? 1 : 0;
@@ -184,16 +253,64 @@ function scoreReply(
     actionSuccess = (successCount / allActionResults.length) > 0.5 ? 1 : 0;
   }
 
-  const total = hasAction + hasSemanticSearch + hasSubstance + notGeneric + actionSuccess;
+  // 新增 5 分
+  // 6. hasWriteAction — 有 write_file / patch_file / create_task（真正產出）
+  const hasWriteAction = allActionResults.some(r => WRITE_ACTIONS.some(a => r.includes(a))) ? 1 : 0;
+
+  // 7. hasDataQuery — 有 query_supabase / run_script（用數據說話）
+  const hasDataQuery = allActionResults.some(r => DATA_ACTIONS.some(a => r.includes(a))) ? 1 : 0;
+
+  // 8. citesKnowledge — 回覆中引用了知識庫結果
+  const citesKnowledge = KNOWLEDGE_CITE_PHRASES.some(p => finalReply.includes(p)) ? 1 : 0;
+
+  // 9. actionEfficiency — action 數量在 1-6 之間（太少沒做事，太多在亂試）
+  const actionCount = allActionResults.length;
+  const actionEfficiency = (actionCount >= 1 && actionCount <= 6) ? 1 : 0;
+
+  // 10. replyRelevance — 回覆長度在 50-2000 字之間（太短沒用，太長灌水）
+  const replyLen = finalReply.length;
+  const replyRelevance = (replyLen >= 50 && replyLen <= 2000) ? 1 : 0;
+
+  const total = hasAction + hasSemanticSearch + hasSubstance + notGeneric + actionSuccess
+    + hasWriteAction + hasDataQuery + citesKnowledge + actionEfficiency + replyRelevance;
 
   log.info(
-    `[CrewScore] ${bot.emoji} ${bot.name} score=${total}/5 (action=${hasAction} search=${hasSemanticSearch} substance=${hasSubstance} notGeneric=${notGeneric} success=${actionSuccess})`,
+    `[CrewScore] ${bot.emoji} ${bot.name} score=${total}/10`
+    + ` (action=${hasAction} search=${hasSemanticSearch} substance=${hasSubstance} notGeneric=${notGeneric} success=${actionSuccess}`
+    + ` | write=${hasWriteAction} data=${hasDataQuery} cite=${citesKnowledge} efficiency=${actionEfficiency} relevance=${replyRelevance})`,
   );
 }
 
 // ── 工作紀錄自動追加 ──
 
-function appendWorkLog(botId: string, userMessage: string, actionResults: string[], reply: string): void {
+/** 去掉 reply 開頭的廢話前綴，讓摘要更有資訊量 */
+function cleanReplyPrefix(text: string): string {
+  return text
+    .replace(/^(根據搜尋結果[，,：:\s]*)/i, '')
+    .replace(/^(根據(你|您)提供的[^，,：:]*[，,：:\s]*)/i, '')
+    .replace(/^(根據(知識庫|資料庫|系統|查詢)[^，,：:]*[，,：:\s]*)/i, '')
+    .replace(/^(我已(經)?完成[^，,：:]*[，,：:\s]*)/i, '')
+    .replace(/^(我已(經)?[^，,：:]*[，,：:\s]*)/i, '')
+    .replace(/^(好的[，,：:\s]*)/i, '')
+    .replace(/^(OK[，,：:\s]*)/i, '')
+    .replace(/^(收到[，,：:\s]*)/i, '')
+    .replace(/^(了解[，,：:\s]*)/i, '')
+    .replace(/^(沒問題[，,：:\s]*)/i, '')
+    .trim();
+}
+
+/** 從 actionResults 提取去重的 action 名稱列表 */
+function extractActionNames(actionResults: string[]): string {
+  const names = new Set<string>();
+  for (const r of actionResults) {
+    // actionResults 格式: "✅ semantic_search: ..." 或 "🚫 run_script: ..."
+    const m = r.match(/^[✅🚫]\s*([a-z_]+)/);
+    if (m) names.add(m[1]);
+  }
+  return Array.from(names).join('+') || `${actionResults.length}actions`;
+}
+
+function appendWorkLog(botId: string, _userMessage: string, actionResults: string[], reply: string): void {
   // 只在有 actionResults（做了事）時才追加
   if (!actionResults || actionResults.length === 0) return;
 
@@ -210,9 +327,16 @@ function appendWorkLog(botId: string, userMessage: string, actionResults: string
     const now = new Date();
     const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    const questionSnippet = userMessage.slice(0, 30).replace(/\n/g, ' ');
-    const resultSnippet = (reply || actionResults[actionResults.length - 1] || '').slice(0, 50).replace(/\n/g, ' ');
-    const logLine = `\n- [${ts}] 問題="${questionSnippet}" actions=${actionResults.length} ${resultSnippet}`;
+    // actionSummary: 去重的 action 名稱列表（例如 "semantic_search+query_supabase+run_script"）
+    const actionSummary = extractActionNames(actionResults);
+
+    // outcomeSummary: 成功數/總數 + reply 前 40 字（去廢話前綴）
+    const successCount = actionResults.filter(r => r.startsWith('\u2705')).length;
+    const cleanedReply = cleanReplyPrefix((reply || '').replace(/\n/g, ' '));
+    const replySnippet = cleanedReply.slice(0, 40) + (cleanedReply.length > 40 ? '\u2026' : '');
+    const outcomeSummary = `${successCount}/${actionResults.length}ok ${replySnippet}`;
+
+    const logLine = `\n- [${ts}] ${actionSummary} \u2192 ${outcomeSummary}`;
 
     // 如果檔案不存在，建立含標題的初始內容
     if (!fs.existsSync(memPath)) {
@@ -300,7 +424,7 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
           temperature: 0.3,  // 低 temperature 讓模型更精確生成 action JSON
         },
         safetySettings: [
@@ -685,6 +809,12 @@ ${bot.responseStyle}
 | SOUL.md | ${_workspace}/SOUL.md |
 | AGENTS.md | ${_workspace}/AGENTS.md |
 
+## 路徑規則（違反會失敗）
+- 所有路徑用 ~ 開頭（例如 ~/.openclaw/workspace/crew/${bot.id}/MEMORY.md）
+- read_file 只能讀「檔案」，不能讀目錄 → 讀目錄用 list_dir
+- 你的個人目錄：~/.openclaw/workspace/crew/${bot.id}/
+- 別讀小蔡的記憶（~/.openclaw/workspace/MEMORY.md），那不是你的
+
 ## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
 1. **先查知識庫**（每次必做！）：semantic_search 搜相關知識 → 有結果就引用，沒結果再用其他方式
 2. 搞懂狀況：read_file / query_supabase / grep_project — **直接查，不要問要不要查**
@@ -702,11 +832,11 @@ ${bot.responseStyle}
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 {"action":"create_task","name":"名稱","description":"詳細描述"}
 {"action":"update_task","id":"t1234567890","status":"done","result":"完成摘要"}
-{"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}
+{"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}  ← 讀檔案（不能讀目錄！讀目錄用 list_dir）
 {"action":"write_file","path":"~/.openclaw/workspace/crew/${bot.id}/notes.md","content":"內容"}
 {"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}
 {"action":"reindex_knowledge","mode":"append"}
-{"action":"list_dir","path":"~/.openclaw/workspace"}
+{"action":"list_dir","path":"~/.openclaw/workspace"}  ← 看目錄內容用這個（不要用 read_file 讀目錄）
 {"action":"ask_ai","model":"flash","prompt":"問題"}
 {"action":"ask_ai","model":"pro","prompt":"架構分析","context":"背景"}
 {"action":"ask_ai","model":"claude","prompt":"代碼問題","context":"相關代碼"}
