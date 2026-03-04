@@ -38,8 +38,9 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'bot message' };
   }
 
-  // ─── Layer 2: 已知 crew/system bot username 過濾 ───
-  if (CREW_BOT_USERNAMES.has(lowerUsername) || SYSTEM_BOT_USERNAMES.has(lowerUsername)) {
+  // ─── Layer 2: 已知 crew/system bot username 過濾（小蔡指揮官例外） ───
+  const isXiaocaiCommand = senderIsBot && lowerUsername === 'xiaoji_cai_bot';
+  if (!isXiaocaiCommand && (CREW_BOT_USERNAMES.has(lowerUsername) || SYSTEM_BOT_USERNAMES.has(lowerUsername))) {
     return { respondingBots: [], filtered: true, filterReason: 'known bot username' };
   }
 
@@ -50,7 +51,6 @@ export function routeMessage(
 
   // ─── Layer 3.5: 指揮官模式 — 小蔡發的訊息不過濾，視為指令 ───
   const lText = text.toLowerCase();
-  const isXiaocaiCommand = senderIsBot && lowerUsername === 'xiaoji_cai_bot';
 
   // 非小蔡發的、但提到小蔡 → 跳過（由小蔡本人回覆）
   if (!isXiaocaiCommand && (lText.includes('小蔡') || lText.includes('@xiaoji_cai_bot'))) {
