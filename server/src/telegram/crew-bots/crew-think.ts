@@ -391,20 +391,22 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
 // ── AI 呼叫路由 ──
 
 async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null> {
-  if (bot.model === 'claude') {
+  // Claude 訂閱制模型（opus/sonnet/haiku）
+  if (bot.model.startsWith('claude-') || bot.model === 'claude') {
     const result = await callClaudeCLI(prompt, bot);
     if (result) return result;
     // Claude 失敗 → fallback Gemini Flash
-    log.info(`[CrewThink] ${bot.name} Claude 失敗，fallback Gemini Flash`);
+    log.info(`[CrewThink] ${bot.name} Claude(${bot.model}) 失敗，fallback Gemini Flash`);
     return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
   }
+  // Gemini Pro
   if (bot.model === 'gemini-pro') {
     const result = await callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
     if (result) return result;
-    // Pro 失敗 → fallback Flash
     log.info(`[CrewThink] ${bot.name} Gemini Pro 失敗，fallback Flash`);
     return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
   }
+  // Gemini Flash（預設）
   return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
 }
 
@@ -491,9 +493,13 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
       let stderr = '';
       const claudeBin = path.join(process.env.HOME || '/tmp', '.local', 'bin', 'claude');
 
+      // 根據 bot.model 選擇 CLI 模型：claude-opus→opus, claude-haiku→haiku, 其他→sonnet
+      const cliModel = bot.model === 'claude-opus' ? 'opus'
+        : bot.model === 'claude-haiku' ? 'haiku'
+        : 'sonnet';
       const child = spawn(claudeBin, [
         '-p',
-        '--model', 'sonnet',
+        '--model', cliModel,
         prompt,
       ], {
         env: (() => {
@@ -563,8 +569,8 @@ const TASK_INTENT_KEYWORDS = [
  * 條件：指揮官指令 / 訊息含任務意圖 / 訊息觸及 bot 職責關鍵字（>=2 個）
  */
 function shouldUseFullModel(bot: CrewBotConfig, message: string, senderName: string): boolean {
-  // Flash bot 不需要升級
-  if (bot.model === 'gemini-flash') return false;
+  // 輕量 bot（flash/haiku）不需要升級
+  if (bot.model === 'gemini-flash' || bot.model === 'claude-haiku') return false;
 
   const lower = message.toLowerCase();
 
@@ -890,7 +896,7 @@ ${bot.responseStyle}
 可一次放多個 action，每個獨立一行。路徑用 ~ 開頭。主工作區：~/.openclaw/workspace/
 
 ## 現在
-大腦模型：${bot.model === 'claude' ? 'Claude Sonnet 4.6' : bot.model === 'gemini-pro' ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash'}
+大腦模型：${bot.model === 'claude-opus' ? 'Claude Opus 4.6' : bot.model === 'claude-sonnet' || bot.model === 'claude' ? 'Claude Sonnet 4.6' : bot.model === 'claude-haiku' ? 'Claude Haiku 4.5' : bot.model === 'gemini-pro' ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash'}
 系統：${sysStatus}
 任務板：
 ${taskSnap}
