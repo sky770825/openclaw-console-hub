@@ -417,15 +417,24 @@ function stripActionJson(text: string): string {
 
 // ── System Prompt ──
 
-/** 讀取 bot 個人記憶檔案 */
+/** 讀取 bot 個人記憶 + 共享協作劇本 */
 function loadBotMemory(botId: string): string {
-  const memPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', botId, 'MEMORY.md');
+  const crewDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew');
+  const parts: string[] = [];
+
+  // 個人記憶
   try {
-    const content = fs.readFileSync(memPath, 'utf-8').trim();
-    return content.length > 2000 ? content.slice(0, 2000) + '\n...(截斷)' : content;
-  } catch {
-    return '';
-  }
+    const mem = fs.readFileSync(path.join(crewDir, botId, 'MEMORY.md'), 'utf-8').trim();
+    if (mem) parts.push(mem.length > 1500 ? mem.slice(0, 1500) + '\n...(截斷)' : mem);
+  } catch { /* no memory yet */ }
+
+  // 共享協作劇本
+  try {
+    const playbook = fs.readFileSync(path.join(crewDir, 'PLAYBOOK.md'), 'utf-8').trim();
+    if (playbook) parts.push(playbook.length > 1500 ? playbook.slice(0, 1500) + '\n...(截斷)' : playbook);
+  } catch { /* no playbook */ }
+
+  return parts.join('\n\n---\n\n');
 }
 
 function buildCrewPrompt(
