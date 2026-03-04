@@ -286,7 +286,19 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
     const suffix = outsideWorkspace
       ? `\n⚠️ 寫到 workspace 以外的路徑。請立刻用 run_script: ls ${resolved} 確認檔案存在，再回報老蔡。`
       : '';
-    return { ok: true, output: `已寫入 ${resolved} (${content.length} 字)${suffix}` };
+    // 寫完 .js/.ts 自動語法檢查
+    let syntaxNote = '';
+    if (/\.(js|ts|mjs|cjs)$/.test(resolved)) {
+      try {
+        const { execSync } = require('child_process');
+        execSync(`node --check "${resolved}"`, { timeout: 5000, stdio: 'pipe' });
+        syntaxNote = '\n✅ 語法檢查通過';
+      } catch (syntaxErr: unknown) {
+        const msg = syntaxErr instanceof Error ? syntaxErr.message : String(syntaxErr);
+        syntaxNote = `\n❌ 語法錯誤！請修正後重寫：${msg.split('\n').slice(0, 3).join('\n')}`;
+      }
+    }
+    return { ok: true, output: `已寫入 ${resolved} (${content.length} 字)${suffix}${syntaxNote}` };
   } catch (e) {
     return { ok: false, output: `寫入失敗: ${(e as Error).message}` };
   }

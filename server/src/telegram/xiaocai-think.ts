@@ -607,8 +607,13 @@ export async function xiaocaiThink(
     log.info(`[XiaocaiAI-Escalate] ✅ ${usedModel} 接棒成功（原模型 ${xiaocaiMainModel}），自動切回不改設定`);
   }
 
-  // 轉換 markdown → Telegram 格式
-  const clean = reply
+  // 轉換 markdown → Telegram 格式（保護 JSON action 塊不被破壞）
+  const jsonPlaceholders: string[] = [];
+  let protectedReply = reply.replace(/\{[\s\n]*"action"[\s\S]*?\n\}/g, (match) => {
+    jsonPlaceholders.push(match);
+    return `__JSON_ACTION_${jsonPlaceholders.length - 1}__`;
+  });
+  protectedReply = protectedReply
     .replace(/^#{1,6}\s*/gm, '')           // 移除標題符號
     .replace(/\*\*(.+?)\*\*/g, '*$1*')     // **粗體** → *粗體*（Telegram）
     .replace(/^[-*]\s/gm, '• ')            // - 列表 → • 列表
@@ -617,6 +622,8 @@ export async function xiaocaiThink(
     .replace(/^---+$/gm, '')               // 移除分隔線
     .replace(/\n{3,}/g, '\n\n')            // 最多兩個換行
     .trim();
+  // 還原 JSON action 塊（反引號完整保留）
+  const clean = protectedReply.replace(/__JSON_ACTION_(\d+)__/g, (_, i) => jsonPlaceholders[Number(i)]);
 
   // 更新對話歷史
   history.push({ role: 'user', text: userMessage });
