@@ -48,9 +48,12 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'too short' };
   }
 
-  // ─── Layer 3.5: 叫「小蔡」→ 跳過（由小蔡本人 bot-polling 回覆）───
+  // ─── Layer 3.5: 指揮官模式 — 小蔡發的訊息不過濾，視為指令 ───
   const lText = text.toLowerCase();
-  if (lText.includes('小蔡') || lText.includes('@xiaoji_cai_bot')) {
+  const isXiaocaiCommand = senderIsBot && lowerUsername === 'xiaoji_cai_bot';
+
+  // 非小蔡發的、但提到小蔡 → 跳過（由小蔡本人回覆）
+  if (!isXiaocaiCommand && (lText.includes('小蔡') || lText.includes('@xiaoji_cai_bot'))) {
     return { respondingBots: [], filtered: true, filterReason: 'xiaocai handles directly' };
   }
 
@@ -59,13 +62,27 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'command' };
   }
 
-  // ─── Layer 5: 全局限速 ───
+  // ─── Layer 5: 全局限速（指揮官指令不受限速） ───
   const now = Date.now();
   while (globalResponses.length > 0 && now - globalResponses[0] > GLOBAL_WINDOW_MS) {
     globalResponses.shift();
   }
-  if (globalResponses.length >= GLOBAL_LIMIT_PER_MIN) {
+  if (!isXiaocaiCommand && globalResponses.length >= GLOBAL_LIMIT_PER_MIN) {
     return { respondingBots: [], filtered: true, filterReason: 'global rate limit' };
+  }
+
+  // ─── 指揮官全員集合 — 小蔡發的訊息含「各位」「大家」「全員」→ 所有 bot 回覆 ───
+  if (isXiaocaiCommand) {
+    const ALL_HANDS_KEYWORDS = ['各位', '大家', '全員', '所有人', '夥伴們', '請大家', '全體'];
+    const isAllHands = ALL_HANDS_KEYWORDS.some(kw => lText.includes(kw));
+
+    if (isAllHands) {
+      const allBots = CREW_BOTS
+        .filter(b => b.token)
+        .map(b => ({ botId: b.id, score: 20 }));
+      for (const r of allBots) recordResponse(r.botId, now);
+      return { respondingBots: allBots, filtered: false };
+    }
   }
 
   // ─── 關鍵字計分 ───
@@ -109,14 +126,23 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'mentioned bot cooling down' };
   }
 
-  // 最高分 >= 5 → 只有最高分的 1 個 bot 回（不再允許 2 個同時回）
+  // 指揮官指令門檻降低：score >= 2 就回；一般訊息 score >= 5
+  // 指揮官模式允許多個 bot 回覆（score >= 2 的都回）
+  const scoreThreshold = isXiaocaiCommand ? 2 : 5;
   const top = scores[0];
-  if (!top || top.score < 5) {
+  if (!top || top.score < scoreThreshold) {
     return { respondingBots: [], filtered: true, filterReason: 'no relevant expertise' };
   }
 
   const responding: Array<{ botId: string; score: number }> = [];
-  if (!isCoolingDown(top.botId, now)) {
+  if (isXiaocaiCommand) {
+    // 指揮官模式：所有過門檻的 bot 都回
+    for (const s of scores) {
+      if (s.score >= scoreThreshold && !isCoolingDown(s.botId, now)) {
+        responding.push(s);
+      }
+    }
+  } else if (!isCoolingDown(top.botId, now)) {
     responding.push(top);
   }
 
