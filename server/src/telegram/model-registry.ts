@@ -38,6 +38,7 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // 其他：xAI、Kimi、DeepSeek
   // ══════════════════════════════════════════
   // ── 訂閱制 CLI（Claude Code / Codex / Cursor）——可當指揮官 + 子代理 ──
+  { id: 'claude-opus-cli', label: '🏆 Claude Opus (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   { id: 'claude-haiku-cli', label: '⚡ Claude Haiku (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   { id: 'codex-mini', label: '📦 Codex Mini (CLI)', provider: 'OpenAI-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },

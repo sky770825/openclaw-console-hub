@@ -419,16 +419,35 @@ export async function xiaocaiThink(
   const history = xiaocaiHistory.get(chatId) || [];
   const systemPrompt = buildSystemPrompt(soulCore, awakening, sysStatus, taskSnap, xiaocaiMainModel);
 
+  // ── 複雜度偵測：複雜任務直接用 Opus ──
+  const lowerMsg = userMessage.toLowerCase();
+  const isComplex = [
+    // 多步驟/架構級任務
+    '重構', 'refactor', '架構', 'architecture', '設計', 'design',
+    // 深度除錯
+    'debug', '除錯', '排查', '根因', 'root cause', '追蹤',
+    // 完整功能開發
+    '實作', '實現', 'implement', '開發', '全部', '整套',
+    // 分析/規劃
+    '分析.*方案', '規劃.*系統', '評估.*風險', '完整.*計畫',
+    // 老蔡明確指定
+    'opus', '用最強的', '認真想', '仔細分析',
+  ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
+
+  const startModel = isComplex ? 'claude-opus-cli' : xiaocaiMainModel;
+  if (isComplex) log.info(`[XiaocaiAI] 🏆 偵測到複雜任務，升級到 Opus`);
+
   // ── 階梯式升級鏈：CLI 訂閱制優先 → Gemini → API 付費最後 ──
   const ESCALATION_CHAIN = [
-    xiaocaiMainModel,                          // 第 0 層：當前主模型（預設 claude-sonnet-cli）
-    'claude-sonnet-cli',                       // 第 1 層：Claude Sonnet CLI（訂閱制免費）
-    'claude-haiku-cli',                        // 第 2 層：Claude Haiku CLI（訂閱制免費）
-    'gemini-2.5-flash',                        // 第 3 層：Gemini Flash（免費額度）
-    'gemini-2.5-pro',                          // 第 4 層：Gemini Pro（免費額度）
-    'claude-sonnet-4-6',                       // 第 5 層：Anthropic Sonnet API（付費兜底）
+    startModel,                                // 第 0 層：主模型（複雜→Opus / 一般→Sonnet）
+    'claude-opus-cli',                         // 第 1 層：Claude Opus CLI（訂閱制，複雜任務）
+    'claude-sonnet-cli',                       // 第 2 層：Claude Sonnet CLI（訂閱制，日常主力）
+    'claude-haiku-cli',                        // 第 3 層：Claude Haiku CLI（訂閱制，快速）
+    'gemini-2.5-flash',                        // 第 4 層：Gemini Flash（免費額度）
+    'gemini-2.5-pro',                          // 第 5 層：Gemini Pro（免費額度）
+    'claude-sonnet-4-6',                       // 第 6 層：Anthropic Sonnet API（付費兜底）
   ];
-  // 去重（如果主模型已經是 Pro 就不重複）
+  // 去重（如果主模型已經是某層就不重複）
   const chain = [...new Set(ESCALATION_CHAIN)];
 
   /** 嘗試用指定模型生成回覆 */
