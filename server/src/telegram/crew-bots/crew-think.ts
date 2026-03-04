@@ -150,6 +150,12 @@ export async function crewThink(
           log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 幻覺 action=${action.action}`);
           continue;
         }
+        // 禁止 crew bot 建立/更新任務 — 避免垃圾任務堆積
+        if (action.action === 'create_task' || action.action === 'update_task') {
+          allActionResults.push(`🚫 crew bot 不能直接建任務。如需建任務，請通知小蔡。`);
+          log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 試圖 ${action.action}，已攔截`);
+          continue;
+        }
         const result = await executeNEUXAAction(action);
         const output = result.output.length > MAX_ACTION_OUTPUT
           ? result.output.slice(0, MAX_ACTION_OUTPUT) + '...'
@@ -183,8 +189,8 @@ export async function crewThink(
   // 品質評分（追蹤用）
   scoreReply(bot, userMessage, clean, allActionResults);
 
-  // 任務自動回報（bot 做完事，自動記錄到任務系統）
-  autoReportTask(bot, userMessage, allActionResults, clean);
+  // 任務自動回報已停用 — crew bot 不應自動建任務，避免垃圾任務堆積
+  // autoReportTask(bot, userMessage, allActionResults, clean);
 
   return { reply: clean || null, actionResults: allActionResults };
 }
