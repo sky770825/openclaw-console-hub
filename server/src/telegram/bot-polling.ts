@@ -2042,7 +2042,11 @@ export function startTelegramStopPoll(): void {
       loop();
     });
 
-  if (XIAOCAI_TOKEN) {
+  // 小蔡 polling：如果 openclaw-gateway 已在跑，由 gateway 獨佔，taskboard 不搶
+  const gatewayOwnsXiaocai = process.env.XIAOCAI_POLL_DISABLED === '1'
+    || (() => { try { return !!require('child_process').execSync('pgrep -f openclaw-gateway', { timeout: 2000 }).toString().trim(); } catch { return false; } })();
+
+  if (XIAOCAI_TOKEN && !gatewayOwnsXiaocai) {
     xiaocaiRunning = true;
     const xcBotId = XIAOCAI_TOKEN.split(':')[0] || '(unknown)';
     log.info(`[XiaocaiBot] 啟動小蔡 bot polling bot_id=${xcBotId}`);
@@ -2055,6 +2059,8 @@ export function startTelegramStopPoll(): void {
       heartbeatTick().catch(e => log.error({ err: e }, '[Heartbeat] tick error'));
     }, HEARTBEAT_INTERVAL_MS);
     log.info(`[Heartbeat] 🫀 心跳已啟動，每 ${HEARTBEAT_INTERVAL_MS / 60000} 分鐘一次`);
+  } else if (XIAOCAI_TOKEN && gatewayOwnsXiaocai) {
+    log.info('[XiaocaiBot] ⏭️ openclaw-gateway 在線，taskboard 跳過小蔡 polling（避免 409）');
   }
 
   // Crew bots 啟用時跳過舊 groupPoll（避免同 token 做兩個 getUpdates 導致 409）
