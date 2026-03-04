@@ -217,7 +217,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v2.4.3**
+- 目前版本：**v2.4.32**
 - 每次重大功能更新，版本號 patch +1（如 v2.2.3、v2.2.4）
 - 需同時更新：`package.json`、`server/package.json`、`server/src/index.ts`
 - 每天 00:01 老蔡 launchd 自動遞增 patch 版本號
@@ -246,10 +246,10 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ---
 
-## 📡 目前系統狀態（2026-03-03 更新）
+## 📡 目前系統狀態（2026-03-04 更新）
 
 - 9 個甲板全部建立完成（AI/後勤/工程/自動化/通信/輪機/防禦/保護/科技）
-- Server：v2.4.3，port 3011，autoExecutor 運行中
+- Server：v2.4.32，port 3011，autoExecutor 運行中
 - 小蔡：AGENTS.md v7.0 / SOUL.md v3.0 / 22 個 action / 20 個模型可調度
 - 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
 - Owner 密碼：sky36990
