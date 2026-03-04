@@ -242,7 +242,7 @@ const MENU_KEYBOARD = {
       { text: '🟣 切換派工', callback_data: '/dispatch' },
       { text: '🔧 修復任務', callback_data: '/reconcile' },
     ],
-    [{ text: '🧑‍💻 交給 Codex 排查', callback_data: '/codex-triage' }],
+    [{ text: '🫀 心跳開關', callback_data: '/heartbeat' }, { text: '🧑‍💻 交給 Codex 排查', callback_data: '/codex-triage' }],
     [{ text: '❓ 幫助', callback_data: '/help' }],
   ],
 };
@@ -254,7 +254,7 @@ const MENU_REPLY_KEYBOARD = {
     [{ text: '🛟 自救巡檢' }, { text: '🧾 產生 Handoff' }],
     [{ text: '📋 日報' }, { text: '🏥 健康檢查' }],
     [{ text: '🟣 切換派工' }, { text: '🔧 修復任務' }],
-    [{ text: '🧑‍💻 交給 Codex 排查' }, { text: '❓ 幫助' }],
+    [{ text: '🫀 心跳開關' }, { text: '🧑‍💻 交給 Codex 排查' }],
     [{ text: '🔘 功能欄' }, { text: '🙈 隱藏按鈕' }],
   ],
   resize_keyboard: true,
@@ -1110,6 +1110,22 @@ async function poll(): Promise<void> {
       if (text === '🏥 健康檢查') { await replyHealth(chatId); continue; }
       if (text === '🟣 切換派工') { await replyDispatchToggle(chatId); continue; }
       if (text === '🔧 修復任務') { await replyReconcile(chatId); continue; }
+      if (text === '🫀 心跳開關') {
+        try {
+          const { getHeartbeatStatus, enableHeartbeat, disableHeartbeat } = await import('./crew-bots/crew-patrol.js');
+          const status = getHeartbeatStatus();
+          if (status.enabled) {
+            disableHeartbeat();
+            await sendTelegramMessageToChat(chatId, `🫀 Crew 心跳已關閉（累計 ${status.heartbeatCount} 次巡邏）`, { token: TOKEN });
+          } else {
+            enableHeartbeat(30);
+            await sendTelegramMessageToChat(chatId, `🫀 Crew 心跳已開啟（每 30 分鐘）\n\n阿研掃 log + 阿數查 metrics + 阿秘整理待辦`, { token: TOKEN });
+          }
+        } catch (e) {
+          await sendTelegramMessageToChat(chatId, `❌ 心跳操作失敗：${e}`, { token: TOKEN });
+        }
+        continue;
+      }
       if (text === '🧑‍💻 交給 Codex 排查') { await promptCodexTriage(chatId); continue; }
       if (text === '❓ 幫助') { await replyMenu(chatId, '📊 系統菜單'); continue; }
 
@@ -1132,6 +1148,26 @@ async function poll(): Promise<void> {
       if (cmd === '/recover') { await replyRecover(chatId); continue; }
       if (cmd === '/health') { await replyHealth(chatId); continue; }
       if (cmd === '/dispatch') { await replyDispatchToggle(chatId); continue; }
+      if (cmd === '/heartbeat') {
+        try {
+          const { getHeartbeatStatus, enableHeartbeat, disableHeartbeat } = await import('./crew-bots/crew-patrol.js');
+          const status = getHeartbeatStatus();
+          const customMin = parseInt(text.replace(/^\/heartbeat\s*/i, '').trim(), 10);
+          if (customMin >= 5) {
+            enableHeartbeat(customMin);
+            await sendTelegramMessageToChat(chatId, `🫀 Crew 心跳已開啟（每 ${customMin} 分鐘）`, { token: TOKEN });
+          } else if (status.enabled) {
+            disableHeartbeat();
+            await sendTelegramMessageToChat(chatId, `🫀 Crew 心跳已關閉（累計 ${status.heartbeatCount} 次）`, { token: TOKEN });
+          } else {
+            enableHeartbeat(30);
+            await sendTelegramMessageToChat(chatId, `🫀 Crew 心跳已開啟（每 30 分鐘）`, { token: TOKEN });
+          }
+        } catch (e) {
+          await sendTelegramMessageToChat(chatId, `❌ ${e}`, { token: TOKEN });
+        }
+        continue;
+      }
       if (cmd === '/report') { await replyReport(chatId); continue; }
       if (cmd === '/reconcile') { await replyReconcile(chatId); continue; }
       if (cmd === '/wake') { await replyWake(chatId); continue; }
@@ -1522,7 +1558,7 @@ async function xiaocaiPoll(): Promise<void> {
           [{ text: '📊 系統狀態' }, { text: '🚀 任務板' }],
           [{ text: '🧠 切換模型' }, { text: '📋 日報' }],
           [{ text: '🏥 健康檢查' }, { text: '🛟 自救巡檢' }],
-          [{ text: '❓ 幫助' }],
+          [{ text: '🫀 心跳開關' }, { text: '❓ 幫助' }],
         ],
         resize_keyboard: true,
       };
@@ -1592,6 +1628,27 @@ async function xiaocaiPoll(): Promise<void> {
           await sendTelegramMessageToChat(chatId, `🏥 健康檢查\n\nServer：${h.status || 'ok'}\n版本：${h.version || '?'}\nUptime：${h.uptime || '?'}`, { token: XIAOCAI_TOKEN });
         } catch {
           await sendTelegramMessageToChat(chatId, '🏥 健康檢查\n\n❌ Server 無回應', { token: XIAOCAI_TOKEN });
+        }
+        continue;
+      }
+      if (text === '🫀 心跳開關' || xcCmd === '/heartbeat') {
+        try {
+          const { getHeartbeatStatus, enableHeartbeat, disableHeartbeat } = await import('./crew-bots/crew-patrol.js');
+          const status = getHeartbeatStatus();
+          // /heartbeat 15 → 自訂間隔開啟
+          const customMin = parseInt(text.replace(/^\/heartbeat\s*/i, '').trim(), 10);
+          if (customMin >= 5) {
+            enableHeartbeat(customMin);
+            await sendTelegramMessageToChat(chatId, `🫀 心跳已開啟（每 ${customMin} 分鐘巡邏）\n\n關閉：再按一次 🫀 心跳開關`, { token: XIAOCAI_TOKEN });
+          } else if (status.enabled) {
+            disableHeartbeat();
+            await sendTelegramMessageToChat(chatId, `🫀 心跳已關閉\n\n累計巡邏 ${status.heartbeatCount} 次`, { token: XIAOCAI_TOKEN });
+          } else {
+            enableHeartbeat(30);
+            await sendTelegramMessageToChat(chatId, `🫀 心跳已開啟（每 30 分鐘巡邏）\n\n阿研掃 log + 阿數查 metrics + 阿秘整理待辦\n\n自訂間隔：/heartbeat 15\n關閉：再按一次`, { token: XIAOCAI_TOKEN });
+          }
+        } catch (e) {
+          await sendTelegramMessageToChat(chatId, `❌ 心跳操作失敗：${e}`, { token: XIAOCAI_TOKEN });
         }
         continue;
       }
