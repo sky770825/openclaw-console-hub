@@ -13,6 +13,17 @@ import { triggerPatrolNow } from './crew-patrol.js';
 
 const log = createLogger('crew-poller');
 
+/**
+ * 格式化 crew bot 回覆為 HTML（專業排版）
+ * 格式：emoji <b>名字</b>（角色）\n回覆內容
+ */
+function formatBotReplyHTML(bot: CrewBotConfig, reply: string): string {
+  // 台灣時區時間戳
+  const now = new Date();
+  const twTime = now.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit' });
+  return `${bot.emoji} <b>${bot.name}</b>（${bot.role}）<i>${twTime}</i>\n\n${reply}`;
+}
+
 const POLL_INTERVAL_MS = 6000;          // 每 6 秒 poll 一次（省資源）
 const GET_UPDATES_TIMEOUT_SEC = 15;     // Telegram long polling timeout
 const FETCH_TIMEOUT_MS = 25_000;        // fetch 超時
@@ -148,7 +159,8 @@ async function executeRound(
       const result = await crewThink(bot, text, senderName);
       const reply = result.reply;
       if (reply && !reply.includes('沒有補充')) {
-        await sendTelegramMessageToChat(chatId, reply, { token: bot.token, silent: true });
+        const htmlMsg = formatBotReplyHTML(bot, reply);
+        await sendTelegramMessageToChat(chatId, htmlMsg, { token: bot.token, silent: true, parseMode: 'HTML' });
         pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
         replies.push({ botId: bot.id, botName: bot.name, reply });
         log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 回覆了 (len=${reply.length}, actions=${result.actionResults.length})`);
@@ -234,9 +246,11 @@ async function detectAndHandoff(
     const handoffReply = result.reply;
 
     if (handoffReply) {
-      await sendTelegramMessageToChat(chatId, handoffReply, {
+      const htmlMsg = formatBotReplyHTML(mentionedBot, handoffReply);
+      await sendTelegramMessageToChat(chatId, htmlMsg, {
         token: mentionedBot.token,
         silent: true,
+        parseMode: 'HTML',
       });
       pushHistory({
         role: 'model',
@@ -428,9 +442,11 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
           const result = await crewThink(bot, text, senderName);
           const reply = result.reply;
           if (reply) {
-            await sendTelegramMessageToChat(chatId, reply, {
+            const htmlMsg = formatBotReplyHTML(bot, reply);
+            await sendTelegramMessageToChat(chatId, htmlMsg, {
               token: bot.token,
               silent: true,
+              parseMode: 'HTML',
             });
             // 記錄 bot 回覆到歷史
             pushHistory({

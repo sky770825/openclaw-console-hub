@@ -181,24 +181,35 @@ export async function crewThink(
 
   if (!finalReply) return { reply: null, actionResults: allActionResults };
 
-  // Telegram 友好格式
-  const clean = finalReply
-    .replace(/^#{1,6}\s*/gm, '')
-    .replace(/\*\*(.+?)\*\*/g, '*$1*')
-    .replace(/^[-*]\s/gm, '• ')
-    .replace(/`([^`\n]+)`/g, '$1')
+  // Telegram HTML 友好格式
+  // 先跳脫 HTML 特殊字元，再轉換 markdown → HTML 標籤
+  const escaped = finalReply
+    .replace(/&/g, '&amp;')                          // & → &amp;（必須最先處理）
+    .replace(/</g, '&lt;')                           // < → &lt;
+    .replace(/>/g, '&gt;');                           // > → &gt;
+  const clean = escaped
+    .replace(/^#{1,6}\s*/gm, '')                     // 移除 markdown 標題符號
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')          // **粗體** → HTML <b>
+    .replace(/\*(.+?)\*/g, '<i>$1</i>')              // *斜體* → HTML <i>
+    .replace(/^[-*]\s/gm, '• ')                       // 列表符號統一為 •
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')       // `code` → HTML <code>
     .trim();
 
+  // 超過 300 字截斷
+  const truncated = clean.length > 300
+    ? clean.slice(0, 297) + '...'
+    : clean;
+
   // 自動追加工作紀錄到 bot 的 MEMORY.md
-  appendWorkLog(bot.id, userMessage, allActionResults, clean);
+  appendWorkLog(bot.id, userMessage, allActionResults, truncated);
 
   // 品質評分（追蹤用）
-  scoreReply(bot, userMessage, clean, allActionResults);
+  scoreReply(bot, userMessage, truncated, allActionResults);
 
   // 任務自動回報已停用 — crew bot 不應自動建任務，避免垃圾任務堆積
-  // autoReportTask(bot, userMessage, allActionResults, clean);
+  // autoReportTask(bot, userMessage, allActionResults, truncated);
 
-  return { reply: clean || null, actionResults: allActionResults };
+  return { reply: truncated || null, actionResults: allActionResults };
 }
 
 // ── 任務自動回報 ──

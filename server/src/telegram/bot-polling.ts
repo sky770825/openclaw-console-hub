@@ -2082,9 +2082,17 @@ async function heartbeatTick(): Promise<void> {
       if (hasRealError) {
         const ownerChatId = getAllowChatId();
         const errorLines = actionResults.filter(r => r.startsWith('🚫') || r.startsWith('🔒'));
-        const summary = `🚨 心跳異常（${errorLines.length} 個 action 失敗）\n\n${errorLines.map(r => r.replace(/<[^>]*>/g, '').slice(0, 150)).join('\n')}`;
+        const summary = [
+          `🚨 <b>心跳異常報告</b>`,
+          ``,
+          `⏰ ${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false })}`,
+          `📊 執行 ${allResults.length} 個動作，<b>${errorLines.length} 個失敗</b>`,
+          ``,
+          `<b>❌ 失敗項目：</b>`,
+          ...errorLines.map(r => `  • ${r.replace(/<[^>]*>/g, '').slice(0, 150)}`),
+        ].join('\n');
         if (ownerChatId) {
-          await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN, silent: true });
+          await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN, silent: true, parseMode: 'HTML' });
         }
       }
       appendInteractionLog('[心跳]', allResults, hasRealError ? '心跳異常' : '心跳正常');

@@ -175,28 +175,34 @@ async function executePatrol(task: PatrolTask): Promise<void> {
     const result: CrewThinkResult = await crewThink(bot, task.prompt, '系統巡邏', 'full');
     const { reply, actionResults } = result;
 
-    // 組合訊息：action 執行結果 + 文字回覆
-    const parts: string[] = [];
+    // 組合訊息：action 執行結果 + 文字回覆（HTML 格式）
+    const hasParts = actionResults.length > 0 || (reply && reply.length > 5);
 
-    if (actionResults.length > 0) {
-      parts.push(`📋 執行動作 (${actionResults.length})：`);
-      for (const ar of actionResults) {
-        // 截斷過長的單條結果
-        parts.push(ar.length > 300 ? ar.slice(0, 300) + '...' : ar);
-      }
-    }
-
-    if (reply && reply.length > 5) {
-      parts.push(`\n💬 結論：${reply}`);
-    }
-
-    if (parts.length > 0) {
-      const msg = `🔄 ${bot.name}巡邏報告：\n${parts.join('\n')}`;
+    if (hasParts) {
+      const msgLines = [
+        `${bot.emoji} <b>${bot.name}巡邏報告</b>`,
+        `⏰ ${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false })}`,
+        ``,
+        ...(actionResults.length > 0 ? [
+          `<b>📋 執行動作 (${actionResults.length})</b>`,
+          ...actionResults.map(ar => {
+            const truncated = ar.length > 300 ? ar.slice(0, 300) + '...' : ar;
+            return `  • ${truncated}`;
+          }),
+        ] : []),
+        ...(reply && reply.length > 5 ? [
+          ``,
+          `<b>💬 結論</b>`,
+          reply,
+        ] : []),
+      ];
+      const msg = msgLines.join('\n');
       // 截斷避免 Telegram 4096 字元限制
       const truncated = msg.length > 3900 ? msg.slice(0, 3900) + '\n...（已截斷）' : msg;
       await sendTelegramMessageToChat(chatId, truncated, {
         token: bot.token,
         silent: true,
+        parseMode: 'HTML',
       });
       pushHistory({
         role: 'model',
