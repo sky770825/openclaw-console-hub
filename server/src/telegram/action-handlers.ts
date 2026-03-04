@@ -263,6 +263,13 @@ export async function handleReadFile(actionPath: string): Promise<ActionResult> 
 }
 
 export async function handleWriteFile(actionPath: string, content: string): Promise<ActionResult> {
+  // 檢查：路徑必須是檔案，不能是目錄
+  if (!actionPath || actionPath.endsWith('/') || !path.extname(actionPath)) {
+    return { ok: false, output: `write_file 需要完整的檔案路徑（你傳了: "${actionPath || '空'}"）。正確格式：{"action":"write_file","path":"~/.openclaw/workspace/notes/xxx.md","content":"..."}` };
+  }
+  if (!content && content !== '') {
+    return { ok: false, output: 'write_file 缺少 content 參數。正確格式：{"action":"write_file","path":"檔案路徑","content":"檔案內容"}' };
+  }
   const check = isPathSafe(actionPath, 'write');
   if (!check.safe) {
     // 靈魂文件被擋 → 自動轉存到 pending-updates/ 等老蔡審核
@@ -806,8 +813,8 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
   if (!hasSb() || !sb) return { ok: false, output: 'Supabase 未設定' };
 
   const table = action.table;
-  if (!table || typeof table !== 'string') return { ok: false, output: 'query_supabase 需要 table 參數' };
-  if (!ALLOWED_TABLES.has(table)) return { ok: false, output: `表 "${table}" 不在白名單。可用: ${[...ALLOWED_TABLES].join(', ')}` };
+  if (!table || typeof table !== 'string') return { ok: false, output: 'query_supabase 需要 table 參數。正確格式：{"action":"query_supabase","table":"openclaw_tasks","select":"*","limit":10}' };
+  if (!ALLOWED_TABLES.has(table)) return { ok: false, output: `表 "${table}" 不在白名單。可用: ${[...ALLOWED_TABLES].join(', ')}。正確格式：{"action":"query_supabase","table":"openclaw_tasks","select":"*","limit":10}` };
 
   // select 欄位 mapping — 映射後過濾掉不存在的欄位
   // 已知每張表的真實欄位（Supabase schema）
@@ -1676,7 +1683,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 /** 單檔快速索引：把一個 .md 檔案切 chunk → embed → 寫入 Supabase */
 export async function handleIndexFile(filePath: string, category?: string): Promise<ActionResult> {
   if (!filePath || !filePath.endsWith('.md')) {
-    return { ok: false, output: 'index_file 需要 .md 檔案路徑' };
+    return { ok: false, output: `index_file 需要 .md 檔案路徑（你傳了: "${filePath || '空'}"）。正確格式：{"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}` };
   }
   let resolved = path.resolve(filePath);
   if (!fs.existsSync(resolved) && !path.isAbsolute(filePath)) {
