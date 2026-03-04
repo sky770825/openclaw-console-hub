@@ -2074,20 +2074,20 @@ async function heartbeatTick(): Promise<void> {
       xiaocaiHistory.set(HEARTBEAT_CHAT_ID, history);
     }
 
-    // 心跳完成 — 只有異常時才推 Telegram，正常靜默（避免吵老蔡）
+    // 心跳完成 — 只有 action 真正失敗（🚫）才推異常，模型 fallback 不算異常
     if (allResults.length > 0) {
-      const hasError = allResults.some(r => r.includes('🚫') || r.includes('🔒') || r.includes('失敗') || r.includes('error') || r.includes('異常'));
-      if (hasError) {
+      // 只看 action 執行結果，忽略模型升級/熔斷的中間訊息
+      const actionResults = allResults.filter(r => r.includes('✅') || r.includes('🚫') || r.includes('🔒'));
+      const hasRealError = actionResults.some(r => r.startsWith('🚫') || r.startsWith('🔒'));
+      if (hasRealError) {
         const ownerChatId = getAllowChatId();
-        const summary = `🚨 心跳異常\n${allResults.map(r => r.replace(/<[^>]*>/g, '').slice(0, 100)).join('\n')}`;
+        const errorLines = actionResults.filter(r => r.startsWith('🚫') || r.startsWith('🔒'));
+        const summary = `🚨 心跳異常（${errorLines.length} 個 action 失敗）\n\n${errorLines.map(r => r.replace(/<[^>]*>/g, '').slice(0, 150)).join('\n')}`;
         if (ownerChatId) {
-          await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN });
-        }
-        if (GROUP_TOKEN && GROUP_CHAT_ID) {
-          await sendTelegramMessageToChat(Number(GROUP_CHAT_ID), summary, { token: GROUP_TOKEN }).catch(() => {});
+          await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN, silent: true });
         }
       }
-      appendInteractionLog('[心跳]', allResults, hasError ? '心跳異常' : '心跳正常');
+      appendInteractionLog('[心跳]', allResults, hasRealError ? '心跳異常' : '心跳正常');
     }
 
     log.info(`[Heartbeat] 🫀 心跳完成，執行 ${allResults.length} 個動作`);
