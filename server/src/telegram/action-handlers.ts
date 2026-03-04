@@ -3114,8 +3114,12 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
 
         // 內部調度 crew bots（Forum 群組 bot→bot 訊息不走 getUpdates）
         const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
-        const dispatched = await dispatchToCrewBots(groupMsg, '小蔡');
-        const dispatchNote = dispatched > 0 ? ` → ${dispatched} 個 crew bot 將回覆` : '';
+        const dispatch = await dispatchToCrewBots(groupMsg, '小蔡');
+        let dispatchNote = '';
+        if (dispatch.totalReplied > 0) {
+          const summary = dispatch.replies.map(r => `[${r.botName}]: ${r.reply.slice(0, 200)}`).join('\n');
+          dispatchNote = `\n\n--- crew bots 回覆（${dispatch.totalReplied} 個）---\n${summary}`;
+        }
         result = { ok: true, output: `已發送到群組: ${groupMsg.slice(0, 100)}${dispatchNote}` };
       } catch (e) {
         result = { ok: false, output: `send_group 失敗: ${e instanceof Error ? e.message : String(e)}` };

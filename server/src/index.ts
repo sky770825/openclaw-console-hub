@@ -3751,8 +3751,8 @@ app.post('/api/crew/dispatch', async (req, res) => {
     const { message, sender } = req.body || {};
     if (!message) return res.status(400).json({ ok: false, error: 'message required' });
     const { dispatchToCrewBots } = await import('./telegram/crew-bots/crew-poller.js');
-    const count = await dispatchToCrewBots(message, sender || '小蔡');
-    res.json({ ok: true, dispatched: count, message: count > 0 ? `${count} 個 crew bot 將回覆` : '無匹配的 crew bot' });
+    const dispatch = await dispatchToCrewBots(message, sender || '小蔡');
+    res.json({ ok: true, dispatched: dispatch.totalReplied, replies: dispatch.replies, message: dispatch.totalReplied > 0 ? `${dispatch.totalReplied} 個 crew bot 已回覆` : '無匹配的 crew bot' });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
   }

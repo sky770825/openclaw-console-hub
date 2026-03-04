@@ -46,21 +46,27 @@ let dispatchRunning = false;              // 防並發
  *
  * 流程：小蔡發話 → crew bots 第 1 輪回覆 → 匯總 → 有追問/互動再 dispatch 第 2 輪 → 最多 3 輪
  */
-export async function dispatchToCrewBots(text: string, senderName: string = '小蔡'): Promise<number> {
-  if (!CREW_GROUP_CHAT_ID) return 0;
+export interface DispatchResult {
+  totalReplied: number;
+  replies: RoundReply[];
+}
+
+export async function dispatchToCrewBots(text: string, senderName: string = '小蔡'): Promise<DispatchResult> {
+  if (!CREW_GROUP_CHAT_ID) return { totalReplied: 0, replies: [] };
   if (dispatchRunning) {
     log.warn('[CrewDispatch] 已有調度在跑，跳過');
-    return 0;
+    return { totalReplied: 0, replies: [] };
   }
 
   const decision = routeMessage(text, 'xiaoji_cai_bot', true);
   log.info(`[CrewDispatch] R1 text="${text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
 
-  if (decision.filtered || decision.respondingBots.length === 0) return 0;
+  if (decision.filtered || decision.respondingBots.length === 0) return { totalReplied: 0, replies: [] };
 
   dispatchRunning = true;
   const chatId = Number(CREW_GROUP_CHAT_ID);
   let totalReplied = 0;
+  const allReplies: RoundReply[] = [];
 
   try {
     // 記錄發起者的訊息
@@ -69,8 +75,9 @@ export async function dispatchToCrewBots(text: string, senderName: string = '小
     // ── 第 1 輪：所有被路由的 bot 回覆 ──
     const round1Replies = await executeRound(decision.respondingBots.map(b => b.botId), text, senderName, chatId, 1);
     totalReplied += round1Replies.length;
+    allReplies.push(...round1Replies);
 
-    if (round1Replies.length === 0) return totalReplied;
+    if (round1Replies.length === 0) return { totalReplied, replies: allReplies };
 
     // ── 後續輪次：檢測互動需求 ──
     const repliedBotIds = new Set(round1Replies.map(r => r.botId));
@@ -94,6 +101,7 @@ export async function dispatchToCrewBots(text: string, senderName: string = '小
 
       const roundReplies = await executeRound(nextBots, followUpText, '系統', chatId, round);
       totalReplied += roundReplies.length;
+      allReplies.push(...roundReplies);
 
       // 收斂偵測：全部回覆都太短 → 結束
       const allShort = roundReplies.every(r => r.reply.length < MIN_REPLY_FOR_CONTINUE || r.reply.includes('沒有補充'));
@@ -109,10 +117,10 @@ export async function dispatchToCrewBots(text: string, senderName: string = '小
     dispatchRunning = false;
   }
 
-  return totalReplied;
+  return { totalReplied, replies: allReplies };
 }
 
-interface RoundReply {
+export interface RoundReply {
   botId: string;
   botName: string;
   reply: string;
