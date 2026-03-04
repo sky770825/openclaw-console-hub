@@ -9,6 +9,7 @@ import { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
 import type { CrewBotConfig } from './crew-config.js';
 import { routeMessage } from './crew-router.js';
 import { crewThink, pushHistory } from './crew-think.js';
+import { triggerPatrolNow } from './crew-patrol.js';
 
 const log = createLogger('crew-poller');
 
@@ -320,6 +321,16 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
 
       // 已經回覆過 → 跳過
       if (repliedSet.has(replyKey)) continue;
+
+      // ─── 巡邏觸發偵測（任何人喊「巡邏」就觸發，只需第一個 bot 執行） ───
+      const PATROL_KEYWORDS = ['巡邏', '系統巡檢', '系統檢查'];
+      if (PATROL_KEYWORDS.some(kw => msg.text!.includes(kw)) && !routingCache.has(messageId)) {
+        routingCache.set(messageId, { respondingBots: [], filtered: true, filterReason: 'patrol triggered' });
+        repliedSet.add(replyKey);
+        log.info(`[CrewPoller] 偵測到巡邏指令 from=${msg.from!.username} text="${msg.text!.slice(0, 30)}"，觸發手動巡邏`);
+        triggerPatrolNow().catch(err => log.error({ err }, '[CrewPoller] 巡邏觸發失敗'));
+        continue;
+      }
 
       // 路由決策（只做一次，其他 bot 查 cache）
       if (!routingCache.has(messageId)) {

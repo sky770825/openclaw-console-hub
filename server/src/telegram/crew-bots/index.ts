@@ -4,7 +4,7 @@
  */
 
 import { startCrewPolling, stopCrewPolling } from './crew-poller.js';
-import { startCrewPatrol, stopCrewPatrol } from './crew-patrol.js';
+import { startCrewPatrol, stopCrewPatrol, triggerPatrolNow } from './crew-patrol.js';
 
 export function startCrewBots(): void {
   startCrewPolling();
@@ -16,5 +16,6 @@ export function stopCrewBots(): void {
   stopCrewPatrol();
 }
 
+export { triggerPatrolNow } from './crew-patrol.js';
 export type { CrewBotConfig } from './crew-config.js';
 export { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';

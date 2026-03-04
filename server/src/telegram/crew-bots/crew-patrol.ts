@@ -1,10 +1,10 @@
 /**
- * NEUXA 星群 — 主動巡邏機制
- * crew bots 定期執行職責相關的巡邏任務，不等群組訊息
+ * NEUXA 星群 — 巡邏機制（手動觸發）
+ * 自動巡邏預設關閉，群組喊「巡邏」「報到」才觸發
  *
- * 阿研：每 60 分鐘掃 log 異常
- * 阿數：每 60 分鐘查 metrics / 任務統計
- * 阿秘：每 120 分鐘整理待辦摘要
+ * 阿研：掃 log 異常
+ * 阿數：查 metrics / 任務統計
+ * 阿秘：整理待辦摘要
  */
 
 import { createLogger } from '../../logger.js';
@@ -16,16 +16,13 @@ const log = createLogger('crew-patrol');
 
 interface PatrolTask {
   botId: string;
-  intervalMs: number;
   prompt: string;
   lastRun: number;
-  timerId?: ReturnType<typeof setTimeout>;
 }
 
 const patrolTasks: PatrolTask[] = [
   {
     botId: 'ayan',
-    intervalMs: 60 * 60 * 1000, // 60 分鐘
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"run_script","command":"tail -50 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n\n' +
       '拿到結果後，分析有無異常。有異常就報告嚴重程度，沒異常就說「巡邏完畢，系統正常」。',
@@ -33,7 +30,6 @@ const patrolTasks: PatrolTask[] = [
   },
   {
     botId: 'ashu',
-    intervalMs: 60 * 60 * 1000, // 60 分鐘
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"query_supabase","table":"openclaw_tasks","select":"status","filters":[],"limit":200}\n' +
       '{"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n\n' +
@@ -42,7 +38,6 @@ const patrolTasks: PatrolTask[] = [
   },
   {
     botId: 'ami',
-    intervalMs: 120 * 60 * 1000, // 120 分鐘
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"query_supabase","table":"openclaw_tasks","select":"name,status,priority,owner","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
       '拿到結果後，整理簡短清單：高優先 / 進行中 / 待處理。',
@@ -51,49 +46,40 @@ const patrolTasks: PatrolTask[] = [
 ];
 
 /**
- * 啟動主動巡邏
+ * 啟動巡邏系統（僅註冊，不自動排程）
+ * 自動巡邏已關閉，改為手動觸發（群組喊「巡邏」）
  */
 export function startCrewPatrol(): void {
   if (!CREW_GROUP_CHAT_ID) {
     log.warn('[CrewPatrol] 無 CREW_GROUP_CHAT_ID，跳過巡邏');
     return;
   }
-
-  const activeBots = new Set(CREW_BOTS.filter(b => b.token).map(b => b.id));
-
-  for (const task of patrolTasks) {
-    if (!activeBots.has(task.botId)) {
-      log.info(`[CrewPatrol] ${task.botId} 無 token，跳過巡邏`);
-      continue;
-    }
-
-    // 首次巡邏延遲 5 分鐘（等系統穩定）
-    const initialDelay = 5 * 60 * 1000 + Math.random() * 60 * 1000;
-    schedulePatrol(task, initialDelay);
-    log.info(`[CrewPatrol] ${task.botId} 巡邏已排程，間隔 ${task.intervalMs / 60000} 分鐘`);
-  }
+  log.info('[CrewPatrol] 巡邏系統就緒（手動觸發模式，群組喊「巡邏」觸發）');
 }
 
 /**
- * 停止所有巡邏
+ * 停止所有巡邏（相容舊介面）
  */
 export function stopCrewPatrol(): void {
-  for (const task of patrolTasks) {
-    if (task.timerId) {
-      clearTimeout(task.timerId);
-      task.timerId = undefined;
-    }
-  }
-  log.info('[CrewPatrol] 所有巡邏已停止');
+  log.info('[CrewPatrol] 巡邏系統已停止');
 }
 
-function schedulePatrol(task: PatrolTask, delayMs: number): void {
-  task.timerId = setTimeout(async () => {
-    await executePatrol(task);
-    // 下一次巡邏（加隨機偏移避免同時觸發）
-    const jitter = Math.random() * 5 * 60 * 1000; // 0~5 分鐘隨機
-    schedulePatrol(task, task.intervalMs + jitter);
-  }, delayMs);
+/**
+ * 手動觸發所有巡邏任務（群組喊「巡邏」時呼叫）
+ */
+export async function triggerPatrolNow(): Promise<void> {
+  const activeBots = new Set(CREW_BOTS.filter(b => b.token).map(b => b.id));
+  const tasks = patrolTasks.filter(t => activeBots.has(t.botId));
+
+  if (tasks.length === 0) {
+    log.warn('[CrewPatrol] 無可用巡邏 bot');
+    return;
+  }
+
+  log.info(`[CrewPatrol] 手動觸發巡邏，${tasks.length} 個 bot 出動`);
+
+  // 並行執行所有巡邏
+  await Promise.allSettled(tasks.map(t => executePatrol(t)));
 }
 
 async function executePatrol(task: PatrolTask): Promise<void> {
