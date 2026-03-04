@@ -702,8 +702,8 @@ ${bot.responseStyle}
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 {"action":"create_task","name":"名稱","description":"詳細描述"}
 {"action":"update_task","id":"t1234567890","status":"done","result":"完成摘要"}
-{"action":"read_file","path":"~/.openclaw/workspace/MEMORY.md"}
-{"action":"write_file","path":"~/.openclaw/workspace/notes/xxx.md","content":"內容"}
+{"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/${bot.id}/notes.md","content":"內容"}
 {"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}
 {"action":"reindex_knowledge","mode":"append"}
 {"action":"list_dir","path":"~/.openclaw/workspace"}
