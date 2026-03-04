@@ -34,46 +34,165 @@ const ROUTING_CACHE_MAX = 200;
 /** 已回覆記錄：`${botId}:${messageId}` → true */
 const repliedSet = new Set<string>();
 
+const MAX_DISPATCH_ROUNDS = 3;           // 最多 3 輪對話
+const ROUND_DELAY_MS = 2000;              // 輪次間隔
+const BOT_STAGGER_MS = 1500;              // 同輪 bot 之間間隔
+const MIN_REPLY_FOR_CONTINUE = 15;        // 回覆少於 15 字視為收斂
+let dispatchRunning = false;              // 防並發
+
 /**
- * 內部調度 — 小蔡(bot)發訊息後，直接觸發 crew bots 回覆
+ * 內部調度 — 小蔡(bot)發訊息後，直接觸發 crew bots 多輪對話
  * 繞過 Telegram getUpdates（Forum 群組 bot→bot 訊息不推送）
+ *
+ * 流程：小蔡發話 → crew bots 第 1 輪回覆 → 匯總 → 有追問/互動再 dispatch 第 2 輪 → 最多 3 輪
  */
 export async function dispatchToCrewBots(text: string, senderName: string = '小蔡'): Promise<number> {
   if (!CREW_GROUP_CHAT_ID) return 0;
+  if (dispatchRunning) {
+    log.warn('[CrewDispatch] 已有調度在跑，跳過');
+    return 0;
+  }
 
   const decision = routeMessage(text, 'xiaoji_cai_bot', true);
-  log.info(`[CrewDispatch] 內部調度 text="${text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
+  log.info(`[CrewDispatch] R1 text="${text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
 
   if (decision.filtered || decision.respondingBots.length === 0) return 0;
 
-  // 記錄小蔡的訊息到歷史
-  pushHistory({ role: 'user', text, fromName: senderName, timestamp: Date.now() });
-
-  let replied = 0;
+  dispatchRunning = true;
   const chatId = Number(CREW_GROUP_CHAT_ID);
+  let totalReplied = 0;
 
-  // 逐個 bot 思考 + 回覆（帶隨機延遲，自然感）
-  for (const { botId } of decision.respondingBots) {
+  try {
+    // 記錄發起者的訊息
+    pushHistory({ role: 'user', text, fromName: senderName, timestamp: Date.now() });
+
+    // ── 第 1 輪：所有被路由的 bot 回覆 ──
+    const round1Replies = await executeRound(decision.respondingBots.map(b => b.botId), text, senderName, chatId, 1);
+    totalReplied += round1Replies.length;
+
+    if (round1Replies.length === 0) return totalReplied;
+
+    // ── 後續輪次：檢測互動需求 ──
+    const repliedBotIds = new Set(round1Replies.map(r => r.botId));
+    let prevReplies = round1Replies;
+
+    for (let round = 2; round <= MAX_DISPATCH_ROUNDS; round++) {
+      await sleep(ROUND_DELAY_MS);
+
+      // 匯總上一輪回覆，找出需要繼續的 bot
+      const nextBots = detectFollowUp(prevReplies, repliedBotIds);
+      if (nextBots.length === 0) {
+        log.info(`[CrewDispatch] R${round} 對話收斂，結束`);
+        break;
+      }
+
+      log.info(`[CrewDispatch] R${round} 繼續: ${nextBots.join(',')}`);
+
+      // 匯總上輪回覆作為上下文
+      const summary = prevReplies.map(r => `[${r.botName}] ${r.reply}`).join('\n');
+      const followUpText = `（接續討論）\n${summary}\n\n請針對以上回覆補充你的看法，或回應同事的觀點。如果沒有要補充的，回覆「沒有補充」即可。`;
+
+      const roundReplies = await executeRound(nextBots, followUpText, '系統', chatId, round);
+      totalReplied += roundReplies.length;
+
+      // 收斂偵測：全部回覆都太短 → 結束
+      const allShort = roundReplies.every(r => r.reply.length < MIN_REPLY_FOR_CONTINUE || r.reply.includes('沒有補充'));
+      if (allShort || roundReplies.length === 0) {
+        log.info(`[CrewDispatch] R${round} 回覆收斂（短回覆/沒有補充），結束`);
+        break;
+      }
+
+      for (const r of roundReplies) repliedBotIds.add(r.botId);
+      prevReplies = roundReplies;
+    }
+  } finally {
+    dispatchRunning = false;
+  }
+
+  return totalReplied;
+}
+
+interface RoundReply {
+  botId: string;
+  botName: string;
+  reply: string;
+}
+
+/** 執行一輪：指定 bot 依序思考 + 回覆群組 */
+async function executeRound(
+  botIds: string[],
+  text: string,
+  senderName: string,
+  chatId: number,
+  round: number,
+): Promise<RoundReply[]> {
+  const replies: RoundReply[] = [];
+
+  for (const botId of botIds) {
     const bot = CREW_BOTS.find(b => b.id === botId);
     if (!bot?.token) continue;
 
-    const delay = 2000 + Math.random() * 3000;
-    setTimeout(async () => {
-      try {
-        const reply = await crewThink(bot, text, senderName);
-        if (reply) {
-          await sendTelegramMessageToChat(chatId, reply, { token: bot.token, silent: true });
-          pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
-          log.info(`[CrewDispatch] ${bot.emoji} ${bot.name} 回覆了`);
-        }
-      } catch (err) {
-        log.error({ err }, `[CrewDispatch] ${bot.name} 回覆失敗`);
+    // bot 之間交錯（自然感）
+    if (replies.length > 0) await sleep(BOT_STAGGER_MS + Math.random() * 1500);
+
+    try {
+      const reply = await crewThink(bot, text, senderName);
+      if (reply && !reply.includes('沒有補充')) {
+        await sendTelegramMessageToChat(chatId, reply, { token: bot.token, silent: true });
+        pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
+        replies.push({ botId: bot.id, botName: bot.name, reply });
+        log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 回覆了 (len=${reply.length})`);
       }
-    }, delay);
-    replied++;
+    } catch (err) {
+      log.error({ err }, `[CrewDispatch] R${round} ${bot.name} 回覆失敗`);
+    }
   }
 
-  return replied;
+  return replies;
+}
+
+/** 偵測哪些 bot 需要繼續回覆（被提到 / 有追問 / 相關專長） */
+function detectFollowUp(prevReplies: RoundReply[], alreadyReplied: Set<string>): string[] {
+  const nextBots: string[] = [];
+  const allText = prevReplies.map(r => r.reply).join(' ').toLowerCase();
+
+  for (const bot of CREW_BOTS) {
+    if (!bot.token) continue;
+    // 已回覆過的 bot 不重複（除非被點名）
+    const wasMentioned = allText.includes(bot.name) || allText.includes(`@${bot.username.toLowerCase()}`);
+    const selfReplied = prevReplies.some(r => r.botId === bot.id);
+
+    if (wasMentioned && !selfReplied) {
+      // 被其他 bot 點名但自己還沒回 → 加入
+      nextBots.push(bot.id);
+    } else if (wasMentioned && selfReplied) {
+      // 被點名且已回過 → 追問情境，可以再回一次
+      nextBots.push(bot.id);
+    }
+  }
+
+  // 如果沒人被點名，看有沒有「？」追問 → 讓最相關的 1-2 個 bot 回
+  if (nextBots.length === 0) {
+    const hasQuestion = allText.includes('？') || allText.includes('?');
+    if (!hasQuestion) return [];
+
+    // 找上一輪沒回的、但有 token 的 bot（輪流參與）
+    for (const bot of CREW_BOTS) {
+      if (!bot.token) continue;
+      if (!alreadyReplied.has(bot.id)) {
+        // 檢查專長關鍵字匹配
+        const hasRelevance = bot.expertiseKeywords.some(kw => allText.includes(kw.toLowerCase()));
+        if (hasRelevance) nextBots.push(bot.id);
+      }
+      if (nextBots.length >= 2) break;
+    }
+  }
+
+  return nextBots;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
