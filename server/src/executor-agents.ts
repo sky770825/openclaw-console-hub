@@ -1482,23 +1482,23 @@ ${errorFeedback.slice(0, 800)}
     fs.mkdirSync(outputDir, { recursive: true });
 
     const prompt = [
-      `你是 OpenClaw 系統的 Claude 維護工程師，負責修改 server 源碼、修 bug、加功能。`,
+      `你是 OpenClaw 系統的 Claude 分析工程師，負責閱讀源碼、分析問題、撰寫修復方案。`,
       ``,
       `任務：${task.name}`,
       `描述：${task.description || '無'}`,
       ``,
       `工作目錄：${PROJECT_ROOT}`,
-      `Server 源碼：${PROJECT_ROOT}/server/src/（⚠️ 禁止修改！只能讀取和分析，不能 write/edit）`,
+      `Server 源碼：${PROJECT_ROOT}/server/src/（⚠️ 唯讀！只能讀取和分析，不能 write/edit）`,
+      `輸出目錄：${PROJECT_ROOT}/output/（分析結果寫在這裡）`,
       ``,
       `執行步驟：`,
       `1. 閱讀相關源碼，理解現有架構`,
-      `2. 修改必要的 .ts 檔案`,
-      `3. 在 ${PROJECT_ROOT} 執行 build：cd ${PROJECT_ROOT} && git pull origin main && cd server && npm run build`,
-      `4. 如果 build 成功，重啟 server：launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw.taskboard`,
-      `5. 驗證：sleep 5 && curl -s http://localhost:3011/api/health`,
+      `2. 分析問題根因，撰寫修復方案`,
+      `3. 將分析結果和建議的 patch 寫到 output/ 目錄`,
+      `4. 如果任務涉及非 server/src 的檔案（如 scripts/、workspace/），可以直接修改`,
       ``,
-      `限制：不動 .env、secrets、SOUL.md 等靈魂文件、不 push git。`,
-      `完成後說明改了哪些檔案及結果。`,
+      `⚠️ 嚴禁：修改 server/src/ 或 server/dist/、動 .env/secrets/SOUL.md、push git。`,
+      `完成後說明分析結果及建議修改方案。`,
     ].join('\n');
 
     try {
@@ -1556,6 +1556,16 @@ ${errorFeedback.slice(0, 800)}
             try { fs.unlinkSync(path.join(PROJECT_ROOT, uf)); } catch {}
           }
           log.info(`[ClaudeCLI] 🛡️ 已回滾 ${protectedCli.length} 個保護檔案`);
+          // 觸碰保護區 = 任務失敗，不繼續品質評分
+          return {
+            success: false,
+            output: `🛡️ Claude CLI 觸碰保護區被回滾: ${protectedCli.join(', ')}`,
+            error: '自動回滾: Claude CLI 修改了 server/src 或 src 保護區',
+            exitCode: -3,
+            durationMs: Date.now() - startTime,
+            agentType,
+            modelUsed: 'claude-sonnet-subscription',
+          };
         }
       } catch (e) {
         log.error(`[ClaudeCLI] 🛡️ 保護區回滾失敗: ${e}`);

@@ -15,7 +15,7 @@ export type Priority = 1 | 2 | 3 | 4 | 5;
 export type TaskComplexity = 'S' | 'M' | 'L' | 'XL';
 export type TaskRiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type TaskType = 'research' | 'development' | 'ops' | 'review' | 'other';
-export type TaskExecutionAgent = 'cursor' | 'codex' | 'openclaw' | 'auto';
+export type TaskExecutionAgent = 'cursor' | 'codex' | 'openclaw' | 'claude' | 'auto';
 export type TaskModelProvider = 'openrouter' | 'ollama' | 'default';
 
 /** 最後一次執行的狀態（含「尚未執行」） */
