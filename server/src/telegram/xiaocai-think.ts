@@ -464,7 +464,7 @@ export async function xiaocaiThink(
           let stdout = '';
           let stderr = '';
           const child = spawn(claudeBin, ['-p', '--model', claudeModel, cliPrompt], {
-            env: { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}`, CLAUDECODE: '', CLAUDE_CODE: '' },
+            env: (() => { const e: Record<string, string | undefined> = { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}` }; delete e.CLAUDECODE; delete e.CLAUDE_CODE; delete e.CLAUDE_SKIP_ANALYTICS; return e; })(),
             cwd: process.env.HOME || '/tmp',
             timeout: 90000,
             stdio: ['ignore', 'pipe', 'pipe'],
