@@ -71,8 +71,8 @@ export async function crewThink(
     getTaskSnapshot(),
   ]);
 
-  // 讀取 bot 個人記憶
-  const botMemory = loadBotMemory(bot.id);
+  // 讀取 bot 個人記憶（根據訊息內容只注入相關情境段落）
+  const botMemory = loadBotMemory(bot.id, userMessage);
 
   const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, awakening, sysStatus, taskSnap, botMemory);
   const recentChat = groupHistory.slice(-10)
@@ -154,7 +154,108 @@ export async function crewThink(
     .replace(/`([^`\n]+)`/g, '$1')
     .trim();
 
+  // 自動追加工作紀錄到 bot 的 MEMORY.md
+  appendWorkLog(bot.id, userMessage, allActionResults, clean);
+
+  // 品質評分（追蹤用）
+  scoreReply(bot, userMessage, clean, allActionResults);
+
   return { reply: clean || null, actionResults: allActionResults };
+}
+
+// ── 品質評分 ──
+
+const GENERIC_PHRASES = ['建議你', '可以試試', '你可以', '建議查看', '你可以試試', '可以嘗試'];
+
+function scoreReply(
+  bot: CrewBotConfig,
+  userMessage: string,
+  finalReply: string,
+  allActionResults: string[],
+): void {
+  const hasAction = allActionResults.length > 0 ? 1 : 0;
+  const hasSemanticSearch = allActionResults.some(r => r.includes('semantic_search')) ? 1 : 0;
+  const hasSubstance = finalReply.length > 30 ? 1 : 0;
+  const notGeneric = GENERIC_PHRASES.some(p => finalReply.includes(p)) ? 0 : 1;
+
+  let actionSuccess = 0;
+  if (allActionResults.length > 0) {
+    const successCount = allActionResults.filter(r => r.startsWith('✅')).length;
+    actionSuccess = (successCount / allActionResults.length) > 0.5 ? 1 : 0;
+  }
+
+  const total = hasAction + hasSemanticSearch + hasSubstance + notGeneric + actionSuccess;
+
+  log.info(
+    `[CrewScore] ${bot.emoji} ${bot.name} score=${total}/5 (action=${hasAction} search=${hasSemanticSearch} substance=${hasSubstance} notGeneric=${notGeneric} success=${actionSuccess})`,
+  );
+}
+
+// ── 工作紀錄自動追加 ──
+
+function appendWorkLog(botId: string, userMessage: string, actionResults: string[], reply: string): void {
+  // 只在有 actionResults（做了事）時才追加
+  if (!actionResults || actionResults.length === 0) return;
+
+  try {
+    const memPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', botId, 'MEMORY.md');
+
+    // 確保目錄存在
+    const dir = path.dirname(memPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // 格式化時間 YYYY-MM-DD HH:mm
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const questionSnippet = userMessage.slice(0, 30).replace(/\n/g, ' ');
+    const resultSnippet = (reply || actionResults[actionResults.length - 1] || '').slice(0, 50).replace(/\n/g, ' ');
+    const logLine = `\n- [${ts}] 問題="${questionSnippet}" actions=${actionResults.length} ${resultSnippet}`;
+
+    // 如果檔案不存在，建立含標題的初始內容
+    if (!fs.existsSync(memPath)) {
+      fs.writeFileSync(memPath, `## 工作紀錄${logLine}\n`, 'utf-8');
+      return;
+    }
+
+    // 讀取現有內容，檢查大小
+    let content = fs.readFileSync(memPath, 'utf-8');
+
+    // 超過 3000 字元，截斷舊紀錄只保留最後 20 條
+    if (content.length > 3000) {
+      const lines = content.split('\n');
+      // 找出工作紀錄段落之前的內容（非紀錄行）
+      const headerLines: string[] = [];
+      const logLines: string[] = [];
+      let inLogSection = false;
+
+      for (const line of lines) {
+        if (line.startsWith('## 工作紀錄')) {
+          inLogSection = true;
+          headerLines.push(line);
+          continue;
+        }
+        if (inLogSection && line.startsWith('- [')) {
+          logLines.push(line);
+        } else if (!inLogSection) {
+          headerLines.push(line);
+        }
+      }
+
+      // 只保留最後 20 條
+      const kept = logLines.slice(-20);
+      content = headerLines.join('\n') + '\n' + kept.join('\n');
+      fs.writeFileSync(memPath, content + logLine + '\n', 'utf-8');
+    } else {
+      // 直接追加
+      fs.appendFileSync(memPath, logLine + '\n', 'utf-8');
+    }
+  } catch (err) {
+    // 失敗不影響主流程
+    log.warn({ err }, `[CrewThink] appendWorkLog failed for bot=${botId}`);
+  }
 }
 
 // ── AI 呼叫路由 ──
@@ -417,8 +518,17 @@ function stripActionJson(text: string): string {
 
 // ── System Prompt ──
 
-/** 讀取 bot 個人記憶 + 共享協作劇本 */
-function loadBotMemory(botId: string): string {
+/** 情境關鍵字匹配表：情境編號 → 觸發關鍵字 */
+const PLAYBOOK_SCENARIO_KEYWORDS: Record<number, string[]> = {
+  1: ['網站', '開發', '功能', '新增', '做一個', '建立', 'feature', '頁面', '前端', '後端', 'API', '自動化', '工作流'],
+  2: ['錯誤', 'error', 'bug', '故障', '掛了', 'crash', '500', '失敗', 'fail', '修', '壞了'],
+  3: ['商業', '賺錢', '營收', '競品', '市場', '990', '房', '成本', '定價', '用戶'],
+  4: ['巡邏', '檢查', '狀態', '健康', 'health', '監控', 'metrics'],
+  5: ['整理', '知識', '索引', '歸檔', '記憶', '文件'],
+};
+
+/** 讀取 bot 個人記憶 + 根據訊息內容注入相關協作劇本段落（省 token） */
+function loadBotMemory(botId: string, userMessage: string = ''): string {
   const crewDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew');
   const parts: string[] = [];
 
@@ -428,13 +538,91 @@ function loadBotMemory(botId: string): string {
     if (mem) parts.push(mem.length > 1500 ? mem.slice(0, 1500) + '\n...(截斷)' : mem);
   } catch { /* no memory yet */ }
 
-  // 共享協作劇本
+  // 共享協作劇本 — 只注入相關情境段落
   try {
     const playbook = fs.readFileSync(path.join(crewDir, 'PLAYBOOK.md'), 'utf-8').trim();
-    if (playbook) parts.push(playbook.length > 1500 ? playbook.slice(0, 1500) + '\n...(截斷)' : playbook);
+    if (playbook) {
+      const relevantPlaybook = extractRelevantPlaybook(playbook, userMessage);
+      if (relevantPlaybook) parts.push(relevantPlaybook);
+    }
   } catch { /* no playbook */ }
 
   return parts.join('\n\n---\n\n');
+}
+
+/**
+ * 從 PLAYBOOK.md 提取與 userMessage 相關的情境段落
+ * - 用正則切割 `## 情境 N：` 段落
+ * - 根據關鍵字匹配選擇最相關的 1-2 個情境
+ * - 情境 6（指令）和協作原則永遠包含
+ * - 沒有匹配時兜底：情境 6 + 協作原則
+ */
+function extractRelevantPlaybook(playbook: string, userMessage: string): string {
+  const lower = userMessage.toLowerCase();
+
+  // 用正則切割段落：每個 `## ` 開頭是一個段落
+  const sections = playbook.split(/(?=^## )/m).map(s => s.trim()).filter(Boolean);
+
+  // 分類段落
+  const scenarioSections: Record<number, string> = {};
+  let collaborationSection = '';
+  let headerSection = '';
+
+  for (const section of sections) {
+    // 匹配情境段落：## 情境 N：...
+    const scenarioMatch = section.match(/^## 情境\s*(\d+)/);
+    if (scenarioMatch) {
+      scenarioSections[parseInt(scenarioMatch[1], 10)] = section;
+      continue;
+    }
+    // 匹配協作原則
+    if (section.startsWith('## 協作原則')) {
+      collaborationSection = section;
+      continue;
+    }
+    // 標題/前言（非 ## 開頭的段落）
+    if (!section.startsWith('## ')) {
+      headerSection = section;
+    }
+  }
+
+  // 根據 userMessage 關鍵字匹配情境（排除情境6，它永遠包含）
+  const matchedIds: number[] = [];
+  for (const [idStr, keywords] of Object.entries(PLAYBOOK_SCENARIO_KEYWORDS)) {
+    const id = parseInt(idStr, 10);
+    if (keywords.some(kw => lower.includes(kw.toLowerCase()))) {
+      matchedIds.push(id);
+    }
+  }
+
+  // 組裝結果：最多取前 2 個匹配情境 + 情境 6（永遠包含）+ 協作原則（永遠包含）
+  const resultParts: string[] = [];
+
+  // 簡短標題
+  if (headerSection) {
+    // 只保留第一行標題，不需要整段前言
+    const firstLine = headerSection.split('\n')[0];
+    if (firstLine) resultParts.push(firstLine);
+  }
+
+  // 匹配到的情境（最多 2 個）
+  for (const id of matchedIds.slice(0, 2)) {
+    if (scenarioSections[id]) {
+      resultParts.push(scenarioSections[id]);
+    }
+  }
+
+  // 情境 6 永遠包含（很短，指揮官指令優先規則）
+  if (scenarioSections[6]) {
+    resultParts.push(scenarioSections[6]);
+  }
+
+  // 協作原則永遠包含
+  if (collaborationSection) {
+    resultParts.push(collaborationSection);
+  }
+
+  return resultParts.join('\n\n');
 }
 
 function buildCrewPrompt(

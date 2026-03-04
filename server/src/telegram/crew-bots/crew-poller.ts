@@ -152,6 +152,9 @@ async function executeRound(
         pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
         replies.push({ botId: bot.id, botName: bot.name, reply });
         log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 回覆了 (len=${reply.length}, actions=${result.actionResults.length})`);
+
+        // 轉交偵測：回覆中提到其他 bot → 自動 handoff
+        detectAndHandoff(reply, bot, chatId).catch(() => {});
       }
     } catch (err) {
       log.error({ err }, `[CrewDispatch] R${round} ${bot.name} 回覆失敗`);
@@ -203,6 +206,49 @@ function detectFollowUp(prevReplies: RoundReply[], alreadyReplied: Set<string>):
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 偵測回覆中是否提到其他 crew bot，如果有則自動轉交
+ * 最多轉交 1 個 bot（避免連鎖反應）
+ */
+async function detectAndHandoff(
+  reply: string,
+  originalBot: CrewBotConfig,
+  chatId: number,
+): Promise<void> {
+  try {
+    // 找出回覆中被提到的其他 bot（排除自己）
+    const mentionedBot = CREW_BOTS.find(
+      b => b.id !== originalBot.id && b.token && reply.includes(b.name),
+    );
+    if (!mentionedBot) return;
+
+    log.info(`[CrewHandoff] ${originalBot.emoji} ${originalBot.name} 提到了 ${mentionedBot.emoji} ${mentionedBot.name}，自動轉交`);
+
+    // 延遲 2-3 秒（自然感）
+    await sleep(2000 + Math.random() * 1000);
+
+    const handoffPrompt = `[${originalBot.name} 轉交] ${reply}`;
+    const result = await crewThink(mentionedBot, handoffPrompt, originalBot.name);
+    const handoffReply = result.reply;
+
+    if (handoffReply) {
+      await sendTelegramMessageToChat(chatId, handoffReply, {
+        token: mentionedBot.token,
+        silent: true,
+      });
+      pushHistory({
+        role: 'model',
+        text: handoffReply,
+        fromName: mentionedBot.name,
+        timestamp: Date.now(),
+      });
+      log.info(`[CrewHandoff] ${mentionedBot.emoji} ${mentionedBot.name} 接手回覆了 (len=${handoffReply.length}, actions=${result.actionResults.length})`);
+    }
+  } catch (err) {
+    log.error({ err }, `[CrewHandoff] ${originalBot.name} → 轉交失敗`);
+  }
 }
 
 /**
@@ -394,6 +440,9 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
               timestamp: Date.now(),
             });
             log.info(`[CrewPoller] ${bot.emoji} ${bot.name} 回覆了 (msg=${messageId}, actions=${result.actionResults.length})`);
+
+            // 轉交偵測：回覆中提到其他 bot → 自動 handoff
+            detectAndHandoff(reply, bot, chatId).catch(() => {});
           }
         } catch (err) {
           log.error({ err }, `[CrewPoller] ${bot.name} 回覆失敗`);
