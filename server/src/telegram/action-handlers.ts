@@ -278,6 +278,13 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
     return { ok: false, output: `🚫 ${check.reason}` };
   }
 
+  // 保護 crew bot MEMORY.md — 不允許覆蓋，只允許追加工作紀錄
+  const resolvedEarly = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
+  const crewMemoryPattern = /\.openclaw\/workspace\/crew\/\w+\/MEMORY\.md$/;
+  if (crewMemoryPattern.test(resolvedEarly)) {
+    return { ok: false, output: '🛡️ MEMORY.md 結構受保護，不能直接覆蓋。系統會自動追加工作紀錄。如需寫筆記，請寫到 ~/.openclaw/workspace/crew/你的id/notes.md' };
+  }
+
   try {
     const resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
     fs.mkdirSync(path.dirname(resolved), { recursive: true });
