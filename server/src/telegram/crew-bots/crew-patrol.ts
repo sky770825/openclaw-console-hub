@@ -2,15 +2,15 @@
  * NEUXA 星群 — 主動巡邏機制
  * crew bots 定期執行職責相關的巡邏任務，不等群組訊息
  *
- * 阿研：每 30 分鐘掃 log 異常
- * 阿數：每 30 分鐘查 metrics / 任務統計
- * 阿秘：每 60 分鐘整理待辦摘要
+ * 阿研：每 60 分鐘掃 log 異常
+ * 阿數：每 60 分鐘查 metrics / 任務統計
+ * 阿秘：每 120 分鐘整理待辦摘要
  */
 
 import { createLogger } from '../../logger.js';
 import { sendTelegramMessageToChat } from '../../utils/telegram.js';
 import { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
-import { crewThink, pushHistory } from './crew-think.js';
+import { crewThink, pushHistory, type CrewThinkResult } from './crew-think.js';
 
 const log = createLogger('crew-patrol');
 
@@ -25,7 +25,7 @@ interface PatrolTask {
 const patrolTasks: PatrolTask[] = [
   {
     botId: 'ayan',
-    intervalMs: 30 * 60 * 1000, // 30 分鐘
+    intervalMs: 60 * 60 * 1000, // 60 分鐘
     prompt: '【巡邏任務】請主動掃描系統 log，用 action 執行：\n' +
       '1. {"action":"run_script","command":"tail -50 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n' +
       '2. 分析結果，如果有異常就彙整報告，標記嚴重程度\n' +
@@ -35,7 +35,7 @@ const patrolTasks: PatrolTask[] = [
   },
   {
     botId: 'ashu',
-    intervalMs: 30 * 60 * 1000, // 30 分鐘
+    intervalMs: 60 * 60 * 1000, // 60 分鐘
     prompt: '【巡邏任務】請主動檢查系統指標，用 action 執行：\n' +
       '1. {"action":"query_supabase","table":"openclaw_tasks","select":"status,count","filters":[],"limit":100}\n' +
       '2. {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n' +
@@ -45,7 +45,7 @@ const patrolTasks: PatrolTask[] = [
   },
   {
     botId: 'ami',
-    intervalMs: 60 * 60 * 1000, // 60 分鐘
+    intervalMs: 120 * 60 * 1000, // 120 分鐘
     prompt: '【巡邏任務】請主動整理待辦事項摘要，用 action 執行：\n' +
       '1. {"action":"query_supabase","table":"openclaw_tasks","select":"name,status,priority,owner","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n' +
       '2. 整理成簡短清單：高優先 / 進行中 / 待處理，提醒老蔡注意的事項\n' +
@@ -110,22 +110,41 @@ async function executePatrol(task: PatrolTask): Promise<void> {
   try {
     log.info(`[CrewPatrol] ${bot.emoji} ${bot.name} 開始巡邏`);
 
-    const reply = await crewThink(bot, task.prompt, '系統巡邏', 'full');
+    const result: CrewThinkResult = await crewThink(bot, task.prompt, '系統巡邏', 'full');
+    const { reply, actionResults } = result;
+
+    // 組合訊息：action 執行結果 + 文字回覆
+    const parts: string[] = [];
+
+    if (actionResults.length > 0) {
+      parts.push(`📋 執行動作 (${actionResults.length})：`);
+      for (const ar of actionResults) {
+        // 截斷過長的單條結果
+        parts.push(ar.length > 300 ? ar.slice(0, 300) + '...' : ar);
+      }
+    }
+
     if (reply && reply.length > 5) {
-      // 只在有實質內容時才發群組（「系統正常」也發，讓老蔡知道有在巡）
-      await sendTelegramMessageToChat(chatId, `🔄 ${bot.name}巡邏報告：\n${reply}`, {
+      parts.push(`\n💬 結論：${reply}`);
+    }
+
+    if (parts.length > 0) {
+      const msg = `🔄 ${bot.name}巡邏報告：\n${parts.join('\n')}`;
+      // 截斷避免 Telegram 4096 字元限制
+      const truncated = msg.length > 3900 ? msg.slice(0, 3900) + '\n...（已截斷）' : msg;
+      await sendTelegramMessageToChat(chatId, truncated, {
         token: bot.token,
         silent: true,
       });
       pushHistory({
         role: 'model',
-        text: `[巡邏] ${reply}`,
+        text: `[巡邏] ${reply || '(僅執行動作)'}`,
         fromName: bot.name,
         timestamp: Date.now(),
       });
-      log.info(`[CrewPatrol] ${bot.emoji} ${bot.name} 巡邏完成，已發群組`);
+      log.info(`[CrewPatrol] ${bot.emoji} ${bot.name} 巡邏完成，actions=${actionResults.length}，已發群組`);
     } else {
-      log.info(`[CrewPatrol] ${bot.emoji} ${bot.name} 巡邏完成，無內容`);
+      log.warn(`[CrewPatrol] ${bot.emoji} ${bot.name} 巡邏完成但無任何產出（未執行 action 也無回覆）`);
     }
   } catch (err) {
     log.error({ err }, `[CrewPatrol] ${bot.name} 巡邏失敗`);

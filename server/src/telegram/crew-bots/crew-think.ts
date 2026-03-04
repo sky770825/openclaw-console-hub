@@ -44,6 +44,12 @@ export function pushHistory(entry: CrewHistoryEntry): void {
   if (groupHistory.length > MAX_HISTORY) groupHistory.splice(0, groupHistory.length - MAX_HISTORY);
 }
 
+/** crewThink 回傳結構 */
+export interface CrewThinkResult {
+  reply: string | null;
+  actionResults: string[];
+}
+
 /**
  * 完整 AI 思考 — 依 bot.model 選擇引擎
  * mode: 'auto'（預設，智慧判斷用原配或 Flash）/ 'full'（直接用原配模型）
@@ -53,7 +59,7 @@ export async function crewThink(
   userMessage: string,
   senderName: string,
   mode: 'auto' | 'full' = 'auto',
-): Promise<string | null> {
+): Promise<CrewThinkResult> {
   // 靈魂核心（快取，不重複讀）
   const soulCore = loadSoulCoreOnce();
   const awakening = loadAwakeningContext(userMessage);
@@ -94,7 +100,7 @@ export async function crewThink(
       ? await callAI(input, bot)
       : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
     if (!reply) {
-      if (step === 0) return null;
+      if (step === 0) return { reply: null, actionResults: [] };
       break;
     }
 
@@ -134,7 +140,7 @@ export async function crewThink(
     }
   }
 
-  if (!finalReply) return null;
+  if (!finalReply) return { reply: null, actionResults: allActionResults };
 
   // Telegram 友好格式
   const clean = finalReply
@@ -144,7 +150,7 @@ export async function crewThink(
     .replace(/`([^`\n]+)`/g, '$1')
     .trim();
 
-  return clean || null;
+  return { reply: clean || null, actionResults: allActionResults };
 }
 
 // ── AI 呼叫路由 ──

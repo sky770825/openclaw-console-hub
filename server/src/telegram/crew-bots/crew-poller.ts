@@ -144,12 +144,13 @@ async function executeRound(
     if (replies.length > 0) await sleep(BOT_STAGGER_MS + Math.random() * 1500);
 
     try {
-      const reply = await crewThink(bot, text, senderName);
+      const result = await crewThink(bot, text, senderName);
+      const reply = result.reply;
       if (reply && !reply.includes('沒有補充')) {
         await sendTelegramMessageToChat(chatId, reply, { token: bot.token, silent: true });
         pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
         replies.push({ botId: bot.id, botName: bot.name, reply });
-        log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 回覆了 (len=${reply.length})`);
+        log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 回覆了 (len=${reply.length}, actions=${result.actionResults.length})`);
       }
     } catch (err) {
       log.error({ err }, `[CrewDispatch] R${round} ${bot.name} 回覆失敗`);
@@ -367,7 +368,8 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
 
       setTimeout(async () => {
         try {
-          const reply = await crewThink(bot, text, senderName);
+          const result = await crewThink(bot, text, senderName);
+          const reply = result.reply;
           if (reply) {
             await sendTelegramMessageToChat(chatId, reply, {
               token: bot.token,
@@ -380,7 +382,7 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
               fromName: bot.name,
               timestamp: Date.now(),
             });
-            log.info(`[CrewPoller] ${bot.emoji} ${bot.name} 回覆了 (msg=${messageId})`);
+            log.info(`[CrewPoller] ${bot.emoji} ${bot.name} 回覆了 (msg=${messageId}, actions=${result.actionResults.length})`);
           }
         } catch (err) {
           log.error({ err }, `[CrewPoller] ${bot.name} 回覆失敗`);
