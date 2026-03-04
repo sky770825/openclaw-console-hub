@@ -737,13 +737,25 @@ function TaskDetailDrawer({ task, open, onClose, initialTab = 'overview', onTask
                       <ul className="text-sm list-disc pl-5 space-y-1">
                         {task.evidenceLinks.slice(0, 6).map((s, i) => {
                           const isUrl = /^https?:\/\//.test(s);
+                          const isAbsPath = s.startsWith('/');
+                          const isRelPath = !isUrl && !isAbsPath && (s.includes('/') || s.endsWith('.ts') || s.endsWith('.tsx') || s.endsWith('.md') || s.endsWith('.json'));
+                          const projectRoot = task.projectPath || '';
+                          const fullPath = isAbsPath ? s : (isRelPath && projectRoot ? `${projectRoot}/${s}` : '');
+                          const vscodeUrl = fullPath ? `vscode://file/${fullPath}` : '';
+                          const fileName = s.split('/').pop() || s;
                           return (
                             <li key={i} className="break-all">
                               {isUrl ? (
                                 <a href={s} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:opacity-80">
                                   {s}
                                 </a>
-                              ) : s}
+                              ) : vscodeUrl ? (
+                                <a href={vscodeUrl} className="text-primary underline hover:opacity-80 cursor-pointer" title={`在 VSCode 開啟: ${s}`}>
+                                  📄 {fileName} <span className="text-muted-foreground text-xs">({s})</span>
+                                </a>
+                              ) : (
+                                <span>📄 {s}</span>
+                              )}
                             </li>
                           );
                         })}
@@ -764,34 +776,30 @@ function TaskDetailDrawer({ task, open, onClose, initialTab = 'overview', onTask
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">projectPath</p>
-                        <p className="text-sm font-mono break-all">{task.projectPath}</p>
+                        <a href={`vscode://file/${task.projectPath}`} className="text-sm font-mono break-all text-primary underline hover:opacity-80" title="在 VSCode 開啟專案">
+                          📁 {task.projectPath}
+                        </a>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => copyToClipboard(task.projectPath!)}
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        複製
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" className="h-8" onClick={() => copyToClipboard(task.projectPath!)}>
+                          <Copy className="h-3 w-3 mr-1" /> 複製
+                        </Button>
+                      </div>
                     </div>
                   )}
                   {task.runPath && (
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">runPath</p>
-                        <p className="text-sm font-mono break-all">{task.runPath}</p>
+                        <a href={`vscode://file/${task.runPath}`} className="text-sm font-mono break-all text-primary underline hover:opacity-80" title="在 VSCode 開啟">
+                          📄 {task.runPath}
+                        </a>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => copyToClipboard(task.runPath!)}
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        複製
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" className="h-8" onClick={() => copyToClipboard(task.runPath!)}>
+                          <Copy className="h-3 w-3 mr-1" /> 複製
+                        </Button>
+                      </div>
                     </div>
                   )}
                   {task.idempotencyKey && (
