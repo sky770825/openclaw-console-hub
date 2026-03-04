@@ -3,8 +3,22 @@
  * 純 Supabase CRUD，不含 run/execution 邏輯
  *
  * GET    /tasks       — 列出任務（含 in-memory fallback）
+ *        ?status=pending|running|done|...         — 篩選任務狀態
+ *        ?owner=小蔡                              — 篩選任務擁有者
+ *        ?priority=3                              — 篩選最低優先級（priority >= N）
+ *        ?tags=feature,bug                        — 篩選標籤（逗號分隔，任一匹配即可）
+ *        ?search=登入                             — 任務名稱/描述文字搜尋
  *        ?sort=hot|rising|controversial|top|new  — Moltbook Feed 排名算法排序
  *        ?timeFilter=hour|day|week|month|year|all — Top 模式的時間過濾
+ *        ?limit=20          — 每頁數量（1-100，預設 20）
+ *        ?cursor=t1234567   — 游標分頁：從此 task ID 之後開始
+ *        ?offset=40         — 偏移分頁：跳過前 N 筆
+ *        ?fields=id,name,status  — Progressive Disclosure：只回傳指定欄位（輕量回應）
+ *        ?fields=summary         — 速記：id,name,status,priority,owner,tags,createdAt
+ *        ※ 未帶 limit/cursor/offset 時回傳全部（向後相容）
+ *        ※ 未帶 fields 時回傳完整物件（向後相容）
+ *        ※ 篩選在排序之前套用：取得全部 → 篩選 → 排序 → 分頁 → fields 投影 → 回傳
+ * GET    /tasks/:id/full — 完整任務詳情（含 rankingScore、age、activityHistory）
  * POST   /tasks       — 新增任務
  * PATCH  /tasks/:id   — 更新任務
  * DELETE /tasks/:id   — 刪除任務
@@ -25,6 +39,14 @@ import { tasks } from '../store.js';
 import type { Task } from '../types.js';
 import { scanTaskPayload } from '../promptGuard.js';
 import { rankTasks, isValidSortMode } from '../utils/task-ranking.js';
+import type { RankingSortMode } from '../utils/task-ranking.js';
+import {
+  getCachedFeed,
+  setCachedFeed,
+  invalidateFeedCache,
+  buildCacheKey,
+  getDefaultTTL,
+} from '../utils/feed-cache.js';
 
 const log = createLogger('openclaw-tasks-route');
 
@@ -43,6 +65,115 @@ const OC_STATUS_TO_BOARD: Record<string, string> = {
   cancelled: 'done',         // 已取消
   timeout: 'done',           // 逾時
 };
+
+// ── Progressive Disclosure: fields 投影 ─────────────────────
+
+/** ?fields=summary 的速記展開：常用輕量欄位 */
+const SUMMARY_FIELDS = ['id', 'name', 'status', 'priority', 'owner', 'tags', 'createdAt'];
+
+/**
+ * 解析 ?fields= 參數，回傳要保留的欄位陣列。
+ * - 未提供 → null（回傳完整物件）
+ * - "summary" → SUMMARY_FIELDS
+ * - "id,name,status" → ['id','name','status']
+ */
+function parseFieldsParam(raw: unknown): string[] | null {
+  const str = String(raw ?? '').trim();
+  if (!str) return null;
+  if (str.toLowerCase() === 'summary') return SUMMARY_FIELDS;
+  return str.split(',').map((f) => f.trim()).filter(Boolean);
+}
+
+/**
+ * 將任務物件投影到指定欄位。
+ * fields 為 null 時回傳原物件（向後相容）。
+ */
+function projectFields<T extends Record<string, unknown>>(item: T, fields: string[] | null): Partial<T> | T {
+  if (!fields) return item;
+  const result: Record<string, unknown> = {};
+  for (const key of fields) {
+    if (key in item) {
+      result[key] = item[key];
+    }
+  }
+  return result as Partial<T>;
+}
+
+/**
+ * 對陣列或分頁結果套用 fields 投影。
+ * 同時處理陣列和 { tasks, pagination } 兩種結構。
+ */
+function applyFieldsProjection(data: unknown, fields: string[] | null): unknown {
+  if (!fields) return data;
+
+  if (Array.isArray(data)) {
+    return data.map((item) => projectFields(item as Record<string, unknown>, fields));
+  }
+
+  // 分頁結構：{ tasks: [...], pagination: {...} }
+  if (data && typeof data === 'object' && 'tasks' in data && Array.isArray((data as any).tasks)) {
+    return {
+      ...(data as any),
+      tasks: (data as any).tasks.map((item: Record<string, unknown>) => projectFields(item, fields)),
+    };
+  }
+
+  return data;
+}
+
+// ── 排名分數計算（用於 /:id/full 端點）─────────────────────
+
+/**
+ * 計算單一任務在指定排序模式下的分數。
+ * 移植自 task-ranking.ts 的公式，避免為單一任務建立完整排序流程。
+ */
+function computeRankingScore(task: Record<string, unknown>, mode: RankingSortMode, now: number): number {
+  const priority = typeof task.priority === 'number' && task.priority >= 1 && task.priority <= 5
+    ? task.priority
+    : 3;
+
+  const createdIso = (task.createdAt ?? task.created_at) as string | undefined;
+  const createdMs = createdIso ? new Date(createdIso).getTime() : NaN;
+  const ageHours = Number.isNaN(createdMs) ? 0.1 : Math.max((now - createdMs) / (1000 * 60 * 60), 0.1);
+
+  switch (mode) {
+    case 'hot': {
+      const votes = priority - 3;
+      const absVotes = Math.abs(votes);
+      const sign = votes > 0 ? 1 : votes < 0 ? -1 : 0;
+      return Math.log10(Math.max(absVotes, 1)) * sign + ageHours / 12.5;
+    }
+    case 'rising':
+      return (priority + 1) / Math.pow(ageHours, 1.5);
+    case 'controversial': {
+      const up = priority;
+      const down = 6 - priority;
+      const total = up + down;
+      if (total === 0) return 0;
+      return total * (1 - Math.abs(up - down) / total);
+    }
+    case 'best': {
+      const up = priority;
+      const status = String(task.status ?? '');
+      const failedStatuses = ['failed', 'cancelled', 'canceled', 'error'];
+      const down = failedStatuses.includes(status) ? 6 - priority : 0;
+      const n = up + down;
+      if (n === 0) return 0;
+      const z = 1.96;
+      const p = up / n;
+      const left = p + (z * z) / (2 * n);
+      const right = z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n);
+      const under = 1 + (z * z) / n;
+      return (left - right) / under;
+    }
+    case 'top':
+      return priority;
+    case 'new':
+      return Number.isNaN(createdMs) ? 0 : createdMs;
+    default:
+      return 0;
+  }
+}
 
 /** 映射 OpenClaw task 到前端看板格式 */
 function mapToBoard(oc: any) {
@@ -75,9 +206,140 @@ function mapToBoard(oc: any) {
   };
 }
 
+/**
+ * 分頁輔助函式
+ * 若 request 帶有 limit/cursor/offset 任一參數，回傳 { tasks, pagination } 結構。
+ * 否則回傳原始陣列（向後相容）。
+ */
+function paginateResult(items: unknown[], req: import('express').Request): unknown {
+  const rawLimit = req.query.limit;
+  const rawCursor = req.query.cursor;
+  const rawOffset = req.query.offset;
+  const hasPagination =
+    rawLimit !== undefined || rawCursor !== undefined || rawOffset !== undefined;
+
+  if (!hasPagination) {
+    // 無分頁參數 → 回傳全部陣列（向後相容）
+    return items;
+  }
+
+  const total = items.length;
+
+  // 解析 limit：預設 20，範圍 1-100
+  let limit = 20;
+  if (rawLimit !== undefined) {
+    const parsed = parseInt(String(rawLimit), 10);
+    if (!isNaN(parsed)) {
+      limit = Math.max(1, Math.min(100, parsed));
+    }
+  }
+
+  let startIndex = 0;
+
+  if (rawCursor !== undefined && String(rawCursor).length > 0) {
+    // 游標分頁：找到 cursor 所指的 task，從它的下一筆開始
+    const cursorId = String(rawCursor);
+    const cursorIndex = items.findIndex((t: any) => t.id === cursorId);
+    if (cursorIndex === -1) {
+      // cursor 指向不存在的 ID → 從頭開始（容錯）
+      startIndex = 0;
+    } else {
+      startIndex = cursorIndex + 1;
+    }
+  } else if (rawOffset !== undefined) {
+    // 偏移分頁
+    const parsed = parseInt(String(rawOffset), 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      startIndex = Math.min(parsed, total);
+    }
+  }
+
+  const page = items.slice(startIndex, startIndex + limit);
+  const hasMore = startIndex + limit < total;
+  const nextCursor =
+    hasMore && page.length > 0 ? (page[page.length - 1] as any).id : null;
+
+  return {
+    tasks: page,
+    pagination: {
+      total,
+      limit,
+      hasMore,
+      ...(nextCursor != null && { nextCursor }),
+    },
+  };
+}
+
+// ── GET /api/openclaw/tasks/:id/full — 完整任務詳情 ─────────
+// 必須定義在 GET '/' 和 PATCH '/:id' 之前，避免 Express 路由衝突
+openclawTasksRouter.get('/:id/full', async (req, res) => {
+  try {
+    if (!hasSupabase()) {
+      log.error('[OpenClaw] GET /tasks/:id/full: Supabase not connected');
+      return res.status(503).json({ message: 'Supabase not connected' });
+    }
+
+    const ocTasks = await fetchOpenClawTasks();
+    const oc = ocTasks.find((x) => x.id === req.params.id);
+    if (!oc) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    const full = mapToBoard(oc as any);
+    const now = Date.now();
+    const rec = full as Record<string, unknown>;
+
+    // ── 計算 age（距離建立時間的小時數）──
+    const createdIso = rec.createdAt ?? rec.created_at;
+    let ageHours: number | null = null;
+    if (typeof createdIso === 'string') {
+      const createdMs = new Date(createdIso).getTime();
+      if (!Number.isNaN(createdMs)) {
+        ageHours = Math.round(((now - createdMs) / (1000 * 60 * 60)) * 100) / 100;
+      }
+    }
+
+    // ── 計算 rankingScore（如果提供了 ?sort= 參數）──
+    const sortMode = String(req.query.sort ?? '').toLowerCase();
+    let rankingScore: number | null = null;
+    if (sortMode && isValidSortMode(sortMode)) {
+      rankingScore = computeRankingScore(rec, sortMode as RankingSortMode, now);
+    }
+
+    // ── 組裝 activityHistory ──
+    const updatedIso = rec.updatedAt ?? rec.updated_at;
+    const activityHistory: { event: string; timestamp: string }[] = [];
+    if (typeof createdIso === 'string') {
+      activityHistory.push({ event: 'created', timestamp: createdIso });
+    }
+    if (typeof updatedIso === 'string' && updatedIso !== createdIso) {
+      activityHistory.push({ event: 'updated', timestamp: updatedIso as string });
+    }
+
+    const response = {
+      ...full,
+      _detail: 'full',
+      _computed: {
+        ageHours,
+        rankingScore,
+        rankingSortMode: rankingScore !== null ? sortMode : undefined,
+        activityHistory,
+      },
+    };
+
+    log.info(`[OpenClaw] GET /tasks/${req.params.id}/full: returned full detail`);
+    res.json(response);
+  } catch (e) {
+    log.error('[OpenClaw] GET /tasks/:id/full error:', e);
+    res.status(500).json({ message: 'Failed to fetch task detail' });
+  }
+});
+
 // GET /api/openclaw/tasks
 // 支持 ?sort=hot|rising|controversial|top|new 排名排序
 // 支持 ?timeFilter=hour|day|week|month|year|all（僅對 sort=top 生效）
+// 支持 ?limit=20&cursor=t123 游標分頁 / ?limit=20&offset=0 偏移分頁
+// 支持 ?fields=id,name,status 或 ?fields=summary（Progressive Disclosure）
 openclawTasksRouter.get('/', async (req, res) => {
   try {
     if (!hasSupabase()) {
@@ -100,17 +362,113 @@ openclawTasksRouter.get('/', async (req, res) => {
         thought: t.description,
       }));
     }
-    const mapped = (data ?? []).map((oc) => mapToBoard(oc as any));
+    let mapped = (data ?? []).map((oc) => mapToBoard(oc as any));
 
-    // 排名排序：根據 ?sort= 參數應用 Moltbook Feed 排名算法
+    // ── 篩選（filter before sort）──────────────────────────
+    const totalBeforeFilter = mapped.length;
+
+    // ?status=running  — 精確匹配 board status（支援原始 OpenClaw status 也一併對映）
+    const filterStatus = String(req.query.status ?? '').trim().toLowerCase();
+    if (filterStatus) {
+      // 允許用戶傳入 board status 或 OpenClaw raw status
+      const boardEquiv = OC_STATUS_TO_BOARD[filterStatus] ?? filterStatus;
+      mapped = mapped.filter((t) => {
+        const ts = String((t as Record<string, unknown>).status ?? '').toLowerCase();
+        return ts === filterStatus || ts === boardEquiv;
+      });
+    }
+
+    // ?owner=小蔡  — 大小寫不敏感子字串匹配
+    const filterOwner = String(req.query.owner ?? '').trim();
+    if (filterOwner) {
+      const ownerLower = filterOwner.toLowerCase();
+      mapped = mapped.filter((t) => {
+        const taskOwner = String((t as Record<string, unknown>).owner ?? '').toLowerCase();
+        return taskOwner.includes(ownerLower);
+      });
+    }
+
+    // ?priority=3  — 回傳 priority >= N 的任務
+    const filterPriority = Number(req.query.priority);
+    if (!Number.isNaN(filterPriority) && filterPriority > 0) {
+      mapped = mapped.filter((t) => {
+        const p = Number((t as Record<string, unknown>).priority ?? 0);
+        return p >= filterPriority;
+      });
+    }
+
+    // ?tags=feature,bug  — 逗號分隔，任務的 tags 陣列中任一標籤匹配即保留
+    const filterTags = String(req.query.tags ?? '').trim();
+    if (filterTags) {
+      const wantedTags = filterTags.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+      if (wantedTags.length > 0) {
+        mapped = mapped.filter((t) => {
+          const taskTags: string[] = Array.isArray((t as Record<string, unknown>).tags) ? ((t as Record<string, unknown>).tags as string[]) : [];
+          return taskTags.some((tag) => wantedTags.includes(String(tag).toLowerCase()));
+        });
+      }
+    }
+
+    // ?search=登入  — 名稱（name/title）或描述（description/thought）包含關鍵字（大小寫不敏感）
+    const filterSearch = String(req.query.search ?? '').trim();
+    if (filterSearch) {
+      const needle = filterSearch.toLowerCase();
+      mapped = mapped.filter((t) => {
+        const rec = t as Record<string, unknown>;
+        const name = String(rec.name ?? '').toLowerCase();
+        const title = String(rec.title ?? '').toLowerCase();
+        const desc = String(rec.description ?? '').toLowerCase();
+        const thought = String(rec.thought ?? '').toLowerCase();
+        return name.includes(needle) || title.includes(needle) || desc.includes(needle) || thought.includes(needle);
+      });
+    }
+
+    const filtered = totalBeforeFilter !== mapped.length;
+    if (filtered) {
+      log.info(`[OpenClaw] GET /tasks: filtered ${totalBeforeFilter} → ${mapped.length} tasks`);
+    }
+
+    // ── 排名排序（含 feed cache）──────────────────────────
     const sortMode = String(req.query.sort ?? '').toLowerCase();
     if (sortMode && isValidSortMode(sortMode)) {
       const timeFilter = String(req.query.timeFilter ?? 'all').toLowerCase();
-      rankTasks(mapped, sortMode, { timeFilter });
+
+      // 建構快取鍵（包含所有篩選參數）
+      const cacheKey = buildCacheKey({
+        sort: sortMode,
+        timeFilter,
+        status: filterStatus || undefined,
+        owner: filterOwner || undefined,
+        priority: filterPriority > 0 ? String(filterPriority) : undefined,
+        tags: filterTags || undefined,
+        search: filterSearch || undefined,
+      });
+
+      // 嘗試取得快取
+      const cached = getCachedFeed<unknown[]>(cacheKey);
+      if (cached) {
+        log.info(`[OpenClaw] GET /tasks: cache HIT for "${sortMode}", ${cached.length} tasks`);
+        const fields = parseFieldsParam(req.query.fields);
+        const paginated = paginateResult(cached, req);
+        return res.json(applyFieldsProjection(paginated, fields));
+      }
+
+      // Cache miss — 執行排序
+      rankTasks(mapped, sortMode as RankingSortMode, { timeFilter });
       log.info(`[OpenClaw] GET /tasks: sorted by "${sortMode}"${sortMode === 'top' ? ` (timeFilter=${timeFilter})` : ''}, ${mapped.length} tasks`);
+
+      // 寫入快取
+      const ttl = getDefaultTTL(sortMode as RankingSortMode);
+      setCachedFeed(cacheKey, mapped, ttl);
     }
 
-    res.json(mapped);
+    // ── 分頁 → fields 投影 → 回傳 ──────────────────────────
+    const fields = parseFieldsParam(req.query.fields);
+    const paginated = paginateResult(mapped, req);
+    if (fields) {
+      log.info(`[OpenClaw] GET /tasks: fields projection [${fields.join(',')}]`);
+    }
+    res.json(applyFieldsProjection(paginated, fields));
   } catch (e) {
     log.error('[OpenClaw] GET /tasks error:', e);
     res.status(500).json({ message: 'Failed to fetch tasks' });
@@ -210,6 +568,8 @@ openclawTasksRouter.post('/', async (req, res) => {
       log.error('[OpenClaw] POST /tasks: upsert failed');
       return res.status(500).json({ message: 'Failed to save task' });
     }
+    // 新增任務 → 清除 feed 快取
+    invalidateFeedCache();
     res.status(201).json({
       ...openClawTaskToTask(task),
       title: task.title,
@@ -254,6 +614,8 @@ openclawTasksRouter.patch('/:id', async (req, res) => {
       log.error('[OpenClaw] PATCH /tasks: upsert failed');
       return res.status(500).json({ message: 'Failed to update task' });
     }
+    // 更新任務 → 清除 feed 快取
+    invalidateFeedCache();
     res.json({
       ...openClawTaskToTask(task),
       title: task.title,
@@ -294,6 +656,8 @@ openclawTasksRouter.post('/archive-done', async (_req, res) => {
       return res.status(500).json({ message: error.message });
     }
     log.info(`[OpenClaw] Deleted ${count} done tasks`);
+    // 批次刪除 → 清除 feed 快取
+    invalidateFeedCache();
     res.json({ archived: count });
   } catch (e) {
     log.error('[OpenClaw] archive-done error:', e);
@@ -313,6 +677,8 @@ openclawTasksRouter.delete('/:id', async (req, res) => {
       log.error('[OpenClaw] DELETE /tasks error:', error.message);
       return res.status(500).json({ message: 'Failed to delete task' });
     }
+    // 刪除任務 → 清除 feed 快取
+    invalidateFeedCache();
     return res.status(204).send();
   } catch (e) {
     log.error('[OpenClaw] DELETE /tasks error:', e);
