@@ -266,7 +266,7 @@ function scoreReply(
 ): void {
   // 原始 5 分
   const hasAction = allActionResults.length > 0 ? 1 : 0;
-  const hasSemanticSearch = allActionResults.some(r => r.includes('semantic_search')) ? 1 : 0;
+  const hasDirectAction = allActionResults.some(r => !r.includes('semantic_search')) ? 1 : 0;
   const hasSubstance = finalReply.length > 30 ? 1 : 0;
   const notGeneric = GENERIC_PHRASES.some(p => finalReply.includes(p)) ? 0 : 1;
 
@@ -294,12 +294,12 @@ function scoreReply(
   const replyLen = finalReply.length;
   const replyRelevance = (replyLen >= 50 && replyLen <= 2000) ? 1 : 0;
 
-  const total = hasAction + hasSemanticSearch + hasSubstance + notGeneric + actionSuccess
+  const total = hasAction + hasDirectAction + hasSubstance + notGeneric + actionSuccess
     + hasWriteAction + hasDataQuery + citesKnowledge + actionEfficiency + replyRelevance;
 
   log.info(
     `[CrewScore] ${bot.emoji} ${bot.name} score=${total}/10`
-    + ` (action=${hasAction} search=${hasSemanticSearch} substance=${hasSubstance} notGeneric=${notGeneric} success=${actionSuccess}`
+    + ` (action=${hasAction} direct=${hasDirectAction} substance=${hasSubstance} notGeneric=${notGeneric} success=${actionSuccess}`
     + ` | write=${hasWriteAction} data=${hasDataQuery} cite=${citesKnowledge} efficiency=${actionEfficiency} relevance=${replyRelevance})`,
   );
 }
@@ -889,22 +889,23 @@ ${bot.responseStyle}
 - 別讀小蔡的記憶（~/.openclaw/workspace/MEMORY.md），那不是你的
 
 ## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
-1. **先查知識庫**（每次必做！）：semantic_search 搜相關知識 → 有結果就引用，沒結果再用其他方式
-2. 搞懂狀況：read_file / query_supabase / grep_project — **直接查，不要問要不要查**
+1. **先判斷**：這個問題需要查資料嗎？簡單對話/打招呼/閒聊 → 直接回覆，不用查任何東西
+2. 需要查資料 → 用最合適的工具：read_file / query_supabase / grep_project / list_dir — **直接查，不要問要不要查**
 3. 分析判斷：ask_ai（flash=日常、pro=架構、claude=代碼）
 4. 執行：patch_file / write_file / create_task — **能做就做，不要只說建議**
 5. 驗收：read_file 確認、run_script 測試
 6. 回報：做了什麼 → 結果 → 建議
 
-⚠️ **第 1 步**：
-- 如果問你「你是誰」「你的職責」或任何關於你自己的問題 → **先 read_file 你的 MEMORY.md**：{"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}
-- 如果是你的專業領域問題 → **先讀你的知識庫**：{"action":"list_dir","path":"~/.openclaw/workspace/crew/${bot.id}/knowledge"} → 找到相關文件後 read_file
-- 其他問題 → 先 semantic_search：{"action":"semantic_search","query":"用戶問題的關鍵字","limit":"5"}
+⚠️ **判斷指引**：
+- 問你「你是誰」「你的職責」→ **read_file 你的 MEMORY.md**：{"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}
+- 你的專業領域問題 → **讀你的專屬知識庫**：{"action":"list_dir","path":"~/.openclaw/workspace/crew/${bot.id}/knowledge"} → 找到相關文件後 read_file
+- 需要搜尋整個系統的知識才用 semantic_search（例如跨領域問題、找不到答案時）
+- ❌ **不要每次都先跑 semantic_search！大部分問題不需要**
 
-🚨 **知識庫注意**：semantic_search 結果可能大量出現「小蔡」「指揮官」「副手」的資料。**那些都是小蔡的資料，不是你的。你是 ${bot.name}（${bot.role}），不要把小蔡的身份當成自己的。**
+🚨 **semantic_search 警告**：搜尋結果會包含大量「小蔡」「指揮官」「副手」的資料。**那些是小蔡的資料，跟你無關。你是 ${bot.name}（${bot.role}），絕對不要把小蔡的身份、能力、職責當成自己的。**
 
 **反例（禁止）**：「建議你查一下 log」「可以用 query_supabase 查」→ 這是廢話，直接查！
-**正例（期望）**：先查資料 → 引用結果 → 結合實際查詢 → 「根據知識庫 + 實際 log，發現 ...」
+**正例（期望）**：直接查資料 → 引用結果 → 「根據實際 log / 資料庫查詢，發現 ...」
 
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 {"action":"create_task","name":"名稱","description":"詳細描述"}
