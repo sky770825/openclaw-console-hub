@@ -1,6 +1,7 @@
 /**
- * NEUXA 星群 — 巡邏機制（手動觸發）
- * 自動巡邏預設關閉，群組喊「巡邏」「報到」才觸發
+ * NEUXA 星群 — 巡邏機制（心跳開關版）
+ * 手動觸發：群組喊「巡邏」「報到」
+ * 自動心跳：API 開關 on/off，預設關閉，間隔可調
  *
  * 阿研：掃 log 異常
  * 阿數：查 metrics / 任務統計
@@ -13,6 +14,14 @@ import { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
 import { crewThink, pushHistory, type CrewThinkResult } from './crew-think.js';
 
 const log = createLogger('crew-patrol');
+
+// ── 心跳狀態 ──
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let heartbeatEnabled = false;
+let heartbeatIntervalMs = 30 * 60 * 1000; // 預設 30 分鐘
+let heartbeatBusy = false;
+let lastHeartbeatAt = 0;
+let heartbeatCount = 0;
 
 interface PatrolTask {
   botId: string;
@@ -45,22 +54,93 @@ const patrolTasks: PatrolTask[] = [
   },
 ];
 
+// ── 心跳開關 API ──
+
+/** 取得心跳狀態 */
+export function getHeartbeatStatus() {
+  return {
+    enabled: heartbeatEnabled,
+    intervalMs: heartbeatIntervalMs,
+    intervalMin: Math.round(heartbeatIntervalMs / 60000),
+    busy: heartbeatBusy,
+    lastHeartbeatAt: lastHeartbeatAt ? new Date(lastHeartbeatAt).toISOString() : null,
+    heartbeatCount,
+  };
+}
+
+/** 開啟心跳（可選間隔，單位分鐘） */
+export function enableHeartbeat(intervalMin?: number): { ok: boolean; message: string } {
+  if (!CREW_GROUP_CHAT_ID) {
+    return { ok: false, message: '無 CREW_GROUP_CHAT_ID，無法啟動心跳' };
+  }
+
+  if (intervalMin && intervalMin >= 5) {
+    heartbeatIntervalMs = intervalMin * 60 * 1000;
+  }
+
+  // 清除舊 timer
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+
+  heartbeatEnabled = true;
+  heartbeatTimer = setInterval(() => {
+    heartbeatTick().catch(err => log.error({ err }, '[CrewHeartbeat] tick 失敗'));
+  }, heartbeatIntervalMs);
+
+  log.info(`[CrewHeartbeat] 🫀 心跳已開啟，間隔 ${Math.round(heartbeatIntervalMs / 60000)} 分鐘`);
+  return { ok: true, message: `心跳已開啟，間隔 ${Math.round(heartbeatIntervalMs / 60000)} 分鐘` };
+}
+
+/** 關閉心跳 */
+export function disableHeartbeat(): { ok: boolean; message: string } {
+  heartbeatEnabled = false;
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+  log.info('[CrewHeartbeat] 💤 心跳已關閉');
+  return { ok: true, message: '心跳已關閉' };
+}
+
+/** 心跳 tick — 自動觸發巡邏 */
+async function heartbeatTick(): Promise<void> {
+  if (heartbeatBusy) {
+    log.info('[CrewHeartbeat] 上一次心跳還在跑，跳過');
+    return;
+  }
+
+  heartbeatBusy = true;
+  heartbeatCount++;
+  lastHeartbeatAt = Date.now();
+  log.info(`[CrewHeartbeat] 🫀 心跳 #${heartbeatCount} 觸發巡邏`);
+
+  try {
+    await triggerPatrolNow();
+  } finally {
+    heartbeatBusy = false;
+  }
+}
+
+// ── 原有功能 ──
+
 /**
- * 啟動巡邏系統（僅註冊，不自動排程）
- * 自動巡邏已關閉，改為手動觸發（群組喊「巡邏」）
+ * 啟動巡邏系統（僅註冊，心跳預設關閉）
  */
 export function startCrewPatrol(): void {
   if (!CREW_GROUP_CHAT_ID) {
     log.warn('[CrewPatrol] 無 CREW_GROUP_CHAT_ID，跳過巡邏');
     return;
   }
-  log.info('[CrewPatrol] 巡邏系統就緒（手動觸發模式，群組喊「巡邏」觸發）');
+  log.info('[CrewPatrol] 巡邏系統就緒（手動觸發 + 心跳開關模式）');
 }
 
 /**
- * 停止所有巡邏（相容舊介面）
+ * 停止所有巡邏 + 心跳
  */
 export function stopCrewPatrol(): void {
+  disableHeartbeat();
   log.info('[CrewPatrol] 巡邏系統已停止');
 }
 
@@ -76,7 +156,7 @@ export async function triggerPatrolNow(): Promise<void> {
     return;
   }
 
-  log.info(`[CrewPatrol] 手動觸發巡邏，${tasks.length} 個 bot 出動`);
+  log.info(`[CrewPatrol] 巡邏觸發，${tasks.length} 個 bot 出動`);
 
   // 並行執行所有巡邏
   await Promise.allSettled(tasks.map(t => executePatrol(t)));

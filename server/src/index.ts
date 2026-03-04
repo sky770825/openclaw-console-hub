@@ -3768,6 +3768,31 @@ app.post('/api/crew/dispatch', async (req, res) => {
   }
 });
 
+// ── Crew Bot 心跳開關 ──
+app.get('/api/crew/heartbeat', async (_req, res) => {
+  try {
+    const { getHeartbeatStatus } = await import('./telegram/crew-bots/crew-patrol.js');
+    res.json({ ok: true, ...getHeartbeatStatus() });
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
+app.post('/api/crew/heartbeat/on', async (req, res) => {
+  try {
+    const intervalMin = (req.body as Record<string, unknown>)?.intervalMin as number | undefined;
+    const { enableHeartbeat } = await import('./telegram/crew-bots/crew-patrol.js');
+    const result = enableHeartbeat(intervalMin);
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
+app.post('/api/crew/heartbeat/off', async (_req, res) => {
+  try {
+    const { disableHeartbeat } = await import('./telegram/crew-bots/crew-patrol.js');
+    const result = disableHeartbeat();
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
 app.post('/api/telegram/test', async (_req, res) => {
   if (!isTelegramConfigured()) {
     return res.status(503).json({ ok: false, message: 'Telegram 未設定。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。' });
@@ -3906,7 +3931,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.4.62',
+    version: '2.4.63',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
