@@ -7,3 +7,4 @@ export { default as CyberGradient } from "./CyberGradient";
 export { default as MotionPanel, MotionList } from "./MotionPanel";
 export { default as TelemetryChart } from "./TelemetryChart";
 export { default as NativePopover } from "./NativePopover";
+export { default as Live2DCharacter } from "./Live2DCharacter";

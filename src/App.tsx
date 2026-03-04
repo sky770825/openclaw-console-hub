@@ -41,6 +41,7 @@ const AutomationDeck = lazy(() => import("./pages/AutomationDeck"));
 const MDCIDashboard = lazy(() => import("./pages/starship/MDCIDashboard"));
 const FrameworksOverview = lazy(() => import("./pages/starship/FrameworksOverview"));
 const ManufacturingRoadmap = lazy(() => import("./pages/starship/ManufacturingRoadmap"));
+const Live2DShowcase = lazy(() => import("./pages/Live2DShowcase"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -132,6 +133,7 @@ const App = () => (
                   <Route path="/starship/mdci" element={<MDCIDashboard />} />
                   <Route path="/starship/frameworks" element={<FrameworksOverview />} />
                   <Route path="/starship/manufacturing" element={<ManufacturingRoadmap />} />
+                  <Route path="/starship/live2d" element={<Live2DShowcase />} />
                   {/* ─── 通信甲板 ─── */}
                   <Route path="/center/communication" element={<CommunicationDeck />} />
                   <Route path="/center/communication/:module" element={<CommunicationDeck />} />
