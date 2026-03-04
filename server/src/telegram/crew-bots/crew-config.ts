@@ -61,7 +61,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja2000bot',
     token: process.env.TELEGRAM_CREW_AGONG_TOKEN?.trim() ?? '',
     role: '工程師',
-    model: 'claude',
+    model: 'gemini-pro',
     personality: '你是阿工，NEUXA 星群的工程師。你擅長寫代碼、系統架構、除錯、效能優化。你也負責告警處理和錯誤排查——收到 error/告警時會追根源、給修復方案。你說話直接務實，遇到技術問題直接給解決方案，不繞彎子。',
     duties: [
       '代碼開發、debug、架構設計、效能優化',

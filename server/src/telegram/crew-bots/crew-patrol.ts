@@ -26,30 +26,26 @@ const patrolTasks: PatrolTask[] = [
   {
     botId: 'ayan',
     intervalMs: 60 * 60 * 1000, // 60 分鐘
-    prompt: '【巡邏任務】請主動掃描系統 log，用 action 執行：\n' +
-      '1. {"action":"run_script","command":"tail -50 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n' +
-      '2. 分析結果，如果有異常就彙整報告，標記嚴重程度\n' +
-      '3. 沒有異常就簡短回「巡邏完畢，系統正常」\n' +
-      '不要只說「我來查」，直接執行上面的 action。',
+    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
+      '{"action":"run_script","command":"tail -50 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n\n' +
+      '拿到結果後，分析有無異常。有異常就報告嚴重程度，沒異常就說「巡邏完畢，系統正常」。',
     lastRun: 0,
   },
   {
     botId: 'ashu',
     intervalMs: 60 * 60 * 1000, // 60 分鐘
-    prompt: '【巡邏任務】請主動檢查系統指標，用 action 執行：\n' +
-      '1. {"action":"query_supabase","table":"openclaw_tasks","select":"status,count","filters":[],"limit":100}\n' +
-      '2. {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n' +
-      '3. 彙整：任務統計（pending/running/done/error 各幾個）+ 系統健康狀態\n' +
-      '直接執行，不要問要不要查。',
+    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"status","filters":[],"limit":200}\n' +
+      '{"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n\n' +
+      '拿到結果後，彙整：任務統計（各狀態幾個）+ 系統健康。',
     lastRun: 0,
   },
   {
     botId: 'ami',
     intervalMs: 120 * 60 * 1000, // 120 分鐘
-    prompt: '【巡邏任務】請主動整理待辦事項摘要，用 action 執行：\n' +
-      '1. {"action":"query_supabase","table":"openclaw_tasks","select":"name,status,priority,owner","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n' +
-      '2. 整理成簡短清單：高優先 / 進行中 / 待處理，提醒老蔡注意的事項\n' +
-      '直接查直接報告。',
+    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"name,status,priority,owner","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
+      '拿到結果後，整理簡短清單：高優先 / 進行中 / 待處理。',
     lastRun: 0,
   },
 ];

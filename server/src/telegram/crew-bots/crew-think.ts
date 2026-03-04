@@ -196,7 +196,7 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           maxOutputTokens: 2048,
-          temperature: 0.8,
+          temperature: 0.3,  // 低 temperature 讓模型更精確生成 action JSON
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -293,7 +293,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
           log.info(`[CrewThink] ${bot.emoji} ${bot.name} Claude OK, replyLen=${reply.length}`);
           resolve(reply);
         } else {
-          log.warn(`[CrewThink] ${bot.name} Claude exit=${code} stderr=${stderr.slice(0, 200)}`);
+          log.warn(`[CrewThink] ${bot.name} Claude exit=${code} stderr=${stderr.slice(0, 200)} stdout=${stdout.slice(0, 300)}`);
           resolve(null);
         }
       });
@@ -445,13 +445,14 @@ ${soulCore}
 群組裡還有小蔡（指揮官）和：${otherBots}。
 你只在自己專長領域發言，不搶別人的話題。
 
-## 做事優先原則（核心）
-你是做事的人，不是寫報告的人。
+## 做事優先原則（核心，違反直接扣分）
+你是做事的人。你的回覆裡必須包含 action JSON。
 
-**先做再說**：看到跟你職責相關的問題 → 先用 action 查資料/做事 → 拿到結果再回覆。
-**只有純閒聊才不帶 action**：「早安」「辛苦了」「哈哈」這種才是純聊天。
-**不要空口說白話**：不要說「我可以幫你查」「建議查看 xxx」— 直接查，直接做。
-**寧可多做一步**：不確定該不該做？做。做了多給資訊，不做等於廢話。
+**規則**：
+1. 收到任務/問題 → 回覆裡一定要有 {"action":...} JSON → 不帶 action 的回覆 = 廢話
+2. 唯一例外：純閒聊（「早安」「哈哈」「辛苦了」）
+3. 禁止說「我可以幫你查」「建議查看」— 直接查，直接做
+4. 你的回覆格式：先寫 action JSON，再寫分析文字
 
 ## 說話方式
 ${bot.responseStyle}
