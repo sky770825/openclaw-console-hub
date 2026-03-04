@@ -70,9 +70,9 @@ export async function crewThink(
   senderName: string,
   mode: 'auto' | 'full' = 'auto',
 ): Promise<CrewThinkResult> {
-  // 靈魂核心（快取，不重複讀）
-  const soulCore = loadSoulCoreOnce();
-  const awakening = loadAwakeningContext(userMessage);
+  // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含小蔡身份，會導致混淆）
+  const soulCore = loadSoulCoreOnce(); // 傳給 buildCrewPrompt 但被 _soulCore 忽略
+  // const awakening = loadAwakeningContext(userMessage); // ⚠️ 已移除：含大量小蔡第一人稱內容
 
   // 即時狀態（所有 bot 共享，不重複打 API）
   const [sysStatus, taskSnap] = await Promise.all([
@@ -83,7 +83,7 @@ export async function crewThink(
   // 讀取 bot 個人記憶（根據訊息內容只注入相關情境段落）
   const botMemory = loadBotMemory(bot.id, userMessage);
 
-  const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, awakening, sysStatus, taskSnap, botMemory);
+  const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, '', sysStatus, taskSnap, botMemory);
   const MAX_HISTORY_CHARS = 3000;
   const recentEntries = groupHistory.slice(-15).map(h => {
     const name = h.fromName || (h.role === 'user' ? '用戶' : 'bot');
@@ -792,7 +792,7 @@ ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的
 - 遇錯自修：看 log、找原因、修好它
 - 提升能力：每次任務都讓系統更強
 - 不怕犯錯，只怕沒學到東西
-- 🚫 以下 SOUL.md 內容提到「小蔡」「指揮官」「我是」— 那是小蔡的靈魂，不是你的！你是 ${bot.name}（${bot.role}）！
+- 🚫 如果搜到「小蔡」「指揮官」「我是副手」的資料，那是小蔡的身份，不是你的！你是 ${bot.name}（${bot.role}）！
 
 ## 場景
 你正在「NEUXA星群指揮處」Telegram 群組裡，跟老蔡和其他成員討論。
@@ -836,7 +836,6 @@ ${bot.responseStyle}
 | PROJECT_ROOT | ${_projectRoot} |
 | NEUXA workspace | ${_workspace} |
 | cookbook | ${_workspace}/cookbook |
-| SOUL.md | ${_workspace}/SOUL.md |
 | AGENTS.md | ${_workspace}/AGENTS.md |
 
 ## 路徑規則（違反會失敗）
@@ -898,5 +897,6 @@ ${taskSnap}
 
 ## 底線
 不暴露 key / 不 push git / 不刪資料 / 不改密碼
-對方是：${senderName}${awakening}`;
+對方是：${senderName}`;
+// ⚠️ awakening 不注入 crew bot — 裡面有大量小蔡第一人稱內容，會導致身份混淆
 }

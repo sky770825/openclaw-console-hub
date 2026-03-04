@@ -2555,6 +2555,11 @@ function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; re
     }
   }
 
+  // 禁止修改 server 源碼目錄 — 只有老蔡能改（防小蔡 patch_file 搞壞核心）
+  if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
+    return { safe: false, resolved, reason: '🛑 禁止修改 server 源碼目錄，只有老蔡能改' };
+  }
+
   // 只擋系統目錄，其他全放行（靈魂文件已在上面攔截）
   const sysDir = ['/etc', '/var', '/usr', '/bin', '/sbin', '/System', '/Library', '/private'];
   if (sysDir.some(d => resolved.startsWith(d))) {

@@ -1364,16 +1364,27 @@ ${errorFeedback.slice(0, 800)}
       // Step 3: 掃描產出物
       const artifacts = this.scanArtifacts();
 
-      // Step 4: 強制保護核心源碼 — 任何被改動的 server/src 或 src 一律回滾
+      // Step 4: 強制保護核心源碼 — 任何被改動的 server/src 或 src 一律回滾（含 untracked 新檔案）
       try {
         const gitDiff = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+        const gitUntracked = spawnSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
         const changedFiles = (gitDiff.stdout || '').trim().split('\n').filter(f => f);
-        const protectedChanges = changedFiles.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
+        const untrackedFiles = (gitUntracked.stdout || '').trim().split('\n').filter(f => f);
+        const allChanged = [...changedFiles, ...untrackedFiles];
+        const protectedChanges = allChanged.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
         if (protectedChanges.length > 0) {
           log.warn(`[GenerateAndExecute] 🛡️ 腳本改到了保護區: ${protectedChanges.join(', ')}，強制回滾`);
-          // 用 git checkout HEAD -- 確保恢復到 commit 版本，而非 index 版本
-          spawnSync('git', ['checkout', 'HEAD', '--', ...protectedChanges], { cwd: PROJECT_ROOT, timeout: 10000 });
-          log.info(`[GenerateAndExecute] 🛡️ 已回滾 ${protectedChanges.length} 個保護檔案`);
+          // 已追蹤檔案：git checkout HEAD -- 恢復
+          const trackedProtected = protectedChanges.filter(f => changedFiles.includes(f));
+          if (trackedProtected.length > 0) {
+            spawnSync('git', ['checkout', 'HEAD', '--', ...trackedProtected], { cwd: PROJECT_ROOT, timeout: 10000 });
+          }
+          // untracked 新檔案：直接刪除
+          const untrackedProtected = protectedChanges.filter(f => untrackedFiles.includes(f));
+          for (const uf of untrackedProtected) {
+            try { fs.unlinkSync(path.join(PROJECT_ROOT, uf)); } catch {}
+          }
+          log.info(`[GenerateAndExecute] 🛡️ 已回滾 ${protectedChanges.length} 個保護檔案（tracked: ${trackedProtected.length}, untracked: ${untrackedProtected.length}）`);
           // 回滾後視為任務失敗，不讓它混水摸魚
           if (execResult.exitCode === 0) {
             log.warn(`[GenerateAndExecute] 🛡️ 腳本改到保護區，即使 exit=0 也判為失敗`);
@@ -1443,7 +1454,7 @@ ${errorFeedback.slice(0, 800)}
       `描述：${task.description || '無'}`,
       ``,
       `工作目錄：${PROJECT_ROOT}`,
-      `Server 源碼：${PROJECT_ROOT}/server/src/（你可以直接修改這裡的 TypeScript 檔案）`,
+      `Server 源碼：${PROJECT_ROOT}/server/src/（⚠️ 禁止修改！只能讀取和分析，不能 write/edit）`,
       ``,
       `執行步驟：`,
       `1. 閱讀相關源碼，理解現有架構`,
@@ -1490,6 +1501,31 @@ ${errorFeedback.slice(0, 800)}
           resolve({ stdout, stderr: err.message, exitCode: 1 });
         });
       });
+
+      // 🛡️ Claude CLI 也要保護核心源碼 — 回滾任何 server/src 或 src 的改動
+      try {
+        const gitDiffCli = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+        const gitUntrackedCli = spawnSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+        const changedCli = (gitDiffCli.stdout || '').trim().split('\n').filter(f => f);
+        const untrackedCli = (gitUntrackedCli.stdout || '').trim().split('\n').filter(f => f);
+        const allChangedCli = [...changedCli, ...untrackedCli];
+        const protectedCli = allChangedCli.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
+        if (protectedCli.length > 0) {
+          log.warn(`[ClaudeCLI] 🛡️ Claude CLI 改到保護區: ${protectedCli.join(', ')}，強制回滾`);
+          const trackedProtected = protectedCli.filter(f => changedCli.includes(f));
+          const untrackedProtected = protectedCli.filter(f => untrackedCli.includes(f));
+          if (trackedProtected.length > 0) {
+            spawnSync('git', ['checkout', 'HEAD', '--', ...trackedProtected], { cwd: PROJECT_ROOT, timeout: 10000 });
+          }
+          // 刪除 untracked 的保護區新檔案
+          for (const uf of untrackedProtected) {
+            try { fs.unlinkSync(path.join(PROJECT_ROOT, uf)); } catch {}
+          }
+          log.info(`[ClaudeCLI] 🛡️ 已回滾 ${protectedCli.length} 個保護檔案`);
+        }
+      } catch (e) {
+        log.error(`[ClaudeCLI] 🛡️ 保護區回滾失敗: ${e}`);
+      }
 
       const artifacts = this.scanArtifacts();
 
