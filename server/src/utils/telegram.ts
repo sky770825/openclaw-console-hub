@@ -5,8 +5,30 @@
  */
 
 import { createLogger } from '../logger.js';
+import { appendFileSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
 
 const log = createLogger('telegram-util');
+
+const GROUP_CHAT_LOG = process.env.HOME + '/.openclaw/workspace/reports/group_chat_log.md';
+
+/** 把 bot 發出的訊息也記進 group_chat_log.md */
+function logBotMessage(chatId: number | string, text: string, token: string) {
+  try {
+    // 從 token 反查 bot 名稱
+    const botNames: Record<string, string> = {};
+    const envKeys = Object.keys(process.env).filter(k => k.includes('BOT_TOKEN'));
+    for (const k of envKeys) {
+      const name = k.replace(/_TOKEN$/, '').replace(/^TELEGRAM_/, '').toLowerCase();
+      if (process.env[k]?.trim()) botNames[process.env[k]!.trim()] = name;
+    }
+    const botName = botNames[token] || 'unknown_bot';
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const line = `[${ts}] [BOT:${botName}] → chat ${chatId}: ${text.slice(0, 500)}\n`;
+    mkdirSync(dirname(GROUP_CHAT_LOG), { recursive: true });
+    appendFileSync(GROUP_CHAT_LOG, line, 'utf-8');
+  } catch { /* 不影響主流程 */ }
+}
 
 /**
  * 清理非 UTF-8 / Telegram 不接受的字元
@@ -110,6 +132,8 @@ export async function sendTelegramMessageToChat(
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
       log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] send failed');
+    } else {
+      logBotMessage(chatId, text, token);
     }
   } catch (error) {
     log.error({ err: error }, '[TelegramControl] Failed to send message');
