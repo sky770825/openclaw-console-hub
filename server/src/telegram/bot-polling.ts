@@ -10,7 +10,7 @@ import { createLogger } from '../logger.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
 import { handleStopCommand } from '../emergency-stop.js';
 import { sanitize } from '../utils/key-vault.js';
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -2044,7 +2044,7 @@ export function startTelegramStopPoll(): void {
 
   // 小蔡 polling：如果 openclaw-gateway 已在跑，由 gateway 獨佔，taskboard 不搶
   const gatewayOwnsXiaocai = process.env.XIAOCAI_POLL_DISABLED === '1'
-    || (() => { try { return !!require('child_process').execSync('pgrep -f openclaw-gateway', { timeout: 2000 }).toString().trim(); } catch { return false; } })();
+    || (() => { try { return !!execSync('pgrep -f openclaw-gateway', { timeout: 2000 }).toString().trim(); } catch { return false; } })();
 
   if (XIAOCAI_TOKEN && !gatewayOwnsXiaocai) {
     xiaocaiRunning = true;
