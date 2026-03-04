@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../../logger.js';
 import { executeNEUXAAction } from '../action-handlers.js';
-import { loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from '../xiaocai-think.js';
+import { loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus, claudeCliCircuitOpen, claudeCliRecordFail, claudeCliRecordSuccess } from '../xiaocai-think.js';
 import type { CrewBotConfig } from './crew-config.js';
 import { CREW_BOTS } from './crew-config.js';
 
@@ -487,6 +487,11 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
  */
 async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string | null> {
   // 併發鎖
+  // Claude CLI 熔斷：共用小蔡的熔斷器（同一個訂閱）
+  if (claudeCliCircuitOpen()) {
+    log.info(`[CrewThink] ${bot.name} ⚡ Claude CLI 熔斷中，跳過`);
+    return null;
+  }
   if (claudeRunning >= CLAUDE_MAX_CONCURRENT) {
     log.warn(`[CrewThink] ${bot.name} Claude 併發已滿 (${claudeRunning}/${CLAUDE_MAX_CONCURRENT})，跳過`);
     return null;
@@ -537,9 +542,11 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
         clearTimeout(timer);
         const reply = stdout.trim();
         if (code === 0 && reply) {
+          claudeCliRecordSuccess();
           log.info(`[CrewThink] ${bot.emoji} ${bot.name} Claude OK, replyLen=${reply.length}`);
           resolve(reply);
         } else {
+          claudeCliRecordFail();
           log.warn(`[CrewThink] ${bot.name} Claude exit=${code} stderr=${stderr.slice(0, 200)} stdout=${stdout.slice(0, 300)}`);
           resolve(null);
         }

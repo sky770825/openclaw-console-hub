@@ -13,6 +13,32 @@ const log = createLogger('telegram');
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
+// ── Claude CLI 熔斷器（連續失敗時快速跳過，省 12 秒無謂重試）──
+let claudeCliFailCount = 0;
+let claudeCliLastFailAt = 0;
+const CLAUDE_CLI_CIRCUIT_THRESHOLD = 3;    // 連敗 3 次觸發熔斷
+const CLAUDE_CLI_CIRCUIT_COOLDOWN = 5 * 60 * 1000; // 5 分鐘後重試
+
+export function claudeCliCircuitOpen(): boolean {
+  if (claudeCliFailCount < CLAUDE_CLI_CIRCUIT_THRESHOLD) return false;
+  // 冷卻期過了 → 重置，再試一次
+  if (Date.now() - claudeCliLastFailAt > CLAUDE_CLI_CIRCUIT_COOLDOWN) {
+    claudeCliFailCount = 0;
+    log.info('[XiaocaiAI] Claude CLI 熔斷重置，嘗試恢復');
+    return false;
+  }
+  return true;
+}
+
+export function claudeCliRecordFail(): void {
+  claudeCliFailCount++;
+  claudeCliLastFailAt = Date.now();
+}
+
+export function claudeCliRecordSuccess(): void {
+  claudeCliFailCount = 0;
+}
+
 // ── 即時狀態 ──
 
 /** 取得任務板快照（給 AI 當 context） */
@@ -453,6 +479,11 @@ export async function xiaocaiThink(
   /** 嘗試用指定模型生成回覆 */
   async function tryModel(modelId: string): Promise<string | null> {
     const prov = getModelProvider(modelId);
+    // Claude CLI 熔斷：連續失敗 3+ 次 → 5 分鐘內直接跳過，省掉無謂重試
+    if (prov === 'claude-cli' && claudeCliCircuitOpen()) {
+      log.info(`[XiaocaiAI] ⚡ Claude CLI 熔斷中（${claudeCliFailCount} 連敗），跳過 ${modelId}`);
+      return null;
+    }
     try {
       if (prov === 'claude-cli') {
         // ── Claude Code CLI 訂閱制（不花 API 錢）──
@@ -476,9 +507,11 @@ export async function xiaocaiThink(
             clearTimeout(timer);
             const reply = stdout.trim();
             if (code === 0 && reply) {
+              claudeCliRecordSuccess();
               log.info(`[XiaocaiAI] Claude CLI model=${claudeModel} replyLen=${reply.length}`);
               resolve(reply);
             } else {
+              claudeCliRecordFail();
               log.warn(`[XiaocaiAI] Claude CLI ${claudeModel} exitCode=${code} stderr=${stderr.slice(0, 200)}`);
               resolve(null);
             }
