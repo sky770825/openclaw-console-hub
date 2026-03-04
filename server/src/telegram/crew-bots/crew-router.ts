@@ -49,13 +49,9 @@ export function routeMessage(
     return { respondingBots: [], filtered: true, filterReason: 'too short' };
   }
 
-  // ─── Layer 3.5: 指揮官模式 — 小蔡發的訊息不過濾，視為指令 ───
+  // ─── Layer 3.5: 指揮官模式標記 ───
   const lText = text.toLowerCase();
-
-  // 非小蔡發的、但提到小蔡 → 跳過（由小蔡本人回覆）
-  if (!isXiaocaiCommand && (lText.includes('小蔡') || lText.includes('@xiaoji_cai_bot'))) {
-    return { respondingBots: [], filtered: true, filterReason: 'xiaocai handles directly' };
-  }
+  // 注意：不再過濾提到「小蔡」的訊息 — Forum 群組小蔡走私訊通道，不搶 crew bots
 
   // ─── Layer 4: 指令過濾（讓現有 bot 處理） ───
   if (text.startsWith('/')) {
