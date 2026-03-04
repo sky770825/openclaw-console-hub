@@ -3745,6 +3745,19 @@ app.get('/api/system-schedules', async (_req, res) => {
   }
 });
 
+// 小蔡指揮 crew bots（內部調度，繞過 Forum bot→bot 限制）
+app.post('/api/crew/dispatch', async (req, res) => {
+  try {
+    const { message, sender } = req.body || {};
+    if (!message) return res.status(400).json({ ok: false, error: 'message required' });
+    const { dispatchToCrewBots } = await import('./telegram/crew-bots/crew-poller.js');
+    const count = await dispatchToCrewBots(message, sender || '小蔡');
+    res.json({ ok: true, dispatched: count, message: count > 0 ? `${count} 個 crew bot 將回覆` : '無匹配的 crew bot' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 app.post('/api/telegram/test', async (_req, res) => {
   if (!isTelegramConfigured()) {
     return res.status(503).json({ ok: false, message: 'Telegram 未設定。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。' });
