@@ -31,6 +31,89 @@ const PROJECT_ROOT: string = (() => {
 
 export type ActionResult = { ok: boolean; output: string };
 
+interface OpenClawTaskUpdate {
+  status?: string;
+  progress?: number;
+  result?: string;
+  thought?: string;
+  tags?: string[];
+}
+
+/* 更新任務板上的任務狀態 */
+export async function updateTaskOnBoard(taskId: string, updates: OpenClawTaskUpdate): Promise<void> {
+  try {
+    const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENCLAW_API_KEY}`,
+      },
+      body: JSON.stringify(updates),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) {
+      log.warn(`Failed to update task ${taskId} on taskboard: ${r.statusText}`);
+    }
+  } catch (error) {
+    log.error(`Error updating task ${taskId} on taskboard: ${error}`);
+  }
+}
+
+/* 記錄到任務執行日誌 */
+export async function logToTaskRun(logEntry: { taskId: string; message: string; type?: 'info' | 'error' | 'warning' }): Promise<void> {
+  try {
+    const r = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/runs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENCLAW_API_KEY}`,
+      },
+      body: JSON.stringify({
+        task_id: logEntry.taskId,
+        message: logEntry.message,
+        type: logEntry.type || 'info',
+        timestamp: new Date().toISOString(),
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) {
+      log.warn(`Failed to log run for task ${logEntry.taskId}: ${r.statusText}`);
+    }
+  } catch (error) {
+    log.error(`Error logging run for task ${logEntry.taskId}: ${error}`);
+  }
+}
+
+/** 為人類創建一個審查任務 */
+export async function createReviewTaskForHuman(agentId: string, originalTaskId: string, message: string, context: string): Promise<string> {
+  try {
+    const response = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENCLAW_API_KEY}`,
+      },
+      body: JSON.stringify({
+        name: `[Review Request] from ${agentId} for task ${originalTaskId.slice(0, 8)}`,
+        description: `Agent ${agentId} encountered an issue or requires human intervention for task ${originalTaskId}.\n\nMessage: ${message}\n\nContext:\n${context}`,
+        status: 'review',
+        cat: ['review', agentId],
+        auto: false,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      log.warn(`Failed to create review task: ${response.statusText}`);
+      return `Failed to create review task: ${response.statusText}`;
+    }
+    return data.id || 'unknown-id';
+  } catch (error) {
+    log.error(`Error creating review task: ${error}`);
+    return `Error creating review task: ${error}`;
+  }
+}
+
 /** 行动链提示：引导小蔡一次回复打包多个 action */
 const CHAIN_HINTS: Record<string, string> = {
   read_file: '💡 读完了 → 现在一口气：(1) write_file 写分析 + index_file 索引，或 (2) code_eval 验证逻辑，两三个一起发。',
