@@ -1330,6 +1330,19 @@ function groupLoop(): void {
 // 小蔡 Bot (@xiaoji_cai_bot) polling loop
 // ══════════════════════════════════════════════════════════════
 
+/** 判斷小蔡收到的是否純閒聊（不需要 action） */
+const XIAOCAI_CHITCHAT = [
+  /^(早安?|午安|晚安|嗨|hi|hello|hey|哈+|嘿|yo)[\s!！。.~]*$/i,
+  /^(辛苦了?|謝謝|感謝|讚|棒|ok|好的?|收到|了解|掰|再見|88|嗯|對|好)[\s!！。.~]*$/i,
+  /^(怎麼樣|在嗎|小蔡|你覺得呢)[\s?？!！。.~]*$/i,
+  /^[\p{Emoji}\s]+$/u,
+];
+function isXiaocaiChitChat(message: string): boolean {
+  const t = message.trim();
+  if (t.length > 20) return false;
+  return XIAOCAI_CHITCHAT.some(p => p.test(t));
+}
+
 /** 清除殘留的 JSON action blocks — 發送到 Telegram 前必經 */
 function stripActionJson(text: string): string {
   if (!text) return text;
@@ -1655,6 +1668,12 @@ async function xiaocaiPoll(): Promise<void> {
 
         const actionMatches = extractActionJsons(reply);
         if (!actionMatches || actionMatches.length === 0) {
+          // step 0 沒帶 action 且是任務類訊息 → 重試一次提醒帶 action
+          if (step === 0 && text.length > 8 && !isXiaocaiChitChat(text)) {
+            log.info(`[NEUXA-Chain] step=0 沒帶 action，重試提醒`);
+            allActionResults.push(`⚠️ 你的回覆沒有 action JSON。老蔡的訊息看起來需要你做事，請用 action 執行，不要只回文字。`);
+            continue;
+          }
           finalReply = stripActionJson(reply);
           break;
         }
