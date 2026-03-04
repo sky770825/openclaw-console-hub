@@ -1692,12 +1692,14 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
   if (!filePath || !filePath.endsWith('.md')) {
     return { ok: false, output: `index_file 需要 .md 檔案路徑（你傳了: "${filePath || '空'}"）。正確格式：{"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}` };
   }
-  let resolved = path.resolve(filePath);
+  let resolved = path.isAbsolute(filePath) ? filePath : path.resolve(NEUXA_WORKSPACE, filePath);
   if (!fs.existsSync(resolved) && !path.isAbsolute(filePath)) {
-    resolved = path.join(NEUXA_WORKSPACE, filePath);
+    // fallback: 試 PROJECT_ROOT
+    const projCandidate = path.join(PROJECT_ROOT, filePath);
+    if (fs.existsSync(projCandidate)) resolved = projCandidate;
   }
   if (!fs.existsSync(resolved)) {
-    return { ok: false, output: `檔案不存在: ${filePath}（也嘗試了 ${resolved}）` };
+    return { ok: false, output: `檔案不存在: ${filePath}（已嘗試 ${NEUXA_WORKSPACE} 和 ${PROJECT_ROOT}）` };
   }
 
   const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
@@ -2198,9 +2200,12 @@ async function handleGrepProject(
   }
 
   let targetDir = searchPath || `${PROJECT_ROOT}/server/src/`;
-  // 自動修正：如果 searchPath 以 server/src 開頭，不重複拼接
-  if (searchPath && searchPath.startsWith('server/') && !searchPath.startsWith('/')) {
-    targetDir = `${PROJECT_ROOT}/${searchPath}`;
+  // 自動修正：相對路徑 → 嘗試 PROJECT_ROOT 拼接
+  if (searchPath && !searchPath.startsWith('/')) {
+    const candidate = `${PROJECT_ROOT}/${searchPath}`;
+    if (fs.existsSync(candidate)) {
+      targetDir = candidate;
+    }
   }
   const pathCheck = isGrepPathSafe(targetDir);
   if (!pathCheck.safe) return { ok: false, output: `🚫 ${pathCheck.reason}` };
@@ -3075,7 +3080,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       result = await handleSemanticSearch(action.query || action.prompt || '', parseInt(action.limit || '5', 10), action.mode || 'task');
       break;
     case 'index_file':
-      result = await handleIndexFile(action.path || '', action.category);
+      result = await handleIndexFile(expandTilde(action.path || ''), action.category);
       break;
     case 'reindex_knowledge':
       result = await handleReindexKnowledge(action.mode || 'append');
@@ -3093,7 +3098,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       result = await handleCodeEval(action.code || action.content || '');
       break;
     case 'analyze_code':
-      result = await handleAnalyzeCode(action.path || '', action.question || action.content || '');
+      result = await handleAnalyzeCode(expandTilde(action.path || ''), action.question || action.content || '');
       break;
     case 'grep_project': {
       const grepOpts: { ignore_case?: boolean; max_results?: number; file_pattern?: string } = {};
@@ -3105,14 +3110,14 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
           if (parsed.file_pattern) grepOpts.file_pattern = String(parsed.file_pattern);
         } catch { /* ignore parse errors */ }
       }
-      result = await handleGrepProject(action.pattern || '', action.path, grepOpts);
+      result = await handleGrepProject(action.pattern || '', expandTilde(action.path || ''), grepOpts);
       break;
     }
     case 'find_symbol':
       result = await handleFindSymbol(action.symbol || '', action.type);
       break;
     case 'analyze_symbol':
-      result = await handleAnalyzeSymbol(action.symbol || '', action.path);
+      result = await handleAnalyzeSymbol(action.symbol || '', expandTilde(action.path || ''));
       break;
     case 'pty_exec': {
       const answers: string[] = (() => {
