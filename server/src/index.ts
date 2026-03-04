@@ -115,6 +115,7 @@ import {
 // === 新增：Telegram 通知 ===
 import {
   sendTelegramMessage,
+  sendTelegramMessageToChat,
   isTelegramConfigured,
   notifyTaskTimeout,
   notifyTaskRetry,
@@ -3746,10 +3747,19 @@ app.get('/api/system-schedules', async (_req, res) => {
 });
 
 // 小蔡指揮 crew bots（內部調度，繞過 Forum bot→bot 限制）
+// 先用小蔡 bot 發訊息到群組，再觸發 crew dispatch
 app.post('/api/crew/dispatch', async (req, res) => {
   try {
     const { message, sender } = req.body || {};
     if (!message) return res.status(400).json({ ok: false, error: 'message required' });
+
+    // 先發到 Telegram 群組（讓訊息出現在聊天室）
+    const xiaocaiToken = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim();
+    const groupChatId = process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim() || process.env.TELEGRAM_GROUP_CHAT_ID?.trim();
+    if (xiaocaiToken && groupChatId) {
+      await sendTelegramMessageToChat(Number(groupChatId), message, { token: xiaocaiToken, silent: true });
+    }
+
     const { dispatchToCrewBots } = await import('./telegram/crew-bots/crew-poller.js');
     const dispatch = await dispatchToCrewBots(message, sender || '小蔡');
     res.json({ ok: true, dispatched: dispatch.totalReplied, replies: dispatch.replies, message: dispatch.totalReplied > 0 ? `${dispatch.totalReplied} 個 crew bot 已回覆` : '無匹配的 crew bot' });
@@ -3896,7 +3906,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.4.43',
+    version: '2.4.44',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
