@@ -116,7 +116,7 @@ export async function crewThink(
   for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
     const input = step === 0
       ? fullPrompt
-      : `[系統回饋] 你上一步的 action 執行結果：\n${allActionResults.slice(-5).join('\n')}\n\n請繼續處理，或給出最終回覆（不帶 action JSON）。`;
+      : `[系統回饋] 你上一步的 action 執行結果：\n${allActionResults.slice(-5).join('\n')}\n\n繼續下一步。如果所有步驟都完成了，給出最終回覆（不帶 action JSON）。`;
 
     const reply = useFullModel
       ? await callAI(input, bot)
@@ -131,6 +131,12 @@ export async function crewThink(
     const cleanReply = stripActionJson(reply);
 
     if (!actions || actions.length === 0) {
+      // step 0 沒帶 action → 給一次重試（step 1 再沒 action 才停）
+      if (step === 0 && cleanReply && !isChitChat(userMessage)) {
+        log.info(`[CrewThink] ${bot.emoji} ${bot.name} 第1步沒帶 action，重試提醒`);
+        allActionResults.push(`⚠️ 你的回覆沒有 action JSON。請用 action 做事，不要只回文字。再試一次。`);
+        continue;
+      }
       finalReply = cleanReply;
       break;
     }
@@ -563,6 +569,19 @@ const TASK_INTENT_KEYWORDS = [
   '處理', '拆解', '規劃', '排查', '告警', '異常', '錯誤', 'error',
   'bug', 'fix', '更新', '升級', '優化', '追蹤',
 ];
+
+const CHITCHAT_PATTERNS = [
+  /^(早安?|午安|晚安|嗨|hi|hello|hey|哈+|嘿|yo)[\s!！。.~]*$/i,
+  /^(辛苦了?|謝謝|感謝|讚|棒|ok|好的?|收到|了解|掰|再見|88)[\s!！。.~]*$/i,
+  /^[\p{Emoji}\s]+$/u,
+];
+
+/** 判斷是否純閒聊短句（不需要 action） */
+function isChitChat(message: string): boolean {
+  const trimmed = message.trim();
+  if (trimmed.length > 15) return false;
+  return CHITCHAT_PATTERNS.some(p => p.test(trimmed));
+}
 
 /**
  * 判斷是否應該直接用原配模型（而非 Flash）
