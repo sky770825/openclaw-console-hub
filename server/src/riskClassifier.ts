@@ -34,6 +34,9 @@ const MEDIUM_KEYWORDS = [
   'auth', '權限', '認證', 'permission', 'rbac',
   'rollback', 'revert', 'reset',
   'truncate', 'alter table',
+  // 大型規劃/設計任務 — 需 Claude 審慎執行，避免亂生成垃圾
+  '規劃', '設計', 'landing page', '方案規劃', '技術方案',
+  '架構設計', '實作規劃', '數據追蹤', 'kpi',
 ];
 
 const GREEN_KEYWORDS = [

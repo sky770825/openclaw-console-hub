@@ -576,8 +576,8 @@ echo "✅ 封存檢查完成"`;
     const startTime = Date.now();
     onProgress?.(`[${agentType}] 真實執行任務: ${task.name}\n`);
     try {
-      // cursor agent 有權限修改 server 源碼並 build/restart
-      const allowServerPatch = agentType === 'cursor';
+      // 🛑 auto-executor 生成的腳本禁止修改 server/src — 防止 Gemini 不聽話改壞核心
+      const allowServerPatch = false;
       const execResult = await this.generateAndExecute(task.name, task.description, timeout, allowServerPatch);
 
       // 品質閘門評分
@@ -1364,20 +1364,26 @@ ${errorFeedback.slice(0, 800)}
       // Step 3: 掃描產出物
       const artifacts = this.scanArtifacts();
 
-      // Step 4: 驗證
-      // 安全檢查：如果腳本改到了 server/src 或 src，自動回滾
+      // Step 4: 強制保護核心源碼 — 任何被改動的 server/src 或 src 一律回滾
       try {
         const gitDiff = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
         const changedFiles = (gitDiff.stdout || '').trim().split('\n').filter(f => f);
         const protectedChanges = changedFiles.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
         if (protectedChanges.length > 0) {
-          log.warn(`[GenerateAndExecute] 🛡️ 腳本改到了保護區: ${protectedChanges.join(', ')}，自動回滾`);
-          for (const f of protectedChanges) {
-            spawnSync('git', ['checkout', '--', f], { cwd: PROJECT_ROOT, timeout: 5000 });
-          }
+          log.warn(`[GenerateAndExecute] 🛡️ 腳本改到了保護區: ${protectedChanges.join(', ')}，強制回滾`);
+          // 用 git checkout HEAD -- 確保恢復到 commit 版本，而非 index 版本
+          spawnSync('git', ['checkout', 'HEAD', '--', ...protectedChanges], { cwd: PROJECT_ROOT, timeout: 10000 });
           log.info(`[GenerateAndExecute] 🛡️ 已回滾 ${protectedChanges.length} 個保護檔案`);
+          // 回滾後視為任務失敗，不讓它混水摸魚
+          if (execResult.exitCode === 0) {
+            log.warn(`[GenerateAndExecute] 🛡️ 腳本改到保護區，即使 exit=0 也判為失敗`);
+            lastError = `腳本越界修改保護區: ${protectedChanges.join(', ')}，已回滾`;
+            continue; // 跳到下一個 retry（或結束）
+          }
         }
-      } catch { /* git 失敗不影響任務結果 */ }
+      } catch (e) {
+        log.error(`[GenerateAndExecute] 🛡️ 保護區回滾失敗: ${e}`);
+      }
 
       if (execResult.exitCode === 0) {
         log.info(`[GenerateAndExecute] Success: ${artifacts.length} artifacts, ${execResult.durationMs}ms`);
