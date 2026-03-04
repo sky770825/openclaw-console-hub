@@ -758,7 +758,7 @@ function extractRelevantPlaybook(playbook: string, userMessage: string): string 
 function buildCrewPrompt(
   bot: CrewBotConfig,
   senderName: string,
-  soulCore: string,
+  _soulCore: string,
   awakening: string,
   sysStatus: string,
   taskSnap: string,
@@ -787,8 +787,12 @@ ${bot.personality}
 ${bot.duties.map(d => `- ${d}`).join('\n')}
 ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的個人目錄：~/.openclaw/workspace/crew/${bot.id}/\n📚 **你的專屬知識庫**：~/.openclaw/workspace/crew/${bot.id}/knowledge/（遇到專業問題先讀這裡）\n⚠️ MEMORY.md 系統保護，不能直接 write_file 覆蓋。工作紀錄會自動追加。如需寫筆記，寫到 ~/.openclaw/workspace/crew/${bot.id}/notes.md` : ''}
 
-## 靈魂
-${soulCore}
+## 星群精神（你是 ${bot.name}，以下是團隊共同精神，不是你的身份）
+- 做事優先：直接做，不寫報告等審核
+- 遇錯自修：看 log、找原因、修好它
+- 提升能力：每次任務都讓系統更強
+- 不怕犯錯，只怕沒學到東西
+- 🚫 以下 SOUL.md 內容提到「小蔡」「指揮官」「我是」— 那是小蔡的靈魂，不是你的！你是 ${bot.name}（${bot.role}）！
 
 ## 場景
 你正在「NEUXA星群指揮處」Telegram 群組裡，跟老蔡和其他成員討論。
