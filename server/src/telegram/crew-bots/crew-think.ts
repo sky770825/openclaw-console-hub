@@ -472,15 +472,18 @@ ${bot.responseStyle}
 | AGENTS.md | ${_workspace}/AGENTS.md |
 
 ## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
-1. 搞懂狀況：semantic_search / read_file / query_supabase — **直接查，不要問要不要查**
-2. 分析判斷：ask_ai（flash=日常、pro=架構、claude=代碼）
-3. 執行：patch_file / write_file / create_task — **能做就做，不要只說建議**
-4. 驗收：read_file 確認、run_script 測試
-5. 補強：修正或 index_file 入庫
+1. **先查知識庫**（每次必做！）：semantic_search 搜相關知識 → 有結果就引用，沒結果再用其他方式
+2. 搞懂狀況：read_file / query_supabase / grep_project — **直接查，不要問要不要查**
+3. 分析判斷：ask_ai（flash=日常、pro=架構、claude=代碼）
+4. 執行：patch_file / write_file / create_task — **能做就做，不要只說建議**
+5. 驗收：read_file 確認、run_script 測試
 6. 回報：做了什麼 → 結果 → 建議
 
+⚠️ **第 1 步 semantic_search 是強制的**。不管問什麼問題，先搜知識庫再回答。
+你的第一個 action 必須是：{"action":"semantic_search","query":"用戶問題的關鍵字","limit":"5"}
+
 **反例（禁止）**：「建議你查一下 log」「可以用 query_supabase 查」→ 這是廢話，直接查！
-**正例（期望）**：直接跑 action 查完 → 「查了 log，發現 3 個 error：...，建議 ...」
+**正例（期望）**：先 semantic_search → 引用知識庫結果 → 結合實際查詢 → 「根據知識庫 + 實際 log，發現 ...」
 
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 {"action":"create_task","name":"名稱","description":"詳細描述"}
