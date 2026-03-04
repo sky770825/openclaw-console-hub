@@ -3111,7 +3111,12 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
         const { sendTelegramMessageToChat } = await import('../utils/telegram.js');
         await sendTelegramMessageToChat(Number(groupChatId), groupMsg, { token: xiaocaiToken });
         log.info(`[NEUXA-Action] send_group: len=${groupMsg.length} to=${groupChatId}`);
-        result = { ok: true, output: `已發送到群組: ${groupMsg.slice(0, 100)}` };
+
+        // 內部調度 crew bots（Forum 群組 bot→bot 訊息不走 getUpdates）
+        const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
+        const dispatched = await dispatchToCrewBots(groupMsg, '小蔡');
+        const dispatchNote = dispatched > 0 ? ` → ${dispatched} 個 crew bot 將回覆` : '';
+        result = { ok: true, output: `已發送到群組: ${groupMsg.slice(0, 100)}${dispatchNote}` };
       } catch (e) {
         result = { ok: false, output: `send_group 失敗: ${e instanceof Error ? e.message : String(e)}` };
       }

@@ -35,6 +35,48 @@ const ROUTING_CACHE_MAX = 200;
 const repliedSet = new Set<string>();
 
 /**
+ * 內部調度 — 小蔡(bot)發訊息後，直接觸發 crew bots 回覆
+ * 繞過 Telegram getUpdates（Forum 群組 bot→bot 訊息不推送）
+ */
+export async function dispatchToCrewBots(text: string, senderName: string = '小蔡'): Promise<number> {
+  if (!CREW_GROUP_CHAT_ID) return 0;
+
+  const decision = routeMessage(text, 'xiaoji_cai_bot', true);
+  log.info(`[CrewDispatch] 內部調度 text="${text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
+
+  if (decision.filtered || decision.respondingBots.length === 0) return 0;
+
+  // 記錄小蔡的訊息到歷史
+  pushHistory({ role: 'user', text, fromName: senderName, timestamp: Date.now() });
+
+  let replied = 0;
+  const chatId = Number(CREW_GROUP_CHAT_ID);
+
+  // 逐個 bot 思考 + 回覆（帶隨機延遲，自然感）
+  for (const { botId } of decision.respondingBots) {
+    const bot = CREW_BOTS.find(b => b.id === botId);
+    if (!bot?.token) continue;
+
+    const delay = 2000 + Math.random() * 3000;
+    setTimeout(async () => {
+      try {
+        const reply = await crewThink(bot, text, senderName);
+        if (reply) {
+          await sendTelegramMessageToChat(chatId, reply, { token: bot.token, silent: true });
+          pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
+          log.info(`[CrewDispatch] ${bot.emoji} ${bot.name} 回覆了`);
+        }
+      } catch (err) {
+        log.error({ err }, `[CrewDispatch] ${bot.name} 回覆失敗`);
+      }
+    }, delay);
+    replied++;
+  }
+
+  return replied;
+}
+
+/**
  * 啟動所有 crew bot 的 polling
  */
 export function startCrewPolling(): void {
