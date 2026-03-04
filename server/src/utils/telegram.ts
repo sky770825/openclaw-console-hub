@@ -15,11 +15,11 @@ const GROUP_CHAT_LOG = process.env.HOME + '/.openclaw/workspace/reports/group_ch
 /** 把 bot 發出的訊息也記進 group_chat_log.md */
 function logBotMessage(chatId: number | string, text: string, token: string) {
   try {
-    // 從 token 反查 bot 名稱
+    // 從 token 反查 bot 名稱（支援 BOT_TOKEN + CREW_*_TOKEN）
     const botNames: Record<string, string> = {};
-    const envKeys = Object.keys(process.env).filter(k => k.includes('BOT_TOKEN'));
+    const envKeys = Object.keys(process.env).filter(k => k.includes('TOKEN') && k.startsWith('TELEGRAM'));
     for (const k of envKeys) {
-      const name = k.replace(/_TOKEN$/, '').replace(/^TELEGRAM_/, '').toLowerCase();
+      const name = k.replace(/_TOKEN$/, '').replace(/^TELEGRAM_(CREW_)?/, '').toLowerCase();
       if (process.env[k]?.trim()) botNames[process.env[k]!.trim()] = name;
     }
     const botName = botNames[token] || 'unknown_bot';
