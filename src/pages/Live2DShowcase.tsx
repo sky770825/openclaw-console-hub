@@ -6,17 +6,12 @@ import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import Live2DCharacter from "@/components/starship/fx/Live2DCharacter";
 
-// 免費測試模型（Live2D 官方 Sample）
+// 本地 Live2D 模型（dist/models/ 由 server 靜態提供）
 const SAMPLE_MODELS = [
   {
-    name: "Hiyori",
-    url: "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/hiyori/hiyori_pro_t10.model3.json",
-    description: "Live2D 官方示範角色",
-  },
-  {
-    name: "Shizuku",
-    url: "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json",
-    description: "Cubism 2.1 經典角色",
+    name: "Haru",
+    url: "/models/haru/Haru.model3.json",
+    description: "Live2D 官方 Cubism 4 角色",
   },
 ];
 

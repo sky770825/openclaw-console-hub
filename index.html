@@ -8,6 +8,7 @@
     <meta name="author" content="Lovable" />
     <meta name="theme-color" content="#06060a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="星艦指揮中心" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
@@ -25,6 +26,8 @@
 
   <body>
     <div id="root"></div>
+    <!-- Live2D Cubism 5 Core SDK（本地，避免 CSP 阻擋外部腳本） -->
+    <script src="/live2dcubismcore.min.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

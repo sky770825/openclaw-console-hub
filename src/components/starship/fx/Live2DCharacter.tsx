@@ -28,7 +28,14 @@ let pixiPromise: Promise<typeof import("pixi.js")> | null = null;
 let live2dPromise: Promise<typeof import("@naari3/pixi-live2d-display")> | null = null;
 
 function loadPixi() {
-  if (!pixiPromise) pixiPromise = import("pixi.js");
+  if (!pixiPromise) {
+    // 在受限環境（禁止 unsafe-eval）中，先載入 pixi.js/unsafe-eval 模組
+    // 以便 PixiJS 能在 CSP 嚴格的情況下正常編譯 shader
+    pixiPromise = (async () => {
+      await import("pixi.js/unsafe-eval");
+      return import("pixi.js");
+    })();
+  }
   return pixiPromise;
 }
 function loadLive2D() {
@@ -73,6 +80,10 @@ export default function Live2DCharacter({
         setError(null);
 
         const PIXI = await loadPixi();
+
+        // pixi-live2d-display 需要 window.PIXI 來取得 Ticker 做自動更新
+        (window as unknown as Record<string, unknown>).PIXI = PIXI;
+
         const { Live2DModel } = await loadLive2D();
 
         if (cancelled) return;
