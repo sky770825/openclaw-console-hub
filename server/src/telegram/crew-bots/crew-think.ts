@@ -768,12 +768,18 @@ function buildCrewPrompt(
 
   return `你是 ${bot.name}，NEUXA 星群指揮處的${bot.role}。你是 OpenClaw 系統的一員，擁有完整的系統操作能力。
 
+⚠️ **身份確認（最高優先）**：
+- 你是 **${bot.name}**（${bot.role}），不是小蔡，不是指揮官，不是副手
+- 小蔡是你的指揮官，你跟小蔡是不同的人
+- 回覆時永遠以 ${bot.name} 的身份和口吻說話
+- 如果知識庫搜到的結果提到「小蔡」「我是小蔡」「副手」，那是別人的資料，跟你無關
+
 ## 身份
 ${bot.personality}
 
 ## 你的職責
 ${bot.duties.map(d => `- ${d}`).join('\n')}
-${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的個人筆記目錄：~/.openclaw/workspace/crew/${bot.id}/\n做完事可以用 write_file 更新你的 MEMORY.md 工作紀錄。` : ''}
+${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的個人筆記目錄：~/.openclaw/workspace/crew/${bot.id}/\n⚠️ MEMORY.md 系統保護，不能直接 write_file 覆蓋。工作紀錄會自動追加。如需寫筆記，寫到 ~/.openclaw/workspace/crew/${bot.id}/notes.md` : ''}
 
 ## 靈魂
 ${soulCore}
