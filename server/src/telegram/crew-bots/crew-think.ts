@@ -46,7 +46,7 @@ export function pushHistory(entry: CrewHistoryEntry): void {
 
 /**
  * 完整 AI 思考 — 依 bot.model 選擇引擎
- * mode: 'auto'（預設，討論用 Flash、執行 action 才升級）/ 'full'（直接用原配模型）
+ * mode: 'auto'（預設，智慧判斷用原配或 Flash）/ 'full'（直接用原配模型）
  */
 export async function crewThink(
   bot: CrewBotConfig,
@@ -74,8 +74,16 @@ export async function crewThink(
   let finalReply = '';
   const allActionResults: string[] = [];
 
-  // 模型策略：auto 模式下，step 0 一律 Flash（省額度），有 action 才升級原配模型
+  // 模型策略：auto 模式智慧判斷
+  // - 指揮官指令 / 訊息觸及 bot 職責關鍵字 → 直接用原配模型（做事）
+  // - 純閒聊短句 → Flash（省額度）
   let useFullModel = mode === 'full';
+  if (!useFullModel && mode === 'auto') {
+    useFullModel = shouldUseFullModel(bot, userMessage, senderName);
+    if (useFullModel) {
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} 偵測到任務意圖，直接用 ${bot.model} 模型`);
+    }
+  }
 
   for (let step = 0; step < MAX_CHAIN_STEPS; step++) {
     const input = step === 0
@@ -295,6 +303,55 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
   }
 }
 
+// ── 智慧模型判斷 ──
+
+/** 管理員/指揮官 username */
+const COMMANDER_USERNAMES = new Set(['xiaoji_cai_bot', 'gousmaaa', 'sky770825']);
+
+/** 任務意圖關鍵字（跨 bot 通用） */
+const TASK_INTENT_KEYWORDS = [
+  '幫我', '幫忙', '請', '執行', '做', '查', '找', '修', '改', '建',
+  '分析', '掃', '檢查', '監控', '報告', '整理', '寫', '產', '算',
+  '部署', 'deploy', '跑', 'run', '測試', 'test', '搜', '看一下',
+  '處理', '拆解', '規劃', '排查', '告警', '異常', '錯誤', 'error',
+  'bug', 'fix', '更新', '升級', '優化', '追蹤',
+];
+
+/**
+ * 判斷是否應該直接用原配模型（而非 Flash）
+ * 條件：指揮官指令 / 訊息含任務意圖 / 訊息觸及 bot 職責關鍵字（>=2 個）
+ */
+function shouldUseFullModel(bot: CrewBotConfig, message: string, senderName: string): boolean {
+  // Flash bot 不需要升級
+  if (bot.model === 'gemini-flash') return false;
+
+  const lower = message.toLowerCase();
+
+  // 指揮官指令 → 直接升級（指揮官不會閒聊叫 crew bot）
+  const senderLower = senderName.toLowerCase();
+  if (COMMANDER_USERNAMES.has(senderLower) || senderName === '小蔡' || senderName === '系統') {
+    return true;
+  }
+
+  // 訊息含任務意圖關鍵字
+  const hasTaskIntent = TASK_INTENT_KEYWORDS.some(kw => lower.includes(kw));
+  if (hasTaskIntent) return true;
+
+  // 訊息觸及 bot 職責關鍵字 >= 2 個
+  let expertHits = 0;
+  for (const kw of bot.expertiseKeywords) {
+    if (lower.includes(kw.toLowerCase())) {
+      expertHits++;
+      if (expertHits >= 2) return true;
+    }
+  }
+
+  // 訊息超過 20 字（不是純閒聊）
+  if (message.trim().length > 20) return true;
+
+  return false;
+}
+
 // ── Action JSON 解析 ──
 
 function extractActionJsons(text: string): string[] | null {
@@ -382,15 +439,19 @@ ${soulCore}
 群組裡還有小蔡（指揮官）和：${otherBots}。
 你只在自己專長領域發言，不搶別人的話題。
 
-## 對話 vs 任務（最重要的判斷）
-**對話模式**（直接回覆文字，不帶 action JSON）：問候/閒聊/感想/簡單問答/確認
-**任務模式**（用 action 做事）：明確要你做事/需要系統資料/代碼技術操作
-對話模式就像朋友聊天，1-3 句話回覆。不要讀檔案、不要查資料庫。
+## 做事優先原則（核心）
+你是做事的人，不是寫報告的人。
+
+**先做再說**：看到跟你職責相關的問題 → 先用 action 查資料/做事 → 拿到結果再回覆。
+**只有純閒聊才不帶 action**：「早安」「辛苦了」「哈哈」這種才是純聊天。
+**不要空口說白話**：不要說「我可以幫你查」「建議查看 xxx」— 直接查，直接做。
+**寧可多做一步**：不確定該不該做？做。做了多給資訊，不做等於廢話。
 
 ## 說話方式
 ${bot.responseStyle}
 - 繁體中文口語，直接有個性
-- 回覆簡潔（群組對話 1-5 句話）
+- 做事的回覆：先回報你做了什麼 + 結果，再簡短建議
+- 聊天的回覆：1-3 句話
 - 不要開頭「好的」「收到」「了解」
 - 直接回覆內容，不要加自己的名字前綴
 
@@ -403,13 +464,16 @@ ${bot.responseStyle}
 | SOUL.md | ${_workspace}/SOUL.md |
 | AGENTS.md | ${_workspace}/AGENTS.md |
 
-## 做事流程（最多 6 步，一口氣做完）
-1. 搞懂狀況：semantic_search / read_file / query_supabase
+## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
+1. 搞懂狀況：semantic_search / read_file / query_supabase — **直接查，不要問要不要查**
 2. 分析判斷：ask_ai（flash=日常、pro=架構、claude=代碼）
-3. 執行：patch_file / write_file / create_task
+3. 執行：patch_file / write_file / create_task — **能做就做，不要只說建議**
 4. 驗收：read_file 確認、run_script 測試
 5. 補強：修正或 index_file 入庫
 6. 回報：做了什麼 → 結果 → 建議
+
+**反例（禁止）**：「建議你查一下 log」「可以用 query_supabase 查」→ 這是廢話，直接查！
+**正例（期望）**：直接跑 action 查完 → 「查了 log，發現 3 個 error：...，建議 ...」
 
 ## 可執行動作（回覆最後加 JSON，系統自動執行）
 {"action":"create_task","name":"名稱","description":"詳細描述"}
