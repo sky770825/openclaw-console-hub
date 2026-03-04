@@ -7,6 +7,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../../logger.js';
 import { executeNEUXAAction } from '../action-handlers.js';
@@ -70,7 +71,10 @@ export async function crewThink(
     getTaskSnapshot(),
   ]);
 
-  const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, awakening, sysStatus, taskSnap);
+  // 讀取 bot 個人記憶
+  const botMemory = loadBotMemory(bot.id);
+
+  const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, awakening, sysStatus, taskSnap, botMemory);
   const recentChat = groupHistory.slice(-10)
     .map(h => `[${h.fromName || (h.role === 'model' ? 'bot' : '用戶')}] ${h.text}`)
     .join('\n');
@@ -413,6 +417,17 @@ function stripActionJson(text: string): string {
 
 // ── System Prompt ──
 
+/** 讀取 bot 個人記憶檔案 */
+function loadBotMemory(botId: string): string {
+  const memPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', botId, 'MEMORY.md');
+  try {
+    const content = fs.readFileSync(memPath, 'utf-8').trim();
+    return content.length > 2000 ? content.slice(0, 2000) + '\n...(截斷)' : content;
+  } catch {
+    return '';
+  }
+}
+
 function buildCrewPrompt(
   bot: CrewBotConfig,
   senderName: string,
@@ -420,6 +435,7 @@ function buildCrewPrompt(
   awakening: string,
   sysStatus: string,
   taskSnap: string,
+  botMemory: string,
 ): string {
   const otherBots = CREW_BOTS
     .filter(b => b.id !== bot.id && b.token)
@@ -436,6 +452,7 @@ ${bot.personality}
 
 ## 你的職責
 ${bot.duties.map(d => `- ${d}`).join('\n')}
+${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的個人筆記目錄：~/.openclaw/workspace/crew/${bot.id}/\n做完事可以用 write_file 更新你的 MEMORY.md 工作紀錄。` : ''}
 
 ## 靈魂
 ${soulCore}
