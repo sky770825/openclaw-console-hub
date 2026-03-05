@@ -11,7 +11,7 @@ const filepath = process.argv[2];
 const CATEGORY = process.argv[3] || 'cookbook';
 if (!filepath) { console.log('ERROR:no-file'); process.exit(1); }
 
-const GOOGLE_KEY = process.env.GOOGLE_API_KEY || 'AIzaSyDGHy3xWJ91GaSwB9Si6rsUWdA58vJoX6w';
+const GOOGLE_KEY = process.env.GOOGLE_API_KEY || '';
 const SB_URL = 'https://vbejswywswaeyfasnwjq.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiZWpzd3l3c3dhZXlmYXNud2pxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDYxOTg4NywiZXhwIjoyMDg2MTk1ODg3fQ.VHwlh1LZ77B_IIL9tXi3UM-yJKh7LvZMirMH6wfqh_A';
 
