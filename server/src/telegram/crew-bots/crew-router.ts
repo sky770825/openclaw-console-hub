@@ -73,7 +73,7 @@ export function routeMessage(
   }
 
   // ─── 指揮官全員集合 — 指揮官（小蔡/管理員）含「各位」「大家」「全員」→ 所有 bot 回覆 ───
-  const ALL_HANDS_KEYWORDS = ['各位', '大家', '全員', '所有人', '夥伴們', '請大家', '全體', '在嗎'];
+  const ALL_HANDS_KEYWORDS = ['各位', '大家', '全員', '所有人', '夥伴們', '請大家', '全體', '在嗎', '每個人', '校準', '回報', '星群'];
   const isAllHands = ALL_HANDS_KEYWORDS.some(kw => lText.includes(kw));
 
   if (isCommander && isAllHands) {

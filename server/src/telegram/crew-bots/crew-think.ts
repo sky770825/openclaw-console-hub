@@ -151,10 +151,22 @@ export async function crewThink(
     const cleanReply = stripActionJson(reply);
 
     if (!actions || actions.length === 0) {
-      // step 0 沒帶 action → 給一次重試（step 1 再沒 action 才停）
+      // 沒帶 action → 判斷是否需要重試
       if (step === 0 && cleanReply && !isChitChat(userMessage)) {
-        log.info(`[CrewThink] ${bot.emoji} ${bot.name} 第1步沒帶 action，重試提醒`);
-        allActionResults.push(`⚠️ 你的回覆沒有 action JSON。請用 action 做事，不要只回文字。再試一次。`);
+        // 有實質回覆內容（>20字）且不是空話 → 接受為最終回覆，不強迫帶 action
+        const hasSubstance = cleanReply.length > 20
+          && !cleanReply.includes('請重新說明')
+          && !cleanReply.includes('請告訴我')
+          && !cleanReply.includes('請提供')
+          && !cleanReply.includes('可以請您');
+        if (hasSubstance) {
+          log.info(`[CrewThink] ${bot.emoji} ${bot.name} 第1步有實質回覆(${cleanReply.length}字)，接受為最終回覆`);
+          finalReply = cleanReply;
+          break;
+        }
+        // 回覆太短或是空話 → 溫和提醒重試
+        log.info(`[CrewThink] ${bot.emoji} ${bot.name} 第1步回覆太短/空話，提醒重試`);
+        allActionResults.push(`提示：請直接回答問題或用 action 做事。不要回覆「請重新說明」。`);
         continue;
       }
       finalReply = cleanReply;
@@ -660,11 +672,26 @@ const CHITCHAT_PATTERNS = [
   /^[\p{Emoji}\s]+$/u,
 ];
 
+/** 不需要 action 的「簡單回覆型」訊息模式 */
+const SIMPLE_REPLY_PATTERNS = [
+  // 問身份/狀態/模型（校準類）
+  /回報|報到|自我介紹|你是誰|你的(名字|專長|職責|模型|角色|身份)/,
+  /校準|點名|簽到|報名/,
+  // 意見/感想類
+  /你(覺得|認為|看法|怎麼看|有什麼想法)/,
+  /你的(意見|建議|看法|想法)/,
+  // 確認/狀態類
+  /在嗎|還在嗎|有空嗎|準備好了嗎/,
+];
+
 /** 判斷是否純閒聊短句（不需要 action） */
 function isChitChat(message: string): boolean {
   const trimmed = message.trim();
-  if (trimmed.length > 15) return false;
-  return CHITCHAT_PATTERNS.some(p => p.test(trimmed));
+  // 短打招呼
+  if (trimmed.length <= 15 && CHITCHAT_PATTERNS.some(p => p.test(trimmed))) return true;
+  // 簡單回覆型（不需要查資料或執行操作，直接回答即可）
+  if (SIMPLE_REPLY_PATTERNS.some(p => p.test(trimmed))) return true;
+  return false;
 }
 
 /**
@@ -943,14 +970,18 @@ ${CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b
 4. 做完自己的部分 → 回報結果到群組，讓下一手接棒
 5. 詳細協作流程見：\`~/.openclaw/workspace/crew/COLLABORATION.md\`
 
-## 做事優先原則（核心，違反直接扣分）
-你是做事的人。你的回覆裡必須包含 action JSON。
+## 做事優先原則（核心）
+你是做事的人。需要查資料或操作系統時，用 action JSON。
 
 **規則**：
-1. 收到任務/問題 → 回覆裡一定要有 {"action":...} JSON → 不帶 action 的回覆 = 廢話
-2. 唯一例外：純閒聊（「早安」「哈哈」「辛苦了」）
+1. 收到需要查資料/操作系統的任務 → 回覆裡帶 {"action":...} JSON
+2. **不需要 action 的情況**（直接用文字回覆）：
+   - 純閒聊（「早安」「哈哈」「辛苦了」）
+   - 問你身份/專長/模型/角色 → 根據你的身份設定直接回答
+   - 校準/點名/回報 → 直接說你是誰、你做什麼
+   - 問你意見/看法 → 直接說你的想法
 3. 禁止說「我可以幫你查」「建議查看」— 直接查，直接做
-4. 你的回覆格式：先寫 action JSON，再寫分析文字
+4. 需要做事時格式：先寫 action JSON，再寫分析文字
 
 ## 說話方式
 ${bot.responseStyle}
@@ -995,7 +1026,7 @@ ${bot.responseStyle}
 6. 回報：做了什麼 → 結果 → 建議
 
 ⚠️ **判斷指引**：
-- 問你「你是誰」「你的職責」→ **read_file 你的 MEMORY.md**：{"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}
+- 問你「你是誰」「你的職責」「你的模型」「校準/點名」→ **不需要 action！直接根據上方「身份」「職責」段落回答**
 - 你的專業領域問題 → **讀你的專屬知識庫**：{"action":"list_dir","path":"~/.openclaw/workspace/crew/${bot.id}/knowledge"} → 找到相關文件後 read_file
 - 需要搜尋整個系統的知識才用 semantic_search（例如跨領域問題、找不到答案時）
 - ❌ **不要每次都先跑 semantic_search！大部分問題不需要**
