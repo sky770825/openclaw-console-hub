@@ -295,6 +295,7 @@ ${soulCore}
 | 腳本 | ${_workspace}/scripts |
 | 報告 | ${_workspace}/reports |
 | WAKE_STATUS | ${_workspace}/WAKE_STATUS.md |
+| HEARTBEAT.md | ${_workspace}/HEARTBEAT.md |
 | AGENTS.md | ${_workspace}/AGENTS.md |
 | GROWTH.md | ${_workspace}/GROWTH.md |
 | SOUL.md | ${_workspace}/SOUL.md |
@@ -495,7 +496,7 @@ export async function xiaocaiThink(
           let stdout = '';
           let stderr = '';
           const child = spawn(claudeBin, ['-p', '--model', claudeModel, cliPrompt], {
-            env: (() => { const e: Record<string, string | undefined> = { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}` }; delete e.CLAUDECODE; delete e.CLAUDE_CODE; delete e.CLAUDE_SKIP_ANALYTICS; return e; })(),
+            env: (() => { const e: Record<string, string | undefined> = { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}` }; delete e.CLAUDECODE; delete e.CLAUDE_CODE; delete e.CLAUDE_SKIP_ANALYTICS; delete e.ANTHROPIC_API_KEY; return e; })(),
             cwd: process.env.HOME || '/tmp',
             timeout: 90000,
             stdio: ['ignore', 'pipe', 'pipe'],
