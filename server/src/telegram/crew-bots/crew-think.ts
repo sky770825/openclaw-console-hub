@@ -232,19 +232,12 @@ export async function crewThink(
     .trim();
 
   // Telegram 訊息上限 4096，留 200 給 bot header → 1500 字是安全上限
-  // 智慧截斷：找到最後一個完整句子（。！？\n）再切，避免句子中間斷掉
+  // 超長回覆 → 用 Gemini Flash 自動摘要重點，保留完整分析但精簡表達
   let truncated = clean;
   if (clean.length > 1500) {
-    const cutRegion = clean.slice(1200, 1500); // 在 1200-1500 之間找斷點
-    const lastBreak = Math.max(
-      cutRegion.lastIndexOf('。'),
-      cutRegion.lastIndexOf('！'),
-      cutRegion.lastIndexOf('？'),
-      cutRegion.lastIndexOf('\n'),
-      cutRegion.lastIndexOf('. '),
-    );
-    const cutAt = lastBreak >= 0 ? 1200 + lastBreak + 1 : 1497;
-    truncated = clean.slice(0, cutAt).trimEnd() + '...';
+    log.info(`[CrewThink] ${bot.emoji} ${bot.name} 回覆過長(${clean.length}字)，自動摘要`);
+    const summary = await summarizeReply(clean, bot);
+    truncated = summary || smartTruncate(clean, 1500);
   }
 
   // 自動追加工作紀錄到 bot 的 MEMORY.md
@@ -508,6 +501,73 @@ async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null
 }
 
 /**
+ * 超長回覆自動摘要 — 用 Gemini Flash 把冗長回覆精簡成重點
+ * 保留完整分析邏輯，但去除重複、灌水、過度客套
+ */
+async function summarizeReply(longReply: string, bot: CrewBotConfig): Promise<string | null> {
+  const summaryPrompt = `你是摘要助手。以下是 ${bot.name}（${bot.role}）在 Telegram 群組的回覆，太長了需要精簡。
+
+要求：
+- 保留所有關鍵資訊、數據、結論、建議
+- 去除重複的描述、客套話、過度鋪陳
+- 用條列式整理重點，精簡但不遺漏
+- 繁體中文，控制在 800 字以內
+- 不要加「以下是摘要」之類的前綴，直接給精簡後的內容
+
+原文：
+${longReply}`;
+
+  try {
+    const apiKey = getGeminiKey();
+    if (!apiKey) return null;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15_000);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: summaryPrompt }] }],
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.1 },
+      }),
+    });
+
+    clearTimeout(timer);
+    if (!res.ok) return null;
+
+    const json = await res.json() as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (text) {
+      log.info(`[CrewSummary] ${bot.emoji} ${bot.name} 摘要完成 ${longReply.length}→${text.length}字`);
+      return text;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** 智慧截斷兜底 — 摘要失敗時，找完整句子再切 */
+function smartTruncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const cutRegion = text.slice(maxLen - 300, maxLen);
+  const lastBreak = Math.max(
+    cutRegion.lastIndexOf('。'),
+    cutRegion.lastIndexOf('！'),
+    cutRegion.lastIndexOf('？'),
+    cutRegion.lastIndexOf('\n'),
+    cutRegion.lastIndexOf('. '),
+  );
+  const cutAt = lastBreak >= 0 ? (maxLen - 300) + lastBreak + 1 : maxLen - 3;
+  return text.slice(0, cutAt).trimEnd() + '...';
+}
+
+/**
  * 呼叫 Gemini API（Flash 或 Pro）
  */
 async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig): Promise<string | null> {
@@ -530,7 +590,7 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 1024,    // 限制回覆長度，Telegram 群聊不需要長篇大論
+          maxOutputTokens: 2048,    // 給足分析空間，超長由後端自動摘要
           temperature: 0.3,
         },
         safetySettings: [
@@ -997,13 +1057,13 @@ ${CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b
 ## 說話方式
 ${bot.responseStyle}
 - 繁體中文口語，直接有個性
-- ⚠️ **回覆字數限制：最多 150 字**。這是 Telegram 群組聊天，不是寫報告。講重點就好
-- 做事的回覆：一句話回報結果 + 一句話建議（不要條列分析）
-- 聊天的回覆：1-2 句話
+- 精簡扼要，講重點。分析要全面但表達要精煉，不灌水不重複
+- 做事的回覆：回報結果 + 關鍵發現 + 建議（條列式整理，不寫流水帳）
+- 聊天的回覆：1-3 句話
 - 不要開頭「好的」「收到」「了解」
 - 直接回覆內容，不要加自己的名字前綴
 - 🚫 **絕對不要在回覆裡列出程式碼**（不要用 \`\`\` 代碼區塊）— 這是 Telegram 聊天，不是 IDE
-- 回覆要完整，不要寫到一半就停。講重點，不要拖泥帶水
+- 回覆要完整，不要寫到一半就停
 - 不要重複別人已經說過的觀點，有新東西才補充
 
 ## 路徑基準
