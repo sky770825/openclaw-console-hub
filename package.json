@@ -1,7 +1,7 @@
 {
   "name": "openclaw-starship-ui",
   "private": true,
-  "version": "2.4.98",
+  "version": "2.4.99",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",

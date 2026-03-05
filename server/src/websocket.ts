@@ -227,6 +227,13 @@ class WebSocketManager {
     });
   }
 
+  broadcastAgentUpdate(data: { agentId: string; status: string; message?: string }): void {
+    const msg = JSON.stringify({ type: 'agentUpdate', ...data, timestamp: new Date().toISOString() });
+    this.clients.forEach(({ ws, subscriptions }) => {
+      if (ws.readyState === WebSocket.OPEN && (subscriptions.has('agent:*') || subscriptions.has(`agent:${data.agentId}`))) ws.send(msg);
+    });
+  }
+
   /**
    * 推送執行進度
    */
