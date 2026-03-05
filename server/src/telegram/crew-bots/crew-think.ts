@@ -717,7 +717,7 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 2048,    // 給足分析空間，超長由後端自動摘要
+          maxOutputTokens: 4096,    // 加大避免 MAX_TOKENS 截斷空回覆，超長由後端自動摘要
           temperature: 0.3,
         },
         safetySettings: [
@@ -744,12 +744,14 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
     };
 
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const finishReason = json.candidates?.[0]?.finishReason;
     if (text) {
-      log.info(`[CrewThink] ${bot.emoji} ${bot.name} Gemini(${model.includes('pro') ? 'pro' : 'flash'}) OK, replyLen=${text.length}`);
+      const truncNote = finishReason === 'MAX_TOKENS' ? '（截斷）' : '';
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} Gemini(${model.includes('pro') ? 'pro' : 'flash'}) OK, replyLen=${text.length}${truncNote}`);
       return text;
     }
 
-    log.warn(`[CrewThink] ${bot.name} Gemini 回覆為空 finishReason=${json.candidates?.[0]?.finishReason}`);
+    log.warn(`[CrewThink] ${bot.name} Gemini 回覆為空 finishReason=${finishReason}`);
     return null;
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
