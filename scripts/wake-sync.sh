@@ -103,7 +103,7 @@ CURRENT_MODEL="$(python3 -c "import json; d=json.load(open('$HOME/.openclaw/open
 
 # ── 8. 小蔡（副手）是否在線 ──
 XIAOJI_ALIVE=false
-XIAOJI_PROJECTS_DIR="$HOME/Downloads/openclaw-console-hub-main"
+XIAOJI_PROJECTS_DIR="$HOME/openclaw任務面版設計"
 if [[ -d "$XIAOJI_PROJECTS_DIR" ]]; then
   XIAOJI_ALIVE=true
 fi
@@ -208,7 +208,7 @@ HEADER
 
 # ── 9. 同步 CLAUDE.md 到小蔡工作目錄 ──
 LAOCAI_CLAUDE="/Users/caijunchang/openclaw任務面版設計/CLAUDE.md"
-XIAOJI_CLAUDE="/Users/caijunchang/Downloads/openclaw-console-hub-main/CLAUDE.md"
+XIAOJI_CLAUDE="/Users/caijunchang/openclaw任務面版設計/CLAUDE.md"
 if [[ -f "$LAOCAI_CLAUDE" ]]; then
   if ! diff -q "$LAOCAI_CLAUDE" "$XIAOJI_CLAUDE" > /dev/null 2>&1; then
     cp "$LAOCAI_CLAUDE" "$XIAOJI_CLAUDE"

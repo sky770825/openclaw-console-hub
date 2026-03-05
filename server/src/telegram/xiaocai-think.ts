@@ -162,7 +162,7 @@ export function loadAwakeningContext(userMessage: string): string {
     if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
     const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
     if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/caijunchang/Downloads/openclaw-console-hub-main';
+    return '/Users/caijunchang/openclaw任務面版設計';
   })();
   const chunks: string[] = [];
 
@@ -248,7 +248,7 @@ export function buildSystemPrompt(soulCore: string, awakening: string, sysStatus
     if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
     const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
     if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/caijunchang/Downloads/openclaw-console-hub-main';
+    return '/Users/caijunchang/openclaw任務面版設計';
   })();
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 

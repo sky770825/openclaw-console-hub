@@ -7,10 +7,10 @@
 ## 🔄 開場同步（每次對話必做，第一步）
 
 ```bash
-# 進入工作目錄
-cd /Users/caijunchang/Downloads/openclaw-console-hub-main
+# 進入工作目錄（統一目錄，不再分老蔡/小蔡）
+cd /Users/caijunchang/openclaw任務面版設計
 
-# 同步老蔡最新代碼
+# 同步最新代碼
 git pull origin main
 
 # 確認版本
@@ -24,9 +24,8 @@ grep '"version"' package.json
 ## 📌 身份與角色
 
 - **我是小蔡**（副手/Deputy），老蔡的代理人
-- **老蔡工作目錄**：`/Users/caijunchang/openclaw任務面版設計`
-- **我的工作目錄**：`/Users/caijunchang/Downloads/openclaw-console-hub-main`
-- 兩個目錄指向同一個 GitHub repo：`sky770825/openclaw-console-hub`
+- **工作目錄（統一）**：`/Users/caijunchang/openclaw任務面版設計`
+- GitHub repo：`sky770825/openclaw-console-hub`
 - 我的任務推到 `xiaoji` remote：`andy825lay-tech/openclaw-workspace`
 
 ---
@@ -101,21 +100,21 @@ bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "部
 ## 🚀 Push 流程
 
 ```bash
-# 1. 先同步老蔡最新
+# 1. 先同步最新
 git pull origin main
 
 # 2. 做完工作後 commit
 git add <files>
 git commit -m "feat: ..."
 
-# 3. 推到老蔡的 origin（主 repo）
+# 3. 推到 origin（主 repo）
 git push origin main
 
 # 4. 也推到 xiaoji（小蔡的 mirror）
 git push xiaoji main
 
-# 5. 老蔡目錄 pull + build（讓 server 生效！）
-cd /Users/caijunchang/openclaw任務面版設計 && git pull origin main && cd server && npm run build
+# 5. build（讓 server 生效！）
+cd server && npm run build
 
 # 6. 重啟 server
 launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw.taskboard
@@ -124,10 +123,7 @@ launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw
 bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 ```
 
-> ⚠️ **兩個目錄說明**
-> - `openclaw-console-hub-main/` — 小蔡開發目錄（寫代碼在這）
-> - `openclaw任務面版設計/` — **server 實際執行目錄**（launchd 跑這）
-> - 改完代碼 push 後，**老蔡目錄也要 pull + build**，否則 server 跑的還是舊版。
+> ⚠️ **統一目錄**：老蔡和小蔡都在 `openclaw任務面版設計/` 工作，不再有雙目錄同步問題。
 
 ---
 
@@ -137,7 +133,7 @@ bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任
 
 ```bash
 # 基本用法（API Key 已在 .env）
-source ~/.env 2>/dev/null || export GEMINI_API_KEY=$(grep GEMINI_API_KEY /Users/caijunchang/Downloads/openclaw-console-hub-main/.env | cut -d= -f2)
+source ~/.env 2>/dev/null || export GEMINI_API_KEY=$(grep GEMINI_API_KEY /Users/caijunchang/openclaw任務面版設計/server/.env | cut -d= -f2)
 
 # 單次問答
 GEMINI_API_KEY="$GEMINI_API_KEY" gemini "你的問題或任務" -m gemini-2.5-flash
