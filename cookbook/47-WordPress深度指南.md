@@ -1,3 +1,9 @@
+---
+tags: [WordPress, WooCommerce, PHP, plugin, theme, SEO, hosting, security]
+date: 2026-03-05
+category: cookbook
+---
+
 # 47 — WordPress 深度指南（接案實戰版）
 
 > 給網頁設計接案者的 WordPress 完整手冊

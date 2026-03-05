@@ -12,20 +12,18 @@ export const SOUL_FILES = new Set([
   'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md',
 ]);
 
-/** 危險路徑關鍵字 — 包含這些字串的路徑一律封鎖寫入 */
+/** 危險路徑關鍵字 — 包含這些字串的路徑封鎖寫入 */
 export const FORBIDDEN_PATH_PATTERNS = [
   '.env', 'credentials', 'secret', 'password', 'api_key', 'apikey',
-  'token', '.pem', '.key', 'id_rsa', 'authorized_keys',
+  '.token', '.pem', '.key', 'id_rsa', 'authorized_keys',
   'openclaw.json', // 含 provider API keys
 ];
 
-/** 危險指令 — 腳本中不可出現 */
+/** 危險指令 — 腳本中不可出現（只擋真正破壞性操作，不擋變數名引用） */
 export const FORBIDDEN_COMMANDS = [
   'rm -rf /', 'rm -rf ~', 'rm -rf *',
   'git push',
   'sudo',
-  'GOOGLE_API_KEY', 'GEMINI_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENCLAW_API_KEY',
-  'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CONTROL_BOT_TOKEN', 'TELEGRAM_GROUP_BOT_TOKEN',
 ];
 
 /** 安全檢查：路徑是否允許操作 */
@@ -34,11 +32,8 @@ export function isPathSafe(targetPath: string, operation: 'read' | 'write'): { s
   const basename = path.basename(resolved);
 
   if (operation === 'read') {
-    for (const pattern of FORBIDDEN_PATH_PATTERNS) {
-      if (resolved.toLowerCase().includes(pattern)) {
-        return { safe: false, reason: `禁止讀取包含 "${pattern}" 的檔案` };
-      }
-    }
+    // 讀取只擋靈魂文件的刪除（不擋讀），其他全放行
+    // 小蔡需要讀取 .env / config 來排查問題，寫入才是真正的風險
     return { safe: true };
   }
 

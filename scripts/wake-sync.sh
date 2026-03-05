@@ -42,7 +42,17 @@ fi
 EXECUTOR_STATUS=""
 if $SERVER_OK; then
   EXECUTOR_STATUS="$(curl -sf --max-time 2 "$TASKBOARD/api/openclaw/auto-executor/status" 2>/dev/null \
-    | python3 -c "import json,sys; d=json.load(sys.stdin); print('運行中' if d.get('isRunning') else '停止', '| 最後執行:', str(d.get('lastExecutedAt','未知'))[:16])" 2>/dev/null || echo '(無法取得)')"
+    | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+running = '運行中' if d.get('isRunning') else '停止'
+last = d.get('lastExecutedAt')
+today = d.get('totalExecutedToday', 0)
+if last:
+    print(f'{running} | 最後執行: {str(last)[:16]} | 今日: {today}')
+else:
+    print(f'{running} | 待命中（無 pending 任務）| 今日: {today}')
+" 2>/dev/null || echo '(無法取得)')"
 fi
 
 # ── 5. FADP 聯盟狀態 ──
@@ -72,11 +82,11 @@ PY
 fi
 
 # ── 7. API 額度快速檢測 ──
-GOOGLE_KEY="AIzaSyD0KfLJji1sgTK4anrL5VSnvc1GA2pN1Gk"
+GOOGLE_KEY="AIzaSyCRZMBAE1mODvTYV0fSO6z8jAqyxx6_Njk"
 check_model() {
   local model="$1"
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
     -X POST "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_KEY}" \
     -H "Content-Type: application/json" \
     -d '{"contents":[{"parts":[{"text":"1"}]}]}' 2>/dev/null)

@@ -1,1543 +1,2204 @@
+---
+tags: [landing-page, conversion, A/B-testing, CTA, copywriting, analytics, performance, mobile]
+date: 2026-03-05
+category: cookbook
+---
+
 # 48 — Landing Page 高轉換設計
 
-> 適用對象：接案網頁設計師、數位行銷人員、前端工程師
+> 從零打造高轉換率的 Landing Page：結構、文案、測試、追蹤一次到位。
+> 適用對象：網頁設計接案者 / 前端工程師 / 行銷人員 / 創業者
 > 最後更新：2026-03-05
 
 ---
 
 ## 目錄
 
-1. [Landing Page 心理學](#1-landing-page-心理學)
-2. [高轉換 LP 結構（12 區塊模板）](#2-高轉換-lp-結構12-區塊模板)
-3. [Hero Section 設計](#3-hero-section-設計)
-4. [文案撰寫技巧](#4-文案撰寫技巧)
-5. [CTA 按鈕設計](#5-cta-按鈕設計)
-6. [社會證明](#6-社會證明)
-7. [表單設計](#7-表單設計)
-8. [行動版 LP 設計](#8-行動版-lp-設計)
-9. [速度與效能](#9-速度與效能)
-10. [A/B Testing](#10-ab-testing)
-11. [追蹤與分析](#11-追蹤與分析)
-12. [LP 建站工具](#12-lp-建站工具)
-13. [LP 範例模板](#13-lp-範例模板)
-14. [LP QA Checklist（上線前 20 項檢查）](#14-lp-qa-checklist上線前-20-項檢查)
+1. [高轉換 Landing Page 核心觀念](#1-高轉換-landing-page-核心觀念)
+2. [頁面結構：五段式黃金架構](#2-頁面結構五段式黃金架構)
+3. [文案撰寫公式](#3-文案撰寫公式)
+4. [CTA 設計原則](#4-cta-設計原則)
+5. [表單優化](#5-表單優化)
+6. [A/B Testing 實作](#6-ab-testing-實作)
+7. [速度優化](#7-速度優化)
+8. [手機端設計](#8-手機端設計)
+9. [GA4 事件追蹤](#9-ga4-事件追蹤)
+10. [熱力圖分析工具](#10-熱力圖分析工具)
+11. [React/Next.js Landing Page 模板代碼](#11-reactnextjs-landing-page-模板代碼)
+12. [上線前檢查表](#12-上線前檢查表)
+13. [轉換率診斷 SOP](#13-轉換率診斷-sop)
 
 ---
 
-## 1. Landing Page 心理學
+## 1. 高轉換 Landing Page 核心觀念
 
-### 1.1 AIDA 模型
+### 1.1 Landing Page vs 首頁
 
-每個高轉換 LP 都遵循 AIDA 心理路徑：
+| 比較項目 | Landing Page | 首頁 (Homepage) |
+|----------|-------------|-----------------|
+| **目的** | 單一轉換目標 | 品牌總覽、多重入口 |
+| **導航** | 極簡或無導航列 | 完整導航 |
+| **連結** | 盡量少，只留 CTA | 多連結、多分類 |
+| **內容** | 針對特定受眾/產品 | 涵蓋所有服務 |
+| **流量來源** | 廣告、Email、社群 | 自然搜尋、直接造訪 |
+| **轉換率** | 5%–15%（優秀） | 1%–3% |
 
-```
-Attention（注意）→ Interest（興趣）→ Desire（渴望）→ Action（行動）
-   Hero 區          痛點+方案         社會證明+定價        CTA 按鈕
-```
+### 1.2 轉換率基準
 
-| 階段 | 目標 | LP 區塊對應 | 停留時間 |
-|------|------|------------|---------|
-| **Attention** | 3 秒內抓住目光 | Hero 標題 + 主視覺 | 0-3 秒 |
-| **Interest** | 讓訪客想繼續看 | 痛點描述 + 解決方案 | 3-15 秒 |
-| **Desire** | 產生「我也要」的感覺 | 社會證明 + 功能利益 | 15-60 秒 |
-| **Action** | 讓他按下按鈕 | CTA + 表單 + 定價 | 60+ 秒 |
+| 產業 | 平均轉換率 | 優秀轉換率 |
+|------|-----------|-----------|
+| SaaS | 3%–5% | 8%–12% |
+| 電商 | 2%–4% | 6%–10% |
+| B2B 服務 | 2%–5% | 8%–15% |
+| 教育/課程 | 5%–8% | 12%–20% |
+| 醫療/健康 | 2%–4% | 5%–8% |
+| 房地產 | 1%–3% | 4%–7% |
 
-### 1.2 F 型閱讀模式
-
-Nielsen Norman Group 眼球追蹤研究顯示，使用者閱讀網頁呈 F 型：
-
-```
-████████████████████████   ← 第一橫：讀完整標題
-████████████████████████
-██████████████             ← 第二橫：讀副標題（較短）
-██████████████
-████                       ← 往下只掃左側
-████
-████
-████
-```
-
-**設計對策：**
-
-- 標題放最上方，完整呈現價值主張
-- 副標題比標題短，但資訊密度更高
-- 左側放重點資訊（icon、數字、粗體關鍵字）
-- 每個區塊開頭都要有吸引力（因為使用者只看開頭）
-
-### 1.3 視覺動線設計
+### 1.3 轉換率公式
 
 ```
-Z 型動線（適合簡潔 LP）        Gutenberg 對角線（適合長頁面）
+轉換率 = (完成目標動作的人數 / 總訪客數) x 100%
 
-1 ──→ 2                       [強] ─── [弱]
-      │                         │        │
-      ↓                         ↓        ↓
-3 ──→ 4 (CTA)                 [弱] ─── [強=CTA]
+例：1000 個訪客，50 人填表 → 轉換率 = 5%
+
+影響轉換率的三大要素：
+1. 流量品質 — 進來的人對不對？（廣告受眾設定）
+2. 訊息匹配 — 廣告說的和頁面寫的一致嗎？
+3. 頁面體驗 — 好不好用？信不信任？動機夠不夠強？
 ```
 
-**Z 型動線實作：**
-
-```html
-<section class="hero">
-  <!-- 1. 左上：Logo/品牌 -->
-  <nav>Logo .............. 選單</nav>
-
-  <!-- 2. 右上→左下：標題橫跨 -->
-  <h1>用 AI 把你的客服效率提升 300%</h1>
-
-  <!-- 3. 左下：說明文字 -->
-  <p>不需要寫程式，5 分鐘設定完成</p>
-
-  <!-- 4. 右下 or 中間：CTA -->
-  <button>免費試用 14 天</button>
-</section>
-```
-
-### 1.4 決策疲勞
-
-**核心原理：** 人在一天中做越多決策，判斷力越差。LP 要減少訪客的決策負擔。
-
-| 問題 | 解法 | 轉換率影響 |
-|------|------|-----------|
-| 太多選項 | 定價最多 3 個方案 | 選項從 5→3，轉換率 +20% |
-| 太多 CTA | 整頁只有 1 個目標動作 | 單一 CTA 比多重 CTA 高 13.5% |
-| 太多文字 | 用 icon + 短句取代長段落 | 精簡 50% 文字，轉換率 +58% |
-| 表單太長 | 欄位從 11 個降到 4 個 | 減少欄位，轉換率 +120% |
-
-**Hick's Law（希克定律）：**
+### 1.4 注意力衰減模型
 
 ```
-決策時間 = log2(選項數量 + 1)
-```
+使用者進入頁面後的注意力曲線：
 
-選項越少，訪客越快行動。**一個 LP 只做一件事。**
+100% ┤ ██
+ 80% ┤ ████
+ 60% ┤ ██████
+ 40% ┤ █████████
+ 20% ┤ █████████████
+  0% ┤ ████████████████████
+     └─────────────────────
+      0s  3s  8s  15s  30s
 
-### 1.5 其他關鍵心理效應
-
-| 效應 | 說明 | LP 應用 |
-|------|------|--------|
-| **錨定效應** | 先看到的數字影響判斷 | 定價表先放最貴方案，中間方案顯得便宜 |
-| **稀缺性** | 越少越想要 | 「限時優惠」「僅剩 12 個名額」 |
-| **社會認同** | 別人都用 = 安全 | 「超過 10,000 家企業信賴」 |
-| **損失厭惡** | 怕失去 > 想得到 | 「別讓競爭對手搶先一步」 |
-| **互惠原則** | 先給好處 | 免費試用、免費電子書、免費諮詢 |
-| **承諾一致** | 小 yes → 大 yes | 先按「了解更多」→ 再填表單 |
-
----
-
-## 2. 高轉換 LP 結構（12 區塊模板）
-
-### 2.1 完整結構圖
-
-```
-┌─────────────────────────────────────┐
-│  0. 頂部通知列（選用）                │  ← 限時優惠 / 公告
-├─────────────────────────────────────┤
-│  1. Hero Section                     │  ← 標題 + 副標 + CTA + 主視覺
-├─────────────────────────────────────┤
-│  2. 社會證明（Logo 列）               │  ← 「信賴我們的品牌」
-├─────────────────────────────────────┤
-│  3. 痛點區                           │  ← 「你是否遇到這些問題？」
-├─────────────────────────────────────┤
-│  4. 解決方案                         │  ← 「我們如何解決」
-├─────────────────────────────────────┤
-│  5. 功能 / 特色區                    │  ← 3-6 個核心功能（icon + 標題 + 說明）
-├─────────────────────────────────────┤
-│  6. 運作流程                         │  ← 「3 步驟開始」
-├─────────────────────────────────────┤
-│  7. 客戶見證                         │  ← 真人照片 + 引言 + 公司名
-├─────────────────────────────────────┤
-│  8. 數據成果                         │  ← 大數字：「300% 效率提升」
-├─────────────────────────────────────┤
-│  9. 定價方案                         │  ← 2-3 個方案，推薦標示
-├─────────────────────────────────────┤
-│ 10. FAQ                              │  ← 5-8 個常見問題（手風琴）
-├─────────────────────────────────────┤
-│ 11. 最終 CTA                         │  ← 最後一次說服 + 大按鈕
-├─────────────────────────────────────┤
-│ 12. Footer                           │  ← 法律資訊 / 聯絡方式
-└─────────────────────────────────────┘
-```
-
-### 2.2 各區塊轉換貢獻度
-
-| 區塊 | 轉換貢獻度 | 必要性 | 備註 |
-|------|-----------|--------|------|
-| Hero Section | 極高 | 必要 | 決定 70% 訪客去留 |
-| 痛點區 | 高 | 必要 | 引起共鳴是轉換基礎 |
-| 解決方案 | 高 | 必要 | 承接痛點，給出答案 |
-| 功能特色 | 中高 | 必要 | 具體說明產品價值 |
-| 社會證明 | 高 | 必要 | 信任感是轉換催化劑 |
-| 客戶見證 | 高 | 強烈建議 | 真人故事最有說服力 |
-| 定價方案 | 中高 | 視業務 | SaaS 必要，服務業選用 |
-| FAQ | 中 | 建議 | 消除最後疑慮 |
-| 最終 CTA | 高 | 必要 | 最後一擊 |
-
-### 2.3 12 區塊 HTML 骨架
-
-```html
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>產品名稱 — 一句話價值主張</title>
-  <meta name="description" content="120 字以內的頁面描述，包含主要關鍵字">
-</head>
-<body>
-
-  <!-- 0. 頂部通知列 -->
-  <div class="announcement-bar">
-    限時優惠：前 100 名註冊享 6 折 → <a href="#pricing">立即查看</a>
-  </div>
-
-  <!-- 1. Hero Section -->
-  <section id="hero" class="hero">
-    <div class="hero-content">
-      <h1>主標題：一句話說清楚產品價值</h1>
-      <p class="subtitle">副標題：補充說明、降低疑慮</p>
-      <div class="hero-cta">
-        <a href="#signup" class="btn-primary">主要 CTA</a>
-        <a href="#demo" class="btn-secondary">次要 CTA</a>
-      </div>
-    </div>
-    <div class="hero-visual">
-      <img src="hero-image.webp" alt="產品使用情境" loading="eager">
-    </div>
-  </section>
-
-  <!-- 2. Logo 社會證明 -->
-  <section class="logo-bar">
-    <p>超過 2,000 家企業信賴</p>
-    <div class="logos">
-      <img src="logo1.svg" alt="客戶A" loading="lazy">
-      <img src="logo2.svg" alt="客戶B" loading="lazy">
-      <img src="logo3.svg" alt="客戶C" loading="lazy">
-    </div>
-  </section>
-
-  <!-- 3. 痛點區 -->
-  <section id="problems" class="pain-points">
-    <h2>你是否也遇到這些問題？</h2>
-    <div class="pain-grid">
-      <div class="pain-item">
-        <span class="pain-icon">&#x26A0;</span>
-        <h3>痛點 1 標題</h3>
-        <p>具體描述這個問題如何影響他們</p>
-      </div>
-      <!-- 重複 2-3 個痛點 -->
-    </div>
-  </section>
-
-  <!-- 4. 解決方案 -->
-  <section id="solution" class="solution">
-    <h2>我們的解決方案</h2>
-    <p>一段話說明你的產品如何解決上述痛點</p>
-    <img src="solution-diagram.webp" alt="解決方案示意圖" loading="lazy">
-  </section>
-
-  <!-- 5. 功能特色 -->
-  <section id="features" class="features">
-    <h2>為什麼選擇我們</h2>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon"><!-- SVG icon --></div>
-        <h3>功能名稱</h3>
-        <p>這個功能帶給使用者什麼好處</p>
-      </div>
-      <!-- 重複 3-6 個功能 -->
-    </div>
-  </section>
-
-  <!-- 6. 運作流程 -->
-  <section id="how-it-works" class="process">
-    <h2>3 步驟輕鬆開始</h2>
-    <div class="steps">
-      <div class="step">
-        <span class="step-number">1</span>
-        <h3>註冊帳號</h3>
-        <p>30 秒完成，不需信用卡</p>
-      </div>
-      <div class="step">
-        <span class="step-number">2</span>
-        <h3>設定偏好</h3>
-        <p>回答 3 個問題，AI 自動配置</p>
-      </div>
-      <div class="step">
-        <span class="step-number">3</span>
-        <h3>開始使用</h3>
-        <p>立即體驗效率提升</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 7. 客戶見證 -->
-  <section id="testimonials" class="testimonials">
-    <h2>客戶怎麼說</h2>
-    <div class="testimonial-grid">
-      <blockquote class="testimonial-card">
-        <p>「使用後客服回覆時間從 24 小時降到 2 小時，客戶滿意度提升 40%。」</p>
-        <footer>
-          <img src="avatar1.webp" alt="王大明" loading="lazy">
-          <cite>王大明，ABC 科技 執行長</cite>
-        </footer>
-      </blockquote>
-    </div>
-  </section>
-
-  <!-- 8. 數據成果 -->
-  <section class="stats">
-    <div class="stat-item">
-      <span class="stat-number">300%</span>
-      <span class="stat-label">效率提升</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-number">10,000+</span>
-      <span class="stat-label">活躍用戶</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-number">99.9%</span>
-      <span class="stat-label">正常運行時間</span>
-    </div>
-  </section>
-
-  <!-- 9. 定價方案 -->
-  <section id="pricing" class="pricing">
-    <h2>選擇適合你的方案</h2>
-    <div class="pricing-grid">
-      <div class="pricing-card">
-        <h3>入門版</h3>
-        <div class="price">NT$0<span>/月</span></div>
-        <ul>
-          <li>功能 A</li>
-          <li>功能 B</li>
-        </ul>
-        <a href="#signup" class="btn-secondary">免費開始</a>
-      </div>
-      <div class="pricing-card featured">
-        <span class="badge">最受歡迎</span>
-        <h3>專業版</h3>
-        <div class="price">NT$990<span>/月</span></div>
-        <ul>
-          <li>入門版所有功能</li>
-          <li>功能 C</li>
-          <li>功能 D</li>
-        </ul>
-        <a href="#signup" class="btn-primary">開始免費試用</a>
-      </div>
-      <div class="pricing-card">
-        <h3>企業版</h3>
-        <div class="price">聯繫我們</div>
-        <ul>
-          <li>專業版所有功能</li>
-          <li>功能 E</li>
-          <li>專屬客服</li>
-        </ul>
-        <a href="#contact" class="btn-secondary">聯繫業務</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- 10. FAQ -->
-  <section id="faq" class="faq">
-    <h2>常見問題</h2>
-    <details>
-      <summary>可以免費試用嗎？</summary>
-      <p>可以！我們提供 14 天免費試用，不需要綁定信用卡。</p>
-    </details>
-    <details>
-      <summary>隨時可以取消嗎？</summary>
-      <p>隨時都能取消，不綁約、不收違約金。</p>
-    </details>
-  </section>
-
-  <!-- 11. 最終 CTA -->
-  <section class="final-cta">
-    <h2>準備好提升你的業務了嗎？</h2>
-    <p>加入超過 10,000 家企業的行列</p>
-    <a href="#signup" class="btn-primary btn-large">免費試用 14 天</a>
-    <p class="reassurance">不需信用卡 / 隨時取消 / 5 分鐘上手</p>
-  </section>
-
-  <!-- 12. Footer -->
-  <footer class="site-footer">
-    <div class="footer-grid">
-      <div>
-        <h4>產品</h4>
-        <a href="#features">功能</a>
-        <a href="#pricing">定價</a>
-      </div>
-      <div>
-        <h4>公司</h4>
-        <a href="/about">關於我們</a>
-        <a href="/contact">聯繫我們</a>
-      </div>
-      <div>
-        <h4>法律</h4>
-        <a href="/privacy">隱私政策</a>
-        <a href="/terms">服務條款</a>
-      </div>
-    </div>
-    <p class="copyright">&copy; 2026 品牌名稱. All rights reserved.</p>
-  </footer>
-
-</body>
-</html>
+黃金 3 秒：使用者在 3 秒內決定要不要繼續看
+黃金 8 秒：決定要不要投入閱讀
+黃金 15 秒：決定要不要行動（點 CTA）
 ```
 
 ---
 
-## 3. Hero Section 設計
+## 2. 頁面結構：五段式黃金架構
 
-### 3.1 標題公式（10 種高轉換模板）
-
-| # | 公式 | 範例 |
-|---|------|------|
-| 1 | **動詞 + 成果 + 時間** | 「在 5 分鐘內建立你的線上商店」 |
-| 2 | **不用 X 也能 Y** | 「不用寫程式也能打造 AI 客服」 |
-| 3 | **數字 + 成果** | 「幫助 10,000+ 企業節省 40% 行銷費用」 |
-| 4 | **問句直擊痛點** | 「還在手動整理客戶名單？」 |
-| 5 | **一句話定位** | 「最簡單的團隊專案管理工具」 |
-| 6 | **Before/After** | 「把 3 小時的報表工作縮短到 3 分鐘」 |
-| 7 | **客戶代言** | 「被 Google、Netflix、Spotify 採用的設計系統」 |
-| 8 | **消除風險** | 「免費試用 14 天，不滿意全額退費」 |
-| 9 | **排他性** | 「專為台灣中小企業打造的 ERP」 |
-| 10 | **對比法** | 「別花 50 萬請工程師，月付 990 就搞定」 |
-
-### 3.2 副標題原則
+### 2.1 架構總覽
 
 ```
-主標題 = 說「什麼」（What）
-副標題 = 說「怎麼做」或「為什麼」（How / Why）
+┌─────────────────────────────┐
+│  1. HERO（英雄區）          │  ← 黃金 3 秒決勝
+│     標題 + 副標題 + CTA     │
+├─────────────────────────────┤
+│  2. PAIN（痛點區）          │  ← 建立同理心
+│     你是否有這些困擾？       │
+├─────────────────────────────┤
+│  3. SOLUTION（方案區）      │  ← 展示解法
+│     功能/特色/差異化         │
+├─────────────────────────────┤
+│  4. SOCIAL PROOF（信任區）  │  ← 消除疑慮
+│     見證/數據/品牌 Logo      │
+├─────────────────────────────┤
+│  5. CTA（行動區）           │  ← 臨門一腳
+│     表單/按鈕 + 急迫感       │
+└─────────────────────────────┘
 ```
 
-**好的副標題範例：**
+### 2.2 第一段：Hero 英雄區
 
-```html
-<h1>用 AI 把客服效率提升 300%</h1>
-<p class="subtitle">
-  自動回覆常見問題、智能分派工單、即時翻譯 12 種語言。
-  超過 2,000 家企業已在使用。
-</p>
-```
+Hero 是整個頁面最重要的區塊，決定使用者留不留下來。
 
-**副標題 Checklist：**
-- 控制在 20-30 字（中文）
-- 補充主標題沒說的資訊
-- 包含具體數字或事實
-- 降低一個疑慮（免費？快速？簡單？）
+**必備元素：**
 
-### 3.3 CTA 按鈕配置
-
-```html
-<!-- 雙按鈕配置（最常見） -->
-<div class="hero-cta">
-  <!-- 主按鈕：高對比色、動作明確 -->
-  <a href="#signup" class="btn-primary">免費開始使用</a>
-
-  <!-- 次按鈕：低調、給猶豫的人 -->
-  <a href="#demo" class="btn-secondary">觀看 2 分鐘 Demo</a>
-</div>
-
-<!-- 按鈕下方小字（降低疑慮） -->
-<p class="cta-reassurance">不需信用卡 &bull; 30 秒註冊 &bull; 隨時取消</p>
-```
-
-### 3.4 背景圖 vs 影片
-
-| 項目 | 靜態圖片 | 背景影片 | 動態插圖 |
-|------|---------|---------|---------|
-| 載入速度 | 快 | 慢（+2-5MB） | 中等 |
-| 注意力 | 中 | 高 | 高 |
-| 行動版表現 | 好 | 差（耗電耗流量） | 好 |
-| 轉換率影響 | 基準 | +10-20%（桌面） | +5-15% |
-| 適合場景 | 所有場景 | SaaS 產品展示 | 科技/新創 |
-
-**背景影片最佳實踐：**
-
-```html
-<!-- 桌面版才載入影片，手機版顯示靜態圖 -->
-<div class="hero-bg">
-  <picture>
-    <source media="(min-width: 768px)" type="video/mp4">
-    <img src="hero-fallback.webp" alt="產品展示">
-  </picture>
-  <video autoplay muted loop playsinline
-         poster="hero-fallback.webp"
-         class="hero-video desktop-only">
-    <source src="hero-bg.mp4" type="video/mp4">
-  </video>
-</div>
-
-<style>
-.hero-video {
-  display: none;
-}
-@media (min-width: 768px) {
-  .hero-video {
-    display: block;
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    z-index: -1;
-  }
-}
-</style>
-```
-
----
-
-## 4. 文案撰寫技巧
-
-### 4.1 PAS 框架
-
-```
-Problem（問題）→ Agitate（加深痛感）→ Solution（解決方案）
-```
-
-**範例：**
-
-```html
-<!-- P: Problem -->
-<h2>每天花 3 小時手動整理客戶資料？</h2>
-
-<!-- A: Agitate -->
-<p>
-  人工整理不只浪費時間，更容易出錯。
-  一筆錯誤的聯絡資訊，可能讓你失去一張百萬訂單。
-  你的競爭對手已經在用自動化了——你還在用 Excel？
-</p>
-
-<!-- S: Solution -->
-<p>
-  CRM Pro 自動匯整所有通路的客戶資料，
-  即時更新、零錯誤、每天幫你省下 3 小時。
-</p>
-```
-
-### 4.2 Features vs Benefits
-
-**Features 說的是「產品有什麼」，Benefits 說的是「使用者得到什麼」。**
-
-| Feature（功能）| Benefit（好處）| 寫在 LP 上的版本 |
-|---------------|---------------|-----------------|
-| 256-bit 加密 | 你的資料絕對安全 | 「銀行級加密保護你的每一筆交易」 |
-| AI 自動分類 | 不用手動整理 | 「AI 幫你自動整理，每天省 2 小時」 |
-| 即時同步 | 團隊不會用到舊資料 | 「所有人永遠看到最新版本」 |
-| 14 天免費 | 零風險嘗試 | 「免費用 14 天，不滿意一鍵取消」 |
-| 99.9% Uptime | 不會突然掛掉 | 「24/7 穩定運行，你的客戶隨時都能下單」 |
-
-**公式：**
-
-```
-[功能] + so that（所以）+ [使用者好處]
-```
-
-### 4.3 Action Words（行動詞彙）
-
-**CTA 按鈕必用動詞開頭：**
-
-| 類型 | 動詞 | 範例 |
+| 元素 | 說明 | 範例 |
 |------|------|------|
-| 開始類 | 開始、啟動、體驗 | 「開始免費試用」 |
-| 獲取類 | 取得、下載、領取 | 「領取免費攻略」 |
-| 加入類 | 加入、註冊、預約 | 「加入 10,000+ 用戶行列」 |
-| 了解類 | 了解、探索、查看 | 「查看定價方案」 |
-| 立即類 | 立即、馬上、今天 | 「立即開始」 |
+| **主標題** | 一句話說明核心價值 | 「30 天打造被動收入系統」 |
+| **副標題** | 補充說明怎麼做到 | 「不需要技術背景，跟著步驟就能建立你的第一個線上課程」 |
+| **主視覺** | 產品截圖/使用情境/影片 | 實際儀表板截圖 |
+| **CTA 按鈕** | 明確的行動指令 | 「免費試用 14 天」 |
+| **信任標記** | 降低疑慮的小元素 | 「不需信用卡 / 10,000+ 用戶 / 4.9 星評分」 |
 
-**避免使用：**
-- 「提交」（Submit）— 暗示你要交出什麼
-- 「購買」（Buy）— 太直接，增加心理壓力
-- 「點擊這裡」— 沒有傳達任何價值
+**主標題撰寫規則：**
 
-### 4.4 數字的力量
+```
+好標題的公式：[具體結果] + [時間/條件] + [降低門檻]
 
-數字比文字更有說服力，大腦處理數字的速度比文字快 20%。
+好：「7 天內讓你的 Email 開信率從 15% 提升到 40%」
+壞：「最好的 Email 行銷工具」
 
-| 弱版本 | 強版本 |
-|--------|--------|
-| 「很多客戶信賴我們」 | 「12,847 家企業信賴我們」 |
-| 「快速部署」 | 「5 分鐘完成部署」 |
-| 「大幅提升效率」 | 「效率提升 300%」 |
-| 「節省成本」 | 「平均每月節省 NT$15,000」 |
-| 「高客戶滿意度」 | 「客戶滿意度 4.9/5.0」 |
+好：「不會寫程式也能 10 分鐘架好網站」
+壞：「簡單好用的網站建立平台」
 
-**數字使用原則：**
-- 奇數比偶數更吸引注意（例外：10 的倍數）
-- 越精確越可信（「12,847」比「12,000」可信）
-- 百分比和金額交替使用
-- 大數字用千分位（12,847 不是 12847）
+好：「每月省下 20 小時重複工作，讓團隊專注在真正重要的事」
+壞：「自動化你的工作流程」
+```
 
----
-
-## 5. CTA 按鈕設計
-
-### 5.1 顏色選擇
-
-| 顏色 | 心理效應 | 適合場景 | A/B Test 數據 |
-|------|---------|---------|--------------|
-| **橘色** | 急迫、活力 | 免費試用、立即行動 | 比灰色高 32.5% |
-| **綠色** | 安全、確認 | 結帳、確認訂閱 | 比紅色高 21%（Dmix 測試） |
-| **紅色** | 緊急、熱情 | 限時優惠、立即購買 | 比綠色高 34%（Performable） |
-| **藍色** | 信任、專業 | B2B、金融、醫療 | 比白底高 9% |
-
-**重點不是「哪個顏色最好」，而是「對比度」。**
+**Hero 區高度建議：**
 
 ```css
-/* 高對比原則：CTA 顏色不能跟頁面主色一樣 */
-
-/* 差：藍色網站 + 藍色按鈕（看不到） */
-.btn-primary { background: #2563EB; } /* 跟 nav 一樣藍 */
-
-/* 好：藍色網站 + 橘色按鈕（跳出來） */
-.btn-primary { background: #F97316; } /* 互補色，一眼就看到 */
-```
-
-### 5.2 大小與間距
-
-```css
-.btn-primary {
-  /* 最小尺寸：44x44px（Apple HIG 觸控規範） */
-  min-height: 48px;
-  min-width: 200px;
-  padding: 14px 32px;
-
-  /* 字體 */
-  font-size: 18px;       /* 不要小於 16px */
-  font-weight: 700;
-  letter-spacing: 0.5px;
-
-  /* 外觀 */
-  border-radius: 8px;    /* 圓角比直角轉換率高 2-5% */
-  border: none;
-  cursor: pointer;
-
-  /* 顏色 */
-  background: #F97316;
-  color: #FFFFFF;
-
-  /* 陰影（增加「可點擊感」） */
-  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
-
-  /* 過渡動畫 */
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-```
-
-### 5.3 按鈕文字
-
-| 類別 | 差 | 好 | 更好 |
-|------|-----|-----|------|
-| 通用 | Submit | 免費註冊 | 開始我的免費試用 |
-| 下載 | Download | 下載指南 | 領取我的免費行銷攻略 |
-| 電商 | Buy | 加入購物車 | 立即以 6 折入手 |
-| SaaS | Sign Up | 免費試用 | 免費試用 14 天，不綁卡 |
-
-**按鈕文字公式：**
-
-```
-[動詞] + [使用者得到什麼] + [降低風險的修飾]
-
-範例：
-「領取」+「免費 SEO 檢查報告」          → 領取免費 SEO 檢查報告
-「開始」+「14 天免費試用」+「不需信用卡」 → 開始 14 天免費試用（不需信用卡）
-```
-
-### 5.4 位置與數量
-
-**CTA 出現位置：**
-- Hero Section 上方（Above the fold）— 必要
-- 功能區塊結束後 — 建議
-- 客戶見證後 — 建議
-- 頁面最底部（最終 CTA）— 必要
-- 固定導航列右上角 — 選用
-
-**數量規則：**
-- 整頁只有「一個目標」（例如：註冊免費試用）
-- 可以有多個按鈕，但都指向同一個目標
-- 次要 CTA 最多 1 個（如「觀看 Demo」）
-
-### 5.5 A/B Test 實際結果統計
-
-| 測試項目 | 變體 A | 變體 B | 勝出 | 轉換率差異 |
-|---------|--------|--------|------|-----------|
-| 按鈕文字 | 「免費試用」 | 「開始我的免費試用」 | B | +90%（ContentVerve） |
-| 按鈕顏色 | 綠色 | 紅色 | 紅色 | +21%（HubSpot） |
-| 按鈕位置 | 頁面底部 | Above the fold | 兩者都放 | +17% |
-| 按鈕大小 | 標準（200px） | 加大（300px） | 加大 | +11% |
-| 按鈕周邊 | 無留白 | 大量留白 | 留白 | +232%（VWO） |
-| 箭頭符號 | 無箭頭 | 有 → 箭頭 | 箭頭 | +26%（Helzberg） |
-| 第一人稱 | 「開始免費試用」 | 「開始我的免費試用」 | 第一人稱 | +25% |
-
----
-
-## 6. 社會證明
-
-### 6.1 五種社會證明類型
-
-| 類型 | 信任強度 | 實作難度 | 適合階段 |
-|------|---------|---------|---------|
-| **客戶 Logo 牆** | 中高 | 低 | 起步期就能做 |
-| **數據統計** | 高 | 低 | 有真實數據時 |
-| **客戶見證** | 最高 | 中 | 有滿意客戶時 |
-| **評分星級** | 高 | 低 | 有第三方評分時 |
-| **Case Study** | 最高 | 高 | 成熟期 |
-
-### 6.2 Logo 牆
-
-```html
-<section class="trust-logos">
-  <p class="trust-text">受到這些領先企業信賴</p>
-  <div class="logo-grid">
-    <!-- 用灰階、統一高度 -->
-    <img src="logos/google.svg" alt="Google" height="32" loading="lazy">
-    <img src="logos/microsoft.svg" alt="Microsoft" height="32" loading="lazy">
-    <img src="logos/shopee.svg" alt="Shopee" height="32" loading="lazy">
-    <img src="logos/linepay.svg" alt="LINE Pay" height="32" loading="lazy">
-    <img src="logos/asus.svg" alt="ASUS" height="32" loading="lazy">
-  </div>
-</section>
-
-<style>
-.logo-grid {
+/* Hero 區佔滿首屏，不需要滾動就能看到完整資訊 */
+.hero {
+  min-height: 100vh;      /* 行動端 */
+  min-height: 100svh;     /* 支援 Safari 動態工具列 */
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 48px;
-  flex-wrap: wrap;
+  padding: 2rem;
 }
-.logo-grid img {
-  filter: grayscale(100%);
-  opacity: 0.6;
-  transition: all 0.3s;
+
+/* 桌面版可以設定最大高度避免太空曠 */
+@media (min-width: 1024px) {
+  .hero {
+    min-height: min(100vh, 900px);
+  }
 }
-.logo-grid img:hover {
-  filter: grayscale(0%);
-  opacity: 1;
-}
-</style>
 ```
 
-**Logo 牆原則：**
-- 數量：5-8 個（太少不夠力，太多太雜）
-- 灰階處理，hover 才顯示原色
-- 統一高度（32-40px）
-- 優先放知名品牌（即使是小案子）
+### 2.3 第二段：Pain 痛點區
 
-### 6.3 客戶見證
+痛點區的目的是讓使用者覺得「對！這就是我的問題！」
+
+**撰寫框架：**
+
+```
+情境描述 → 痛點列舉 → 情感共鳴 → 暗示需要解決方案
+
+範例：
+
+「你是不是每天花 3 小時回覆客戶訊息，
+結果還是漏掉重要的詢問？
+
+當你終於整理完 Excel 報表，
+卻發現資料已經過時了？
+
+你知道應該要自動化，
+但光想到要學新工具就頭痛...」
+```
+
+**痛點列舉格式（推薦用圖標 + 短句）：**
 
 ```html
-<div class="testimonial-card">
-  <div class="testimonial-rating">
-    <span>&#9733;</span><span>&#9733;</span><span>&#9733;</span>
-    <span>&#9733;</span><span>&#9733;</span>
+<div class="pain-points">
+  <div class="pain-item">
+    <span class="icon">&#x23F0;</span><!-- 鬧鐘 -->
+    <h3>時間被瑣事吃掉</h3>
+    <p>每天花 3 小時處理重複工作，沒時間做真正重要的事</p>
   </div>
-  <blockquote>
-    <p>
-      「導入後的第一個月，<mark>客服處理時間減少 60%</mark>，
-      客戶滿意度從 3.2 提升到 4.7。」
-    </p>
-  </blockquote>
-  <div class="testimonial-author">
-    <img src="avatars/chen.webp" alt="陳經理"
-         width="48" height="48" loading="lazy">
-    <div>
-      <strong>陳志明</strong>
-      <span>ABC 科技 客服主管</span>
-    </div>
+  <div class="pain-item">
+    <span class="icon">&#x1F4B8;</span><!-- 錢飛走 -->
+    <h3>人力成本越來越高</h3>
+    <p>請一個助理月薪 3 萬，但你真的需要全職人力嗎？</p>
+  </div>
+  <div class="pain-item">
+    <span class="icon">&#x1F916;</span><!-- 機器人 -->
+    <h3>自動化太複雜</h3>
+    <p>試過各種工具，不是太貴就是太難，最後放棄</p>
   </div>
 </div>
 ```
 
-**高轉換見證 Checklist：**
-- 真人照片（非素材庫）
-- 全名 + 職稱 + 公司名
-- 包含具體數字（「60%」「4.7 分」）
-- 用 `<mark>` 標記關鍵成果
-- 控制在 2-3 句話
+### 2.4 第三段：Solution 方案區
 
-### 6.4 Case Study 展示方式
+展示你的產品/服務如何解決上面的痛點。
+
+**功能展示三種格式：**
+
+**格式 A — 圖文交替（適合 SaaS）**
+
+```
+┌──────────────────────────────────────┐
+│  [截圖]        功能標題              │
+│                功能說明文字           │
+│                「引用一句客戶評語」    │
+├──────────────────────────────────────┤
+│  功能標題              [截圖]        │
+│  功能說明文字                        │
+│  「引用一句客戶評語」                 │
+└──────────────────────────────────────┘
+```
+
+**格式 B — 三欄卡片（適合服務）**
+
+```
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│   圖標    │  │   圖標    │  │   圖標    │
+│  功能 1   │  │  功能 2   │  │  功能 3   │
+│  說明文字  │  │  說明文字  │  │  說明文字  │
+└──────────┘  └──────────┘  └──────────┘
+```
+
+**格式 C — Before/After 對比（適合轉型類產品）**
+
+```
+        使用前                    使用後
+┌──────────────────┐    ┌──────────────────┐
+│ 手動回覆客戶 3hr  │ →  │ AI 自動回覆 5min  │
+│ Excel 追蹤訂單   │ →  │ 系統即時儀表板    │
+│ 每月漏單 10 筆   │ →  │ 零漏單自動追蹤    │
+└──────────────────┘    └──────────────────┘
+```
+
+**差異化定位（Why Us）：**
+
+```
+不要說「我們最好」，要說「我們哪裡不同」：
+
+vs 競品 A：「他們需要工程師幫你設定，我們 10 分鐘自己搞定」
+vs 競品 B：「他們月費 $99 起跳，我們 $29 就有完整功能」
+vs 自己做：「你可以花 3 個月自己開發，或者現在就用現成方案」
+```
+
+### 2.5 第四段：Social Proof 信任區
+
+信任是轉換的最後一道關卡。
+
+**信任元素清單（按說服力排序）：**
+
+| 排名 | 元素 | 說服力 | 取得難度 |
+|------|------|--------|---------|
+| 1 | 影片見證 | 最高 | 高 |
+| 2 | 客戶案例（含數據） | 極高 | 中高 |
+| 3 | 文字評價（含照片/公司） | 高 | 中 |
+| 4 | 具體數字（使用者數/營收/節省時間） | 高 | 低 |
+| 5 | 品牌 Logo 牆 | 中高 | 中 |
+| 6 | 媒體報導 | 中高 | 高 |
+| 7 | 認證/獎項 | 中 | 高 |
+| 8 | 星等評分 | 中 | 低 |
+| 9 | 安全標章（SSL/PCI） | 中低 | 低 |
+
+**見證撰寫格式（替客戶改寫時用）：**
+
+```
+結構：[之前的狀況] → [使用後的改變] → [具體數據]
+
+範例：
+「以前我每天花 4 小時處理客服訊息，自從用了 [產品名]，
+客服回覆時間從 30 分鐘縮短到 2 分鐘，
+客戶滿意度從 3.2 分提升到 4.8 分。
+現在我把省下來的時間拿去開發新產品。」
+
+— 王小明，ABC 公司創辦人
+```
+
+**數字展示格式：**
 
 ```html
-<div class="case-study-card">
-  <img src="case/abc-tech.webp" alt="ABC 科技案例" loading="lazy">
-  <div class="case-content">
-    <span class="case-industry">SaaS / 客服</span>
-    <h3>ABC 科技如何在 3 個月內將客戶滿意度提升 47%</h3>
-    <div class="case-metrics">
-      <div>
-        <span class="metric-value">-60%</span>
-        <span class="metric-label">處理時間</span>
-      </div>
-      <div>
-        <span class="metric-value">+47%</span>
-        <span class="metric-label">客戶滿意度</span>
-      </div>
-      <div>
-        <span class="metric-value">3 個月</span>
-        <span class="metric-label">回收期</span>
-      </div>
-    </div>
-    <a href="/cases/abc-tech" class="case-link">閱讀完整案例 &rarr;</a>
+<div class="stats-bar">
+  <div class="stat">
+    <span class="number" data-target="10000">0</span>+
+    <span class="label">企業用戶</span>
+  </div>
+  <div class="stat">
+    <span class="number" data-target="98">0</span>%
+    <span class="label">客戶滿意度</span>
+  </div>
+  <div class="stat">
+    <span class="number" data-target="500">0</span>萬
+    <span class="label">節省工時（小時/年）</span>
+  </div>
+  <div class="stat">
+    <span class="number" data-target="24">0</span>/7
+    <span class="label">技術支援</span>
   </div>
 </div>
+```
+
+### 2.6 第五段：CTA 行動區
+
+最後的行動呼籲，要給使用者一個「現在就要行動」的理由。
+
+**CTA 區必備元素：**
+
+```
+1. 重申核心價值（一句話）
+2. CTA 按鈕（顯眼、明確）
+3. 急迫感或稀缺感（限時/限量/額外贈品）
+4. 風險消除（退款保證/免費試用/不需信用卡）
+5. 補充信任（安全標章/客服聯繫方式）
 ```
 
 ---
 
-## 7. 表單設計
+## 3. 文案撰寫公式
 
-### 7.1 欄位最少化
+### 3.1 AIDA 公式
 
-**每多一個欄位，轉換率平均下降 7%。**
+```
+A — Attention（注意力）：用標題抓住目光
+I — Interest（興趣）：用痛點/數據引起好奇
+D — Desire（慾望）：用好處/見證激發渴望
+A — Action（行動）：用 CTA 推動下一步
 
-| 欄位數 | 平均轉換率 | 建議 |
-|--------|-----------|------|
-| 1-2 個 | 25%+ | 只要 Email（最佳） |
-| 3-4 個 | 15-20% | Name + Email + Phone |
-| 5-7 個 | 5-10% | 勉強接受 |
-| 8+ 個 | < 3% | 不要，拆成兩步 |
+範例（線上課程 Landing Page）：
 
-```html
-<!-- 最簡表單（最高轉換率） -->
-<form class="signup-form">
-  <input type="email" placeholder="你的 Email" required>
-  <button type="submit" class="btn-primary">免費開始使用</button>
-  <p class="form-note">不需信用卡，30 秒完成</p>
-</form>
+[Attention]
+「90% 的自由工作者，第一年收入不到 30 萬」
+
+[Interest]
+「不是你不夠努力，是你沒有系統化的接案流程。
+我們訪談了 200 位年收百萬的自由工作者，
+歸納出 7 個他們共同的高收入習慣。」
+
+[Desire]
+「這堂課的學員平均在 3 個月內月收增加 40%：
+- 小王：從月收 2 萬 → 8 萬（4 個月）
+- 小李：從月收 3 萬 → 12 萬（6 個月）
+- 小張：從兼職 → 全職自由工作者（2 個月）」
+
+[Action]
+「限時優惠倒數 48 小時 — 立即加入，附贈價值 $5,000 的接案模板包」
 ```
 
-### 7.2 漸進式表單（Multi-Step Form）
+### 3.2 PAS 公式
 
-把長表單拆成多步，每步 2-3 個欄位，降低心理壓力。
+```
+P — Problem（問題）：指出讀者面臨的困境
+A — Agitate（攪動）：放大問題的嚴重性
+S — Solution（解方）：提出你的解決方案
 
-```html
-<form class="multi-step-form" id="leadForm">
-  <!-- Step 1 -->
-  <div class="form-step active" data-step="1">
-    <h3>第 1 步：基本資訊</h3>
-    <div class="progress-bar">
-      <div class="progress" style="width: 33%"></div>
-    </div>
-    <input type="text" name="name" placeholder="你的姓名" required>
-    <input type="email" name="email" placeholder="Email" required>
-    <button type="button" class="btn-primary" onclick="nextStep(2)">
-      下一步 &rarr;
-    </button>
-  </div>
+範例（自動化工具 Landing Page）：
 
-  <!-- Step 2 -->
-  <div class="form-step" data-step="2">
-    <h3>第 2 步：你的需求</h3>
-    <div class="progress-bar">
-      <div class="progress" style="width: 66%"></div>
-    </div>
-    <select name="budget" required>
-      <option value="">預算範圍</option>
-      <option value="30k">NT$30,000 以下</option>
-      <option value="30-80k">NT$30,000 - 80,000</option>
-      <option value="80k+">NT$80,000 以上</option>
-    </select>
-    <select name="timeline" required>
-      <option value="">期望時程</option>
-      <option value="1m">1 個月內</option>
-      <option value="3m">1-3 個月</option>
-      <option value="3m+">不急</option>
-    </select>
-    <button type="button" class="btn-primary" onclick="nextStep(3)">
-      下一步 &rarr;
-    </button>
-  </div>
+[Problem]
+「你的團隊還在用 Email + Excel 管理專案嗎？」
 
-  <!-- Step 3 -->
-  <div class="form-step" data-step="3">
-    <h3>最後一步！</h3>
-    <div class="progress-bar">
-      <div class="progress" style="width: 100%"></div>
-    </div>
-    <input type="tel" name="phone" placeholder="聯絡電話">
-    <textarea name="message" placeholder="簡單描述你的專案"></textarea>
-    <button type="submit" class="btn-primary">
-      送出，取得免費報價
-    </button>
-  </div>
-</form>
+[Agitate]
+「每個月有 15% 的任務因為溝通失誤而延誤。
+每次交接工作都要花 2 小時寫交接文件。
+當團隊擴大到 10 人以上，這些問題會指數級惡化：
+— 資訊散落在 5 個不同平台
+— 沒人知道任務的最新狀態
+— 老闆每天都在問『現在進度到哪了？』」
 
-<script>
-function nextStep(step) {
-  document.querySelectorAll('.form-step').forEach(el => {
-    el.classList.remove('active');
-  });
-  document.querySelector(`[data-step="${step}"]`).classList.add('active');
-}
-</script>
-
-<style>
-.form-step { display: none; }
-.form-step.active { display: block; }
-.progress-bar {
-  height: 4px;
-  background: #E5E7EB;
-  border-radius: 2px;
-  margin-bottom: 24px;
-}
-.progress {
-  height: 100%;
-  background: #F97316;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-</style>
+[Solution]
+「[產品名] 把你的任務、文件、溝通全部整合在同一個地方。
+不用再跨平台找資料，不用再手動更新進度。
+一目了然的看板讓每個人都知道自己該做什麼。」
 ```
 
-### 7.3 Inline Validation
+### 3.3 4U 公式
 
-```html
-<style>
-.form-group { position: relative; margin-bottom: 16px; }
+```
+U — Useful（有用）：對讀者有明確好處
+U — Urgent（急迫）：給一個現在就要行動的理由
+U — Unique（獨特）：和別人不一樣的地方
+U — Ultra-specific（超具體）：用數字和細節
 
-.form-group input:valid {
-  border-color: #10B981;
-}
-.form-group input:invalid:not(:placeholder-shown) {
-  border-color: #EF4444;
-}
+範例（標題撰寫）：
 
-/* 即時錯誤訊息 */
-.error-msg {
-  color: #EF4444;
-  font-size: 13px;
-  margin-top: 4px;
-  display: none;
-}
-.form-group input:invalid:not(:placeholder-shown) ~ .error-msg {
-  display: block;
-}
-</style>
+一般：「提升你的行銷效果」
+4U 版：「這 3 個 Email 標題公式讓我的開信率在 7 天內從 12% 飆到 38%
+       （第 2 個最簡單，今天就能用）」
 
-<div class="form-group">
-  <input type="email" id="email" placeholder="your@email.com" required>
-  <span class="error-msg">請輸入有效的 Email 地址</span>
-</div>
+一般：「學會投資理財」
+4U 版：「小資族每月 3000 元定期定額，
+       用這個 ETF 組合 10 年後變 68 萬
+       （附 Excel 試算表免費下載，限今天）」
 ```
 
-**表單 UX 原則：**
-- Label 放在欄位上方（不是左邊）
-- Placeholder 不能取代 Label
-- 錯誤訊息在欄位下方即時顯示
-- 成功狀態用綠色勾勾
-- 送出按鈕在表單正下方
-- 密碼欄位提供顯示/隱藏切換
+### 3.4 文案寫作速查表
+
+| 場景 | 用什麼公式 | 適合什麼產品 |
+|------|-----------|-------------|
+| 長頁面（銷售頁） | AIDA | 課程、高單價服務 |
+| 短文案（Email/廣告） | PAS | 痛點明確的 B2B 產品 |
+| 標題/Hook | 4U | 所有產品 |
+| 功能說明 | Feature → Benefit → Proof | SaaS、工具 |
+| 客戶見證 | Before → After → Bridge | 轉型/教育類 |
+
+### 3.5 Feature-Benefit 轉換練習
+
+```
+技巧：不要說「我們有什麼」，要說「你得到什麼」
+
+Feature（功能）         → Benefit（好處）
+─────────────────────────────────────────────
+256-bit 加密            → 你的資料比銀行還安全
+AI 自動分類             → 再也不用手動整理，每天省 1 小時
+即時同步                → 團隊每個人看到的都是最新資料
+一鍵匯出                → 報告 3 分鐘就搞定，不用再加班做 PPT
+24/7 客服               → 凌晨 3 點遇到問題也有人幫你
+```
 
 ---
 
-## 8. 行動版 LP 設計
+## 4. CTA 設計原則
 
-### 8.1 Thumb Zone（拇指熱區）
+### 4.1 CTA 文案公式
 
 ```
-         手機螢幕
-┌──────────────────────┐
-│   !!  困難區域  !!    │  ← 別放主要 CTA
-│                      │
-│   ~~ 勉強可及 ~~      │
-│                      │
-│   == 自然觸及 ==      │  ← 主要操作放這
-│                      │
-│ ████ 拇指熱區 ████   │  ← CTA 按鈕最佳位置
-└──────────────────────┘
+好的 CTA = 動詞 + 受眾想要的結果
+
+差：「提交」「送出」「註冊」
+好：「免費試用 14 天」「立即下載指南」「開始省時間」
+
+更好的公式：
+「我要 + [好處]」（第一人稱，心理擁有感）
+「免費 + [動作] + [時間限制]」（降低門檻 + 急迫感）
+
+範例：
+「我要開始免費試用」
+「免費下載 — 限時 48 小時」
+「立即預約免費諮詢（剩餘 3 個名額）」
 ```
 
-**設計對策：**
-- 主 CTA 放在螢幕下半部
-- 導航列的「漢堡選單」放右上角（右手拇指可及）
-- 表單欄位寬度 100%
-- 按鈕最小 48px 高
-
-### 8.2 堆疊式排版
-
-桌面版的並排欄位，手機版全部改成上下堆疊。
+### 4.2 CTA 按鈕設計規範
 
 ```css
-/* 桌面版：三欄 */
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+/* 高轉換 CTA 按鈕樣式 */
+.cta-button {
+  /* 尺寸：夠大、好點 */
+  padding: 16px 40px;
+  min-width: 200px;
+  font-size: 18px;
+  font-weight: 700;
+
+  /* 顏色：和頁面主色形成對比 */
+  background: #FF6B35;           /* 橘色系轉換率最高 */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+
+  /* 互動反饋 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.4);
 }
 
-/* 手機版：單欄堆疊 */
-@media (max-width: 768px) {
-  .feature-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
+.cta-button:hover {
+  background: #E85A2A;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+}
 
-  /* Hero 區塊改成圖片在上、文字在下 */
-  .hero {
-    flex-direction: column;
-  }
-  .hero-visual {
-    order: -1; /* 圖片移到上方 */
-  }
+.cta-button:active {
+  transform: translateY(0);
+}
 
-  /* 標題字體縮小 */
-  h1 { font-size: 28px; line-height: 1.3; }
-  h2 { font-size: 22px; }
-
-  /* 按鈕全寬 */
-  .btn-primary, .btn-secondary {
-    width: 100%;
-    text-align: center;
-  }
+/* CTA 下方的安心文字 */
+.cta-subtext {
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
 }
 ```
 
-### 8.3 固定底部 CTA
+### 4.3 CTA 位置策略
 
-```html
-<!-- 固定在手機底部的 CTA 列 -->
-<div class="sticky-cta" id="stickyCta">
-  <a href="#signup" class="btn-primary">免費開始使用</a>
-</div>
+```
+建議在頁面上放 3–4 個 CTA：
 
-<style>
-.sticky-cta {
-  display: none; /* 桌面版隱藏 */
+位置 1：Hero 區（首屏）        — 高意圖訪客直接轉換
+位置 2：Solution 區之後        — 了解功能後的轉換點
+位置 3：Social Proof 區之後    — 被說服後的轉換點
+位置 4：頁面底部（Final CTA）  — 最後一次機會
+
+注意：所有 CTA 都連到同一個目標（表單/結帳頁），
+只是文案可以根據上下文微調。
+```
+
+### 4.4 浮動 CTA（行動端必備）
+
+```css
+/* 手機端固定底部 CTA bar */
+.mobile-cta-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 12px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: none;               /* 桌面端隱藏 */
+
+  /* 安全區（iPhone 瀏海/底部條） */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
 }
 
 @media (max-width: 768px) {
-  .sticky-cta {
-    display: block;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 12px 16px;
-    background: #FFFFFF;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    z-index: 1000;
-  }
-  .sticky-cta .btn-primary {
-    width: 100%;
-    text-align: center;
+  .mobile-cta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  /* 防止被固定 CTA 擋住頁尾內容 */
-  body { padding-bottom: 80px; }
+  /* 頁面底部留空間，避免 CTA bar 蓋住內容 */
+  body {
+    padding-bottom: 80px;
+  }
 }
-</style>
-
-<script>
-// 只在捲過 Hero 區後才顯示
-const hero = document.getElementById('hero');
-const stickyCta = document.getElementById('stickyCta');
-
-const observer = new IntersectionObserver(([entry]) => {
-  stickyCta.style.display = entry.isIntersecting ? 'none' : 'block';
-}, { threshold: 0 });
-
-if (hero && stickyCta) observer.observe(hero);
-</script>
 ```
-
-### 8.4 行動版 LP 關鍵數據
-
-| 指標 | 目標值 | 說明 |
-|------|--------|------|
-| 首屏載入 | < 2.5 秒 | LCP（Largest Contentful Paint） |
-| 可互動時間 | < 3 秒 | FID（First Input Delay） |
-| 按鈕觸控區 | >= 48x48 px | Apple / Google 規範 |
-| 字體最小值 | 16px | 避免 iOS 自動縮放 |
-| 行動轉換率 | 桌面的 50-70% | 行動轉換率通常較低，這是正常的 |
 
 ---
 
-## 9. 速度與效能
+## 5. 表單優化
 
-### 9.1 為什麼 LP 必須 < 3 秒載入
+### 5.1 表單欄位數量 vs 轉換率
 
-| 載入時間 | 跳出率增加 | 轉換率影響 |
-|---------|-----------|-----------|
-| 1 秒 | 基準 | 基準 |
-| 2 秒 | +6% | -7% |
-| 3 秒 | +32% | -20% |
-| 5 秒 | +90% | -38% |
-| 10 秒 | +123% | -62% |
+```
+欄位數量和轉換率的關係：
 
-Google 研究：行動頁面載入從 1 秒增加到 3 秒，跳出率增加 32%。
+欄位數 │ 轉換率影響
+───────┼──────────
+  1    │ ████████████████  最高（只要 Email）
+  2    │ ██████████████    高（名字 + Email）
+  3    │ ████████████      中高
+  4    │ ██████████        中
+  5    │ ████████          中低
+  6+   │ ██████            低（每多一個欄位約 -11% 轉換率）
 
-### 9.2 圖片壓縮
-
-```bash
-# WebP 格式轉換（品質 80，肉眼無差）
-# macOS 安裝 cwebp
-brew install webp
-
-# 單張轉換
-cwebp -q 80 hero.png -o hero.webp
-
-# 批次轉換整個資料夾
-for f in images/*.{png,jpg}; do
-  cwebp -q 80 "$f" -o "${f%.*}.webp"
-done
+原則：每個欄位都要問自己「不拿到這個資料，能不能完成服務？」
+不能的才留，能的就砍掉。
 ```
 
-```html
-<!-- 自適應圖片（根據螢幕寬度載入不同尺寸） -->
-<picture>
-  <source srcset="hero-400.webp" media="(max-width: 480px)" type="image/webp">
-  <source srcset="hero-800.webp" media="(max-width: 1024px)" type="image/webp">
-  <source srcset="hero-1200.webp" type="image/webp">
-  <img src="hero-1200.jpg" alt="產品展示"
-       width="1200" height="600"
-       loading="eager"
-       decoding="async">
-</picture>
+### 5.2 表單 UX 最佳實踐
 
-<!-- 非首屏圖片全部 lazy load -->
-<img src="feature1.webp" alt="功能一" loading="lazy" decoding="async">
+```
+1. Label 放在欄位上方（不要用 placeholder 當 label）
+2. 錯誤訊息即時顯示（blur 時驗證，不要等 submit）
+3. 手機端用對的 input type（email/tel/number）
+4. 密碼強度即時反饋
+5. 自動聚焦到第一個欄位
+6. Enter 鍵可以送出表單
+7. 送出後顯示成功頁面（不要只跳 alert）
+8. 送出按鈕載入中要 disable + 顯示 spinner
 ```
 
-**圖片壓縮對照表：**
+### 5.3 多步驟表單（Step Form）
 
-| 格式 | 適用場景 | 壓縮率 | 瀏覽器支援 |
-|------|---------|--------|-----------|
-| **WebP** | 照片、插圖（萬用） | 比 JPEG 小 25-35% | 97%+ |
-| **AVIF** | 照片（最小） | 比 WebP 再小 20% | 92% |
-| **SVG** | Logo、Icon | 向量無損 | 100% |
-| **JPEG** | 照片（Fallback） | 基準 | 100% |
-| **PNG** | 需要透明底 | 較大 | 100% |
+```
+適合：欄位超過 4 個的情況
 
-### 9.3 CDN 設定
+步驟 1：Email（最容易填的先）
+步驟 2：姓名 + 電話
+步驟 3：公司名 + 需求描述
 
-```html
-<!-- 使用 CDN 載入第三方資源 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
+視覺設計：
+┌─────────────────────────────────┐
+│  [1]──────[2]──────[3]          │  ← 進度條
+│   ●        ○        ○          │
+│ 基本資料  聯絡方式  需求描述     │
+├─────────────────────────────────┤
+│                                 │
+│  你的 Email                     │
+│  ┌─────────────────────────┐   │
+│  │ example@email.com       │   │
+│  └─────────────────────────┘   │
+│                                 │
+│       [下一步 →]                │
+│                                 │
+│  已經有帳號？登入               │
+│                                 │
+└─────────────────────────────────┘
 
-<!-- DNS 預解析 -->
-<link rel="dns-prefetch" href="https://www.googletagmanager.com">
-<link rel="dns-prefetch" href="https://www.google-analytics.com">
+技巧：
+- 第 1 步完成就拿到 Email → 即使使用者放棄，也能做 remarketing
+- 每步 1-2 個欄位就好
+- 顯示進度條增加完成動力
 ```
 
-**推薦 CDN 服務：**
+### 5.4 表單驗證模式
 
-| 服務 | 免費方案 | 適合場景 |
-|------|---------|---------|
-| **Cloudflare** | 無限流量 | 所有 LP（首選） |
-| **Vercel Edge** | 100GB/月 | Next.js / React LP |
-| **Netlify** | 100GB/月 | 靜態 LP |
-| **BunnyCDN** | $0.01/GB | 圖片多的 LP |
+```typescript
+// 即時驗證 + 友善錯誤訊息
+const validators = {
+  email: {
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    message: '請輸入正確的 Email 格式，例如：name@example.com'
+  },
+  phone: {
+    pattern: /^09\d{8}$/,
+    message: '請輸入 09 開頭的 10 位數手機號碼'
+  },
+  name: {
+    minLength: 2,
+    message: '請輸入至少 2 個字的姓名'
+  }
+};
 
-### 9.4 Lazy Load 與資源優先級
+// 驗證時機：
+// 1. blur（離開欄位時）→ 顯示錯誤
+// 2. input（輸入時）→ 如果之前有錯誤，即時清除
+// 3. submit（送出時）→ 最終驗證，聚焦到第一個錯誤欄位
+```
 
-```html
-<head>
-  <!-- 預載首屏關鍵資源 -->
-  <link rel="preload" href="hero-1200.webp" as="image">
-  <link rel="preload" href="fonts/inter-var.woff2" as="font"
-        type="font/woff2" crossorigin>
+---
 
-  <!-- 關鍵 CSS 內聯 -->
-  <style>
-    /* 只放首屏需要的 CSS（Hero Section） */
-    .hero { min-height: 100vh; display: flex; align-items: center; }
-    .btn-primary {
-      background: #F97316; color: #fff;
-      padding: 14px 32px; border-radius: 8px;
-      font-size: 18px; font-weight: 700;
-      border: none; cursor: pointer;
+## 6. A/B Testing 實作
+
+### 6.1 測試什麼？（依影響力排序）
+
+| 優先級 | 測試項目 | 預期影響 | 範例 |
+|--------|---------|---------|------|
+| **P0** | 標題 | 20%–50% | 「省時間」vs「省 3 小時」 |
+| **P0** | CTA 文案 | 10%–30% | 「免費試用」vs「開始省時間」 |
+| **P1** | Hero 圖片/影片 | 10%–25% | 產品截圖 vs 使用者情境照 |
+| **P1** | 頁面長度 | 10%–20% | 長頁面 vs 短頁面 |
+| **P1** | 表單欄位數 | 10%–25% | 3 欄位 vs 5 欄位 |
+| **P2** | CTA 按鈕顏色 | 2%–10% | 橘色 vs 綠色 |
+| **P2** | 社會證明位置 | 5%–15% | Hero 區 vs CTA 區 |
+| **P3** | 字型大小 | 1%–5% | 16px vs 18px |
+| **P3** | 邊距/留白 | 1%–3% | 不太重要 |
+
+### 6.2 A/B Testing 樣本量計算
+
+```
+最小樣本量公式（95% 信心水準，80% 統計檢力）：
+
+n = 16 x p x (1-p) / (MDE)^2
+
+p = 基準轉換率
+MDE = Minimum Detectable Effect（最小可偵測效果）
+
+範例：
+基準轉換率 5%（p = 0.05）
+想偵測 20% 的相對提升（MDE = 0.05 x 0.20 = 0.01）
+
+n = 16 x 0.05 x 0.95 / 0.01^2
+n = 16 x 0.0475 / 0.0001
+n = 7,600（每組）
+總共需要 15,200 個訪客
+
+經驗法則：
+- 每組至少 100 次轉換才能下結論
+- 測試至少跑 7 天（包含平日和週末）
+- 不要偷看中間結果就提早停止（peeking problem）
+```
+
+### 6.3 純前端 A/B Testing 實作
+
+```typescript
+// utils/abtest.ts
+// 不依賴第三方工具的 A/B Testing 實作
+
+type Variant = 'control' | 'variant';
+
+interface ABTestConfig {
+  testId: string;
+  variants: Record<Variant, number>;  // 流量分配比例（總和 = 100）
+}
+
+export function getVariant(config: ABTestConfig): Variant {
+  const storageKey = `ab_${config.testId}`;
+
+  // 檢查是否已分配過
+  const stored = localStorage.getItem(storageKey);
+  if (stored === 'control' || stored === 'variant') {
+    return stored;
+  }
+
+  // 隨機分配
+  const random = Math.random() * 100;
+  const variant: Variant = random < config.variants.control
+    ? 'control'
+    : 'variant';
+
+  localStorage.setItem(storageKey, variant);
+  return variant;
+}
+
+// 追蹤轉換事件
+export function trackConversion(testId: string, eventName: string) {
+  const variant = localStorage.getItem(`ab_${testId}`);
+  if (!variant) return;
+
+  // 送到 GA4
+  if (typeof gtag === 'function') {
+    gtag('event', eventName, {
+      ab_test_id: testId,
+      ab_variant: variant,
+    });
+  }
+
+  // 也可以送到自己的後端
+  fetch('/api/analytics/ab-conversion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      testId,
+      variant,
+      eventName,
+      timestamp: Date.now(),
+      url: window.location.href,
+    }),
+  }).catch(() => {});
+}
+
+// 使用範例
+const variant = getVariant({
+  testId: 'hero-headline-2026-03',
+  variants: { control: 50, variant: 50 },
+});
+
+if (variant === 'control') {
+  // 原版標題
+} else {
+  // 測試版標題
+}
+```
+
+### 6.4 React A/B Testing Hook
+
+```tsx
+// hooks/useABTest.ts
+import { useState, useEffect } from 'react';
+
+interface ABTestResult<T extends string> {
+  variant: T;
+  trackConversion: (eventName: string) => void;
+}
+
+export function useABTest<T extends string>(
+  testId: string,
+  variants: T[],
+  weights?: number[]       // 預設平均分配
+): ABTestResult<T> {
+  const [variant, setVariant] = useState<T>(variants[0]);
+
+  useEffect(() => {
+    const storageKey = `ab_${testId}`;
+    const stored = localStorage.getItem(storageKey) as T;
+
+    if (stored && variants.includes(stored)) {
+      setVariant(stored);
+      return;
     }
-  </style>
 
-  <!-- 非關鍵 CSS 延遲載入 -->
-  <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
-</head>
+    // 加權隨機分配
+    const w = weights || variants.map(() => 1 / variants.length);
+    const random = Math.random();
+    let cumulative = 0;
+    let selected = variants[0];
+    for (let i = 0; i < variants.length; i++) {
+      cumulative += w[i];
+      if (random < cumulative) {
+        selected = variants[i];
+        break;
+      }
+    }
 
-<body>
-  <!-- 首屏圖片：loading="eager"（立即載入） -->
-  <img src="hero.webp" loading="eager" fetchpriority="high" alt="Hero">
+    localStorage.setItem(storageKey, selected);
+    setVariant(selected);
+  }, [testId]);
 
-  <!-- 非首屏圖片：loading="lazy"（延遲載入） -->
-  <img src="feature1.webp" loading="lazy" alt="Feature 1">
+  const trackConversion = (eventName: string) => {
+    if (typeof gtag === 'function') {
+      gtag('event', eventName, {
+        ab_test_id: testId,
+        ab_variant: variant,
+      });
+    }
+  };
 
-  <!-- 第三方腳本延遲載入 -->
-  <script src="analytics.js" defer></script>
-  <script src="chat-widget.js" async></script>
-</body>
+  return { variant, trackConversion };
+}
+
+// 使用範例
+function HeroSection() {
+  const { variant, trackConversion } = useABTest(
+    'hero-cta-text',
+    ['free-trial', 'start-saving', 'get-started']
+  );
+
+  const ctaText: Record<string, string> = {
+    'free-trial': '免費試用 14 天',
+    'start-saving': '開始省時間',
+    'get-started': '立即開始',
+  };
+
+  return (
+    <button
+      onClick={() => {
+        trackConversion('cta_click');
+        // ...導向目標頁
+      }}
+    >
+      {ctaText[variant]}
+    </button>
+  );
+}
 ```
 
-### 9.5 LP 效能檢查清單
-
-```bash
-# 用 Lighthouse 跑效能分數
-npx lighthouse https://your-lp.com --output html --output-path report.html
-
-# 或用 PageSpeed Insights API
-curl "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://your-lp.com&strategy=mobile"
-```
-
-| 指標 | 目標 | 工具 |
-|------|------|------|
-| LCP | < 2.5 秒 | Lighthouse / PageSpeed Insights |
-| FID / INP | < 200ms | Chrome DevTools |
-| CLS | < 0.1 | Lighthouse |
-| 頁面大小 | < 1.5MB | Chrome DevTools Network |
-| 請求數 | < 30 | Chrome DevTools Network |
-| Lighthouse 分數 | > 90 | Lighthouse |
-
----
-
-## 10. A/B Testing
-
-### 10.1 Google Optimize 替代方案（已於 2023 年停用）
+### 6.5 A/B Testing 工具比較
 
 | 工具 | 價格 | 適合對象 | 特色 |
 |------|------|---------|------|
-| **VWO** | $0-$357/月 | 中大型企業 | 視覺化編輯器、熱力圖 |
-| **Optimizely** | 需洽詢 | 企業級 | 功能最完整 |
-| **Google Tag Manager + GA4** | 免費 | 所有人 | 需要自行寫程式 |
-| **PostHog** | 免費開源 | 工程師 | Feature Flags + A/B |
-| **Vercel Toolbar** | 隨 Vercel 方案 | 用 Vercel 的團隊 | Edge Middleware 分流 |
-| **自建** | 免費 | 工程師 | 完全控制 |
-
-### 10.2 用 GA4 + GTM 自建 A/B Test
-
-```html
-<!-- 方法：用 JavaScript 隨機分組，GA4 追蹤 -->
-<script>
-(function() {
-  // 取得或建立使用者分組（存在 cookie 確保一致性）
-  function getVariant() {
-    const cookie = document.cookie.match(/ab_variant=(\w+)/);
-    if (cookie) return cookie[1];
-    const variant = Math.random() < 0.5 ? 'control' : 'variant_b';
-    document.cookie = `ab_variant=${variant};max-age=2592000;path=/`;
-    return variant;
-  }
-
-  const variant = getVariant();
-
-  // 根據分組修改頁面
-  if (variant === 'variant_b') {
-    // 測試不同的 CTA 文字
-    document.addEventListener('DOMContentLoaded', function() {
-      const ctaBtn = document.querySelector('.btn-primary');
-      if (ctaBtn) ctaBtn.textContent = '立即免費體驗';
-    });
-  }
-
-  // 送到 GA4
-  gtag('event', 'ab_test_impression', {
-    test_name: 'hero_cta_text',
-    variant: variant
-  });
-})();
-</script>
-```
-
-### 10.3 該測試什麼（優先順序）
-
-| 優先級 | 測試項目 | 預期影響 | 最低樣本量 |
-|--------|---------|---------|-----------|
-| 最高 | 標題文案 | +10-50% | 1,000 訪客/組 |
-| 最高 | CTA 按鈕文字 | +5-30% | 1,000 |
-| 高 | CTA 按鈕顏色 | +5-20% | 2,000 |
-| 高 | Hero 主視覺 | +5-25% | 2,000 |
-| 中 | 表單欄位數量 | +10-50% | 500 |
-| 中 | 定價呈現方式 | +5-15% | 2,000 |
-| 低 | 按鈕圓角 vs 方角 | +1-5% | 5,000 |
-| 低 | 字體選擇 | +0-3% | 10,000 |
-
-### 10.4 統計顯著性
-
-```
-樣本量計算公式（簡化版）：
-
-n = (Z^2 * p * (1-p)) / E^2
-
-Z = 1.96（95% 信賴度）
-p = 基準轉換率
-E = 最小可偵測差異
-
-範例：
-基準轉換率 5%，想偵測 20% 的相對提升（5% → 6%）
-n = (1.96^2 * 0.05 * 0.95) / 0.01^2 = 1,825 人/組
-```
-
-**白話說：每組至少要 1,000-2,000 個訪客，跑至少 2 週。**
-
-不要因為幾百個人的結果就下結論。
+| Google Optimize（已停用） | - | - | 2023 年已關閉 |
+| **VWO** | $99/月起 | 行銷團隊 | 視覺化編輯器、不需工程師 |
+| **Optimizely** | 客製報價 | 企業 | 功能最完整、伺服器端測試 |
+| **PostHog** | 免費/開源 | 開發者 | 自架、feature flag + 分析 |
+| **GrowthBook** | 免費/開源 | 開發者 | SDK 好用、Bayesian 統計 |
+| **LaunchDarkly** | $10/月起 | 開發團隊 | Feature flag 為主、可做 A/B |
+| 自己寫（如上） | 免費 | 預算有限 | 完全掌控、但缺統計分析 |
 
 ---
 
-## 11. 追蹤與分析
+## 7. 速度優化
 
-### 11.1 GA4 事件追蹤
+### 7.1 Landing Page 速度目標
+
+```
+LCP（最大內容繪製）：≤ 2.0 秒（比一般網頁更嚴格）
+FCP（首次內容繪製）：≤ 1.0 秒
+CLS（累計版面位移）：≤ 0.05
+TBT（總阻塞時間）：≤ 100ms
+
+為什麼要更嚴格？
+- Landing Page 多半來自廣告，使用者耐心更低
+- 多 1 秒載入時間 ≈ 少 7% 轉換率
+- Google Ads 品質分數會受 LCP 影響
+```
+
+### 7.2 圖片優化
 
 ```html
-<!-- GA4 基本設定 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+<!-- Hero 圖片：最優先載入，用 fetchpriority="high" -->
+<img
+  src="/hero-800.webp"
+  srcset="/hero-400.webp 400w,
+          /hero-800.webp 800w,
+          /hero-1200.webp 1200w,
+          /hero-1600.webp 1600w"
+  sizes="(max-width: 768px) 100vw, 50vw"
+  alt="產品使用情境"
+  width="800"
+  height="600"
+  fetchpriority="high"
+  decoding="async"
+/>
+
+<!-- 非首屏圖片：lazy loading -->
+<img
+  src="/feature-screenshot.webp"
+  alt="功能截圖"
+  width="600"
+  height="400"
+  loading="lazy"
+  decoding="async"
+/>
+```
+
+**圖片格式選擇：**
+
+| 格式 | 壓縮率 | 透明 | 動畫 | 適用場景 |
+|------|--------|------|------|---------|
+| WebP | 最佳 | 支援 | 支援 | 首選格式 |
+| AVIF | 極佳 | 支援 | 部分 | 進階選擇（瀏覽器支援度注意） |
+| JPEG | 中 | 不支援 | 不支援 | Fallback |
+| PNG | 低 | 支援 | 不支援 | 需要完美透明時 |
+| SVG | N/A | 支援 | 支援 | 圖標、插畫 |
+
+### 7.3 字型優化
+
+```html
+<!-- 只預載首屏需要的字型 -->
+<link
+  rel="preload"
+  href="/fonts/NotoSansTC-Bold.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin
+/>
+
+<style>
+  /* 用 font-display: swap 避免文字隱形（FOIT） */
+  @font-face {
+    font-family: 'Noto Sans TC';
+    src: url('/fonts/NotoSansTC-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Noto Sans TC';
+    src: url('/fonts/NotoSansTC-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+
+  /* 提供 fallback 字型，減少 CLS */
+  body {
+    font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei',
+                 -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+</style>
+```
+
+### 7.4 JavaScript 最小化
+
+```
+Landing Page 的 JS 守則：
+1. 不要用大型框架（React 首屏要多載 130KB+）
+2. 如果用 Next.js，確保 Hero 區是 SSG/SSR
+3. 第三方腳本用 defer/async + 延遲載入
+4. 分析工具放在 requestIdleCallback 裡
+```
+
+```html
+<!-- 第三方腳本延遲載入策略 -->
+
+<!-- 1. GA4：頁面載入後 2 秒再載入 -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXX');
+  setTimeout(() => {
+    const s = document.createElement('script');
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX';
+    s.async = true;
+    document.head.appendChild(s);
+    s.onload = () => {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXX');
+    };
+  }, 2000);
 </script>
 
-<!-- LP 關鍵事件追蹤 -->
+<!-- 2. 聊天插件：使用者互動後才載入 -->
 <script>
-// CTA 點擊
-document.querySelectorAll('.btn-primary').forEach(btn => {
+  function loadChatWidget() {
+    // 載入 Intercom / Crisp / LiveChat 等
+    const s = document.createElement('script');
+    s.src = 'https://chat-widget.example.com/widget.js';
+    document.body.appendChild(s);
+    // 移除監聽，只載入一次
+    document.removeEventListener('scroll', loadChatWidget);
+    document.removeEventListener('click', loadChatWidget);
+  }
+  document.addEventListener('scroll', loadChatWidget, { once: true });
+  document.addEventListener('click', loadChatWidget, { once: true });
+</script>
+```
+
+### 7.5 Critical CSS 內聯
+
+```html
+<head>
+  <!-- 首屏關鍵 CSS 直接內聯，不等外部檔案 -->
+  <style>
+    /* 只放 Hero 區需要的樣式 */
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Noto Sans TC',sans-serif;color:#1a1a1a}
+    .hero{min-height:100svh;display:flex;align-items:center;padding:2rem}
+    .hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:700;line-height:1.3}
+    .hero p{font-size:1.25rem;color:#555;margin:1rem 0 2rem}
+    .cta-btn{padding:16px 40px;background:#FF6B35;color:#fff;
+             border:none;border-radius:8px;font-size:18px;font-weight:700;cursor:pointer}
+  </style>
+
+  <!-- 其餘 CSS 非同步載入 -->
+  <link rel="preload" href="/styles/main.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="/styles/main.css" /></noscript>
+</head>
+```
+
+---
+
+## 8. 手機端設計
+
+### 8.1 行動端設計原則
+
+```
+2026 年流量分佈：
+- 行動端：65%–75%（廣告流量甚至高達 85%）
+- 桌面端：20%–30%
+- 平板：5%–10%
+
+所以 Landing Page 一定要 Mobile First！
+```
+
+**行動端設計 Checklist：**
+
+| 項目 | 說明 | 常見錯誤 |
+|------|------|---------|
+| 字體大小 | 內文 >= 16px | 12px 太小看不清 |
+| 按鈕大小 | 最小 44x44px 觸控區 | 按鈕太小、太靠近 |
+| 行間距 | 1.5–1.8 倍 | 太擠不好閱讀 |
+| 左右留白 | >= 16px | 文字貼邊不好看 |
+| 圖片寬度 | 100% container | 圖片溢出或太小 |
+| 表單 | 用對 inputmode | 打電話要跳數字鍵盤 |
+| 橫向滾動 | 絕對不能有 | 用 overflow-x: hidden 除錯 |
+| 底部 CTA | 固定浮動按鈕 | 只放頁面上方一個 CTA |
+
+### 8.2 行動端排版
+
+```css
+/* 手機端排版基礎 */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* 手機端：單欄排版 */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+/* 平板端：雙欄 */
+@media (min-width: 768px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+}
+
+/* 桌面端：三欄 */
+@media (min-width: 1024px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+  }
+}
+
+/* 手機端文字大小：用 clamp 做流體排版 */
+h1 { font-size: clamp(1.75rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
+h3 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
+p  { font-size: clamp(1rem, 2.5vw, 1.25rem); }
+```
+
+### 8.3 手機端表單優化
+
+```html
+<!-- 手機端表單最佳實踐 -->
+<form>
+  <!-- Email 欄位：自動跳出 @ 鍵盤 -->
+  <input
+    type="email"
+    inputmode="email"
+    autocomplete="email"
+    placeholder="your@email.com"
+  />
+
+  <!-- 電話：數字鍵盤 -->
+  <input
+    type="tel"
+    inputmode="tel"
+    autocomplete="tel"
+    placeholder="0912-345-678"
+  />
+
+  <!-- 數字：純數字鍵盤（不含 +/- 等） -->
+  <input
+    type="text"
+    inputmode="numeric"
+    pattern="[0-9]*"
+    placeholder="統一編號"
+  />
+
+  <!-- 姓名：首字母大寫 -->
+  <input
+    type="text"
+    autocomplete="name"
+    autocapitalize="words"
+    placeholder="你的姓名"
+  />
+</form>
+
+<style>
+  /* 手機端表單樣式 */
+  input, select, textarea {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;          /* 防止 iOS 自動放大 */
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    -webkit-appearance: none; /* 移除 iOS 預設樣式 */
+    appearance: none;
+  }
+
+  input:focus {
+    border-color: #FF6B35;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+  }
+</style>
+```
+
+### 8.4 Thumb Zone（拇指操作區）
+
+```
+手機螢幕的拇指操作區：
+
+   ┌──────────────┐
+   │   難以觸及    │ ← 不要放重要按鈕
+   │              │
+   │   可觸及區    │ ← 次要操作可以放這
+   │              │
+   │  ████████████ │ ← 最佳操作區（CTA 放這！）
+   │  ████████████ │
+   └──────────────┘
+
+原則：
+- CTA 按鈕放在螢幕下半部
+- 導航/漢堡選單放在右上或右下（右手單手操作）
+- 重要操作不要放在左上角（最難觸及）
+```
+
+---
+
+## 9. GA4 事件追蹤
+
+### 9.1 Landing Page 必追蹤事件
+
+```javascript
+// 1. 頁面瀏覽（GA4 自動追蹤，但建議加自訂參數）
+gtag('event', 'page_view', {
+  page_title: 'Landing Page - 產品名',
+  page_location: window.location.href,
+  traffic_source: new URLSearchParams(location.search).get('utm_source'),
+  ab_variant: localStorage.getItem('ab_hero-headline'),
+});
+
+// 2. CTA 點擊
+document.querySelectorAll('.cta-button').forEach((btn) => {
   btn.addEventListener('click', () => {
     gtag('event', 'cta_click', {
-      button_text: btn.textContent.trim(),
-      button_location: btn.closest('section')?.id || 'unknown'
+      button_text: btn.textContent?.trim(),
+      button_position: btn.dataset.position,  // hero / features / bottom
+      ab_variant: localStorage.getItem('ab_hero-headline'),
     });
   });
 });
 
-// 表單送出
-document.querySelector('#leadForm')?.addEventListener('submit', () => {
-  gtag('event', 'generate_lead', {
-    currency: 'TWD',
-    value: 1000  // 預估每個 lead 價值
+// 3. 表單互動
+const form = document.querySelector('#lead-form');
+if (form) {
+  // 表單開始填寫
+  const inputs = form.querySelectorAll('input, textarea');
+  let formStarted = false;
+  inputs.forEach((input) => {
+    input.addEventListener('focus', () => {
+      if (!formStarted) {
+        formStarted = true;
+        gtag('event', 'form_start', {
+          form_id: 'lead-form',
+        });
+      }
+    });
   });
-});
 
-// 捲動深度追蹤
-let scrollTracked = {};
+  // 表單送出
+  form.addEventListener('submit', () => {
+    gtag('event', 'generate_lead', {
+      form_id: 'lead-form',
+      currency: 'TWD',
+      value: 500,  // 每個 lead 的預估價值
+    });
+  });
+}
+
+// 4. 滾動深度（GA4 預設追蹤 90%，但 Landing Page 需要更細）
+const scrollThresholds = [25, 50, 75, 100];
+const scrollTracked = new Set();
+
 window.addEventListener('scroll', () => {
-  const scrollPct = Math.round(
+  const scrollPercent = Math.round(
     (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
   );
-  [25, 50, 75, 100].forEach(threshold => {
-    if (scrollPct >= threshold && !scrollTracked[threshold]) {
-      scrollTracked[threshold] = true;
-      gtag('event', 'scroll_depth', { percent: threshold });
+
+  for (const threshold of scrollThresholds) {
+    if (scrollPercent >= threshold && !scrollTracked.has(threshold)) {
+      scrollTracked.add(threshold);
+      gtag('event', 'scroll_depth', {
+        percent_scrolled: threshold,
+        page_title: document.title,
+      });
     }
+  }
+});
+
+// 5. 影片播放（如果 Hero 有影片）
+const video = document.querySelector('video');
+if (video) {
+  video.addEventListener('play', () => {
+    gtag('event', 'video_start', { video_title: 'hero-video' });
   });
+  video.addEventListener('ended', () => {
+    gtag('event', 'video_complete', { video_title: 'hero-video' });
+  });
+}
+
+// 6. 離開意圖（桌面端：滑鼠移出視窗上方）
+let exitIntentShown = false;
+document.addEventListener('mouseout', (e) => {
+  if (e.clientY <= 0 && !exitIntentShown) {
+    exitIntentShown = true;
+    gtag('event', 'exit_intent', {
+      page_title: document.title,
+      time_on_page: Math.round(performance.now() / 1000),
+    });
+    // 可以在這裡顯示挽留 popup
+  }
 });
-
-// 影片播放（如果有）
-document.querySelector('video')?.addEventListener('play', () => {
-  gtag('event', 'video_play', { video_title: 'hero_demo' });
-});
-</script>
 ```
 
-### 11.2 UTM 參數
+### 9.2 GA4 轉換目標設定
 
 ```
-基本格式：
-https://your-lp.com/?utm_source=來源&utm_medium=媒介&utm_campaign=活動名
+在 GA4 後台設定這些事件為轉換：
 
-完整範例：
-https://your-lp.com/
-  ?utm_source=facebook
-  &utm_medium=cpc
-  &utm_campaign=spring_2026
-  &utm_content=hero_video_v2
-  &utm_term=AI客服
+1. generate_lead — 表單送出（最重要）
+2. cta_click — CTA 點擊
+3. sign_up — 註冊完成
+4. purchase — 購買完成
+
+設定路徑：
+GA4 後台 → Admin → Events → 找到事件 → 打開「Mark as conversion」
 ```
 
-| 參數 | 說明 | 範例值 |
-|------|------|--------|
-| `utm_source` | 流量來源 | facebook, google, newsletter, linkedin |
-| `utm_medium` | 媒介類型 | cpc, email, social, organic |
-| `utm_campaign` | 活動名稱 | spring_2026, product_launch |
-| `utm_content` | 廣告素材 | hero_video, banner_a |
-| `utm_term` | 關鍵字 | AI客服, 網頁設計 |
+### 9.3 UTM 參數追蹤
 
-### 11.3 熱力圖工具
+```
+Landing Page URL 格式：
 
-| 工具 | 價格 | 特色 |
-|------|------|------|
-| **Microsoft Clarity** | 免費 | Session Recording + 熱力圖 + 免費無限制 |
-| **Hotjar** | $0-$80/月 | 最知名，UX 團隊愛用 |
-| **PostHog** | 免費開源 | 自架可控 |
-| **FullStory** | 需洽詢 | 企業級，搜尋功能強 |
+https://example.com/lp/product-name
+  ?utm_source=facebook         ← 流量來源
+  &utm_medium=cpc              ← 媒介類型
+  &utm_campaign=spring-2026    ← 活動名稱
+  &utm_content=hero-a          ← 廣告素材版本
+  &utm_term=自動化工具          ← 關鍵字
 
-**Clarity 安裝（推薦，完全免費）：**
+命名規範（統一小寫、用連字號）：
+
+utm_source:  facebook / google / instagram / email / line / youtube
+utm_medium:  cpc / organic / social / email / referral / display
+utm_campaign: [年-月]-[活動名] → 2026-03-spring-sale
+utm_content:  [素材版本] → video-a / image-b / text-c
+```
+
+### 9.4 GA4 自訂報表
+
+```
+建議建立的 GA4 自訂報表：
+
+1. Landing Page 漏斗報表
+   維度：Page path
+   指標：Views → CTA clicks → Form starts → Form submits
+   計算：每步轉換率
+
+2. 流量來源 vs 轉換報表
+   維度：utm_source + utm_campaign
+   指標：Sessions、Conversion rate、Cost per lead
+   用途：判斷哪個廣告管道 ROI 最高
+
+3. 裝置 vs 轉換報表
+   維度：Device category（desktop/mobile/tablet）
+   指標：Sessions、Conversion rate
+   用途：判斷手機端體驗是否需要優化
+```
+
+---
+
+## 10. 熱力圖分析工具
+
+### 10.1 工具比較
+
+| 工具 | 價格 | 免費方案 | 熱力圖 | 錄影 | 漏斗 | 特色 |
+|------|------|---------|--------|------|------|------|
+| **Hotjar** | $39/月起 | 35 sessions/天 | 點擊/移動/滾動 | 有 | 有 | 最知名、UI 好用 |
+| **Microsoft Clarity** | 完全免費 | 無限 | 點擊/滾動 | 有 | 有 | 免費無限量、和 GA4 整合 |
+| **FullStory** | 客製報價 | 1000 sessions/月 | 有 | 有 | 有 | 企業級、AI 錯誤偵測 |
+| **Mouseflow** | $31/月起 | 500 sessions/月 | 有 | 有 | 有 | 表單分析強 |
+| **PostHog** | 免費/開源 | 15K sessions/月 | 有 | 有 | 有 | 開源可自架 |
+| **Lucky Orange** | $32/月起 | 無 | 有 | 有 | 有 | 即時熱力圖 |
+
+**推薦：先用 Microsoft Clarity（免費無限量），再考慮 Hotjar。**
+
+### 10.2 Microsoft Clarity 安裝
 
 ```html
+<!-- 放在 <head> 中 -->
 <script type="text/javascript">
   (function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
     t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
     y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-  })(window,document,"clarity","script","YOUR_PROJECT_ID");
+  })(window, document, "clarity", "script", "YOUR_PROJECT_ID");
 </script>
 ```
 
-### 11.4 轉換率計算
+```typescript
+// Next.js 整合（app router）
+// app/providers.tsx
+'use client';
+
+import { useEffect } from 'react';
+
+export function ClarityProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+      const script = document.createElement('script');
+      script.innerHTML = `
+        (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID}");
+      `;
+      document.head.appendChild(script);
+    }
+  }, []);
+
+  return <>{children}</>;
+}
+```
+
+### 10.3 熱力圖分析要看什麼
 
 ```
-轉換率 = (轉換次數 / 訪客總數) x 100%
+1. 點擊熱力圖（Click Heatmap）
+   看：使用者點了什麼？有沒有點到不是連結的地方（假 affordance）？
+   行動：不可點的元素被點 → 做成可點的 / 加連結
+         CTA 沒人點 → 改文案 / 改顏色 / 換位置
 
-範例：
-1,000 個訪客，50 人填了表單
-轉換率 = 50 / 1,000 = 5%
+2. 滾動熱力圖（Scroll Heatmap）
+   看：使用者滾到哪裡就離開了？
+   行動：如果 60% 的人在 Social Proof 前就離開 → 把信任元素往上移
+         如果 CTA 只有 20% 的人看到 → 在更上面加 CTA
+
+3. 移動熱力圖（Move Heatmap，僅桌面端）
+   看：使用者視線停留在哪裡？（滑鼠移動 ≈ 視線移動）
+   行動：眼球集中的區域放重要資訊
+
+4. 錄影回放（Session Recording）
+   看：使用者實際的操作路徑和卡點
+   行動：找出 rage click（狂點）、dead click（無效點擊）、
+         迷路行為（來回滾動）
+
+分析頻率：
+- 上線第一週：每天看 10 個 session recording
+- 之後：每週看 1 次熱力圖 + 5 個 recording
+- A/B Testing 期間：兩個版本都要看
 ```
-
-**各類 LP 平均轉換率（業界基準）：**
-
-| LP 類型 | 平均轉換率 | 優秀轉換率 | 頂尖轉換率 |
-|---------|-----------|-----------|-----------|
-| SaaS 免費試用 | 3-5% | 8-12% | 15%+ |
-| 電子書/白皮書下載 | 5-10% | 15-25% | 30%+ |
-| 線上課程報名 | 2-5% | 8-15% | 20%+ |
-| 實體商品銷售 | 1-3% | 5-8% | 10%+ |
-| 諮詢預約 | 3-8% | 10-20% | 25%+ |
-| 電商產品頁 | 1-3% | 3-5% | 8%+ |
 
 ---
 
-## 12. LP 建站工具
+## 11. React/Next.js Landing Page 模板代碼
 
-### 12.1 工具比較
-
-| 工具 | 價格 | 學習曲線 | 客製化程度 | 適合誰 |
-|------|------|---------|-----------|--------|
-| **Unbounce** | $99-$625/月 | 低 | 中 | 行銷人員，不想碰程式碼 |
-| **Instapage** | $199/月起 | 低 | 中 | 需要大量 LP 的廣告團隊 |
-| **Webflow** | $14-$39/月 | 中 | 高 | 設計師，想要精準控制 |
-| **Framer** | $0-$30/月 | 中 | 高 | 設計師，動態效果強 |
-| **Carrd** | $9-$49/年 | 極低 | 低 | 超簡單一頁式 LP |
-| **WordPress + Elementor** | $0-$59/年 | 低 | 中高 | 已有 WP 站的人 |
-| **自建 React + Tailwind** | 免費 | 高 | 最高 | 前端工程師 |
-| **自建 Next.js** | 免費 | 高 | 最高 | 需要 SSR/SEO 的 LP |
-
-### 12.2 自建 React + Tailwind LP 骨架
-
-```bash
-# 建立專案
-npm create vite@latest my-landing-page -- --template react-ts
-cd my-landing-page
-npm install
-npm install -D tailwindcss @tailwindcss/vite
-```
+### 11.1 Next.js Landing Page 完整模板
 
 ```tsx
-// src/App.tsx — 單頁 LP 結構
-import { useState } from 'react';
+// app/lp/[slug]/page.tsx
+// Next.js 14+ App Router Landing Page 模板
 
-export default function App() {
-  const [email, setEmail] = useState('');
+import type { Metadata } from 'next';
+import { HeroSection } from './components/HeroSection';
+import { PainSection } from './components/PainSection';
+import { SolutionSection } from './components/SolutionSection';
+import { SocialProofSection } from './components/SocialProofSection';
+import { CTASection } from './components/CTASection';
+import { FloatingCTA } from './components/FloatingCTA';
+import { TrackingProvider } from './components/TrackingProvider';
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // 送到後端 API
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+export const metadata: Metadata = {
+  title: '30 天打造被動收入系統 | 品牌名',
+  description: '不需要技術背景，跟著步驟就能建立你的第一個線上課程。已有 10,000+ 學員成功。',
+  openGraph: {
+    title: '30 天打造被動收入系統',
+    description: '不需要技術背景，跟著步驟就能建立你的第一個線上課程。',
+    images: [{ url: '/og-landing.jpg', width: 1200, height: 630 }],
+  },
+  robots: {
+    index: false,     // Landing Page 通常不需要 SEO 索引
+    follow: false,
+  },
+};
+
+export default function LandingPage() {
+  return (
+    <TrackingProvider>
+      <main className="landing-page">
+        <HeroSection />
+        <PainSection />
+        <SolutionSection />
+        <SocialProofSection />
+        <CTASection />
+        <FloatingCTA />
+      </main>
+    </TrackingProvider>
+  );
+}
+```
+
+### 11.2 Hero Section 組件
+
+```tsx
+// app/lp/[slug]/components/HeroSection.tsx
+'use client';
+
+import { useRef } from 'react';
+import styles from './HeroSection.module.css';
+
+export function HeroSection() {
+  const ctaRef = useRef<HTMLButtonElement>(null);
+
+  const handleCTA = () => {
+    // 追蹤點擊
+    if (typeof gtag === 'function') {
+      gtag('event', 'cta_click', {
+        button_position: 'hero',
+        button_text: '免費試用 14 天',
+      });
+    }
+    // 滾動到表單
+    document.getElementById('signup-form')?.scrollIntoView({
+      behavior: 'smooth',
     });
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero */}
-      <section className="px-6 py-20 max-w-6xl mx-auto flex flex-col
-                          md:flex-row items-center gap-12">
-        <div className="flex-1">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900
-                         leading-tight">
-            用 AI 把你的客服效率
-            <span className="text-orange-500">提升 300%</span>
+    <section className={styles.hero}>
+      <div className={styles.container}>
+        <div className={styles.content}>
+          {/* 信任標記 */}
+          <div className={styles.badge}>
+            <span className={styles.badgeDot} />
+            已有 10,000+ 用戶加入
+          </div>
+
+          {/* 主標題 */}
+          <h1 className={styles.title}>
+            30 天打造你的
+            <span className={styles.highlight}>被動收入系統</span>
           </h1>
-          <p className="mt-4 text-lg text-gray-600">
-            自動回覆常見問題、智能分派工單、即時翻譯 12 種語言。
+
+          {/* 副標題 */}
+          <p className={styles.subtitle}>
+            不需要技術背景，不需要龐大資金。
+            跟著我們的步驟式教學，從零開始建立你的第一個線上課程。
           </p>
-          <form onSubmit={handleSubmit} className="mt-8 flex gap-3">
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="輸入你的 Email"
-              className="flex-1 px-4 py-3 border border-gray-300
-                         rounded-lg text-base"
-              required
-            />
-            <button type="submit"
-                    className="px-6 py-3 bg-orange-500 text-white
-                               font-semibold rounded-lg hover:bg-orange-600
-                               transition-colors whitespace-nowrap">
-              免費試用
+
+          {/* CTA 區 */}
+          <div className={styles.ctaGroup}>
+            <button
+              ref={ctaRef}
+              className={styles.ctaPrimary}
+              onClick={handleCTA}
+            >
+              免費試用 14 天
             </button>
-          </form>
-          <p className="mt-2 text-sm text-gray-400">
-            不需信用卡 &bull; 30 秒註冊
+            <button className={styles.ctaSecondary}>
+              觀看 2 分鐘介紹
+            </button>
+          </div>
+
+          {/* 安心文字 */}
+          <p className={styles.ctaSubtext}>
+            不需要信用卡 &middot; 隨時取消 &middot; 無隱藏費用
           </p>
-        </div>
-        <div className="flex-1">
-          <img src="/hero.webp" alt="產品畫面"
-               className="rounded-xl shadow-2xl" />
-        </div>
-      </section>
 
-      {/* Logo Bar */}
-      <section className="py-12 bg-gray-50">
-        <p className="text-center text-gray-500 mb-6">
-          超過 2,000 家企業信賴
-        </p>
-        <div className="flex justify-center items-center gap-12
-                        flex-wrap px-6 opacity-60">
-          {['Google','Microsoft','Shopee','ASUS','LINE'].map(name => (
-            <span key={name} className="text-xl font-bold text-gray-400">
-              {name}
-            </span>
-          ))}
+          {/* 品牌 Logo 牆 */}
+          <div className={styles.logos}>
+            <span className={styles.logosLabel}>信任我們的企業：</span>
+            <div className={styles.logosGrid}>
+              {['brand1', 'brand2', 'brand3', 'brand4', 'brand5'].map((b) => (
+                <img
+                  key={b}
+                  src={`/logos/${b}.svg`}
+                  alt={b}
+                  className={styles.logo}
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          </div>
         </div>
-      </section>
 
-      {/* Features */}
-      <section className="px-6 py-20 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          為什麼選擇我們
+        {/* Hero 圖片 */}
+        <div className={styles.visual}>
+          <img
+            src="/hero-dashboard.webp"
+            alt="產品儀表板截圖"
+            width={700}
+            height={500}
+            fetchPriority="high"
+            className={styles.heroImage}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+### 11.3 Hero Section 樣式
+
+```css
+/* app/lp/[slug]/components/HeroSection.module.css */
+
+.hero {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
+  padding: 80px 0 40px;
+  overflow: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .container {
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+  }
+}
+
+/* 信任標記 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.badgeDot {
+  width: 8px;
+  height: 8px;
+  background: #4caf50;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* 標題 */
+.title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1a1a2e;
+  margin-bottom: 20px;
+}
+
+.highlight {
+  color: #FF6B35;
+  display: inline-block;
+}
+
+/* 副標題 */
+.subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 32px;
+  max-width: 540px;
+}
+
+/* CTA 按鈕群 */
+.ctaGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.ctaPrimary {
+  padding: 16px 40px;
+  background: #FF6B35;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.4);
+}
+
+.ctaPrimary:hover {
+  background: #e85a2a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+}
+
+.ctaSecondary {
+  padding: 16px 32px;
+  background: transparent;
+  color: #1a1a2e;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ctaSecondary:hover {
+  border-color: #FF6B35;
+  color: #FF6B35;
+}
+
+.ctaSubtext {
+  font-size: 13px;
+  color: #888;
+}
+
+/* Logo 牆 */
+.logos {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.logosLabel {
+  font-size: 13px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.logosGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  margin-top: 16px;
+  opacity: 0.6;
+}
+
+.logo {
+  height: 28px;
+  width: auto;
+}
+
+/* Hero 圖片 */
+.visual {
+  position: relative;
+}
+
+.heroImage {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+```
+
+### 11.4 Social Proof 組件
+
+```tsx
+// app/lp/[slug]/components/SocialProofSection.tsx
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import styles from './SocialProofSection.module.css';
+
+interface Testimonial {
+  name: string;
+  title: string;
+  company: string;
+  avatar: string;
+  quote: string;
+  result: string;
+}
+
+const testimonials: Testimonial[] = [
+  {
+    name: '王小明',
+    title: '創辦人',
+    company: 'ABC 科技',
+    avatar: '/avatars/wang.jpg',
+    quote: '以前每天花 4 小時處理客服訊息，現在只需要 30 分鐘。',
+    result: '客服效率提升 87%',
+  },
+  {
+    name: '李小花',
+    title: '行銷總監',
+    company: 'XYZ 媒體',
+    avatar: '/avatars/li.jpg',
+    quote: '團隊協作效率明顯提升，不再有任務掉球的情況。',
+    result: '專案交付準時率 98%',
+  },
+  {
+    name: '張大偉',
+    title: '技術長',
+    company: 'DEF 新創',
+    avatar: '/avatars/zhang.jpg',
+    quote: '部署時間從 2 小時縮短到 10 分鐘，工程師可以專注在開發。',
+    result: '部署速度提升 12 倍',
+  },
+];
+
+// 數字滾動動畫 Hook
+function useCountUp(target: number, duration: number = 2000) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const counted = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !counted.current) {
+          counted.current = true;
+          const startTime = performance.now();
+
+          const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // easeOutQuart
+            const eased = 1 - Math.pow(1 - progress, 4);
+            setCount(Math.round(eased * target));
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            }
+          };
+
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return { count, ref };
+}
+
+export function SocialProofSection() {
+  const stat1 = useCountUp(10000);
+  const stat2 = useCountUp(98);
+  const stat3 = useCountUp(500);
+
+  return (
+    <section className={styles.section}>
+      <div className={styles.container}>
+        {/* 數字統計 */}
+        <div className={styles.statsBar}>
+          <div className={styles.stat} ref={stat1.ref}>
+            <span className={styles.statNumber}>{stat1.count.toLocaleString()}+</span>
+            <span className={styles.statLabel}>企業用戶</span>
+          </div>
+          <div className={styles.stat} ref={stat2.ref}>
+            <span className={styles.statNumber}>{stat2.count}%</span>
+            <span className={styles.statLabel}>客戶滿意度</span>
+          </div>
+          <div className={styles.stat} ref={stat3.ref}>
+            <span className={styles.statNumber}>{stat3.count}萬+</span>
+            <span className={styles.statLabel}>節省工時/年</span>
+          </div>
+        </div>
+
+        {/* 見證卡片 */}
+        <h2 className={styles.sectionTitle}>
+          他們已經成功了，你也可以
         </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            { title: 'AI 自動回覆', desc: '處理 80% 常見問題，客服只需處理複雜案件' },
-            { title: '智能工單分派', desc: '根據問題類型自動分派給最適合的客服人員' },
-            { title: '即時多語翻譯', desc: '支援 12 種語言即時翻譯，服務全球客戶' },
-          ].map(f => (
-            <div key={f.title} className="p-6 rounded-xl border
-                                          border-gray-200 hover:shadow-lg
-                                          transition-shadow">
-              <h3 className="text-xl font-semibold mb-2">{f.title}</h3>
-              <p className="text-gray-600">{f.desc}</p>
+        <div className={styles.testimonialGrid}>
+          {testimonials.map((t) => (
+            <div key={t.name} className={styles.testimonialCard}>
+              <div className={styles.stars}>{'★'.repeat(5)}</div>
+              <p className={styles.quote}>「{t.quote}」</p>
+              <div className={styles.result}>{t.result}</div>
+              <div className={styles.author}>
+                <img
+                  src={t.avatar}
+                  alt={t.name}
+                  className={styles.avatar}
+                  loading="lazy"
+                  width={48}
+                  height={48}
+                />
+                <div>
+                  <div className={styles.authorName}>{t.name}</div>
+                  <div className={styles.authorTitle}>
+                    {t.title}，{t.company}
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
+```
 
-      {/* Final CTA */}
-      <section className="px-6 py-20 bg-orange-500 text-white text-center">
-        <h2 className="text-3xl font-bold mb-4">
-          準備好提升你的業務了嗎？
-        </h2>
-        <p className="text-lg mb-8 opacity-90">
-          加入超過 10,000 家企業的行列
+### 11.5 Lead Form 組件
+
+```tsx
+// app/lp/[slug]/components/LeadForm.tsx
+'use client';
+
+import { useState, useRef, type FormEvent } from 'react';
+import styles from './LeadForm.module.css';
+
+interface FormData {
+  email: string;
+  name: string;
+  company: string;
+}
+
+interface FormErrors {
+  email?: string;
+  name?: string;
+}
+
+export function LeadForm() {
+  const [formData, setFormData] = useState<FormData>({
+    email: '', name: '', company: '',
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.email) {
+      newErrors.email = '請輸入 Email';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = '請輸入正確的 Email 格式';
+    }
+
+    if (!formData.name || formData.name.length < 2) {
+      newErrors.name = '請輸入至少 2 個字的姓名';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          source: window.location.pathname,
+          utm: Object.fromEntries(new URLSearchParams(window.location.search)),
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (!res.ok) throw new Error('Submit failed');
+
+      setIsSubmitted(true);
+
+      // GA4 轉換追蹤
+      if (typeof gtag === 'function') {
+        gtag('event', 'generate_lead', {
+          form_id: 'landing-lead-form',
+          currency: 'TWD',
+          value: 500,
+        });
+      }
+    } catch (err) {
+      alert('送出失敗，請稍後再試');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isSubmitted) {
+    return (
+      <div className={styles.successMessage}>
+        <div className={styles.successIcon}>&#10003;</div>
+        <h3>感謝你的申請！</h3>
+        <p>我們會在 24 小時內寄送免費試用連結到你的信箱。</p>
+        <p className={styles.checkSpam}>
+          沒收到嗎？請檢查垃圾郵件匣，或聯繫 support@example.com
         </p>
-        <a href="#hero"
-           className="inline-block px-8 py-4 bg-white text-orange-500
-                      font-bold rounded-lg text-lg hover:bg-gray-100
-                      transition-colors">
-          免費試用 14 天
-        </a>
-      </section>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      ref={formRef}
+      className={styles.form}
+      onSubmit={handleSubmit}
+      noValidate
+      id="signup-form"
+    >
+      <h3 className={styles.formTitle}>立即開始免費試用</h3>
+
+      <div className={styles.field}>
+        <label htmlFor="name" className={styles.label}>
+          你的姓名 <span className={styles.required}>*</span>
+        </label>
+        <input
+          id="name"
+          type="text"
+          autoComplete="name"
+          className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
+          value={formData.name}
+          onChange={(e) => {
+            setFormData({ ...formData, name: e.target.value });
+            if (errors.name) setErrors({ ...errors, name: undefined });
+          }}
+          placeholder="王小明"
+        />
+        {errors.name && <p className={styles.error}>{errors.name}</p>}
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="email" className={styles.label}>
+          Email <span className={styles.required}>*</span>
+        </label>
+        <input
+          id="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+          value={formData.email}
+          onChange={(e) => {
+            setFormData({ ...formData, email: e.target.value });
+            if (errors.email) setErrors({ ...errors, email: undefined });
+          }}
+          placeholder="you@company.com"
+        />
+        {errors.email && <p className={styles.error}>{errors.email}</p>}
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="company" className={styles.label}>
+          公司名稱（選填）
+        </label>
+        <input
+          id="company"
+          type="text"
+          autoComplete="organization"
+          className={styles.input}
+          value={formData.company}
+          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+          placeholder="ABC 科技有限公司"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className={styles.submitBtn}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? '送出中...' : '開始免費試用 14 天'}
+      </button>
+
+      <p className={styles.terms}>
+        點擊送出即表示你同意我們的
+        <a href="/terms">服務條款</a>和<a href="/privacy">隱私政策</a>。
+        不需要信用卡，隨時可取消。
+      </p>
+    </form>
+  );
+}
+```
+
+### 11.6 Tracking Provider（GA4 + Clarity 統一管理）
+
+```tsx
+// app/lp/[slug]/components/TrackingProvider.tsx
+'use client';
+
+import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+
+const GA_ID = process.env.NEXT_PUBLIC_GA4_ID;
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
+
+export function TrackingProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') return;
+
+    // 延遲 2 秒載入分析工具，不影響 LCP
+    const timer = setTimeout(() => {
+      // GA4
+      if (GA_ID) {
+        const gaScript = document.createElement('script');
+        gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+        gaScript.async = true;
+        document.head.appendChild(gaScript);
+        gaScript.onload = () => {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(...args: unknown[]) {
+            window.dataLayer.push(args);
+          }
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', GA_ID, {
+            send_page_view: true,
+          });
+        };
+      }
+
+      // Microsoft Clarity
+      if (CLARITY_ID) {
+        const clarityScript = document.createElement('script');
+        clarityScript.innerHTML = `
+          (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "${CLARITY_ID}");
+        `;
+        document.head.appendChild(clarityScript);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 路由變更時追蹤
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_path: pathname,
+        page_search: searchParams.toString(),
+      });
+    }
+  }, [pathname, searchParams]);
+
+  return <>{children}</>;
+}
+
+// 全域類型宣告
+declare global {
+  interface Window {
+    dataLayer: unknown[];
+    gtag: (...args: unknown[]) => void;
+  }
+}
+```
+
+### 11.7 Exit Intent Popup 組件
+
+```tsx
+// app/lp/[slug]/components/ExitIntentPopup.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import styles from './ExitIntentPopup.module.css';
+
+export function ExitIntentPopup() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    // 只在桌面端啟用（行動端沒有 mouseout 上方的概念）
+    if (window.innerWidth < 1024) return;
+
+    // 已經顯示過就不再顯示
+    if (sessionStorage.getItem('exit_intent_shown')) return;
+
+    const handleMouseOut = (e: MouseEvent) => {
+      // 滑鼠移出視窗上方
+      if (e.clientY <= 0) {
+        setShow(true);
+        sessionStorage.setItem('exit_intent_shown', 'true');
+        document.removeEventListener('mouseout', handleMouseOut);
+
+        // 追蹤
+        if (typeof gtag === 'function') {
+          gtag('event', 'exit_intent_popup_shown', {
+            page_path: window.location.pathname,
+            time_on_page: Math.round(performance.now() / 1000),
+          });
+        }
+      }
+    };
+
+    // 延遲 5 秒才開始偵測（避免使用者剛進來就觸發）
+    const timer = setTimeout(() => {
+      document.addEventListener('mouseout', handleMouseOut);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mouseout', handleMouseOut);
+    };
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div className={styles.overlay} onClick={() => setShow(false)}>
+      <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
+        <button
+          className={styles.close}
+          onClick={() => setShow(false)}
+          aria-label="關閉"
+        >
+          &times;
+        </button>
+
+        <h2 className={styles.title}>等等！別走</h2>
+        <p className={styles.subtitle}>
+          我們為你準備了一份特別優惠：
+        </p>
+
+        <div className={styles.offer}>
+          <span className={styles.discount}>首月 5 折</span>
+          <span className={styles.code}>優惠碼：STAY50</span>
+        </div>
+
+        <p className={styles.expiry}>
+          此優惠將在 15 分鐘後失效
+        </p>
+
+        <button
+          className={styles.ctaBtn}
+          onClick={() => {
+            if (typeof gtag === 'function') {
+              gtag('event', 'exit_intent_cta_click');
+            }
+            document.getElementById('signup-form')?.scrollIntoView({
+              behavior: 'smooth',
+            });
+            setShow(false);
+          }}
+        >
+          我要這個優惠
+        </button>
+
+        <button
+          className={styles.dismissBtn}
+          onClick={() => setShow(false)}
+        >
+          不用了，我不需要省錢
+        </button>
+      </div>
     </div>
   );
 }
@@ -1545,605 +2206,230 @@ export default function App() {
 
 ---
 
-## 13. LP 範例模板
+## 12. 上線前檢查表
 
-### 13.1 SaaS 產品 LP
+### 12.1 內容與文案
 
-```html
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CloudTask — 最簡單的團隊專案管理工具</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:#1a1a1a; }
-    .container { max-width:1100px; margin:0 auto; padding:0 24px; }
-
-    /* Hero */
-    .saas-hero { padding:80px 0; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
-    .saas-hero h1 { font-size:48px; line-height:1.2; margin-bottom:16px; }
-    .saas-hero .subtitle { font-size:20px; opacity:0.9; margin-bottom:32px; }
-    .saas-hero .cta-group { display:flex; gap:12px; flex-wrap:wrap; }
-    .btn-white { padding:14px 32px; background:#fff; color:#667eea; border:none; border-radius:8px; font-size:16px; font-weight:700; cursor:pointer; text-decoration:none; }
-    .btn-ghost { padding:14px 32px; background:transparent; color:#fff; border:2px solid rgba(255,255,255,0.5); border-radius:8px; font-size:16px; cursor:pointer; text-decoration:none; }
-
-    /* Features */
-    .saas-features { padding:80px 0; }
-    .saas-features h2 { text-align:center; font-size:32px; margin-bottom:48px; }
-    .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
-    .feat-card { padding:24px; border:1px solid #e5e7eb; border-radius:12px; }
-    .feat-card h3 { font-size:20px; margin-bottom:8px; }
-    .feat-card p { color:#6b7280; line-height:1.6; }
-
-    /* Pricing */
-    .saas-pricing { padding:80px 0; background:#f9fafb; }
-    .price-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:48px; }
-    .price-card { background:#fff; padding:32px; border-radius:12px; border:2px solid #e5e7eb; text-align:center; }
-    .price-card.popular { border-color:#667eea; position:relative; }
-    .price-card.popular::before { content:"最受歡迎"; position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:#667eea; color:#fff; padding:4px 16px; border-radius:20px; font-size:13px; }
-    .price-amount { font-size:48px; font-weight:700; margin:16px 0; }
-    .price-amount span { font-size:16px; font-weight:400; color:#6b7280; }
-    .price-card ul { list-style:none; text-align:left; margin:24px 0; }
-    .price-card li { padding:8px 0; border-bottom:1px solid #f3f4f6; }
-    .price-card li::before { content:"\2713 "; color:#10b981; font-weight:700; }
-    .btn-primary-saas { display:block; padding:14px; background:#667eea; color:#fff; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; }
-
-    @media(max-width:768px) {
-      .saas-hero h1 { font-size:32px; }
-      .feat-grid, .price-grid { grid-template-columns:1fr; }
-    }
-  </style>
-</head>
-<body>
-
-  <section class="saas-hero">
-    <div class="container">
-      <h1>專案管理，終於變簡單了</h1>
-      <p class="subtitle">看板、時間軸、自動化工作流程——你的團隊需要的全部在這裡。免費開始，隨團隊成長升級。</p>
-      <div class="cta-group">
-        <a href="#signup" class="btn-white">免費開始使用</a>
-        <a href="#demo" class="btn-ghost">觀看 Demo &rarr;</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="saas-features">
-    <div class="container">
-      <h2>為什麼 2,000+ 團隊選擇 CloudTask</h2>
-      <div class="feat-grid">
-        <div class="feat-card">
-          <h3>看板視圖</h3>
-          <p>拖拉即可更新任務狀態，直覺操作，5 分鐘上手。</p>
-        </div>
-        <div class="feat-card">
-          <h3>自動化工作流程</h3>
-          <p>任務到期自動通知、狀態變更自動指派，省下 60% 管理時間。</p>
-        </div>
-        <div class="feat-card">
-          <h3>即時協作</h3>
-          <p>留言、附件、@標註——團隊溝通不再需要切換工具。</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="saas-pricing">
-    <div class="container">
-      <h2 style="text-align:center;font-size:32px;">選擇適合你的方案</h2>
-      <div class="price-grid">
-        <div class="price-card">
-          <h3>免費版</h3>
-          <div class="price-amount">$0<span>/月</span></div>
-          <ul>
-            <li>最多 5 人</li>
-            <li>無限專案</li>
-            <li>基本看板</li>
-          </ul>
-          <a href="#signup" class="btn-primary-saas">免費開始</a>
-        </div>
-        <div class="price-card popular">
-          <h3>專業版</h3>
-          <div class="price-amount">$12<span>/人/月</span></div>
-          <ul>
-            <li>無限人數</li>
-            <li>自動化工作流程</li>
-            <li>時間軸視圖</li>
-            <li>進階報表</li>
-          </ul>
-          <a href="#signup" class="btn-primary-saas">開始 14 天免費試用</a>
-        </div>
-        <div class="price-card">
-          <h3>企業版</h3>
-          <div class="price-amount">聯繫我們</div>
-          <ul>
-            <li>專業版所有功能</li>
-            <li>SSO 單一登入</li>
-            <li>專屬客服經理</li>
-            <li>SLA 保證</li>
-          </ul>
-          <a href="#contact" class="btn-primary-saas">聯繫業務團隊</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</body>
-</html>
+```
+[ ] 主標題清楚傳達核心價值（不超過 15 個字）
+[ ] 副標題補充說明如何做到
+[ ] 痛點區至少列出 3 個受眾真實困擾
+[ ] 功能區每個功能都用「好處」而不是「功能」描述
+[ ] 見證區有真實客戶名字、職稱、公司
+[ ] CTA 文案用動詞開頭（「開始」「取得」「下載」）
+[ ] 所有文字沒有錯字、語法正確
+[ ] 手機端文字不會太小（>=16px）
 ```
 
-### 13.2 線上課程 LP
+### 12.2 設計與體驗
 
-```html
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 行銷實戰班 — 30 天掌握 AI 行銷全技能</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:#1a1a1a; }
-    .container { max-width:900px; margin:0 auto; padding:0 24px; }
-
-    .course-hero { padding:80px 0; background:#0f172a; color:#fff; text-align:center; }
-    .course-hero .tag { display:inline-block; background:#f59e0b; color:#0f172a; padding:4px 12px; border-radius:20px; font-size:14px; font-weight:600; margin-bottom:16px; }
-    .course-hero h1 { font-size:42px; line-height:1.3; margin-bottom:16px; }
-    .course-hero .subtitle { font-size:18px; opacity:0.8; margin-bottom:12px; }
-    .course-hero .stats { display:flex; justify-content:center; gap:32px; margin:24px 0; flex-wrap:wrap; }
-    .course-hero .stat { text-align:center; }
-    .course-hero .stat strong { display:block; font-size:24px; color:#f59e0b; }
-    .btn-yellow { display:inline-block; padding:16px 40px; background:#f59e0b; color:#0f172a; border:none; border-radius:8px; font-size:18px; font-weight:700; cursor:pointer; text-decoration:none; }
-    .urgency { margin-top:12px; color:#f87171; font-size:14px; }
-
-    .curriculum { padding:60px 0; }
-    .curriculum h2 { font-size:28px; text-align:center; margin-bottom:32px; }
-    .module { border:1px solid #e5e7eb; border-radius:8px; margin-bottom:12px; overflow:hidden; }
-    .module summary { padding:16px 20px; font-weight:600; cursor:pointer; background:#f9fafb; }
-    .module-content { padding:16px 20px; }
-    .module-content li { padding:4px 0; color:#6b7280; }
-
-    .instructor { padding:60px 0; background:#f9fafb; }
-    .instructor-flex { display:flex; gap:32px; align-items:center; flex-wrap:wrap; }
-    .instructor-photo { width:200px; height:200px; border-radius:50%; background:#d1d5db; flex-shrink:0; }
-    .instructor-info h3 { font-size:24px; margin-bottom:8px; }
-    .instructor-info p { color:#6b7280; line-height:1.7; }
-
-    .guarantee { padding:40px 0; text-align:center; }
-    .guarantee-box { display:inline-block; padding:24px 40px; border:2px solid #10b981; border-radius:12px; }
-    .guarantee-box h3 { color:#10b981; margin-bottom:8px; }
-
-    @media(max-width:768px) {
-      .course-hero h1 { font-size:28px; }
-      .instructor-flex { flex-direction:column; text-align:center; }
-    }
-  </style>
-</head>
-<body>
-
-  <section class="course-hero">
-    <div class="container">
-      <span class="tag">2026 全新改版</span>
-      <h1>AI 行銷實戰班<br>30 天掌握 AI 行銷全技能</h1>
-      <p class="subtitle">從 ChatGPT 到 AI 廣告投放，手把手教你用 AI 把行銷效率翻 3 倍</p>
-      <div class="stats">
-        <div class="stat"><strong>30+</strong>堂影片課程</div>
-        <div class="stat"><strong>12</strong>個實戰專案</div>
-        <div class="stat"><strong>2,847</strong>位學員</div>
-        <div class="stat"><strong>4.9/5.0</strong>學員評分</div>
-      </div>
-      <a href="#signup" class="btn-yellow">立即報名 — 早鳥價 NT$2,490</a>
-      <p class="urgency">早鳥優惠倒數 3 天，原價 NT$4,990</p>
-    </div>
-  </section>
-
-  <section class="curriculum">
-    <div class="container">
-      <h2>課程大綱</h2>
-      <details class="module">
-        <summary>模組一：AI 行銷基礎（第 1-7 天）</summary>
-        <div class="module-content">
-          <ul>
-            <li>1-1 AI 行銷全景圖：工具、流程、策略</li>
-            <li>1-2 ChatGPT / Claude 進階提示工程</li>
-            <li>1-3 AI 文案產生器實作</li>
-            <li>1-4 實戰：用 AI 一天產出一個月的社群內容</li>
-          </ul>
-        </div>
-      </details>
-      <details class="module">
-        <summary>模組二：AI 廣告投放（第 8-14 天）</summary>
-        <div class="module-content">
-          <ul>
-            <li>2-1 Meta 廣告 + AI 受眾分析</li>
-            <li>2-2 Google Ads AI 出價策略</li>
-            <li>2-3 AI 生成廣告素材（圖片 + 影片）</li>
-            <li>2-4 實戰：NT$5,000 預算跑一波完整廣告</li>
-          </ul>
-        </div>
-      </details>
-      <details class="module">
-        <summary>模組三：AI 數據分析（第 15-21 天）</summary>
-        <div class="module-content">
-          <ul>
-            <li>3-1 GA4 + AI 報表自動化</li>
-            <li>3-2 用 AI 做競品分析</li>
-            <li>3-3 預測模型入門</li>
-          </ul>
-        </div>
-      </details>
-    </div>
-  </section>
-
-  <section class="instructor">
-    <div class="container">
-      <div class="instructor-flex">
-        <div class="instructor-photo"></div>
-        <div class="instructor-info">
-          <h3>講師：林小明</h3>
-          <p>
-            前 Google 台灣行銷經理，10 年數位行銷經驗。
-            曾操盤年度預算超過 NT$5,000 萬的廣告專案。
-            2024 年起專注 AI 行銷教學，已培訓超過 2,800 位學員。
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="guarantee">
-    <div class="container">
-      <div class="guarantee-box">
-        <h3>30 天無條件退費保證</h3>
-        <p>不滿意，30 天內申請全額退費，不問原因。</p>
-      </div>
-    </div>
-  </section>
-
-</body>
-</html>
+```
+[ ] Hero 區首屏看得完整（不需滾動才能看到 CTA）
+[ ] CTA 按鈕和頁面主色形成對比
+[ ] 頁面至少有 3 個 CTA 按鈕（首屏/中段/底部）
+[ ] 行動端有浮動 CTA bar
+[ ] 沒有橫向滾動
+[ ] 圖片都設定 width/height（避免 CLS）
+[ ] 表單欄位不超過 4 個
+[ ] 表單有即時驗證和友善錯誤訊息
+[ ] 404 頁面不會讓人迷路
 ```
 
-### 13.3 實體商品 LP
+### 12.3 效能
 
-```html
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AirDesk Pro — 升降桌界的 iPhone</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:#1a1a1a; }
-    .container { max-width:1100px; margin:0 auto; padding:0 24px; }
-
-    .product-hero { padding:80px 0; display:flex; align-items:center; gap:48px; flex-wrap:wrap; max-width:1100px; margin:0 auto; padding-left:24px; padding-right:24px; }
-    .product-hero .visual { flex:1; min-width:300px; background:#f3f4f6; border-radius:16px; height:400px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:14px; }
-    .product-hero .info { flex:1; min-width:300px; }
-    .product-hero h1 { font-size:36px; line-height:1.3; }
-    .product-hero .tagline { font-size:18px; color:#6b7280; margin:12px 0 24px; }
-    .product-hero .price-box { display:flex; align-items:baseline; gap:12px; margin-bottom:24px; }
-    .product-hero .price-now { font-size:36px; font-weight:700; color:#dc2626; }
-    .product-hero .price-original { font-size:18px; color:#9ca3af; text-decoration:line-through; }
-    .product-hero .discount-tag { background:#fef2f2; color:#dc2626; padding:4px 8px; border-radius:4px; font-size:14px; font-weight:600; }
-    .btn-red { display:inline-block; padding:16px 40px; background:#dc2626; color:#fff; border:none; border-radius:8px; font-size:18px; font-weight:700; cursor:pointer; text-decoration:none; }
-    .shipping-note { margin-top:12px; color:#6b7280; font-size:14px; }
-
-    .specs { padding:60px 0; background:#f9fafb; }
-    .specs h2 { text-align:center; font-size:28px; margin-bottom:32px; }
-    .spec-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; text-align:center; }
-    .spec-item strong { display:block; font-size:28px; color:#dc2626; }
-    .spec-item span { color:#6b7280; font-size:14px; }
-
-    .reviews { padding:60px 0; }
-    .reviews h2 { text-align:center; font-size:28px; margin-bottom:32px; }
-    .review-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; }
-    .review-card { padding:24px; border:1px solid #e5e7eb; border-radius:12px; }
-    .review-stars { color:#f59e0b; margin-bottom:8px; }
-    .review-card p { color:#374151; line-height:1.6; margin-bottom:8px; }
-    .review-author { color:#9ca3af; font-size:14px; }
-
-    @media(max-width:768px) {
-      .product-hero { flex-direction:column; }
-      .product-hero h1 { font-size:28px; }
-      .spec-grid { grid-template-columns:repeat(2,1fr); }
-      .review-grid { grid-template-columns:1fr; }
-    }
-  </style>
-</head>
-<body>
-
-  <div class="product-hero">
-    <div class="visual">[產品圖片 / 360度旋轉展示]</div>
-    <div class="info">
-      <h1>AirDesk Pro 電動升降桌</h1>
-      <p class="tagline">靜音馬達 / 記憶高度 / 竹木桌面 / 5 年保固</p>
-      <div class="price-box">
-        <span class="price-now">NT$12,900</span>
-        <span class="price-original">NT$18,900</span>
-        <span class="discount-tag">省 NT$6,000</span>
-      </div>
-      <a href="#order" class="btn-red">立即訂購 — 免運費</a>
-      <p class="shipping-note">預計 3-5 個工作天到貨 / 30 天鑑賞期</p>
-    </div>
-  </div>
-
-  <section class="specs">
-    <div class="container">
-      <h2>產品規格</h2>
-      <div class="spec-grid">
-        <div class="spec-item">
-          <strong>35dB</strong>
-          <span>超靜音馬達</span>
-        </div>
-        <div class="spec-item">
-          <strong>62-127cm</strong>
-          <span>升降範圍</span>
-        </div>
-        <div class="spec-item">
-          <strong>100kg</strong>
-          <span>最大承重</span>
-        </div>
-        <div class="spec-item">
-          <strong>5 年</strong>
-          <span>全機保固</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="reviews">
-    <div class="container">
-      <h2>顧客評價（4.9 / 5.0，1,247 則評價）</h2>
-      <div class="review-grid">
-        <div class="review-card">
-          <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <p>「馬達真的超安靜，開會時調整高度完全不會干擾。桌面質感很好，組裝也很簡單。」</p>
-          <span class="review-author">李先生 / 軟體工程師 / 2026-02-15</span>
-        </div>
-        <div class="review-card">
-          <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <p>「用了三個月，腰痛明顯改善。記憶高度功能很方便，一鍵切換站坐姿。」</p>
-          <span class="review-author">張小姐 / 設計師 / 2026-01-28</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</body>
-</html>
+```
+[ ] LCP <= 2.0 秒
+[ ] CLS <= 0.05
+[ ] TBT <= 100ms
+[ ] PageSpeed Insights 分數 >= 90（手機端）
+[ ] 圖片全部用 WebP/AVIF 格式
+[ ] Hero 圖片用 fetchpriority="high"
+[ ] 非首屏圖片用 loading="lazy"
+[ ] 字型用 font-display: swap
+[ ] 第三方腳本延遲載入（GA4、聊天插件）
+[ ] Critical CSS 內聯
 ```
 
-### 13.4 服務業 LP（網頁設計接案）
+### 12.4 追蹤與分析
 
-```html
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebCraft Studio — 台北專業網頁設計公司</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:#1a1a1a; }
-    .container { max-width:1100px; margin:0 auto; padding:0 24px; }
+```
+[ ] GA4 已安裝並測試可收到事件
+[ ] CTA 點擊事件追蹤（含 button_position）
+[ ] 表單開始填寫事件追蹤
+[ ] 表單送出事件追蹤（設為轉換）
+[ ] 滾動深度追蹤（25%/50%/75%/100%）
+[ ] UTM 參數解析並帶入追蹤事件
+[ ] Microsoft Clarity 或 Hotjar 已安裝
+[ ] A/B Test 已設定並正確分流
+```
 
-    .svc-hero { padding:100px 0; background:linear-gradient(135deg,#1e293b 0%,#334155 100%); color:#fff; text-align:center; }
-    .svc-hero h1 { font-size:42px; line-height:1.3; margin-bottom:16px; }
-    .svc-hero .subtitle { font-size:18px; opacity:0.8; margin-bottom:32px; max-width:600px; margin-left:auto; margin-right:auto; }
-    .btn-teal { display:inline-block; padding:16px 40px; background:#14b8a6; color:#fff; border:none; border-radius:8px; font-size:18px; font-weight:700; cursor:pointer; text-decoration:none; }
+### 12.5 SEO & Meta
 
-    .svc-process { padding:60px 0; }
-    .svc-process h2 { text-align:center; font-size:28px; margin-bottom:40px; }
-    .process-steps { display:flex; gap:32px; flex-wrap:wrap; justify-content:center; }
-    .process-step { flex:1; min-width:200px; max-width:250px; text-align:center; }
-    .step-num { width:48px; height:48px; background:#14b8a6; color:#fff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; margin-bottom:12px; }
-    .process-step h3 { margin-bottom:8px; }
-    .process-step p { color:#6b7280; font-size:14px; }
+```
+[ ] title tag 包含關鍵字 + 品牌名（50-60 字元）
+[ ] meta description 有行動呼籲（150-160 字元）
+[ ] og:image 已設定（1200x630）
+[ ] og:title 和 og:description 已設定
+[ ] favicon 已設定
+[ ] robots meta 設定正確（Landing Page 通常 noindex）
+[ ] canonical URL 設定正確
+```
 
-    .portfolio { padding:60px 0; background:#f9fafb; }
-    .portfolio h2 { text-align:center; font-size:28px; margin-bottom:32px; }
-    .portfolio-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
-    .portfolio-card { background:#fff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; }
-    .portfolio-thumb { height:200px; background:#d1d5db; }
-    .portfolio-info { padding:16px; }
-    .portfolio-info h3 { font-size:16px; margin-bottom:4px; }
-    .portfolio-info span { color:#6b7280; font-size:13px; }
+### 12.6 法律與合規
 
-    .consult-form { padding:60px 0; }
-    .consult-form h2 { text-align:center; font-size:28px; margin-bottom:8px; }
-    .consult-form .form-subtitle { text-align:center; color:#6b7280; margin-bottom:32px; }
-    .form-box { max-width:500px; margin:0 auto; }
-    .form-box input, .form-box select, .form-box textarea { width:100%; padding:12px; border:1px solid #d1d5db; border-radius:8px; font-size:16px; margin-bottom:16px; }
-    .form-box textarea { height:100px; resize:vertical; }
-
-    @media(max-width:768px) {
-      .svc-hero h1 { font-size:28px; }
-      .portfolio-grid { grid-template-columns:1fr; }
-    }
-  </style>
-</head>
-<body>
-
-  <section class="svc-hero">
-    <div class="container">
-      <h1>讓你的網站成為最強業務員</h1>
-      <p class="subtitle">我們幫台灣中小企業打造高轉換率網站。從設計到上線，最快 14 天交付。</p>
-      <a href="#consult" class="btn-teal">免費諮詢 + 網站健檢</a>
-    </div>
-  </section>
-
-  <section class="svc-process">
-    <div class="container">
-      <h2>合作流程</h2>
-      <div class="process-steps">
-        <div class="process-step">
-          <div class="step-num">1</div>
-          <h3>免費諮詢</h3>
-          <p>30 分鐘線上會議，了解你的需求與目標</p>
-        </div>
-        <div class="process-step">
-          <div class="step-num">2</div>
-          <h3>提案報價</h3>
-          <p>3 個工作天內提供設計提案與報價單</p>
-        </div>
-        <div class="process-step">
-          <div class="step-num">3</div>
-          <h3>設計開發</h3>
-          <p>確認後 14 天內完成設計、開發、測試</p>
-        </div>
-        <div class="process-step">
-          <div class="step-num">4</div>
-          <h3>上線交付</h3>
-          <p>協助上線 + 教學 + 30 天免費維護</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="portfolio">
-    <div class="container">
-      <h2>近期作品</h2>
-      <div class="portfolio-grid">
-        <div class="portfolio-card">
-          <div class="portfolio-thumb"></div>
-          <div class="portfolio-info">
-            <h3>ABC 牙醫診所</h3>
-            <span>醫療 / 預約系統 / RWD</span>
-          </div>
-        </div>
-        <div class="portfolio-card">
-          <div class="portfolio-thumb"></div>
-          <div class="portfolio-info">
-            <h3>好食光餐廳</h3>
-            <span>餐飲 / 線上點餐 / LINE 串接</span>
-          </div>
-        </div>
-        <div class="portfolio-card">
-          <div class="portfolio-thumb"></div>
-          <div class="portfolio-info">
-            <h3>CloudSync SaaS</h3>
-            <span>科技 / SaaS LP / A/B Testing</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="consult-form" id="consult">
-    <div class="container">
-      <h2>免費諮詢 + 網站健檢</h2>
-      <p class="form-subtitle">填寫以下表單，我們會在 24 小時內回覆你</p>
-      <div class="form-box">
-        <input type="text" placeholder="你的姓名" required>
-        <input type="email" placeholder="Email" required>
-        <input type="tel" placeholder="聯絡電話">
-        <select>
-          <option value="">預算範圍</option>
-          <option>NT$30,000 以下</option>
-          <option>NT$30,000 - 80,000</option>
-          <option>NT$80,000 - 150,000</option>
-          <option>NT$150,000 以上</option>
-        </select>
-        <textarea placeholder="簡單描述你的專案需求"></textarea>
-        <button type="submit" class="btn-teal" style="width:100%;border:none;cursor:pointer;">
-          送出，取得免費報價
-        </button>
-      </div>
-    </div>
-  </section>
-
-</body>
-</html>
+```
+[ ] 隱私政策連結
+[ ] 服務條款連結
+[ ] Cookie 同意橫幅（GDPR/個資法）
+[ ] 表單有同意條款勾選
+[ ] 退款/取消政策清楚標示
 ```
 
 ---
 
-## 14. LP QA Checklist（上線前 20 項檢查）
+## 13. 轉換率診斷 SOP
 
-上線前逐一檢查，全部通過才能發布。
+### 13.1 轉換率低的 5 大原因與對策
 
-### 內容與文案
+```
+症狀 1：流量高但轉換率 < 1%
+────────────────────────────
+原因：流量品質差（受眾不對）
+診斷：看 GA4 的受眾資料、廣告關鍵字是否精準
+對策：縮窄廣告受眾、用否定關鍵字排除不相關搜尋
 
-| # | 檢查項目 | 通過 |
-|---|---------|------|
-| 1 | 標題在 3 秒內傳達核心價值主張 | [ ] |
-| 2 | 所有文案無錯字、語法正確 | [ ] |
-| 3 | CTA 按鈕文字使用動詞開頭、明確說出好處 | [ ] |
-| 4 | 有社會證明（客戶見證 / Logo / 數據） | [ ] |
-| 5 | FAQ 回答了最常見的 5 個疑慮 | [ ] |
+症狀 2：跳出率 > 70%，平均停留 < 10 秒
+────────────────────────────
+原因：訊息不匹配（廣告說 A，頁面說 B）
+診斷：比對廣告文案和 Landing Page 標題
+對策：確保標題包含廣告中的核心關鍵字和承諾
 
-### 設計與 UX
+症狀 3：滾動深度低（50% 訪客沒滾到第二段）
+────────────────────────────
+原因：Hero 區沒有吸引力 / 載入太慢
+診斷：看 LCP 速度、Hero 區標題是否有說服力
+對策：優化 LCP、A/B 測試標題、加入社會證明到首屏
 
-| # | 檢查項目 | 通過 |
-|---|---------|------|
-| 6 | CTA 按鈕與背景有高對比度、一眼可見 | [ ] |
-| 7 | 手機版排版正確（iPhone SE ~ iPhone 16 Pro Max） | [ ] |
-| 8 | 手機版 CTA 在 Thumb Zone 內可觸及 | [ ] |
-| 9 | 所有圖片有 alt 文字 | [ ] |
-| 10 | 表單欄位不超過必要數量（<= 5 個） | [ ] |
+症狀 4：表單開始填但沒送出（form abandonment > 60%）
+────────────────────────────
+原因：表單太長或問了敏感資訊
+診斷：用 Hotjar 看使用者卡在哪個欄位
+對策：減少欄位、用多步驟表單、移除非必要欄位
 
-### 技術與效能
+症狀 5：手機端轉換率明顯低於桌面端
+────────────────────────────
+原因：手機端體驗差
+診斷：用手機實際測試完整流程
+對策：
+  - 加浮動 CTA bar
+  - 表單用對的 inputmode
+  - 文字放大到 16px 以上
+  - 按鈕放大到 44px 以上觸控區
+  - 簡化手機端內容（不需要和桌面端完全一樣）
+```
 
-| # | 檢查項目 | 通過 |
-|---|---------|------|
-| 11 | PageSpeed Insights 行動版分數 > 90 | [ ] |
-| 12 | 頁面載入時間 < 3 秒（行動網路） | [ ] |
-| 13 | 所有圖片使用 WebP 格式 + lazy loading | [ ] |
-| 14 | HTTPS 啟用、無混合內容警告 | [ ] |
-| 15 | 所有連結可正常運作（無 404） | [ ] |
+### 13.2 週期性優化流程
 
-### 追蹤與分析
+```
+每週（15 分鐘）：
+  1. 查看 GA4 轉換率趨勢
+  2. 看 5 個 Clarity session recording
+  3. 記錄觀察到的問題
 
-| # | 檢查項目 | 通過 |
-|---|---------|------|
-| 16 | GA4 已安裝，事件追蹤已設定（CTA 點擊、表單送出、捲動深度） | [ ] |
-| 17 | UTM 參數在各廣告渠道已正確設定 | [ ] |
-| 18 | 熱力圖工具已安裝（Clarity 或 Hotjar） | [ ] |
-| 19 | Facebook Pixel / Google Ads 轉換追蹤已設定（如有投廣告） | [ ] |
-| 20 | 轉換目標已在 GA4 設為 Key Event | [ ] |
+每月（2 小時）：
+  1. 分析上月各管道轉換率
+  2. 看熱力圖找出點擊/滾動模式
+  3. 決定本月要 A/B 測試什麼
+  4. 啟動 1-2 個 A/B Test
 
-### 快速驗證腳本
+每季（半天）：
+  1. 全面檢視 Landing Page 效能
+  2. 更新見證/數據/截圖
+  3. 根據累積的 A/B Test 結果重新設計
+  4. 競品 Landing Page 研究
+```
 
-```bash
-# 1. 檢查頁面是否正常回應
-curl -s -o /dev/null -w "%{http_code}" https://your-lp.com
+### 13.3 快速贏面清單（Quick Wins）
 
-# 2. 檢查 HTTPS
-curl -sI https://your-lp.com | grep -i "strict-transport"
+```
+不需要改設計，就能提升轉換率的做法：
 
-# 3. 檢查載入時間
-curl -s -o /dev/null -w "DNS: %{time_namelookup}s\nConnect: %{time_connect}s\nTTFB: %{time_starttransfer}s\nTotal: %{time_total}s\n" https://your-lp.com
-
-# 4. 檢查 meta tags
-curl -s https://your-lp.com | grep -E "<title>|<meta name=\"description\""
-
-# 5. 檢查圖片有無 alt
-curl -s https://your-lp.com | grep -oP '<img[^>]*>' | grep -v 'alt='
-
-# 6. 跑 Lighthouse
-npx lighthouse https://your-lp.com --output json --quiet | \
-  python3 -c "import json,sys;d=json.load(sys.stdin);cats=d['categories']; \
-  [print(f\"{k}: {int(v['score']*100)}\") for k,v in cats.items()]"
+1. 在 CTA 旁邊加上「不需信用卡」           → +5%–15%
+2. 加上 countdown timer（限時優惠）         → +3%–10%
+3. 數字統計加上滾動動畫                     → +2%–5%
+4. 表單從 5 個欄位減到 3 個                  → +10%–25%
+5. CTA 按鈕文案從「送出」改成「免費試用」   → +5%–15%
+6. 在表單上方加一句見證                      → +3%–8%
+7. 把最強的見證移到首屏                      → +5%–12%
+8. 手機端加浮動 CTA bar                     → +8%–20%
+9. 頁面速度從 4 秒優化到 2 秒               → +7%–15%
+10. Exit Intent Popup 加限時優惠             → +3%–10%
 ```
 
 ---
 
-## 附錄：關鍵數據速查
+## 附錄 A：Landing Page 文案模板庫
 
-| 指標 | 業界平均 | 良好 | 優秀 |
-|------|---------|------|------|
-| LP 轉換率 | 2-5% | 5-10% | 10%+ |
-| 跳出率 | 60-70% | 40-60% | <40% |
-| 平均停留時間 | 30-60 秒 | 1-3 分鐘 | 3+ 分鐘 |
-| CTA 點擊率 | 2-5% | 5-10% | 10%+ |
-| 表單完成率 | 20-30% | 30-50% | 50%+ |
-| 行動版佔比 | 55-70% | — | — |
-| 頁面載入時間 | 3-5 秒 | 2-3 秒 | <2 秒 |
+### A.1 SaaS 產品
+
+```
+標題：[動詞] + [受眾的目標] + [時間/條件]
+副標題：[如何做到] + [降低門檻]
+
+範例組合：
+
+組合 1（效率類）：
+標題：「把每天 3 小時的重複工作，變成 3 分鐘」
+副標題：「無需寫程式，拖拉式介面 5 分鐘就能設定你的第一個自動化流程」
+
+組合 2（成長類）：
+標題：「讓你的 Email 名單在 30 天內成長 3 倍」
+副標題：「AI 幫你寫文案、設計表單、分眾投遞，你只需要專注在產品」
+
+組合 3（省錢類）：
+標題：「用一個工具取代你每月 $500 美金的 SaaS 訂閱」
+副標題：「整合 CRM、Email、分析、客服，不再需要 5 個不同平台」
+```
+
+### A.2 線上課程
+
+```
+標題：「[受眾] 也能 [達成結果] 的 [方法/系統]」
+副標題：「[去除阻礙] + [社會證明]」
+
+範例：
+標題：「零基礎也能月入 10 萬的自由接案系統」
+副標題：「不需要人脈、不需要經驗，1,200 位學員已經證明可行」
+```
+
+### A.3 B2B 服務
+
+```
+標題：「讓 [受眾角色] 的 [痛點] 變成 [正面結果]」
+副標題：「[方法] + [時間框架] + [風險消除]」
+
+範例：
+標題：「讓行銷團隊不再猜測，用數據做決策」
+副標題：「30 分鐘免費諮詢，幫你找出最有效的行銷管道。已服務 200+ 品牌」
+```
 
 ---
 
-> 本文件為 OpenClaw Cookbook 系列第 48 號。
-> 有任何問題或建議，請回報至任務面板。
+## 附錄 B：常見 Landing Page 錯誤
+
+| # | 錯誤 | 為什麼不好 | 怎麼修 |
+|---|------|-----------|--------|
+| 1 | 放完整導航列 | 使用者會離開 LP 去逛別的頁面 | 移除導航，只留 logo + CTA |
+| 2 | CTA 只寫「送出」 | 沒有動機，不知道送出後會怎樣 | 改成「開始免費試用」「取得報價」 |
+| 3 | 沒有社會證明 | 使用者不信任你 | 加見證/數字/Logo 牆 |
+| 4 | 功能列表太長 | 資訊過載，使用者不知道重點 | 最多 3-6 個功能，用圖標+短句 |
+| 5 | 圖片用 stock photo | 假假的、不專業 | 用真實產品截圖或客製插畫 |
+| 6 | 表單問太多問題 | 填表門檻太高 | 只問必要的（Email + 姓名就好） |
+| 7 | 沒有行動端優化 | 65%+ 流量在手機上 | Mobile First 設計 |
+| 8 | 載入速度太慢 | 多 1 秒 = 少 7% 轉換 | 優化圖片/JS/CSS |
+| 9 | 沒有追蹤事件 | 無法知道什麼有效什麼沒效 | 安裝 GA4 + 事件追蹤 |
+| 10 | 一個頁面兩個目標 | 分散注意力 | 一頁一目標 |
+
+---
+
+> 本手冊持續更新。如有新的高轉換技巧或模板，請補充到對應章節。
