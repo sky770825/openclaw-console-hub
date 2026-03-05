@@ -1,7 +1,7 @@
 {
   "name": "openclaw-server",
   "private": true,
-  "version": "2.4.84",
+  "version": "2.4.85",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
