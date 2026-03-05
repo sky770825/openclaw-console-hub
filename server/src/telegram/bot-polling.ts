@@ -1366,17 +1366,29 @@ function groupLoop(): void {
 // 小蔡 Bot (@xiaoji_cai_bot) polling loop
 // ══════════════════════════════════════════════════════════════
 
-/** 判斷小蔡收到的是否純閒聊（不需要 action） */
+/** 判斷小蔡收到的是否純閒聊/確認（不需要 action） */
 const XIAOCAI_CHITCHAT = [
   /^(早安?|午安|晚安|嗨|hi|hello|hey|哈+|嘿|yo)[\s!！。.~]*$/i,
   /^(辛苦了?|謝謝|感謝|讚|棒|ok|好的?|收到|了解|掰|再見|88|嗯|對|好)[\s!！。.~]*$/i,
   /^(怎麼樣|在嗎|小蔡|你覺得呢)[\s?？!！。.~]*$/i,
   /^[\p{Emoji}\s]+$/u,
 ];
+/** 確認/反饋/意見類（不限字數，匹配即閒聊） */
+const XIAOCAI_CONFIRM_PATTERNS = [
+  /看的?到|看得到|收到了?嗎|好了嗎|對了嗎|這樣對嗎|可以嗎|有嗎/,
+  /你(覺得|認為|看法|怎麼看|怎麼想|有什麼想法|有什麼感覺)/,
+  /你的(意見|建議|看法|想法)/,
+  /你是誰|自我介紹|你的(名字|專長|職責|模型|角色|身份)/,
+  /校準|點名|簽到|回報|報到/,
+  /^(沒事|算了|不用了|好吧|行|可以|沒問題|隨便)[\s!！。.~？?]*$/,
+];
 function isXiaocaiChitChat(message: string): boolean {
   const t = message.trim();
-  if (t.length > 20) return false;
-  return XIAOCAI_CHITCHAT.some(p => p.test(t));
+  // 短訊息：固定模式
+  if (t.length <= 20 && XIAOCAI_CHITCHAT.some(p => p.test(t))) return true;
+  // 確認/反饋類：不限字數
+  if (XIAOCAI_CONFIRM_PATTERNS.some(p => p.test(t))) return true;
+  return false;
 }
 
 /** 清除殘留的 JSON action blocks — 發送到 Telegram 前必經 */
@@ -1725,13 +1737,25 @@ async function xiaocaiPoll(): Promise<void> {
 
         const actionMatches = extractActionJsons(reply);
         if (!actionMatches || actionMatches.length === 0) {
-          // step 0 沒帶 action 且是任務類訊息 → 重試一次提醒帶 action
+          const cleanReply = stripActionJson(reply).trim();
+          // step 0 沒帶 action — 判斷是否該重試
           if (step === 0 && text.length > 8 && !isXiaocaiChitChat(text)) {
-            log.info(`[NEUXA-Chain] step=0 沒帶 action，重試提醒`);
-            allActionResults.push(`⚠️ 你的回覆沒有 action JSON。老蔡的訊息看起來需要你做事，請用 action 執行，不要只回文字。`);
+            // 小蔡已經給了實質回覆（分析/報告/回答）→ 接受，不強制 action
+            const hasSubstance = cleanReply.length > 15
+              && !cleanReply.includes('請重新說明')
+              && !cleanReply.includes('請告訴我')
+              && !cleanReply.includes('請提供')
+              && !cleanReply.includes('可以請您');
+            if (hasSubstance) {
+              log.info(`[NEUXA-Chain] step=0 無 action 但有實質回覆(${cleanReply.length}字)，接受`);
+              finalReply = cleanReply;
+              break;
+            }
+            log.info(`[NEUXA-Chain] step=0 沒帶 action 且回覆空洞，重試提醒`);
+            allActionResults.push(`提示：請直接回答問題或用 action 做事。不要回覆「請重新說明」。`);
             continue;
           }
-          finalReply = stripActionJson(reply);
+          finalReply = cleanReply;
           break;
         }
 
