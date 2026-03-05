@@ -154,19 +154,25 @@ function chunkDocument(content: string, docTitle: string): Chunk[] {
       while (start < secBody.length) {
         let end = start + TARGET_CHUNK_CHARS;
 
-        // 找最近的段落邊界（換行+換行、句號換行）避免切斷句子
-        if (end < secBody.length) {
-          const boundary = secBody.lastIndexOf('\n\n', end);
-          if (boundary > start + TARGET_CHUNK_CHARS * 0.5) {
-            end = boundary;
-          } else {
-            const lineBoundary = secBody.lastIndexOf('\n', end);
-            if (lineBoundary > start + TARGET_CHUNK_CHARS * 0.3) {
-              end = lineBoundary;
-            }
+        // 最後一個 chunk — 取完剩餘內容直接 break（防無窮迴圈）
+        if (end >= secBody.length) {
+          const chunkText = secBody.slice(start).trim();
+          if (chunkText.length > 30) {
+            const subTitle = subIdx === 0 ? secTitle : `${secTitle} (${subIdx + 1})`;
+            chunks.push({ text: chunkText, sectionTitle: subTitle });
           }
+          break;
+        }
+
+        // 找最近的段落邊界（換行+換行、句號換行）避免切斷句子
+        const boundary = secBody.lastIndexOf('\n\n', end);
+        if (boundary > start + TARGET_CHUNK_CHARS * 0.5) {
+          end = boundary;
         } else {
-          end = secBody.length;
+          const lineBoundary = secBody.lastIndexOf('\n', end);
+          if (lineBoundary > start + TARGET_CHUNK_CHARS * 0.3) {
+            end = lineBoundary;
+          }
         }
 
         const chunkText = secBody.slice(start, end).trim();
@@ -177,7 +183,7 @@ function chunkDocument(content: string, docTitle: string): Chunk[] {
 
         // 下一個 chunk 起點 = 當前結尾 - overlap
         start = end - OVERLAP_CHARS;
-        if (start < 0) start = 0;
+        if (start <= 0) start = end; // 安全措施：不能回到比 end 更早的位置
         if (start >= secBody.length) break;
         subIdx++;
       }
