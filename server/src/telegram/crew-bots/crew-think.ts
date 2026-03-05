@@ -18,7 +18,7 @@ import { CREW_BOTS } from './crew-config.js';
 const log = createLogger('crew-think');
 
 const CLAUDE_TIMEOUT_MS = 600_000;      // 10 分鐘，解決複雜任務超時問題
-const GEMINI_TIMEOUT_MS = 45_000;       // 加大 timeout 配合 4096 token 輸出
+const GEMINI_TIMEOUT_MS = 30_000;       // 30s，配合 1024 token 輸出足夠
 const MAX_CHAIN_STEPS = 10;             // 增加思考鏈深度，讓 bot 能做更複雜的多步任務
 const MAX_ACTION_OUTPUT = 4000;
 
@@ -232,9 +232,20 @@ export async function crewThink(
     .trim();
 
   // Telegram 訊息上限 4096，留 200 給 bot header → 1500 字是安全上限
-  const truncated = clean.length > 1500
-    ? clean.slice(0, 1497) + '...'
-    : clean;
+  // 智慧截斷：找到最後一個完整句子（。！？\n）再切，避免句子中間斷掉
+  let truncated = clean;
+  if (clean.length > 1500) {
+    const cutRegion = clean.slice(1200, 1500); // 在 1200-1500 之間找斷點
+    const lastBreak = Math.max(
+      cutRegion.lastIndexOf('。'),
+      cutRegion.lastIndexOf('！'),
+      cutRegion.lastIndexOf('？'),
+      cutRegion.lastIndexOf('\n'),
+      cutRegion.lastIndexOf('. '),
+    );
+    const cutAt = lastBreak >= 0 ? 1200 + lastBreak + 1 : 1497;
+    truncated = clean.slice(0, cutAt).trimEnd() + '...';
+  }
 
   // 自動追加工作紀錄到 bot 的 MEMORY.md
   appendWorkLog(bot.id, userMessage, allActionResults, truncated);
@@ -519,8 +530,8 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 4096,
-          temperature: 0.3,  // 低 temperature 讓模型更精確生成 action JSON
+          maxOutputTokens: 1024,    // 限制回覆長度，Telegram 群聊不需要長篇大論
+          temperature: 0.3,
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -986,12 +997,14 @@ ${CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b
 ## 說話方式
 ${bot.responseStyle}
 - 繁體中文口語，直接有個性
-- 做事的回覆：先回報你做了什麼 + 結果，再簡短建議
-- 聊天的回覆：1-3 句話
+- ⚠️ **回覆字數限制：最多 150 字**。這是 Telegram 群組聊天，不是寫報告。講重點就好
+- 做事的回覆：一句話回報結果 + 一句話建議（不要條列分析）
+- 聊天的回覆：1-2 句話
 - 不要開頭「好的」「收到」「了解」
 - 直接回覆內容，不要加自己的名字前綴
 - 🚫 **絕對不要在回覆裡列出程式碼**（不要用 \`\`\` 代碼區塊）— 這是 Telegram 聊天，不是 IDE
 - 回覆要完整，不要寫到一半就停。講重點，不要拖泥帶水
+- 不要重複別人已經說過的觀點，有新東西才補充
 
 ## 路徑基準
 | 名稱 | 路徑 |
