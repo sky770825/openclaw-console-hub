@@ -18,7 +18,7 @@ import { CREW_BOTS } from './crew-config.js';
 
 const log = createLogger('crew-think');
 
-const CLAUDE_TIMEOUT_MS = 600_000;      // 10 分鐘，解決複雜任務超時問題
+const CLAUDE_TIMEOUT_MS = 120_000;      // 2 分鐘（降低：避免 Opus 卡住整個星群）
 const GEMINI_TIMEOUT_MS = 30_000;       // 30s，配合 1024 token 輸出足夠
 const MAX_CHAIN_STEPS = 10;             // 增加思考鏈深度，讓 bot 能做更複雜的多步任務
 const MAX_ACTION_OUTPUT = 4000;
