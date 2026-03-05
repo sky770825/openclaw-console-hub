@@ -156,6 +156,7 @@ export async function createTask(name: string, description?: string, owner?: str
     // 防重複：同名任務（任何狀態）30 分鐘內不重建，避免殭屍循環
     const checkR = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?limit=200`, {
       headers: { Authorization: `Bearer ${OPENCLAW_API_KEY}` },
+      signal: AbortSignal.timeout(8000),
     });
     if (checkR.ok) {
       const existing = (await checkR.json()) as Array<Record<string, unknown>>;
@@ -183,11 +184,15 @@ export async function createTask(name: string, description?: string, owner?: str
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
       body: JSON.stringify({ name: trimmedName, status: initialStatus, priority: 2, owner: validOwner, description }),
+      signal: AbortSignal.timeout(10000),
     });
     const result = (await r.json()) as Record<string, unknown>;
     const statusNote = initialStatus === 'draft' ? '（draft — 等老蔡批准後才會執行）' : '';
     return result.id ? `已建立，ID: ${result.id}，owner: ${validOwner}${statusNote}` : '建立失敗';
-  } catch { return '建立失敗（連線錯誤）'; }
+  } catch (err) {
+    console.error('[createTask] 連線錯誤:', err instanceof Error ? err.message : err);
+    return `建立失敗（連線錯誤：${err instanceof Error ? err.message : String(err).slice(0, 80)}）`;
+  }
 }
 
 async function updateTask(id: string, updates: Record<string, unknown>): Promise<string> {
@@ -202,10 +207,14 @@ async function updateTask(id: string, updates: Record<string, unknown>): Promise
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENCLAW_API_KEY}` },
       body: JSON.stringify(allowed),
+      signal: AbortSignal.timeout(10000),
     });
     if (!r.ok) return `更新失敗: HTTP ${r.status}`;
     return `已更新任務 ${id}: ${Object.keys(allowed).join(', ')}`;
-  } catch { return '更新失敗（連線錯誤）'; }
+  } catch (err) {
+    console.error('[updateTask] 連線錯誤:', err instanceof Error ? err.message : err);
+    return `更新失敗（連線錯誤：${err instanceof Error ? err.message : String(err).slice(0, 80)}）`;
+  }
 }
 
 // ── 檔案操作 ──
