@@ -87,11 +87,13 @@ export async function crewThink(
   // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含小蔡身份，會導致混淆）
   // loadSoulCoreOnce() 已移除：buildCrewPrompt 的 _soulCore 參數被忽略，無需浪費快取讀取
 
-  // 即時狀態（所有 bot 共享，不重複打 API）
-  const [sysStatus, taskSnap] = await Promise.all([
+  // 即時狀態（所有 bot 共享，不重複打 API；截斷避免 system prompt 過肥）
+  let [sysStatus, taskSnap] = await Promise.all([
     getSystemStatus(),
     getTaskSnapshot(),
   ]);
+  if (sysStatus.length > 500) sysStatus = sysStatus.slice(0, 500) + '\n…（截斷）';
+  if (taskSnap.length > 800) taskSnap = taskSnap.slice(0, 800) + '\n…（截斷）';
 
   // 讀取 bot 個人記憶（根據訊息內容只注入相關情境段落）
   const botMemory = loadBotMemory(bot.id, userMessage);
@@ -110,7 +112,12 @@ export async function crewThink(
     recentChat = recentEntries.join('\n');
   }
 
-  const fullPrompt = `${systemPrompt}\n\n## 最近群組對話\n${recentChat}\n\n## 新訊息\n[${senderName}] ${userMessage}`;
+  // 指揮官指令優先：新訊息放在歷史對話前面，避免被舊脈絡淹沒
+  const isCommander = COMMANDER_USERNAMES.has(senderName.toLowerCase()) || senderName === '小蔡' || senderName === '系統';
+  const cmdPrefix = isCommander
+    ? `\n\n⚠️ **指揮官指令（最高優先級）** — 你必須直接回應以下指令，不要延續之前的話題：\n[${senderName}] ${userMessage}\n\n## 最近群組對話（僅供參考）\n${recentChat}`
+    : `\n\n## 當前訊息（請優先回應）\n[${senderName}] ${userMessage}\n\n## 最近群組對話（僅供參考）\n${recentChat}`;
+  const fullPrompt = `${systemPrompt}${cmdPrefix}`;
 
   let finalReply = '';
   const allActionResults: string[] = [];
@@ -909,6 +916,12 @@ ${bot.responseStyle}
 - 你的個人目錄：~/.openclaw/workspace/crew/${bot.id}/
 - 📚 你的專屬知識庫：~/.openclaw/workspace/crew/${bot.id}/knowledge/（先 list_dir 看有哪些文件）
 - 別讀小蔡的記憶（~/.openclaw/workspace/MEMORY.md），那不是你的
+
+## 🚨 指令回應規則（最高優先）
+- **收到新訊息時，必須回應新訊息的內容**，不要延續之前的話題
+- 如果新訊息是指揮官（老蔡/小蔡）發的，更必須直接回答指令
+- 「最近群組對話」只是背景脈絡，你的回覆必須針對「當前訊息」
+- 禁止忽略新指令去延續舊話題
 
 ## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
 1. **先判斷**：這個問題需要查資料嗎？簡單對話/打招呼/閒聊 → 直接回覆，不用查任何東西
