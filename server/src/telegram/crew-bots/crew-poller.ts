@@ -10,6 +10,7 @@ import type { CrewBotConfig } from './crew-config.js';
 import { routeMessage } from './crew-router.js';
 import { crewThink, pushHistory } from './crew-think.js';
 import { triggerPatrolNow } from './crew-patrol.js';
+import { isCoolingDown, diagnose, autoRepair, recordFailure, fullCheckup } from './crew-doctor.js';
 
 const log = createLogger('crew-poller');
 
@@ -151,9 +152,19 @@ async function executeRound(
 
   if (bots.length === 0) return replies;
 
+  // 過濾冷卻中的 bot
+  const activeBots = bots.filter(bot => {
+    if (isCoolingDown(bot.id)) {
+      log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 冷卻中，跳過`);
+      return false;
+    }
+    return true;
+  });
+  if (activeBots.length === 0) return replies;
+
   // 所有 bot 並行思考（不再串行等待，速度提升 N 倍）
   let sendCount = 0;
-  const thinkPromises = bots.map(async (bot) => {
+  const thinkPromises = activeBots.map(async (bot) => {
     try {
       const result = await crewThink(bot, text, senderName);
       const reply = result.reply;
@@ -169,9 +180,19 @@ async function executeRound(
 
         // 轉交偵測：回覆中提到其他 bot → 自動 handoff
         detectAndHandoff(reply, bot, chatId).catch(() => {});
+      } else {
+        // 沒回覆 → 自動診斷修復
+        const diag = diagnose(bot.id);
+        if (diag) {
+          log.warn(`[CrewDoctor] R${round} ${bot.emoji} ${bot.name} 診斷: ${diag.detail}`);
+          autoRepair(diag).catch(() => {});
+        }
       }
     } catch (err) {
       log.error({ err }, `[CrewDispatch] R${round} ${bot.name} 回覆失敗`);
+      recordFailure(bot.id, 'unknown');
+      const diag = diagnose(bot.id);
+      if (diag) autoRepair(diag).catch(() => {});
     }
   });
 

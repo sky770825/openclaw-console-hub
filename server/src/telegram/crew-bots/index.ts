@@ -19,3 +19,11 @@ export function stopCrewBots(): void {
 export { triggerPatrolNow } from './crew-patrol.js';
 export type { CrewBotConfig } from './crew-config.js';
 export { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
+export {
+  fullCheckup,
+  generateHealthReport,
+  sendHealthReport,
+  getAllHealthStatus,
+  resetHealth,
+  diagnoseAll,
+} from './crew-doctor.js';

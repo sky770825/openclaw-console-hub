@@ -3795,6 +3795,32 @@ app.post('/api/crew/heartbeat/off', async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
 });
 
+// ── Crew Doctor — 星群健康檢查 ──
+app.get('/api/crew/health', async (_req, res) => {
+  try {
+    const { getAllHealthStatus, diagnoseAll } = await import('./telegram/crew-bots/crew-doctor.js');
+    const health = getAllHealthStatus();
+    const issues = diagnoseAll();
+    res.json({ ok: true, bots: health, issues });
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
+app.post('/api/crew/health/checkup', async (_req, res) => {
+  try {
+    const { fullCheckup } = await import('./telegram/crew-bots/crew-doctor.js');
+    const issues = await fullCheckup();
+    res.json({ ok: true, issuesFound: issues.length, issues });
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
+app.post('/api/crew/health/reset/:botId', async (req, res) => {
+  try {
+    const { resetHealth } = await import('./telegram/crew-bots/crew-doctor.js');
+    resetHealth(req.params.botId);
+    res.json({ ok: true, message: `${req.params.botId} 健康紀錄已重置` });
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
 // ── Agent Flow — 即時代理狀態 ──
 app.get('/api/agents/status', async (_req, res) => {
   try {
@@ -3975,7 +4001,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.4.99',
+    version: '2.5.0',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

@@ -16,6 +16,7 @@ import { getTaskSnapshot, getSystemStatus, claudeCliCircuitOpen, claudeCliRecord
 import type { CrewBotConfig } from './crew-config.js';
 import { CREW_BOTS } from './crew-config.js';
 import { wsManager } from '../../websocket.js';
+import { recordSuccess, recordFailure, markThinkStart, markThinkEnd, isCoolingDown } from './crew-doctor.js';
 
 const log = createLogger('crew-think');
 
@@ -86,8 +87,16 @@ export async function crewThink(
   senderName: string,
   mode: 'auto' | 'full' = 'auto',
 ): Promise<CrewThinkResult> {
+  // 冷卻中 → 跳過
+  if (isCoolingDown(bot.id)) {
+    log.info(`[CrewThink] ${bot.emoji} ${bot.name} 冷卻中，跳過`);
+    return { reply: null, actionResults: [] };
+  }
+
   // Agent Flow 即時推播：開始思考
   wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'thinking', message: userMessage.slice(0, 80) });
+  const thinkStartMs = Date.now();
+  markThinkStart(bot.id);
 
   // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含小蔡身份，會導致混淆）
   // loadSoulCoreOnce() 已移除：buildCrewPrompt 的 _soulCore 參數被忽略，無需浪費快取讀取
@@ -148,6 +157,8 @@ export async function crewThink(
       : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
     if (!reply) {
       if (step === 0) {
+        recordFailure(bot.id, 'empty_reply');
+        markThinkEnd(bot.id);
         wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
         return { reply: null, actionResults: [] };
       }
@@ -220,6 +231,7 @@ export async function crewThink(
   }
 
   if (!finalReply) {
+    markThinkEnd(bot.id);
     wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
     return { reply: null, actionResults: allActionResults };
   }
@@ -262,6 +274,10 @@ export async function crewThink(
 
   // 低頻觸發 workspace 自動清理（5% 機率 + 24h 節流，非同步不阻塞）
   maybeCleanupWorkspace(bot.id);
+
+  // 紀錄成功 + 結束思考追蹤
+  recordSuccess(bot.id, Date.now() - thinkStartMs);
+  markThinkEnd(bot.id);
 
   // Agent Flow 即時推播：思考完成
   wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
@@ -733,6 +749,7 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
 
     if (!res.ok) {
       log.warn(`[CrewThink] ${bot.name} Gemini ${model} HTTP ${res.status}`);
+      recordFailure(bot.id, 'api_error');
       return null;
     }
 
@@ -752,12 +769,15 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
     }
 
     log.warn(`[CrewThink] ${bot.name} Gemini 回覆為空 finishReason=${finishReason}`);
+    recordFailure(bot.id, 'empty_reply');
     return null;
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
       log.warn(`[CrewThink] ${bot.name} Gemini 超時 (${GEMINI_TIMEOUT_MS / 1000}s)`);
+      recordFailure(bot.id, 'timeout');
     } else {
       log.error({ err }, `[CrewThink] ${bot.name} Gemini API 呼叫失敗`);
+      recordFailure(bot.id, 'api_error');
     }
     return null;
   }
@@ -777,6 +797,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
   // Claude CLI 熔斷：共用小蔡的熔斷器（同一個訂閱）
   if (claudeCliCircuitOpen()) {
     log.info(`[CrewThink] ${bot.name} ⚡ Claude CLI 熔斷中，跳過`);
+    recordFailure(bot.id, 'circuit_break');
     return null;
   }
   if (claudeRunning >= CLAUDE_MAX_CONCURRENT) {
@@ -823,6 +844,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
       const timer = setTimeout(() => {
         child.kill('SIGTERM');
         log.warn(`[CrewThink] ${bot.name} Claude CLI 超時 (${CLAUDE_TIMEOUT_MS / 1000}s)`);
+        recordFailure(bot.id, 'timeout');
         resolve(null);
       }, CLAUDE_TIMEOUT_MS);
 
@@ -844,6 +866,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
       child.on('error', (err) => {
         clearTimeout(timer);
         log.error({ err }, `[CrewThink] ${bot.name} Claude CLI spawn failed`);
+        recordFailure(bot.id, 'api_error');
         resolve(null);
       });
     });
