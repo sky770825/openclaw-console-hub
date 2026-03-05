@@ -1287,13 +1287,13 @@ async function googleEmbed(text: string): Promise<number[] | null> {
 }
 
 const semanticSearchCache = new Map<string, { ts: number; results: unknown[]; output: string }>();
-// 每 5 分鐘清理過期快取
+// 每 60 秒清理過期快取（TTL=10s，定期回收記憶體）
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of semanticSearchCache) {
-    if (now - v.ts > 300_000) semanticSearchCache.delete(k);
+    if (now - v.ts > 60_000) semanticSearchCache.delete(k);
   }
-}, 300_000);
+}, 60_000);
 
 // ── 查詢意圖自動分類 ──
 function classifyQueryIntent(q: string): 'task' | 'code' | 'history' {
@@ -1404,10 +1404,10 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 
   const safeLimit = Math.min(Math.max(1, limit), 10);
 
-  // ── 查詢快取（60 秒內相同 query 直接回傳）──
+  // ── 查詢快取（10 秒內相同 query 直接回傳）──
   const cacheKey = `${query}::${mode}::${safeLimit}`;
   const cached = semanticSearchCache.get(cacheKey);
-  if (cached && (Date.now() - cached.ts) < 60_000) {
+  if (cached && (Date.now() - cached.ts) < 10_000) {
     log.info(`[SemanticSearch] cache hit: "${query}" → ${cached.results.length} results`);
     return { ok: true, output: cached.output };
   }
@@ -1870,6 +1870,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
       if (!error) indexed++;
     }
 
+    semanticSearchCache.clear();
     return { ok: true, output: `已索引 ${fileName} → ${indexed}/${sections.length + 1} chunks (1 summary + ${sections.length} detail, category: ${cat})` };
   } catch (err: any) {
     return { ok: false, output: sanitize(`index_file 失敗: ${err.message}`) };
@@ -1983,6 +1984,8 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
     }
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     log.info(`[ReindexKnowledge] 完成！${filesDone} files, ${totalIndexed}/${totalChunks} chunks, ${elapsed}s`);
+    semanticSearchCache.clear();
+    log.info(`[ReindexKnowledge] 已清空 semanticSearchCache，下次搜尋將取得最新結果`);
   })().catch(err => log.error(`[ReindexKnowledge] 背景執行失敗: ${err.message}`));
 
   return {
