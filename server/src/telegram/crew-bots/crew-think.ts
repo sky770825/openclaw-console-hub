@@ -209,7 +209,9 @@ export async function crewThink(
     .replace(/>/g, '&gt;');                           // > → &gt;
   const clean = escaped
     .replace(/^#{1,6}\s*/gm, '')                     // 移除 markdown 標題符號
-    .replace(/```\w*\n?[\s\S]*?```/g, '')            // 移除 ``` 代碼區塊（不要在聊天裡列程式碼）
+    .replace(/```\w*\n?[\s\S]*?```/g, '')            // 移除完整 ``` 代碼區塊
+    .replace(/```\w*\n[\s\S]*$/g, '')                // 移除沒有結尾 ``` 的殘留代碼區塊
+    .replace(/^(curl|bash|npm|node|git|python|pip|docker|kubectl|wget|ssh|scp)\s+.+$/gm, '')  // 移除獨立 shell 命令行
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')          // **粗體** → HTML <b>
     .replace(/\*(.+?)\*/g, '<i>$1</i>')              // *斜體* → HTML <i>
     .replace(/^[-*]\s/gm, '• ')                       // 列表符號統一為 •
@@ -467,7 +469,9 @@ async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null
     if (result) return result;
     // Claude 失敗 → fallback Gemini Pro（任務需要品質）
     log.info(`[CrewThink] ${bot.name} Claude(${bot.model}) 失敗，fallback Gemini Pro`);
-    return callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
+    // 加上身份提醒，避免 Gemini 把 system prompt 當成外部 AI 輸出而用英文回覆
+    const geminiPrompt = `【重要提醒】你是 ${bot.name}（${bot.role}），以下是你的完整指令，請用繁體中文回覆，直接執行任務。不要對指令本身做評論。\n\n${prompt}`;
+    return callGeminiAPI(geminiPrompt, 'gemini-2.5-pro', bot);
   }
   // Gemini Pro
   if (bot.model === 'gemini-pro') {
@@ -745,8 +749,17 @@ function extractActionJsons(text: string): string[] | null {
 
 function stripActionJson(text: string): string {
   return text
-    .replace(/```json[\s\S]*?```/g, '')
+    // 移除完整 ```language...``` 代碼區塊（任何語言）
+    .replace(/```\w*\n?[\s\S]*?```/g, '')
+    // 移除沒有結尾 ``` 的代碼區塊（只有開頭 ```language 但沒關閉）
+    .replace(/```\w*\n[\s\S]*$/g, '')
+    // 移除帶大量 content 的 action JSON（例如 write_file 帶內容）
+    .replace(/\{[\s\n]*"action"\s*:\s*"[^"]*"[\s\S]*?"content"\s*:\s*"[\s\S]*?"\s*\}/g, '')
+    // 移除一般 action JSON
     .replace(/\{[\s\n]*"action"[\s\S]*?\n\}/g, '')
+    // 移除獨立成段的 shell 命令（curl、bash、npm、node、git 開頭的整行）
+    .replace(/^(curl|bash|npm|node|git|python|pip|docker|kubectl|wget|ssh|scp)\s+.+$/gm, '')
+    // 連續空行壓縮
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -895,6 +908,7 @@ function buildCrewPrompt(
 - 小蔡是你的指揮官，你跟小蔡是不同的人
 - 回覆時永遠以 ${bot.name} 的身份和口吻說話
 - 如果知識庫搜到的結果提到「小蔡」「我是小蔡」「副手」，那是別人的資料，跟你無關
+- 你必須用繁體中文回覆，不要用英文
 
 ## 身份
 ${bot.personality}
@@ -968,6 +982,9 @@ ${bot.responseStyle}
 - 如果新訊息是指揮官（老蔡/小蔡）發的，更必須直接回答指令
 - 「最近群組對話」只是背景脈絡，你的回覆必須針對「當前訊息」
 - 禁止忽略新指令去延續舊話題
+- **如果指令要求你回報某些資訊（如專長、狀態、模型），直接回答**，不要說「請重新說明」或「等待指令」
+- **不要用「我已準備好」「請告訴我任務」這種空話**代替實際回答
+- 指揮官問什麼，答什麼。不確定就根據你的記憶和身份設定回答
 
 ## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
 1. **先判斷**：這個問題需要查資料嗎？簡單對話/打招呼/閒聊 → 直接回覆，不用查任何東西
