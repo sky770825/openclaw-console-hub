@@ -17,9 +17,9 @@ import { CREW_BOTS } from './crew-config.js';
 
 const log = createLogger('crew-think');
 
-const CLAUDE_TIMEOUT_MS = 90_000;
+const CLAUDE_TIMEOUT_MS = 600_000;      // 10 分鐘，解決複雜任務超時問題
 const GEMINI_TIMEOUT_MS = 45_000;       // 加大 timeout 配合 4096 token 輸出
-const MAX_CHAIN_STEPS = 6;
+const MAX_CHAIN_STEPS = 10;             // 增加思考鏈深度，讓 bot 能做更複雜的多步任務
 const MAX_ACTION_OUTPUT = 4000;
 
 // ── 合法 action 白名單（防止幻覺 action）──
@@ -47,7 +47,7 @@ export interface CrewHistoryEntry {
 
 /** 共享群組對話歷史 */
 export const groupHistory: CrewHistoryEntry[] = [];
-const MAX_HISTORY = 50;
+const MAX_HISTORY = 200;                // 延長短期記憶，讓 bot 能回溯更多對話
 
 export function pushHistory(entry: CrewHistoryEntry): void {
   groupHistory.push(entry);
