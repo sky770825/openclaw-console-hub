@@ -27,3 +27,9 @@ export {
   resetHealth,
   diagnoseAll,
 } from './crew-doctor.js';
+export {
+  scanInbox,
+  scanAllInboxes,
+  getInboxStats,
+  getInboxContext,
+} from './crew-inbox.js';

@@ -3821,6 +3821,24 @@ app.post('/api/crew/health/reset/:botId', async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
 });
 
+// ── Crew Inbox 協作 ──
+app.get('/api/crew/inbox', async (_req, res) => {
+  try {
+    const { scanAllInboxes, getInboxStats } = await import('./telegram/crew-bots/crew-inbox.js');
+    const inboxes = scanAllInboxes();
+    const stats = getInboxStats();
+    // 簡化回傳：只回傳摘要，不含完整內容
+    const summary: Record<string, { total: number; files: Array<{ fileName: string; type: string; fromBot: string; priority: number }> }> = {};
+    for (const [botId, items] of Object.entries(inboxes)) {
+      summary[botId] = {
+        total: items.length,
+        files: items.map(f => ({ fileName: f.fileName, type: f.type, fromBot: f.fromBot, priority: f.priority })),
+      };
+    }
+    res.json({ ok: true, inboxes: summary, stats });
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
 // ── Agent Flow — 即時代理狀態 ──
 app.get('/api/agents/status', async (_req, res) => {
   try {
@@ -4001,7 +4019,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.5.1',
+    version: '2.5.2',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

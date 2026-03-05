@@ -17,6 +17,7 @@ import type { CrewBotConfig } from './crew-config.js';
 import { CREW_BOTS } from './crew-config.js';
 import { wsManager } from '../../websocket.js';
 import { recordSuccess, recordFailure, markThinkStart, markThinkEnd, isCoolingDown } from './crew-doctor.js';
+import { getInboxContext } from './crew-inbox.js';
 
 const log = createLogger('crew-think');
 
@@ -1055,6 +1056,12 @@ function loadBotMemory(botId: string, userMessage: string = ''): string {
       if (relevantPlaybook) parts.push(relevantPlaybook);
     }
   } catch { /* no playbook */ }
+
+  // Inbox 待處理摘要 — 讓 bot 知道自己有待辦
+  try {
+    const inboxCtx = getInboxContext(botId);
+    if (inboxCtx) parts.push(inboxCtx);
+  } catch { /* inbox scan failed, not critical */ }
 
   return parts.join('\n\n---\n\n');
 }

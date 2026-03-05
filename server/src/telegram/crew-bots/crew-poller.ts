@@ -11,6 +11,7 @@ import { routeMessage } from './crew-router.js';
 import { crewThink, pushHistory } from './crew-think.js';
 import { triggerPatrolNow } from './crew-patrol.js';
 import { isCoolingDown, diagnose, autoRepair, recordFailure, fullCheckup } from './crew-doctor.js';
+import { scanInbox, archiveInboxFile, type InboxFile } from './crew-inbox.js';
 
 const log = createLogger('crew-poller');
 
@@ -336,12 +337,25 @@ export function stopCrewPolling(): void {
   log.info('[CrewPoller] 所有 crew bots 已停止');
 }
 
+// ── Inbox 掃描間隔（不需要每 6 秒掃，30 秒一次即可）──
+const INBOX_SCAN_INTERVAL_MS = 30_000;
+const lastInboxScan = new Map<string, number>();
+let inboxProcessing = new Set<string>();  // 防並發
+
 /**
  * 單一 bot 的 polling 迴圈
  */
 function botLoop(bot: CrewBotConfig): void {
   const state = botStates.get(bot.id);
   if (!state?.running) return;
+
+  // ── 優先：Inbox 掃描（每 30 秒一次）──
+  const now = Date.now();
+  const lastScan = lastInboxScan.get(bot.id) || 0;
+  if (now - lastScan >= INBOX_SCAN_INTERVAL_MS && !inboxProcessing.has(bot.id) && !isCoolingDown(bot.id)) {
+    lastInboxScan.set(bot.id, now);
+    processInbox(bot).catch(err => log.error({ err }, `[CrewInbox] ${bot.name} inbox 處理失敗`));
+  }
 
   pollBot(bot, state)
     .catch(err => log.error({ err }, `[CrewPoller] ${bot.name} poll error`))
@@ -354,6 +368,96 @@ function botLoop(bot: CrewBotConfig): void {
       }
     });
 }
+
+/**
+ * 處理 bot 的 inbox 檔案：掃描 → crewThink → 發群組 → 歸檔
+ * 每次最多處理 2 個（避免阻塞 Telegram polling 太久）
+ */
+async function processInbox(bot: CrewBotConfig): Promise<void> {
+  if (!bot.token || !CREW_GROUP_CHAT_ID) return;
+
+  const items = scanInbox(bot.id);
+  if (items.length === 0) return;
+
+  inboxProcessing.add(bot.id);
+  const chatId = Number(CREW_GROUP_CHAT_ID);
+
+  try {
+    // 最多處理前 2 個（P0/P1 優先）
+    const toProcess = items.slice(0, 2);
+    log.info(`[CrewInbox] ${bot.emoji} ${bot.name} 發現 ${items.length} 個 inbox，處理前 ${toProcess.length} 個`);
+
+    for (const item of toProcess) {
+      try {
+        // 組裝 prompt：告訴 bot 這是 inbox 任務
+        const inboxPrompt = [
+          `📬 你收到一個 inbox 任務（來自 ${item.fromBot}，${TYPE_LABELS[item.type] || '未知類型'}，P${item.priority}）`,
+          '',
+          `檔案：${item.fileName}`,
+          '內容：',
+          item.content.length > 2000 ? item.content.slice(0, 2000) + '\n...(截斷)' : item.content,
+          '',
+          '請根據內容執行對應工作，完成後給出簡短結論。',
+        ].join('\n');
+
+        const result = await crewThink(bot, inboxPrompt, item.fromBot, 'full');
+        const { reply, actionResults } = result;
+
+        // 有回覆 → 發群組通知
+        if (reply && reply.length > 5) {
+          const msgLines = [
+            `${bot.emoji} <b>${bot.name}</b>（處理 inbox）`,
+            `📬 來自 <b>${item.fromBot}</b> 的${TYPE_LABELS[item.type] || '訊息'}`,
+            '',
+            ...(actionResults.length > 0 ? [
+              `<b>📋 執行動作 (${actionResults.length})</b>`,
+              ...actionResults.slice(0, 3).map(ar => {
+                const t = ar.length > 200 ? ar.slice(0, 200) + '...' : ar;
+                return `  • ${t}`;
+              }),
+              '',
+            ] : []),
+            reply,
+          ];
+          const msg = msgLines.join('\n');
+          const truncated = msg.length > 3900 ? msg.slice(0, 3900) + '\n...(截斷)' : msg;
+
+          await sendTelegramMessageToChat(chatId, truncated, {
+            token: bot.token,
+            silent: true,
+            parseMode: 'HTML',
+          });
+
+          pushHistory({
+            role: 'model',
+            text: `[inbox→${item.fromBot}] ${reply}`,
+            fromName: bot.name,
+            timestamp: Date.now(),
+          });
+
+          log.info(`[CrewInbox] ${bot.emoji} ${bot.name} 處理完 ${item.fileName}，已回報群組`);
+        }
+
+        // 歸檔
+        archiveInboxFile(item);
+
+      } catch (err) {
+        log.error({ err }, `[CrewInbox] ${bot.name} 處理 ${item.fileName} 失敗`);
+        // 失敗不歸檔，下次重試
+      }
+    }
+  } finally {
+    inboxProcessing.delete(bot.id);
+  }
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  alert: '告警',
+  task: '任務',
+  data: '數據',
+  req: '請求',
+  report: '報告',
+};
 
 /**
  * 單次 poll：getUpdates → 路由 → 思考 → 回覆
