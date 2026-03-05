@@ -226,13 +226,13 @@ export function loadAwakeningContext(userMessage: string): string {
   return chunks.length ? '\n\n## 覺醒記憶\n' + chunks.join('\n\n') : '';
 }
 
-// 靈魂核心快取（每小時刷新）
+// 靈魂核心快取（5 分鐘刷新 — session 記憶和互動日誌變化快，1 小時太舊）
 let soulCoreCache = '';
 let soulCoreCacheTime = 0;
 
 export function loadSoulCoreOnce(): string {
   const now = Date.now();
-  if (!soulCoreCache || now - soulCoreCacheTime > 3600000) {
+  if (!soulCoreCache || now - soulCoreCacheTime > 300_000) {
     soulCoreCache = loadSoulCore();
     soulCoreCacheTime = now;
     log.info(`[XiaocaiAI] 靈魂核心已載入 ~${soulCoreCache.length} 字`);
