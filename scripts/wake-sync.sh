@@ -82,7 +82,8 @@ PY
 fi
 
 # ── 7. API 額度快速檢測 ──
-GOOGLE_KEY="AIzaSyCRZMBAE1mODvTYV0fSO6z8jAqyxx6_Njk"
+# Key 從 .env 讀取，不要硬寫（避免 push 後被 Google 標記 leaked）
+GOOGLE_KEY="$(grep '^GOOGLE_API_KEY=' /Users/caijunchang/openclaw任務面版設計/server/.env 2>/dev/null | cut -d= -f2)"
 check_model() {
   local model="$1"
   local code

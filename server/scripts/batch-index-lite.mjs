@@ -9,7 +9,7 @@ import { createHash } from 'crypto';
 
 const DIR = process.argv[2] || '/Users/caijunchang/openclaw任務面版設計/cookbook';
 const CATEGORY = process.argv[3] || 'cookbook';
-const GOOGLE_KEY = process.env.GOOGLE_API_KEY || 'AIzaSyCRZMBAE1mODvTYV0fSO6z8jAqyxx6_Njk';
+const GOOGLE_KEY = process.env.GOOGLE_API_KEY || 'AIzaSyDGHy3xWJ91GaSwB9Si6rsUWdA58vJoX6w';
 const SB_URL = 'https://vbejswywswaeyfasnwjq.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiZWpzd3l3c3dhZXlmYXNud2pxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDYxOTg4NywiZXhwIjoyMDg2MTk1ODg3fQ.VHwlh1LZ77B_IIL9tXi3UM-yJKh7LvZMirMH6wfqh_A';
 
