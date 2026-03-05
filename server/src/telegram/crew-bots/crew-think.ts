@@ -532,6 +532,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
           delete e.CLAUDECODE;
           delete e.CLAUDE_CODE;
           delete e.CLAUDE_SKIP_ANALYTICS;
+          delete e.ANTHROPIC_API_KEY;
           return e;
         })(),
         cwd: process.env.HOME || '/tmp',

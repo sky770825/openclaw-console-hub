@@ -513,7 +513,7 @@ export async function xiaocaiThink(
               resolve(reply);
             } else {
               claudeCliRecordFail();
-              log.warn(`[XiaocaiAI] Claude CLI ${claudeModel} exitCode=${code} stderr=${stderr.slice(0, 200)}`);
+              log.warn(`[XiaocaiAI] Claude CLI ${claudeModel} exitCode=${code} stderr=${stderr.slice(0, 200)} stdout=${stdout.slice(0, 300)}`);
               resolve(null);
             }
           });
