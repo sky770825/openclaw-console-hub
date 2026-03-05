@@ -31,9 +31,11 @@ const VALID_ACTIONS = new Set([
   'web_browse', 'proxy_fetch', 'delegate_agents', 'mkdir', 'move_file',
 ]);
 
-// ── Claude 併發鎖 ──
+// ── Claude 併發鎖 + 全局冷卻 ──
 let claudeRunning = 0;
 const CLAUDE_MAX_CONCURRENT = 1;
+let lastClaudeCallAt = 0;
+const CLAUDE_GLOBAL_COOLDOWN_MS = 15_000;  // crew bots 共用 15 秒冷卻
 
 // ── Gemini API Key ──
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() || '';
@@ -119,7 +121,7 @@ export async function crewThink(
 
     const reply = useFullModel
       ? await callAI(input, bot)
-      : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
+      : await callGeminiAPI(input, 'gemini-2.5-pro', bot);
     if (!reply) {
       if (step === 0) return { reply: null, actionResults: [] };
       break;
@@ -496,6 +498,12 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
  * 呼叫 Claude Code CLI (Sonnet 4.6) — 有併發鎖
  */
 async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string | null> {
+  // 15 秒全局冷卻（crew bots 共用，避免打滿 Claude 訂閱額度）
+  const sinceLastCall = Date.now() - lastClaudeCallAt;
+  if (lastClaudeCallAt > 0 && sinceLastCall < CLAUDE_GLOBAL_COOLDOWN_MS) {
+    log.info(`[CrewThink] ${bot.name} Claude CLI 冷卻中（${Math.ceil((CLAUDE_GLOBAL_COOLDOWN_MS - sinceLastCall) / 1000)}s），用 Gemini`);
+    return null;
+  }
   // 併發鎖
   // Claude CLI 熔斷：共用小蔡的熔斷器（同一個訂閱）
   if (claudeCliCircuitOpen()) {
@@ -554,6 +562,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
         const reply = stdout.trim();
         if (code === 0 && reply) {
           claudeCliRecordSuccess();
+          lastClaudeCallAt = Date.now();  // 更新全局冷卻時間戳
           log.info(`[CrewThink] ${bot.emoji} ${bot.name} Claude OK, replyLen=${reply.length}`);
           resolve(reply);
         } else {
