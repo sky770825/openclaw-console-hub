@@ -73,13 +73,34 @@ const logUnauthorizedEvent = async (
   }
 };
 
-// 發送警報通知
+// 發送警報通知（Telegram Bot API）
 const sendAlert = async (eventType: string, origin: string): Promise<void> => {
-  // TODO: 整合 n8n 或 Telegram 發送警報
   log.warn({ eventType, origin }, '🔥 FIREWALL ALERT: Unauthorized postMessage blocked');
-  
-  // 這裡可以擴展為實際的警報發送邏輯
-  // 例如：呼叫 n8n webhook 或發送 Telegram 通知
+
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.OWNER_CHAT_ID;
+  if (!token || !chatId) {
+    log.warn('TELEGRAM_BOT_TOKEN or OWNER_CHAT_ID not set, skipping Telegram alert');
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+  const text = [
+    `🔥 <b>FIREWALL ALERT</b>`,
+    ``,
+    `<b>Event:</b> <code>${eventType}</code>`,
+    `<b>Origin:</b> <code>${origin}</code>`,
+    `<b>Time:</b> ${timestamp}`,
+  ].join('\n');
+
+  // Fire and forget — don't block the request
+  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+  }).catch((err) => {
+    log.error({ err }, 'Failed to send Telegram firewall alert');
+  });
 };
 
 // 防火牆中介層主函數

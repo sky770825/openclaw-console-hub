@@ -121,17 +121,8 @@ PENDING_COUNT=$(ls -1 "$HOME/.openclaw/workspace/review/pending/"*.md 2>/dev/nul
 if [[ "$PENDING_COUNT" -gt 0 ]]; then
   NEUXA_REVIEW_PENDING="⚠️ $PENDING_COUNT 份待審文件在 review/pending/"
 fi
-# gateway 狀態
-GW_PID=$(pgrep -f "openclaw-gateway" 2>/dev/null || echo "")
-GW_STATUS="❌ 離線"
-if [[ -n "$GW_PID" ]]; then
-  GW_STATUS="✅ 運行中 (PID $GW_PID)"
-  # 檢查 429 卡死
-  RECENT_429=$(tail -50 "$HOME/.openclaw/logs/gateway.err.log" 2>/dev/null | grep -c "429" || echo 0)
-  if [[ "$RECENT_429" -ge 5 ]]; then
-    GW_STATUS="⚠️ 疑似 429 卡死 (PID $GW_PID, ${RECENT_429}x 429 errors)"
-  fi
-fi
+# gateway 狀態（已停用，bot 功能由 Server 3011 負責）
+GW_STATUS="⏭️ 未啟用（由 Server 負責）"
 
 # ── 9. git 最新 commit ──
 GIT_LOG=""

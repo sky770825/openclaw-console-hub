@@ -2,6 +2,8 @@
  * 批次向量索引工具
  * 讀取目錄下所有 .md 檔案，切 chunk → embed (Google API) → upsert Supabase openclaw_embeddings
  * 與 action-handlers.ts 的 handleIndexFile 使用相同邏輯，但支援整個目錄批次處理
+ *
+ * v2 切分策略：300-500 token chunks + 50 token overlap + 父標題上下文
  */
 
 import fs from 'node:fs';
@@ -12,6 +14,11 @@ import { createLogger } from '../logger.js';
 const log = createLogger('batch-index');
 
 const NEUXA_WORKSPACE = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
+
+// ── 切分常數 ──
+const TARGET_CHUNK_CHARS = 1600;   // ~400 token（1 token ≈ 4 chars 中英混合）
+const MAX_CHUNK_CHARS = 2000;      // ~500 token 上限
+const OVERLAP_CHARS = 200;         // ~50 token overlap
 
 // ── 結果型別 ──
 
@@ -110,6 +117,76 @@ function inferZone(cat: string): string {
 
 const SOUL_FILES = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md'];
 
+// ── 解析 YAML frontmatter 的 tags ──
+
+function parseFrontmatterTags(content: string): string[] {
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmMatch) return [];
+  const tagsMatch = fmMatch[1].match(/tags:\s*\[([^\]]+)\]/);
+  if (!tagsMatch) return [];
+  return tagsMatch[1].split(',').map((t) => t.trim().replace(/['"]/g, ''));
+}
+
+// ── Token-based 切分（300-500 token chunks + overlap）──
+
+interface Chunk {
+  text: string;
+  sectionTitle: string;
+}
+
+function chunkDocument(content: string, docTitle: string): Chunk[] {
+  // 先按 ## 切出 sections（保留結構感）
+  const sections = content.split(/(?=^## )/m).filter((s) => s.trim().length > 30);
+  const chunks: Chunk[] = [];
+
+  for (const section of sections) {
+    const secTitleMatch = section.match(/^## (.+)/m);
+    const secTitle = secTitleMatch ? secTitleMatch[1].replace(/#/g, '').trim() : '';
+    const secBody = section.trim();
+
+    if (secBody.length <= MAX_CHUNK_CHARS) {
+      // section 夠短，整塊作為一個 chunk
+      chunks.push({ text: secBody, sectionTitle: secTitle });
+    } else {
+      // section 太長，按 TARGET_CHUNK_CHARS 切，帶 overlap
+      let start = 0;
+      let subIdx = 0;
+      while (start < secBody.length) {
+        let end = start + TARGET_CHUNK_CHARS;
+
+        // 找最近的段落邊界（換行+換行、句號換行）避免切斷句子
+        if (end < secBody.length) {
+          const boundary = secBody.lastIndexOf('\n\n', end);
+          if (boundary > start + TARGET_CHUNK_CHARS * 0.5) {
+            end = boundary;
+          } else {
+            const lineBoundary = secBody.lastIndexOf('\n', end);
+            if (lineBoundary > start + TARGET_CHUNK_CHARS * 0.3) {
+              end = lineBoundary;
+            }
+          }
+        } else {
+          end = secBody.length;
+        }
+
+        const chunkText = secBody.slice(start, end).trim();
+        if (chunkText.length > 30) {
+          const subTitle = subIdx === 0 ? secTitle : `${secTitle} (${subIdx + 1})`;
+          chunks.push({ text: chunkText, sectionTitle: subTitle });
+        }
+
+        // 下一個 chunk 起點 = 當前結尾 - overlap
+        start = end - OVERLAP_CHARS;
+        if (start < 0) start = 0;
+        if (start >= secBody.length) break;
+        subIdx++;
+      }
+    }
+  }
+
+  return chunks;
+}
+
 // ── 單檔索引（內部用）──
 
 async function indexSingleFile(
@@ -123,64 +200,68 @@ async function indexSingleFile(
   const relPath = path.relative(NEUXA_WORKSPACE, filePath);
   const cat = category || guessCategoryFromPath(relPath);
 
-  const sections = content.split(/(?=^## )/m).filter((s) => s.trim().length > 50);
-  if (sections.length === 0) {
-    log.warn(`[BatchIndex] 跳過 ${fileName}：內容太短或沒有 ## 章節`);
+  const titleMatch = content.match(/^# (.+)/m);
+  const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
+
+  // 解析 frontmatter tags
+  const tags = parseFrontmatterTags(content);
+
+  // v2 切分：token-based + overlap
+  const chunks = chunkDocument(content, docTitle);
+  if (chunks.length === 0) {
+    log.warn(`[BatchIndex] 跳過 ${fileName}：內容太短`);
     return { ok: false, fileName, chunks: 0, indexed: 0 };
   }
 
   // 去重：索引前先刪除同檔案的舊 chunks
   await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
 
-  const titleMatch = content.match(/^# (.+)/m);
-  const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
   const contentType = inferContentType(cat, fileName);
   const zone = inferZone(cat);
   const isPinned = SOUL_FILES.includes(fileName);
 
-  let indexed = 0;
-
   // 用 limiter 控制 embedding 並行度
-  const tasks = sections.map((section, i) => {
+  const tasks = chunks.map((chunk, i) => {
     return limiter(async () => {
-      const sec = section.trim();
-      const secTitleMatch = sec.match(/^## (.+)/m);
-      const secTitle = secTitleMatch ? secTitleMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
-
-      // 上下文充實：doc 標題 + 分類 + section 標題 + 內容（800 chars）
-      const embedText = `[${docTitle}] [${cat}] [${secTitle}] ${sec.slice(0, 800)}`;
+      // 上下文充實：每個 chunk 開頭加父文件標題 + 分類 + section 標題
+      const contextPrefix = `[${docTitle}] [${cat}] [${chunk.sectionTitle}]`;
+      const embedText = `${contextPrefix} ${chunk.text.slice(0, 1200)}`;
       const vector = await googleEmbed(embedText);
       if (!vector) {
         log.warn(`[BatchIndex] embedding 失敗: ${fileName} chunk-${i}`);
         return false;
       }
 
-      const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
+      const hash = crypto.createHash('md5').update(`${relPath}:v2:${i}`).digest('hex');
       const pointId = parseInt(hash.slice(0, 15), 16);
 
-      const { error } = await sb.from('openclaw_embeddings').upsert(
-        {
-          id: pointId,
-          doc_title: docTitle,
-          section_title: secTitle,
-          content: sec,
-          content_preview: sec.slice(0, 200),
-          file_path: relPath,
-          file_name: fileName,
-          category: cat,
-          chunk_index: i,
-          chunk_total: sections.length,
-          size: sec.length,
-          date: new Date().toISOString().split('T')[0],
-          embedding: JSON.stringify(vector),
-          status: 'active',
-          content_type: contentType,
-          zone,
-          is_pinned: isPinned,
-          indexed_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' },
-      );
+      const row: Record<string, unknown> = {
+        id: pointId,
+        doc_title: docTitle,
+        section_title: chunk.sectionTitle,
+        content: chunk.text,
+        content_preview: chunk.text.slice(0, 200),
+        file_path: relPath,
+        file_name: fileName,
+        category: cat,
+        chunk_index: i,
+        chunk_total: chunks.length,
+        size: chunk.text.length,
+        date: new Date().toISOString().split('T')[0],
+        embedding: JSON.stringify(vector),
+        status: 'active',
+        content_type: contentType,
+        zone,
+        is_pinned: isPinned,
+        indexed_at: new Date().toISOString(),
+      };
+
+      // tags 欄位（如果 Supabase 表有此欄位則寫入）
+      if (tags.length > 0) {
+        row.tags = tags;
+      }
+
+      const { error } = await sb.from('openclaw_embeddings').upsert(row, { onConflict: 'id' });
 
       if (error) {
         log.warn(`[BatchIndex] upsert 失敗: ${fileName} chunk-${i}: ${error.message}`);
@@ -191,10 +272,10 @@ async function indexSingleFile(
   });
 
   const results = await Promise.all(tasks);
-  indexed = results.filter(Boolean).length;
+  const indexed = results.filter(Boolean).length;
 
-  log.info(`[BatchIndex] ${fileName} → ${indexed}/${sections.length} chunks (cat: ${cat})`);
-  return { ok: true, fileName, chunks: sections.length, indexed };
+  log.info(`[BatchIndex] ${fileName} → ${indexed}/${chunks.length} chunks (cat: ${cat}, tags: ${tags.length})`);
+  return { ok: true, fileName, chunks: chunks.length, indexed };
 }
 
 // ── 批次索引主函式 ──

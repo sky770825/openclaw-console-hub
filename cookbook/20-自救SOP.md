@@ -1,3 +1,9 @@
+---
+tags: [self-rescue, SOP, 自救, 錯誤, 恢復, 故障, 修復, 對症下藥]
+date: 2026-03-05
+category: cookbook
+---
+
 # 20 — NEUXA 自救 SOP
 
 > 出錯了不要慌，不要等老蔡。先自己修，修不了再報告。

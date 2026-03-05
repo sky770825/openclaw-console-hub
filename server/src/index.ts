@@ -43,6 +43,7 @@ import {
 } from './openclawMapper.js';
 import { validateBody, validateParams, validateQuery } from './middlewares/validate.js';
 import { authMiddleware } from './middlewares/auth.js';
+import { auditMiddleware } from './middlewares/audit.js';
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -505,6 +506,7 @@ app.post('/internal/notify', async (req, res) => {
 
 // 使用新的认证中间件
 app.use('/api', authMiddleware);
+app.use('/api', auditMiddleware);
 
 // 挂载路由模块
 app.use('/api/tasks', tasksRouter);
@@ -3931,7 +3933,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.4.75',
+    version: '2.4.76',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

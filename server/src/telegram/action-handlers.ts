@@ -10,6 +10,7 @@ import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
 import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS } from './security.js';
+import { recordModelUsage } from '../openclawSupabase.js';
 
 const log = createLogger('telegram');
 
@@ -312,6 +313,16 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
         syntaxNote = `\n❌ 語法錯誤！請修正後重寫：${msg.split('\n').slice(0, 3).join('\n')}`;
       }
     }
+    // ── Auto-index: cookbook/knowledge 寫入後自動索引 ──
+    if (resolved.includes('/cookbook/') || resolved.includes('/knowledge/')) {
+      const relPath = resolved.replace(/.*\/(cookbook|knowledge)\//, '$1/');
+      handleIndexFile(resolved, resolved.includes('/cookbook/') ? 'cookbook' : 'knowledge')
+        .then(r => {
+          if (r.ok) log.info(`[AutoIndex] ${relPath} 已自動索引`);
+        })
+        .catch(() => {/* ignore index errors */});
+    }
+
     return { ok: true, output: `已寫入 ${resolved} (${content.length} 字)${suffix}${syntaxNote}` };
   } catch (e) {
     return { ok: false, output: `寫入失敗: ${(e as Error).message}` };
@@ -1397,6 +1408,20 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
   if (processedQuery.length < 2) processedQuery = query.trim();
   const expandedQuery = expandQueryWithSynonyms(processedQuery);
 
+  // ── Query Rewrite: 提取精確關鍵字 ──
+  const extractedKeywords: string[] = [];
+  // 提取英文技術詞彙（全大寫或 camelCase 或帶 - 的）
+  const techTerms = expandedQuery.match(/\b[A-Z][A-Za-z0-9-]{2,}\b/g) || [];
+  extractedKeywords.push(...techTerms);
+  // 提取中文關鍵名詞（2-6 字的中文連續字符）
+  const cnTerms = expandedQuery.match(/[\u4e00-\u9fff]{2,6}/g) || [];
+  extractedKeywords.push(...cnTerms);
+  // 提取被引號包圍的精確詞
+  const quotedTerms = expandedQuery.match(/["']([^"']+)["']/g)?.map(t => t.replace(/["']/g, '')) || [];
+  extractedKeywords.push(...quotedTerms);
+  // 去重
+  const uniqueKeywords = [...new Set(extractedKeywords)];
+
   // 2. 意圖自動分類（mode 未指定時自動偵測）
   const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : classifyQueryIntent(query);
 
@@ -1507,6 +1532,22 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
     }
 
     const allMerged = Array.from(mergedMap.values());
+
+    // ── 精確關鍵字加權（Query Rewrite 提取的）──
+    if (uniqueKeywords.length > 0) {
+      for (const r of allMerged) {
+        let kwBoost = 0;
+        for (const kw of uniqueKeywords) {
+          if (r.content?.includes(kw) || r.doc_title?.includes(kw) || r.section_title?.includes(kw)) {
+            kwBoost += 0.3; // 精確命中加分
+          }
+        }
+        if (kwBoost > 0) {
+          r._keywordScore = Math.min(1, (r._keywordScore || 0) + kwBoost);
+          r._hybridScore = VECTOR_WEIGHT * (r._vectorScore || 0) + KEYWORD_WEIGHT * r._keywordScore;
+        }
+      }
+    }
 
     // 如果向量和全文都沒有結果
     if (allMerged.length === 0) {
@@ -1672,7 +1713,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
     const hybridNote = textSearchUsed ? `，混合搜尋：向量${vectorCount}+文字${textCount}+雙命中${bothCount}` : '';
     const layerNote = enrichedDetailPaths.size > 0 ? `，summary定位${enrichedDetailPaths.size}份→補強${enrichCount}條` : '';
     const dedupNote = totalRaw > results.length ? `（去重前 ${totalRaw} 筆${hybridNote}${layerNote}）` : (layerNote ? `（${layerNote.slice(1)}）` : '');
-    log.info(`[HybridSearch] query="${query}" expanded="${expandedQuery.slice(0, 80)}" mode=${safeMode} keywords=[${searchKeywords.join(',')}] → ${results.length} results${dedupNote} (top vec: ${(topVecScore * 100).toFixed(0)}%, hybrid: ${textSearchUsed}, summaryHits: ${summaryHits.length}, enriched: ${enrichedDetails.length}, top rank: ${((results[0]?._score || 0) * 100).toFixed(0)}%)`);
+    log.info(`[HybridSearch] query="${query}" expanded="${expandedQuery.slice(0, 80)}" mode=${safeMode} keywords=[${searchKeywords.join(',')}] rewrite=[${uniqueKeywords.join(',')}] → ${results.length} results${dedupNote} (top vec: ${(topVecScore * 100).toFixed(0)}%, hybrid: ${textSearchUsed}, summaryHits: ${summaryHits.length}, enriched: ${enrichedDetails.length}, top rank: ${((results[0]?._score || 0) * 100).toFixed(0)}%)`);
     const outputText = `🔍 「${query}」相關知識（${results.length} 筆${dedupNote}，${safeMode} 模式）：\n\n${lines.join('\n\n')}`;
 
     // 存入快取
@@ -3179,6 +3220,13 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     }
     default:
       result = { ok: false, output: `未知 action: ${type}` };
+  }
+
+  // Record model usage for AI-related actions (fire and forget)
+  if (result.ok && (type === 'ask_ai' || type === 'delegate_agents')) {
+    const model = action.model || (type === 'delegate_agents' ? 'delegate' : 'unknown');
+    const tokensEstimate = (action.prompt || '').length + (action.context || '').length + (result.output || '').length;
+    recordModelUsage(model, tokensEstimate, 0, type).catch(() => {});
   }
 
   // 成功时追加 chain hint，引导小蔡连续行动

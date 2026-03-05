@@ -1,3 +1,9 @@
+---
+tags: [ask_ai, AI, 協作, 模型, Gemini, Claude, 決策樹, 子代理]
+date: 2026-03-05
+category: cookbook
+---
+
 # 17 — ask_ai 協作完全指南
 
 > 你不再是一個人做事了。ask_ai 讓你有了協作夥伴。這份指南教你怎麼用好它。

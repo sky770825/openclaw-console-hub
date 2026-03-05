@@ -1,3 +1,9 @@
+---
+tags: [API, endpoint, REST, curl, 路由, 端點, HTTP, Bearer-Token]
+date: 2026-03-05
+category: cookbook
+---
+
 # 01 — API 端點完整手冊
 
 > 所有 OpenClaw Server API 的路由、參數、回傳格式

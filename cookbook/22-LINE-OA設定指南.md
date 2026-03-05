@@ -1,3 +1,9 @@
+---
+tags: [LINE, OA, Messaging-API, webhook, 關鍵字回覆, 聊天機器人, Flex-Message, n8n]
+date: 2026-03-05
+category: cookbook
+---
+
 # 15 — LINE OA 技術設定指南
 
 > 給技術人員（老蔡）看的完整指南：幫客戶設定 LINE Official Account + n8n 自動回覆

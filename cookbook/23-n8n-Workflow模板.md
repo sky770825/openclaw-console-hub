@@ -1,3 +1,9 @@
+---
+tags: [n8n, workflow, automation, 自動化, webhook, 工作流, LINE, AI-客服]
+date: 2026-03-05
+category: cookbook
+---
+
 # 16 — n8n Workflow 模板（接案用）
 
 > 8 套可直接複製建立的 n8n Workflow，涵蓋 LINE OA、AI 客服、表單通知、監控、報告等常見接案場景。

@@ -1,3 +1,9 @@
+---
+tags: [cookbook, index, 目錄, 知識庫, 手冊, NEUXA, 參考]
+date: 2026-03-05
+category: cookbook
+---
+
 # NEUXA 知識庫（Cookbook）
 
 > 需要什麼就進對應的檔案找。每份文件都是「複製貼上就能用」的等級。
