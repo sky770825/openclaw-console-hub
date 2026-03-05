@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../../logger.js';
 import { executeNEUXAAction } from '../action-handlers.js';
-import { loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus, claudeCliCircuitOpen, claudeCliRecordFail, claudeCliRecordSuccess } from '../xiaocai-think.js';
+import { getTaskSnapshot, getSystemStatus, claudeCliCircuitOpen, claudeCliRecordFail, claudeCliRecordSuccess } from '../xiaocai-think.js';
 import type { CrewBotConfig } from './crew-config.js';
 import { CREW_BOTS } from './crew-config.js';
 
@@ -71,8 +71,7 @@ export async function crewThink(
   mode: 'auto' | 'full' = 'auto',
 ): Promise<CrewThinkResult> {
   // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含小蔡身份，會導致混淆）
-  const soulCore = loadSoulCoreOnce(); // 傳給 buildCrewPrompt 但被 _soulCore 忽略
-  // const awakening = loadAwakeningContext(userMessage); // ⚠️ 已移除：含大量小蔡第一人稱內容
+  // loadSoulCoreOnce() 已移除：buildCrewPrompt 的 _soulCore 參數被忽略，無需浪費快取讀取
 
   // 即時狀態（所有 bot 共享，不重複打 API）
   const [sysStatus, taskSnap] = await Promise.all([
@@ -83,7 +82,7 @@ export async function crewThink(
   // 讀取 bot 個人記憶（根據訊息內容只注入相關情境段落）
   const botMemory = loadBotMemory(bot.id, userMessage);
 
-  const systemPrompt = buildCrewPrompt(bot, senderName, soulCore, '', sysStatus, taskSnap, botMemory);
+  const systemPrompt = buildCrewPrompt(bot, senderName, '', '', sysStatus, taskSnap, botMemory);
   const MAX_HISTORY_CHARS = 3000;
   const recentEntries = groupHistory.slice(-15).map(h => {
     const name = h.fromName || (h.role === 'user' ? '用戶' : 'bot');

@@ -1287,13 +1287,13 @@ async function googleEmbed(text: string): Promise<number[] | null> {
 }
 
 const semanticSearchCache = new Map<string, { ts: number; results: unknown[]; output: string }>();
-// 每 60 秒清理過期快取（TTL=10s，定期回收記憶體）
+// 每 15 秒清理過期快取（與查詢 TTL=10s 一致，及時回收）
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of semanticSearchCache) {
-    if (now - v.ts > 60_000) semanticSearchCache.delete(k);
+    if (now - v.ts > 15_000) semanticSearchCache.delete(k);
   }
-}, 60_000);
+}, 15_000);
 
 // ── 查詢意圖自動分類 ──
 function classifyQueryIntent(q: string): 'task' | 'code' | 'history' {
