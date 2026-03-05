@@ -138,7 +138,7 @@ export interface RoundReply {
   reply: string;
 }
 
-/** 執行一輪：指定 bot 依序思考 + 回覆群組 */
+/** 執行一輪：所有 bot 並行思考，按完成順序交錯發送（自然感） */
 async function executeRound(
   botIds: string[],
   text: string,
@@ -147,18 +147,20 @@ async function executeRound(
   round: number,
 ): Promise<RoundReply[]> {
   const replies: RoundReply[] = [];
+  const bots = botIds.map(id => CREW_BOTS.find(b => b.id === id)).filter((b): b is typeof CREW_BOTS[number] => !!b?.token);
 
-  for (const botId of botIds) {
-    const bot = CREW_BOTS.find(b => b.id === botId);
-    if (!bot?.token) continue;
+  if (bots.length === 0) return replies;
 
-    // bot 之間交錯（自然感）
-    if (replies.length > 0) await sleep(BOT_STAGGER_MS + Math.random() * 1500);
-
+  // 所有 bot 並行思考（不再串行等待，速度提升 N 倍）
+  let sendCount = 0;
+  const thinkPromises = bots.map(async (bot) => {
     try {
       const result = await crewThink(bot, text, senderName);
       const reply = result.reply;
       if (reply && !reply.includes('沒有補充')) {
+        // 交錯發送（自然感：第一個立刻發，後續間隔 1.5-3 秒）
+        if (sendCount > 0) await sleep(BOT_STAGGER_MS + Math.random() * 1500);
+        sendCount++;
         const htmlMsg = formatBotReplyHTML(bot, reply);
         await sendTelegramMessageToChat(chatId, htmlMsg, { token: bot.token, silent: true, parseMode: 'HTML' });
         pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
@@ -171,8 +173,9 @@ async function executeRound(
     } catch (err) {
       log.error({ err }, `[CrewDispatch] R${round} ${bot.name} 回覆失敗`);
     }
-  }
+  });
 
+  await Promise.all(thinkPromises);
   return replies;
 }
 
