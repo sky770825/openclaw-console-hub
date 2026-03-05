@@ -13,6 +13,21 @@ const log = createLogger('telegram');
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
+// ── Gemini API Keys（多 key 輪替）──
+const GEMINI_KEYS: string[] = [
+  process.env.GOOGLE_API_KEY,
+  process.env.GOOGLE_API_KEY_2,
+  process.env.GOOGLE_API_KEY_3,
+  process.env.GEMINI_API_KEY,
+].map(k => k?.trim() ?? '').filter(Boolean);
+let geminiKeyIndex = 0;
+function getGeminiKey(): string {
+  if (GEMINI_KEYS.length === 0) return '';
+  const key = GEMINI_KEYS[geminiKeyIndex % GEMINI_KEYS.length];
+  geminiKeyIndex++;
+  return key;
+}
+
 // ── Claude CLI 熔斷器（連續失敗時快速跳過，省 12 秒無謂重試）──
 let claudeCliFailCount = 0;
 let claudeCliLastFailAt = 0;
@@ -436,7 +451,7 @@ export async function xiaocaiThink(
   xiaocaiHistory: Map<number, Array<{ role: string; text: string }>>,
   image?: { base64: string; mimeType: string },
 ): Promise<string> {
-  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
+  const GOOGLE_API_KEY = getGeminiKey();
   if (!GOOGLE_API_KEY) return '（AI 未設定，請在 .env 加入 GOOGLE_API_KEY）';
 
   const soulCore = loadSoulCoreOnce();

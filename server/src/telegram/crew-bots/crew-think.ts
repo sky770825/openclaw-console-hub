@@ -37,8 +37,20 @@ const CLAUDE_MAX_CONCURRENT = 1;
 let lastClaudeCallAt = 0;
 const CLAUDE_GLOBAL_COOLDOWN_MS = 15_000;  // crew bots 共用 15 秒冷卻
 
-// ── Gemini API Key ──
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() || '';
+// ── Gemini API Keys（多 key 輪替）──
+const GEMINI_KEYS: string[] = [
+  process.env.GOOGLE_API_KEY,
+  process.env.GOOGLE_API_KEY_2,
+  process.env.GOOGLE_API_KEY_3,
+  process.env.GEMINI_API_KEY,
+].map(k => k?.trim() ?? '').filter(Boolean);
+let geminiKeyIndex = 0;
+function getGeminiKey(): string {
+  if (GEMINI_KEYS.length === 0) return '';
+  const key = GEMINI_KEYS[geminiKeyIndex % GEMINI_KEYS.length];
+  geminiKeyIndex++;
+  return key;
+}
 
 export interface CrewHistoryEntry {
   role: 'user' | 'model';
@@ -432,12 +444,13 @@ async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null
  * 呼叫 Gemini API（Flash 或 Pro）
  */
 async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig): Promise<string | null> {
-  if (!GOOGLE_API_KEY) {
-    log.warn(`[CrewThink] ${bot.name} 無 GOOGLE_API_KEY，無法呼叫 Gemini`);
+  const apiKey = getGeminiKey();
+  if (!apiKey) {
+    log.warn(`[CrewThink] ${bot.name} 無 Gemini API Key，無法呼叫`);
     return null;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   try {
     const ctrl = new AbortController();
