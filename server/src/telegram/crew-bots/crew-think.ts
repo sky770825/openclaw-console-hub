@@ -15,6 +15,7 @@ import { executeNEUXAAction } from '../action-handlers.js';
 import { getTaskSnapshot, getSystemStatus, claudeCliCircuitOpen, claudeCliRecordFail, claudeCliRecordSuccess } from '../xiaocai-think.js';
 import type { CrewBotConfig } from './crew-config.js';
 import { CREW_BOTS } from './crew-config.js';
+import { wsManager } from '../../websocket.js';
 
 const log = createLogger('crew-think');
 
@@ -85,6 +86,9 @@ export async function crewThink(
   senderName: string,
   mode: 'auto' | 'full' = 'auto',
 ): Promise<CrewThinkResult> {
+  // Agent Flow 即時推播：開始思考
+  wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'thinking', message: userMessage.slice(0, 80) });
+
   // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含小蔡身份，會導致混淆）
   // loadSoulCoreOnce() 已移除：buildCrewPrompt 的 _soulCore 參數被忽略，無需浪費快取讀取
 
@@ -143,7 +147,10 @@ export async function crewThink(
       ? await callAI(input, bot)
       : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
     if (!reply) {
-      if (step === 0) return { reply: null, actionResults: [] };
+      if (step === 0) {
+        wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
+        return { reply: null, actionResults: [] };
+      }
       break;
     }
 
@@ -212,7 +219,10 @@ export async function crewThink(
     }
   }
 
-  if (!finalReply) return { reply: null, actionResults: allActionResults };
+  if (!finalReply) {
+    wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
+    return { reply: null, actionResults: allActionResults };
+  }
 
   // Telegram HTML 友好格式
   // 先跳脫 HTML 特殊字元，再轉換 markdown → HTML 標籤
@@ -252,6 +262,9 @@ export async function crewThink(
 
   // 低頻觸發 workspace 自動清理（5% 機率 + 24h 節流，非同步不阻塞）
   maybeCleanupWorkspace(bot.id);
+
+  // Agent Flow 即時推播：思考完成
+  wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
 
   return { reply: truncated || null, actionResults: allActionResults };
 }
@@ -515,8 +528,8 @@ function maybeCleanupWorkspace(botId: string): void {
 }
 
 function appendWorkLog(botId: string, _userMessage: string, actionResults: string[], reply: string): void {
-  // 只在有 actionResults（做了事）時才追加
-  if (!actionResults || actionResults.length === 0) return;
+  // 沒有 action 也沒有回覆 → 跳過
+  if ((!actionResults || actionResults.length === 0) && !reply) return;
 
   try {
     const memPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', botId, 'MEMORY.md');
@@ -531,14 +544,15 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
     const now = new Date();
     const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    // actionSummary: 去重的 action 名稱列表（例如 "semantic_search+query_supabase+run_script"）
-    const actionSummary = extractActionNames(actionResults);
+    // actionSummary: 去重的 action 名稱列表，純對話標記「對話」
+    const actionSummary = actionResults.length > 0 ? extractActionNames(actionResults) : '對話';
 
     // outcomeSummary: 成功數/總數 + reply 前 40 字（去廢話前綴）
-    const successCount = actionResults.filter(r => r.startsWith('\u2705')).length;
     const cleanedReply = cleanReplyPrefix((reply || '').replace(/\n/g, ' '));
     const replySnippet = cleanedReply.slice(0, 40) + (cleanedReply.length > 40 ? '\u2026' : '');
-    const outcomeSummary = `${successCount}/${actionResults.length}ok ${replySnippet}`;
+    const outcomeSummary = actionResults.length > 0
+      ? `${actionResults.filter(r => r.startsWith('\u2705')).length}/${actionResults.length}ok ${replySnippet}`
+      : replySnippet;
 
     const logLine = `\n- [${ts}] ${actionSummary} \u2192 ${outcomeSummary}`;
 

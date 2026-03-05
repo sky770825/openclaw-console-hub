@@ -1865,9 +1865,12 @@ async function xiaocaiPoll(): Promise<void> {
         }).join('\n');
       }
 
-      // 自動記憶
-      if (allActionResults.length > 0 || (finalReply && finalReply !== '🤔')) {
-        appendInteractionLog(text, allActionResults, finalReply || '');
+      // 自動記憶 — 每次對話都記，不限 action
+      if (finalReply || allActionResults.length > 0) {
+        appendInteractionLog(text, allActionResults, finalReply || '（無回覆）');
+        log.info(`[NEUXA-Memory] 已寫入互動日誌：text=${text.slice(0, 30)} actions=${allActionResults.length} reply=${(finalReply || '').length}字`);
+      } else {
+        log.info(`[NEUXA-Memory] 跳過記憶：無回覆且無 action（text=${text.slice(0, 30)}）`);
       }
 
       // 自驅動（只有明確「要做事」的指令才跑，純查看/確認/閒聊不跑）

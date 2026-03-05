@@ -3795,6 +3795,48 @@ app.post('/api/crew/heartbeat/off', async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
 });
 
+// ── Agent Flow — 即時代理狀態 ──
+app.get('/api/agents/status', async (_req, res) => {
+  try {
+    const { CREW_BOTS } = await import('./telegram/crew-bots/crew-config.js');
+    const { getHeartbeatStatus } = await import('./telegram/crew-bots/crew-patrol.js');
+    const heartbeat = getHeartbeatStatus();
+
+    // 小蔡（指揮官）
+    const xiaocaiStatus = {
+      id: 'xiaocai',
+      name: '小蔡',
+      role: '指揮官',
+      emoji: '🧠',
+      model: 'gemini-flash',
+      domain: 'command' as const,
+      status: 'online' as const,
+      lastActive: new Date().toISOString(),
+    };
+
+    // 6 crew bots
+    const crewStatuses = CREW_BOTS.map(bot => ({
+      id: bot.id,
+      name: bot.name,
+      role: bot.role,
+      emoji: bot.emoji,
+      model: bot.model,
+      domain: bot.domain,
+      status: bot.token ? 'online' as const : 'offline' as const,
+      lastActive: null as string | null,
+    }));
+
+    res.json({
+      ok: true,
+      agents: [xiaocaiStatus, ...crewStatuses],
+      heartbeat,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
 app.post('/api/telegram/test', async (_req, res) => {
   if (!isTelegramConfigured()) {
     return res.status(503).json({ ok: false, message: 'Telegram 未設定。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。' });
@@ -3933,7 +3975,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.4.97',
+    version: '2.4.98',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

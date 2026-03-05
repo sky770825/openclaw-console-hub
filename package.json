@@ -1,7 +1,7 @@
 {
   "name": "openclaw-starship-ui",
   "private": true,
-  "version": "2.4.97",
+  "version": "2.4.98",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
@@ -64,6 +64,7 @@
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
     "@types/three": "^0.183.1",
+    "@xyflow/react": "^12.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
