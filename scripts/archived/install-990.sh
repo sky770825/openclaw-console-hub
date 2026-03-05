@@ -2,7 +2,7 @@
 
 # 990 安裝包 - install-990.sh
 # 任務：P3 990 安裝包 — 建立 install-990.sh 腳本
-# 位置：/Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/install-990.sh
+# 位置：/Users/caijunchang/openclaw任務面版設計/scripts/install-990.sh
 
 # --------------------------------------------------------
 # 功能描述：

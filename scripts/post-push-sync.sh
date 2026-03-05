@@ -4,7 +4,7 @@
 # 由 Claude Code PostToolUse hook 呼叫。
 
 MAIN_DIR="/Users/caijunchang/openclaw任務面版設計"
-XIAOJI_DIR="/Users/caijunchang/Downloads/openclaw-console-hub-main"
+XIAOJI_DIR="/Users/caijunchang/openclaw任務面版設計"
 LOG="/tmp/openclaw-sync.log"
 
 # 只有 git push 成功時才觸發（hook 從 stdin 讀取 tool result）
