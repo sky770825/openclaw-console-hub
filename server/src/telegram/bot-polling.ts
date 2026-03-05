@@ -1740,13 +1740,15 @@ async function xiaocaiPoll(): Promise<void> {
           const cleanReply = stripActionJson(reply).trim();
           // step 0 沒帶 action — 判斷是否該重試
           if (step === 0 && text.length > 8 && !isXiaocaiChitChat(text)) {
-            // 小蔡已經給了實質回覆（分析/報告/回答）→ 接受，不強制 action
-            const hasSubstance = cleanReply.length > 15
-              && !cleanReply.includes('請重新說明')
-              && !cleanReply.includes('請告訴我')
-              && !cleanReply.includes('請提供')
-              && !cleanReply.includes('可以請您');
-            if (hasSubstance) {
+            // 小蔡已經給了實質回覆（分析/報告/回答/確認）→ 接受，不強制 action
+            // 門檻降到 5 字：「報告沒問題」「看完了」「沒事」這種都算實質回覆
+            const isHollow = cleanReply.length < 5
+              || cleanReply.includes('請重新說明')
+              || cleanReply.includes('請告訴我')
+              || cleanReply.includes('請提供')
+              || cleanReply.includes('可以請您')
+              || cleanReply.includes('我不確定你的意思');
+            if (!isHollow) {
               log.info(`[NEUXA-Chain] step=0 無 action 但有實質回覆(${cleanReply.length}字)，接受`);
               finalReply = cleanReply;
               break;
@@ -1868,9 +1870,9 @@ async function xiaocaiPoll(): Promise<void> {
         appendInteractionLog(text, allActionResults, finalReply || '');
       }
 
-      // 自驅動（只有明確任務指令才跑，聊天不跑）
-      const TASK_PATTERNS = /查一下|幫我|麻煩|請你|執行|部署|修復|修改|建立|分析一下|掃描|報告|日報|任務板|健康檢查/;
-      const isTaskMessage = text.length > 8 && TASK_PATTERNS.test(text);
+      // 自驅動（只有明確「要做事」的指令才跑，純查看/確認/閒聊不跑）
+      const TASK_ACTION_PATTERNS = /幫我(修|改|建|做|寫|刪|部署|執行)|麻煩|請你(修|改|建|做|寫)|執行|部署|修復|修改|建立.*任務|分析一下|掃描/;
+      const isTaskMessage = text.length > 12 && TASK_ACTION_PATTERNS.test(text) && !isXiaocaiChitChat(text);
       const SELF_DRIVE_ENABLED = isTaskMessage;
 
       if (SELF_DRIVE_ENABLED && allActionResults.length > 0 && finalReply) {
