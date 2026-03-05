@@ -8,6 +8,7 @@
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../../logger.js';
 import { executeNEUXAAction } from '../action-handlers.js';
@@ -249,6 +250,9 @@ export async function crewThink(
   // 任務自動回報已停用 — crew bot 不應自動建任務，避免垃圾任務堆積
   // autoReportTask(bot, userMessage, allActionResults, truncated);
 
+  // 低頻觸發 workspace 自動清理（5% 機率 + 24h 節流，非同步不阻塞）
+  maybeCleanupWorkspace(bot.id);
+
   return { reply: truncated || null, actionResults: allActionResults };
 }
 
@@ -399,6 +403,115 @@ function archiveOldLogs(botId: string, lines: string[]): void {
   } catch (err) {
     log.warn({ err }, `[CrewArchive] 歸檔失敗 bot=${botId}`);
   }
+}
+
+// ── Workspace 自動清理 ──
+
+/** 每個 bot 上次清理時間（記憶體內，重啟歸零即可） */
+const lastCleanupAt = new Map<string, number>();
+const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 小時最多清理一次
+const MOVE_AFTER_DAYS = 7;   // 根目錄 .md 超過 7 天 → 移到 notes/
+const DELETE_AFTER_DAYS = 30; // notes/ 裡超過 30 天 → 刪除
+
+/**
+ * 自動清理 bot workspace
+ * - 掃描 ~/.openclaw/workspace/crew/{botId}/ 根目錄的 .md（排除 MEMORY.md）
+ * - 超過 7 天 → 移到 notes/ 子目錄
+ * - notes/ 裡超過 30 天 → 刪除
+ */
+async function cleanupBotWorkspace(botId: string): Promise<void> {
+  const baseDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', botId);
+  const notesDir = path.join(baseDir, 'notes');
+  const now = Date.now();
+  const msPerDay = 24 * 60 * 60 * 1000;
+
+  // ── Phase 1：根目錄舊 .md → 移到 notes/ ──
+  try {
+    const entries = await fsp.readdir(baseDir, { withFileTypes: true });
+    const mdFiles = entries.filter(
+      e => e.isFile() && e.name.endsWith('.md') && e.name !== 'MEMORY.md',
+    );
+
+    let movedCount = 0;
+    for (const file of mdFiles) {
+      try {
+        const filePath = path.join(baseDir, file.name);
+        const stat = await fsp.stat(filePath);
+        const ageDays = (now - stat.mtimeMs) / msPerDay;
+
+        if (ageDays > MOVE_AFTER_DAYS) {
+          // 確保 notes/ 目錄存在
+          await fsp.mkdir(notesDir, { recursive: true });
+          const destPath = path.join(notesDir, file.name);
+          await fsp.rename(filePath, destPath);
+          movedCount++;
+        }
+      } catch (err) {
+        log.warn({ err }, `[CrewCleanup] ${botId} 移動檔案失敗: ${file.name}`);
+      }
+    }
+
+    if (movedCount > 0) {
+      log.info(`[CrewCleanup] ${botId} 移動 ${movedCount} 個過期 .md 到 notes/`);
+    }
+  } catch (err) {
+    // 目錄不存在等情況，靜默跳過
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      log.warn({ err }, `[CrewCleanup] ${botId} 掃描根目錄失敗`);
+    }
+  }
+
+  // ── Phase 2：notes/ 超過 30 天 → 刪除 ──
+  try {
+    const notesEntries = await fsp.readdir(notesDir, { withFileTypes: true });
+    const oldFiles = notesEntries.filter(e => e.isFile());
+
+    let deletedCount = 0;
+    for (const file of oldFiles) {
+      try {
+        const filePath = path.join(notesDir, file.name);
+        const stat = await fsp.stat(filePath);
+        const ageDays = (now - stat.mtimeMs) / msPerDay;
+
+        if (ageDays > DELETE_AFTER_DAYS) {
+          await fsp.unlink(filePath);
+          deletedCount++;
+        }
+      } catch (err) {
+        log.warn({ err }, `[CrewCleanup] ${botId} 刪除過期檔案失敗: ${file.name}`);
+      }
+    }
+
+    if (deletedCount > 0) {
+      log.info(`[CrewCleanup] ${botId} 刪除 ${deletedCount} 個超過 ${DELETE_AFTER_DAYS} 天的 notes/ 檔案`);
+    }
+  } catch (err) {
+    // notes/ 目錄不存在，正常情況
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      log.warn({ err }, `[CrewCleanup] ${botId} 掃描 notes/ 失敗`);
+    }
+  }
+}
+
+/**
+ * 低頻觸發 workspace 清理（5% 機率 + 24 小時節流）
+ * 清理失敗不影響主功能
+ */
+function maybeCleanupWorkspace(botId: string): void {
+  // 5% 機率觸發
+  if (Math.random() > 0.05) return;
+
+  // 24 小時節流
+  const lastTime = lastCleanupAt.get(botId) || 0;
+  if (Date.now() - lastTime < CLEANUP_INTERVAL_MS) return;
+
+  lastCleanupAt.set(botId, Date.now());
+  log.info(`[CrewCleanup] ${botId} 觸發 workspace 自動清理`);
+
+  // 非同步執行，不阻塞主流程
+  cleanupBotWorkspace(botId).catch(err => {
+    log.warn({ err }, `[CrewCleanup] ${botId} workspace 清理異常`);
+  });
 }
 
 function appendWorkLog(botId: string, _userMessage: string, actionResults: string[], reply: string): void {
