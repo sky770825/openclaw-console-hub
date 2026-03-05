@@ -121,7 +121,7 @@ export async function crewThink(
 
     const reply = useFullModel
       ? await callAI(input, bot)
-      : await callGeminiAPI(input, 'gemini-2.5-pro', bot);
+      : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
     if (!reply) {
       if (step === 0) return { reply: null, actionResults: [] };
       break;
@@ -413,9 +413,9 @@ async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null
   if (bot.model.startsWith('claude-') || bot.model === 'claude') {
     const result = await callClaudeCLI(prompt, bot);
     if (result) return result;
-    // Claude 失敗 → fallback Gemini Flash
-    log.info(`[CrewThink] ${bot.name} Claude(${bot.model}) 失敗，fallback Gemini Flash`);
-    return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+    // Claude 失敗 → fallback Gemini Pro（任務需要品質）
+    log.info(`[CrewThink] ${bot.name} Claude(${bot.model}) 失敗，fallback Gemini Pro`);
+    return callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
   }
   // Gemini Pro
   if (bot.model === 'gemini-pro') {
