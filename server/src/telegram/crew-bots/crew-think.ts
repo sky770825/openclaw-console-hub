@@ -209,15 +209,17 @@ export async function crewThink(
     .replace(/>/g, '&gt;');                           // > → &gt;
   const clean = escaped
     .replace(/^#{1,6}\s*/gm, '')                     // 移除 markdown 標題符號
+    .replace(/```\w*\n?[\s\S]*?```/g, '')            // 移除 ``` 代碼區塊（不要在聊天裡列程式碼）
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')          // **粗體** → HTML <b>
     .replace(/\*(.+?)\*/g, '<i>$1</i>')              // *斜體* → HTML <i>
     .replace(/^[-*]\s/gm, '• ')                       // 列表符號統一為 •
     .replace(/`([^`\n]+)`/g, '<code>$1</code>')       // `code` → HTML <code>
+    .replace(/\n{3,}/g, '\n\n')                       // 連續空行壓縮
     .trim();
 
-  // 超過 300 字截斷
-  const truncated = clean.length > 300
-    ? clean.slice(0, 297) + '...'
+  // Telegram 訊息上限 4096，留 200 給 bot header → 1500 字是安全上限
+  const truncated = clean.length > 1500
+    ? clean.slice(0, 1497) + '...'
     : clean;
 
   // 自動追加工作紀錄到 bot 的 MEMORY.md
@@ -353,6 +355,34 @@ function extractActionNames(actionResults: string[]): string {
   return Array.from(names).join('+') || `${actionResults.length}actions`;
 }
 
+/** 歸檔舊工作紀錄到 memory-archive/{YYYY-MM}.md（按月份） */
+function archiveOldLogs(botId: string, lines: string[]): void {
+  try {
+    const archiveDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', botId, 'memory-archive');
+    if (!fs.existsSync(archiveDir)) fs.mkdirSync(archiveDir, { recursive: true });
+
+    const byMonth: Record<string, string[]> = {};
+    for (const line of lines) {
+      const m = line.match(/\[(\d{4}-\d{2})/);
+      const month = m ? m[1] : new Date().toISOString().slice(0, 7);
+      if (!byMonth[month]) byMonth[month] = [];
+      byMonth[month].push(line);
+    }
+
+    for (const [month, monthLines] of Object.entries(byMonth)) {
+      const archivePath = path.join(archiveDir, `${month}.md`);
+      if (!fs.existsSync(archivePath)) {
+        fs.writeFileSync(archivePath, `# ${botId} 工作紀錄歸檔 — ${month}\n\n${monthLines.join('\n')}\n`, 'utf-8');
+      } else {
+        fs.appendFileSync(archivePath, monthLines.join('\n') + '\n', 'utf-8');
+      }
+    }
+    log.info(`[CrewArchive] ${botId} 歸檔 ${lines.length} 條舊紀錄`);
+  } catch (err) {
+    log.warn({ err }, `[CrewArchive] 歸檔失敗 bot=${botId}`);
+  }
+}
+
 function appendWorkLog(botId: string, _userMessage: string, actionResults: string[], reply: string): void {
   // 只在有 actionResults（做了事）時才追加
   if (!actionResults || actionResults.length === 0) return;
@@ -390,10 +420,9 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
     // 讀取現有內容，檢查大小
     let content = fs.readFileSync(memPath, 'utf-8');
 
-    // 超過 3000 字元，截斷舊紀錄只保留最後 20 條
+    // 超過 3000 字元，保留最後 10 條 + 歸檔舊紀錄
     if (content.length > 3000) {
       const lines = content.split('\n');
-      // 找出工作紀錄段落之前的內容（非紀錄行）
       const headerLines: string[] = [];
       const logLines: string[] = [];
       let inLogSection = false;
@@ -411,8 +440,12 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
         }
       }
 
-      // 只保留最後 20 條
-      const kept = logLines.slice(-20);
+      const MAX_KEEP = 10;
+      if (logLines.length > MAX_KEEP) {
+        const toArchive = logLines.slice(0, logLines.length - MAX_KEEP);
+        archiveOldLogs(botId, toArchive);
+      }
+      const kept = logLines.slice(-MAX_KEEP);
       content = headerLines.join('\n') + '\n' + kept.join('\n');
       fs.writeFileSync(memPath, content + logLine + '\n', 'utf-8');
     } else {
@@ -734,10 +767,21 @@ function loadBotMemory(botId: string, userMessage: string = ''): string {
   const crewDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew');
   const parts: string[] = [];
 
-  // 個人記憶
+  // 個人記憶（分段截斷：header 800 字 + 工作紀錄 700 字從末尾取，確保最新紀錄可見）
   try {
-    const mem = fs.readFileSync(path.join(crewDir, botId, 'MEMORY.md'), 'utf-8').trim();
-    if (mem) parts.push(mem.length > 1500 ? mem.slice(0, 1500) + '\n...(截斷)' : mem);
+    const raw = fs.readFileSync(path.join(crewDir, botId, 'MEMORY.md'), 'utf-8').trim();
+    if (raw) {
+      const logIdx = raw.indexOf('## 工作紀錄');
+      if (logIdx === -1) {
+        parts.push(raw.length > 1500 ? raw.slice(0, 1500) + '\n...(截斷)' : raw);
+      } else {
+        const header = raw.slice(0, logIdx).trim();
+        const logSection = raw.slice(logIdx).trim();
+        const h = header.length > 800 ? header.slice(0, 800) + '\n...' : header;
+        const l = logSection.length > 700 ? logSection.slice(logSection.length - 700) : logSection;
+        parts.push(h + '\n\n' + l);
+      }
+    }
   } catch { /* no memory yet */ }
 
   // 共享協作劇本 — 只注入相關情境段落
@@ -901,6 +945,8 @@ ${bot.responseStyle}
 - 聊天的回覆：1-3 句話
 - 不要開頭「好的」「收到」「了解」
 - 直接回覆內容，不要加自己的名字前綴
+- 🚫 **絕對不要在回覆裡列出程式碼**（不要用 \`\`\` 代碼區塊）— 這是 Telegram 聊天，不是 IDE
+- 回覆要完整，不要寫到一半就停。講重點，不要拖泥帶水
 
 ## 路徑基準
 | 名稱 | 路徑 |
