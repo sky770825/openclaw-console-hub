@@ -159,7 +159,8 @@ export async function createTask(name: string, description?: string, owner?: str
       signal: AbortSignal.timeout(8000),
     });
     if (checkR.ok) {
-      const existing = (await checkR.json()) as Array<Record<string, unknown>>;
+      const raw = (await checkR.json()) as Record<string, unknown> | Array<Record<string, unknown>>;
+      const existing: Array<Record<string, unknown>> = Array.isArray(raw) ? raw : (Array.isArray((raw as Record<string, unknown>).tasks) ? (raw as Record<string, unknown>).tasks as Array<Record<string, unknown>> : []);
       const thirtyMinAgo = Date.now() - 30 * 60_000;
       const dup = existing.find((t: Record<string, unknown>) => {
         const tName = String(t.name || t.title || '');
