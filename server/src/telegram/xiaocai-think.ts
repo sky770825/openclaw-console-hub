@@ -160,17 +160,23 @@ export function loadSoulCore(): string {
     }
   } catch { /* ignore */ }
 
-  // 最近記憶：今日互動日誌（讀尾部最新對話）
+  // 最近記憶：互動日誌（讀最新的 daily log 尾部，不靠 UTC 日期猜）
   const dailyDir = path.join(workspace, 'memory', 'daily');
   try {
     if (fs.existsSync(dailyDir)) {
-      const today = new Date().toISOString().split('T')[0];
-      const logPath = path.join(dailyDir, `${today}.md`);
-      try {
-        const full = fs.readFileSync(logPath, 'utf-8');
-        const tail = full.length > 2000 ? full.slice(-2000) : full;
-        if (tail.trim()) chunks.push(`=== 今日互動記憶 ${today}（最新） ===\n${tail}`);
-      } catch { /* file not found */ }
+      // 找最新的 daily log（不猜日期，直接按 mtime 排序）
+      const dailyFiles = fs.readdirSync(dailyDir)
+        .filter(f => /^2026-\d{2}-\d{2}\.md$/.test(f))
+        .map(f => ({ name: f, mtime: fs.statSync(path.join(dailyDir, f)).mtimeMs }))
+        .sort((a, b) => b.mtime - a.mtime);
+      if (dailyFiles.length > 0) {
+        const latest = dailyFiles[0];
+        try {
+          const full = fs.readFileSync(path.join(dailyDir, latest.name), 'utf-8');
+          const tail = full.length > 2000 ? full.slice(-2000) : full;
+          if (tail.trim()) chunks.push(`=== 最新互動記憶 ${latest.name}（尾部） ===\n${tail}`);
+        } catch { /* read error */ }
+      }
     }
   } catch { /* ignore */ }
 
@@ -347,7 +353,8 @@ ${soulCore}
 | action 處理器 | ${_projectRoot}/server/src/telegram/action-handlers.ts |
 | NEUXA workspace | ${_workspace} |
 | cookbook | ${_workspace}/cookbook |
-| 記憶 | ${_workspace}/memory |
+| 記憶（舊） | ${_workspace}/memory |
+| 記憶（最新日誌） | ${_workspace}/memory/daily/ |
 | 筆記 | ${_workspace}/notes |
 | 知識庫 | ${_workspace}/knowledge |
 | 腳本 | ${_workspace}/scripts |
@@ -360,6 +367,7 @@ ${soulCore}
 
 路徑搞錯 → list_dir 確認目錄存在，再 read_file。
 路徑不確定時，用 run_script 執行 ls 確認，不要猜。
+⚠️ 最新記憶在 memory/daily/（按日期命名，如 2026-03-06.md），memory/ 根目錄的是舊的。要查記憶先看 daily/。
 
 ## 做事流程（最多 6 步，一口氣做完再回報，複雜任務派 delegate_agents）
 1. 搞懂狀況：semantic_search 搜知識庫 / read_file 看檔案 / query_supabase 查數據
