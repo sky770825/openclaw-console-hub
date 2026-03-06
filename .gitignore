@@ -51,3 +51,10 @@ ollama-main*/
 
 # Local Netlify folder
 .netlify
+
+# Claude sync markers
+.claude/.sync-done-*
+.claude/.version-bumped-*
+
+# Beauty industry website (separate project)
+beauty-industry-website/
