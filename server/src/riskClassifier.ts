@@ -34,9 +34,15 @@ const MEDIUM_KEYWORDS = [
   'auth', '權限', '認證', 'permission', 'rbac',
   'rollback', 'revert', 'reset',
   'truncate', 'alter table',
-  // 大型規劃/設計任務 — 需 Claude 審慎執行，避免亂生成垃圾
+];
+
+// 規劃/設計類任務降為 low — 老蔡已批准自動執行（2026-03-07）
+const LOW_KEYWORDS = [
   '規劃', '設計', 'landing page', '方案規劃', '技術方案',
   '架構設計', '實作規劃', '數據追蹤', 'kpi',
+  '調研', '研究', 'research', '分析', 'analysis',
+  '開發', 'develop', 'implement', '實作', '建置',
+  '前端', '後端', 'frontend', 'backend', 'api',
 ];
 
 const GREEN_KEYWORDS = [
@@ -97,11 +103,14 @@ export function classifyTaskRisk(task: {
   // 紫燈：需要上下文的關鍵字（token/domain/key/infra 單獨出現不算）
   if (matchesAny(blob, CRITICAL_CONTEXT_KEYWORDS)) return 'critical';
 
-  // 紅燈
+  // 紅燈：真正危險的操作（刪資料、改權限等）
   if (matchesAny(blob, MEDIUM_KEYWORDS)) return 'medium';
 
-  // 綠燈
+  // 綠燈：純查詢/監控
   if (matchesAny(blob, GREEN_KEYWORDS)) return 'none';
+
+  // 黃燈：規劃/開發/調研類（自動執行，Claude 審核）
+  if (matchesAny(blob, LOW_KEYWORDS)) return 'low';
 
   // 預設黃燈
   return 'low';
