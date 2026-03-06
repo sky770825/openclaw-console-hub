@@ -3795,6 +3795,15 @@ app.post('/api/crew/heartbeat/off', async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
 });
 
+// ── Crew Patrol — 手動觸發巡邏 ──
+app.post('/api/crew/patrol', async (_req, res) => {
+  try {
+    const { triggerPatrolNow } = await import('./telegram/crew-bots/crew-patrol.js');
+    triggerPatrolNow().catch(() => {});
+    res.json({ ok: true, message: '巡邏已觸發（背景執行中）' });
+  } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
+});
+
 // ── Crew Doctor — 星群健康檢查 ──
 app.get('/api/crew/health', async (_req, res) => {
   try {

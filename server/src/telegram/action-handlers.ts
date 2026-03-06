@@ -794,7 +794,7 @@ export async function handleDelegateAgents(
 const ALLOWED_TABLES = new Set([
   'openclaw_tasks', 'openclaw_reviews', 'openclaw_automations',
   'openclaw_evolution_log', 'openclaw_runs', 'openclaw_audit_logs',
-  'openclaw_memory',
+  // 'openclaw_memory' — 表尚未建立，暫時移除避免重複報錯
   'fadp_members', 'fadp_attack_events', 'fadp_blocklist',
 ]);
 
@@ -853,7 +853,6 @@ async function handleQuerySupabase(action: Record<string, any>): Promise<ActionR
     openclaw_automations: new Set(['id', 'name', 'cron', 'active', 'chain', 'health', 'runs', 'last_run', 'created_at', 'updated_at']),
     openclaw_evolution_log: new Set(['id', 't', 'x', 'c', 'tag', 'tc', 'created_at']),
     openclaw_runs: new Set(['id', 'task_id', 'task_name', 'status', 'started_at', 'ended_at', 'duration_ms', 'input_summary', 'output_summary', 'steps', 'created_at']),
-    openclaw_memory: new Set(['id', 'key', 'value', 'category', 'created_at', 'updated_at']),
   };
   let select = action.select || '*';
   if (select !== '*') {
