@@ -545,10 +545,10 @@ export async function xiaocaiThink(
     log.info(`[XiaocaiAI] 🚀 星群協作模式：派工給星群並行處理`);
     try {
       const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
-      const dispatch = await dispatchToCrewBots(
-        `【指揮官小蔡派工】老蔡指令：${userMessage}\n\n請根據你的專長角色回覆，直接給出你負責的部分（不要客套話），精簡回覆重點。`,
-        '小蔡'
-      );
+      // 組合對話上下文，讓星群知道前因後果
+      const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}：${h.text.slice(0, 200)}`).join('\n');
+      const dispatchMsg = `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
+      const dispatch = await dispatchToCrewBots(dispatchMsg, '小蔡');
       if (dispatch.totalReplied > 0) {
         const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
         // 用 Gemini Flash 快速整合星群結果
