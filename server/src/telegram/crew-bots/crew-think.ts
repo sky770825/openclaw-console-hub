@@ -22,7 +22,8 @@ import { getInboxContext } from './crew-inbox.js';
 const log = createLogger('crew-think');
 
 const CLAUDE_TIMEOUT_MS = 120_000;      // 2 分鐘（降低：避免 Opus 卡住整個星群）
-const GEMINI_TIMEOUT_MS = 30_000;       // 30s，配合 1024 token 輸出足夠
+const GEMINI_FLASH_TIMEOUT_MS = 30_000;  // Flash 30s 足夠
+const GEMINI_PRO_TIMEOUT_MS = 60_000;   // Pro 較慢，給 60s
 const MAX_CHAIN_STEPS = 10;             // 增加思考鏈深度，讓 bot 能做更複雜的多步任務
 const MAX_ACTION_OUTPUT = 4000;
 
@@ -722,10 +723,11 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const timeoutMs = model.includes('pro') ? GEMINI_PRO_TIMEOUT_MS : GEMINI_FLASH_TIMEOUT_MS;
 
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), GEMINI_TIMEOUT_MS);
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
 
     const res = await fetch(url, {
       method: 'POST',
@@ -774,7 +776,7 @@ async function callGeminiAPI(prompt: string, model: string, bot: CrewBotConfig):
     return null;
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
-      log.warn(`[CrewThink] ${bot.name} Gemini 超時 (${GEMINI_TIMEOUT_MS / 1000}s)`);
+      log.warn(`[CrewThink] ${bot.name} Gemini 超時 (${timeoutMs / 1000}s)`);
       recordFailure(bot.id, 'timeout');
     } else {
       log.error({ err }, `[CrewThink] ${bot.name} Gemini API 呼叫失敗`);

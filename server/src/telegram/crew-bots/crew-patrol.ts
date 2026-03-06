@@ -178,10 +178,22 @@ export async function triggerPatrolNow(): Promise<void> {
     return;
   }
 
-  log.info(`[CrewPatrol] 巡邏觸發，${tasks.length} 個 bot 出動`);
+  // 分批出動：每批最多 3 人，避免同時打爆 Gemini API
+  const BATCH_SIZE = 3;
+  const batches: PatrolTask[][] = [];
+  for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+    batches.push(tasks.slice(i, i + BATCH_SIZE));
+  }
 
-  // 並行執行所有巡邏
-  await Promise.allSettled(tasks.map(t => executePatrol(t)));
+  log.info(`[CrewPatrol] 巡邏觸發，${tasks.length} 個 bot 分 ${batches.length} 批出動`);
+
+  for (let i = 0; i < batches.length; i++) {
+    if (i > 0) {
+      log.info(`[CrewPatrol] 第 ${i + 1} 批等待 5 秒...`);
+      await new Promise(r => setTimeout(r, 5_000));
+    }
+    await Promise.allSettled(batches[i].map(t => executePatrol(t)));
+  }
 }
 
 async function executePatrol(task: PatrolTask): Promise<void> {
