@@ -1733,6 +1733,11 @@ async function xiaocaiPoll(): Promise<void> {
 
         // 第一輪帶圖片，後續 follow-up 不帶
         const thinkImage = (!isFollowUp && imageBase64) ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined;
+        // 發送 typing indicator 讓老蔡知道小蔡在思考
+        fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
+        }).catch(() => {});
         let reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory, thinkImage);
 
         const actionMatches = extractActionJsons(reply);
