@@ -3331,7 +3331,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
 
 // ── 網站生成 ──
 
-async function handleGenerateSite(action: Record<string, string>): Promise<ActionResult> {
+export async function handleGenerateSite(action: Record<string, string>): Promise<ActionResult> {
   const description = action.description || action.prompt || action.name || '';
   if (!description) return { ok: false, output: 'generate_site 需要 description 參數（描述你要什麼網站）' };
 

@@ -549,13 +549,71 @@ export async function xiaocaiThink(
     log.info(`[XiaocaiAI] 🚀 星群協作模式：派工給星群並行處理`);
     try {
       const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
+      // 判斷是否為「做網站/生成頁面」類任務
+      const isSiteTask = ['做.*網站', '生成.*網站', '做.*頁面', '建.*網站', '網站.*做', 'landing.*page'].some(kw => new RegExp(kw).test(lowerMsg));
+
       // 組合對話上下文，讓星群知道前因後果
       const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}：${h.text.slice(0, 200)}`).join('\n');
-      const dispatchMsg = `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
-      const dispatch = await dispatchToCrewBots(dispatchMsg, '小蔡');
+
+      // 根據任務類型給星群不同的派工指令
+      const siteDispatchMsg = isSiteTask
+        ? `【指揮官小蔡派工 — 網站協作】\n\n老蔡要做的網站：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，給出你負責的部分：\n• 阿策：規劃網站架構（要哪些區塊、功能清單、頁面結構）\n• 阿研：調研同類型網站最佳實踐（設計風格、必備功能、競品參考）\n• 阿商：建議商業功能（預約系統、金流、會員、行銷工具）\n• 阿秘：撰寫網站文案（標題、副標、服務描述、關於我們）\n• 阿工：建議技術實作方案（框架、動畫、互動功能）\n• 阿數：建議要追蹤的數據指標（轉換率、預約數）\n\n直接給內容，不要說「需要更多資訊」。`
+        : `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
+
+      const dispatch = await dispatchToCrewBots(siteDispatchMsg, '小蔡');
       if (dispatch.totalReplied > 0) {
         const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
-        // 用 Gemini Flash 快速整合星群結果
+
+        // ── 網站任務：星群結果 → 整合 → generate_site 生成實際網站 ──
+        if (isSiteTask) {
+          log.info(`[XiaocaiAI] 🏗️ 網站協作模式：${dispatch.totalReplied} 個 bot 回覆，開始整合生成`);
+          const GOOGLE_API_KEY_SITE = getGeminiKey();
+          if (GOOGLE_API_KEY_SITE) {
+            // Step 1: 整合星群結果成網站需求文件
+            const siteSpecPrompt = `你是小蔡，要整合星群的建議來生成網站。
+
+老蔡的需求：${userMessage}
+
+星群各成員的建議：
+${crewResults}
+
+請根據以上所有建議，整合成一份簡潔的網站需求描述（一段話，200字以內），包含：風格、色系、所有區塊、功能、文案重點。這段描述會直接交給 AI 生成 HTML。`;
+
+            try {
+              const specResp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY_SITE}`,
+                { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: siteSpecPrompt }] }], generationConfig: { maxOutputTokens: 500 } }),
+                  signal: AbortSignal.timeout(30000) }
+              );
+              if (specResp.ok) {
+                const specData = await specResp.json() as any;
+                const siteSpec = specData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || userMessage;
+
+                // Step 2: 用 generate_site 生成網站
+                const { handleGenerateSite } = await import('./action-handlers.js');
+                const slug = `site-${Date.now()}`;
+                const siteResult = await handleGenerateSite({
+                  action: 'generate_site',
+                  description: siteSpec,
+                  slug,
+                });
+
+                if (siteResult.ok) {
+                  // 組合回覆：星群分工摘要 + 網站連結
+                  const crewSummary = dispatch.replies.map(r => `• ${r.botName}：${r.reply.slice(0, 80)}`).join('\n');
+                  return `老蔡，網站做好了！星群全員出動協作：\n\n${crewSummary}\n\n${siteResult.output}`;
+                }
+                // generate_site 失敗，回報星群結果
+                log.warn(`[XiaocaiAI] generate_site 失敗: ${siteResult.output}`);
+              }
+            } catch (e) {
+              log.warn({ err: e }, '[XiaocaiAI] 網站協作整合失敗');
+            }
+          }
+        }
+
+        // ── 一般任務：整合星群結果成報告 ──
         const GOOGLE_API_KEY_CREW = getGeminiKey();
         if (GOOGLE_API_KEY_CREW) {
           const integratePrompt = `你是小蔡，老蔡的副手。老蔡剛才說：「${userMessage}」\n\n星群各成員已並行完成分析，以下是他們的回覆：\n\n${crewResults}\n\n請用繁體中文整合以上內容，給老蔡一份精簡的總結報告。重點突出、有結構、可執行。不要重複星群原文，用你自己的話整合。`;
