@@ -470,7 +470,8 @@ export async function xiaocaiThink(
 
   // ── 複雜度偵測：複雜任務直接用 Opus ──
   const lowerMsg = userMessage.toLowerCase();
-  const isComplex = [
+  const isSystemMsg = userMessage.startsWith('[系統') || userMessage.startsWith('[心跳');
+  const isComplex = !isSystemMsg && [
     // 多步驟/架構級任務
     '重構', 'refactor', '架構', 'architecture', '設計', 'design',
     // 深度除錯
@@ -484,7 +485,7 @@ export async function xiaocaiThink(
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
   // ── 星群協作模式：複雜任務自動派工給星群並行處理 ──
-  const isCrewTask = isComplex && !userMessage.startsWith('[系統') && [
+  const isCrewTask = isComplex && !isSystemMsg && [
     '網站', '方案', '規劃', '分析', '調研', '設計.*系統', '開發.*功能',
     '商業', '市場', '競品', '技術方案', '架構設計', '全部做', '幫我做',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
