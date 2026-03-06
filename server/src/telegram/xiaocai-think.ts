@@ -129,16 +129,23 @@ export function loadSoulCore(): string {
     }
   } catch { /* ignore */ }
 
-  // session 記憶 — 自動載入最近 4 個（不再 hardcode 日期）
+  // session 記憶 — 從 sessions/ + memory/ 根目錄合併，按修改時間取最新 2 個
   try {
+    const allSess: Array<{ name: string; dir: string; mtime: number }> = [];
     if (fs.existsSync(sessionsDir)) {
-      const sessions = fs.readdirSync(sessionsDir)
-        .filter(f => f.endsWith('.md'))
-        .sort().reverse().slice(0, 2);  // 只載入最近 2 個 session（省 token）
-      for (const file of sessions) {
-        const content = readFileSlice(path.join(sessionsDir, file), 800);
-        if (content) chunks.push(`=== ${file} ===\n${content}`);
+      for (const f of fs.readdirSync(sessionsDir).filter(x => x.endsWith('.md'))) {
+        try { allSess.push({ name: f, dir: sessionsDir, mtime: fs.statSync(path.join(sessionsDir, f)).mtimeMs }); } catch { /* skip */ }
       }
+    }
+    if (fs.existsSync(memoryDir)) {
+      for (const f of fs.readdirSync(memoryDir).filter(x => /^2026-.*\.md$/.test(x))) {
+        try { allSess.push({ name: f, dir: memoryDir, mtime: fs.statSync(path.join(memoryDir, f)).mtimeMs }); } catch { /* skip */ }
+      }
+    }
+    allSess.sort((a, b) => b.mtime - a.mtime);
+    for (const s of allSess.slice(0, 2)) {
+      const content = readFileSlice(path.join(s.dir, s.name), 800);
+      if (content) chunks.push(`=== ${s.name} ===\n${content}`);
     }
   } catch { /* ignore */ }
 
@@ -153,17 +160,17 @@ export function loadSoulCore(): string {
     }
   } catch { /* ignore */ }
 
-  // 最近記憶：今天和昨天的互動日誌
+  // 最近記憶：今日互動日誌（讀尾部最新對話）
   const dailyDir = path.join(workspace, 'memory', 'daily');
   try {
     if (fs.existsSync(dailyDir)) {
       const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      for (const dateStr of [yesterday, today]) {
-        const logPath = path.join(dailyDir, `${dateStr}.md`);
-        const content = readFileSlice(logPath, 1000);
-        if (content) chunks.push(`=== 互動記憶 ${dateStr} ===\n${content}`);
-      }
+      const logPath = path.join(dailyDir, `${today}.md`);
+      try {
+        const full = fs.readFileSync(logPath, 'utf-8');
+        const tail = full.length > 2000 ? full.slice(-2000) : full;
+        if (tail.trim()) chunks.push(`=== 今日互動記憶 ${today}（最新） ===\n${tail}`);
+      } catch { /* file not found */ }
     }
   } catch { /* ignore */ }
 
