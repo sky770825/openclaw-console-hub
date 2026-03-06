@@ -1056,6 +1056,21 @@ function loadBotMemory(botId: string, userMessage: string = ''): string {
     }
   } catch { /* no memory yet */ }
 
+  // 個人 Critical Rules（RULES.md）— 紀律與 KPI
+  try {
+    const rules = fs.readFileSync(path.join(crewDir, botId, 'RULES.md'), 'utf-8').trim();
+    if (rules) parts.push(rules.length > 1500 ? rules.slice(0, 1500) + '\n...(截斷)' : rules);
+  } catch { /* no rules yet */ }
+
+  // 個人協作劇本（per-bot PLAYBOOK.md）— 專屬情境 SOP
+  try {
+    const botPlaybook = fs.readFileSync(path.join(crewDir, botId, 'PLAYBOOK.md'), 'utf-8').trim();
+    if (botPlaybook) {
+      const relevantBotPlaybook = extractRelevantPlaybook(botPlaybook, userMessage);
+      if (relevantBotPlaybook) parts.push(relevantBotPlaybook);
+    }
+  } catch { /* no per-bot playbook */ }
+
   // 共享協作劇本 — 只注入相關情境段落
   try {
     const playbook = fs.readFileSync(path.join(crewDir, 'PLAYBOOK.md'), 'utf-8').trim();
@@ -1064,6 +1079,16 @@ function loadBotMemory(botId: string, userMessage: string = ''): string {
       if (relevantPlaybook) parts.push(relevantPlaybook);
     }
   } catch { /* no playbook */ }
+
+  // 共用 QA 規則 + 交接模板
+  try {
+    const qa = fs.readFileSync(path.join(crewDir, 'QA-RULES.md'), 'utf-8').trim();
+    if (qa) parts.push(qa.length > 800 ? qa.slice(0, 800) + '\n...(截斷)' : qa);
+  } catch { /* no QA rules */ }
+  try {
+    const handoff = fs.readFileSync(path.join(crewDir, 'HANDOFF-TEMPLATE.md'), 'utf-8').trim();
+    if (handoff) parts.push(handoff.length > 600 ? handoff.slice(0, 600) + '\n...(截斷)' : handoff);
+  } catch { /* no handoff template */ }
 
   // Inbox 待處理摘要 — 讓 bot 知道自己有待辦
   try {
