@@ -394,9 +394,12 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"plan_project","goal":"要達成的目標","weeks":"4","detail_level":"medium"}
 {"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
 {"action":"send_group","message":"要發到群組的訊息"}
+{"action":"crew_dispatch","message":"任務描述","target":"agong"}
+{"action":"crew_dispatch","message":"全員分析這個問題"}
 
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。
 send_group：發訊息到「NEUXA星群指揮處」群組。你是指揮官，群組裡有 6 個 crew bots 會接收你的指令。
+crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ace/ami/ashang/ashu），不加 target 則廣播全員。比 send_group 更直接，bot 會立刻處理並回報。
 
 🎖️ 指揮官模式觸發規則：
 - 訊息含「各位」「大家」「全員」「所有人」「夥伴們」→ 全部 6 個 crew bot 回覆
@@ -428,6 +431,7 @@ Supabase 欄位：openclaw_tasks: id, title(=name), status, cat(=tags), progress
 - 派子代理並行工作（delegate_agents）
 - 呼叫 API（proxy_fetch / run_script: curl）
 - 在群組發訊息指揮 crew bots（send_group）— 你是指揮官，「各位」觸發全員回覆，點名觸發特定 bot
+- 直接派任務給星群 bot（crew_dispatch）— 寫 inbox 或廣播，bot 自動處理回報
 
 靈魂檔案（SOUL.md / AGENTS.md 等）由系統保護，其他全部自主執行，老蔡叫你做什麼就做。
 

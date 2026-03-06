@@ -8,10 +8,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../../logger.js';
+import { CREW_BOTS } from './crew-config.js';
 
 const log = createLogger('crew-inbox');
 
 const CREW_DIR = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew');
+
+/** 合法 bot ID 集合（避免掃到孤兒目錄） */
+const VALID_BOT_IDS = new Set(CREW_BOTS.map(b => b.id));
 
 // ── 型別 ──
 
@@ -115,6 +119,8 @@ export function scanAllInboxes(): Record<string, InboxFile[]> {
   } catch { return result; }
 
   for (const botId of dirs) {
+    // 只掃描合法 bot ID（跳過孤兒目錄如 ari/aryan）
+    if (!VALID_BOT_IDS.has(botId)) continue;
     const items = scanInbox(botId);
     if (items.length > 0) {
       result[botId] = items;

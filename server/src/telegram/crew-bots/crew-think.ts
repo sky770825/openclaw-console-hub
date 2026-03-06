@@ -675,7 +675,7 @@ ${longReply}`;
       signal: ctrl.signal,
       body: JSON.stringify({
         contents: [{ parts: [{ text: summaryPrompt }] }],
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.1 },
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
       }),
     });
 
@@ -820,7 +820,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
       const child = spawn(claudeBin, [
         '-p',
         '--model', cliModel,
-        prompt,
+        '--output-format', 'text',
       ], {
         env: (() => {
           const e: Record<string, string | undefined> = {
@@ -836,8 +836,14 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
         })(),
         cwd: process.env.HOME || '/tmp',
         timeout: CLAUDE_TIMEOUT_MS,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
+
+      // 用 stdin 傳 prompt（避免 shell arg 長度限制截斷 action 格式指示）
+      if (child.stdin) {
+        child.stdin.write(prompt);
+        child.stdin.end();
+      }
 
       child.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
       child.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });

@@ -3231,6 +3231,37 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       }
       break;
     }
+    case 'crew_dispatch': {
+      // 小蔡主動派任務給星群 — 直接 dispatch 或寫 inbox
+      const crewMsg = action.message || action.text || '';
+      if (!crewMsg) { result = { ok: false, output: 'crew_dispatch 需要 message 參數' }; break; }
+      const targetBot = action.target || ''; // 可選：指定 bot ID
+      try {
+        if (targetBot) {
+          // 寫到指定 bot 的 inbox
+          const inboxDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew', targetBot, 'inbox');
+          fs.mkdirSync(inboxDir, { recursive: true });
+          const ts = Date.now();
+          const fileName = `task-${ts}-xiaocai.md`;
+          const filePath = path.join(inboxDir, fileName);
+          fs.writeFileSync(filePath, crewMsg, 'utf-8');
+          result = { ok: true, output: `已寫入 inbox: ${targetBot}/inbox/${fileName}，bot 會在 30 秒內處理` };
+        } else {
+          // 廣播：dispatch 給所有星群（走群組討論模式）
+          const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
+          const dispatch = await dispatchToCrewBots(crewMsg, '小蔡');
+          if (dispatch.totalReplied > 0) {
+            const summary = dispatch.replies.map(r => `[${r.botName}]: ${r.reply.slice(0, 150)}`).join('\n');
+            result = { ok: true, output: `星群 ${dispatch.totalReplied} 個 bot 回覆了：\n${summary}` };
+          } else {
+            result = { ok: true, output: '已發送給星群，等待回覆中...' };
+          }
+        }
+      } catch (e) {
+        result = { ok: false, output: `crew_dispatch 失敗: ${e instanceof Error ? e.message : String(e)}` };
+      }
+      break;
+    }
     default:
       result = { ok: false, output: `未知 action: ${type}` };
   }
