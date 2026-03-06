@@ -1714,21 +1714,23 @@ async function xiaocaiPoll(): Promise<void> {
           body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
         }).catch(() => {});
 
-        // 從歷史中還原任務上下文
-        const recentUserMsgs = hist.filter(h => h.role === 'user').slice(-5).map(h => h.text);
-        const taskContext = recentUserMsgs.join('\n');
+        // 從歷史中還原任務上下文（只取老蔡的訊息，過濾掉系統回饋/action結果）
+        const recentUserMsgs = hist.filter(h => h.role === 'user' && !h.text.startsWith('[系統') && !h.text.startsWith('[執行結果')).slice(-5).map(h => h.text);
+        const taskContext = recentUserMsgs.slice(-3).join('\n').slice(0, 500);
+        const taskTitle = recentUserMsgs.find(m => m.length > 3 && m.length < 100)?.slice(0, 50) || '老蔡授權任務';
 
         try {
           const taskRes = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENCLAW_API_KEY || ''}` },
             body: JSON.stringify({
-              name: `[Claude Code] ${recentUserMsgs[0]?.slice(0, 50) || '老蔡授權任務'}`,
-              description: `老蔡對話上下文：\n${taskContext}\n\n小蔡最後回覆：${recentBotMsg.slice(0, 500)}\n\n老蔡已授權，請用 Claude Code 完成任務。`,
+              name: `[Claude Code] ${taskTitle}`,
+              description: `老蔡對話上下文：\n${taskContext}\n\n老蔡已授權，請用 Claude Code 完成任務。`,
               status: 'ready',
               priority: 1,
               owner: '小蔡',
               cat: 'development',
+              riskLevel: 'low',  // 老蔡已授權，不需要再審核
             }),
           });
           const taskData = await taskRes.json() as any;
