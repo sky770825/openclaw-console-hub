@@ -3342,18 +3342,30 @@ export async function handleGenerateSite(action: Record<string, string>): Promis
   const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
   if (!googleKey) return { ok: false, output: 'generate_site: 沒有 GOOGLE_API_KEY' };
 
-  const sitePrompt = `你是專業的前端開發者。請根據以下需求，生成一個完整的單頁 HTML 網站。
+  const sitePrompt = `你是頂尖的全端開發者。請根據以下需求，生成一個完整的單頁應用（SPA）。
 
 需求：${description}
 
-要求：
-1. 輸出完整的 HTML 檔案（包含 <!DOCTYPE html>），CSS 寫在 <style> 裡，JS 寫在 <script> 裡
-2. 使用現代美觀的設計，漸層背景、圓角、陰影、動畫
-3. 手機優先的響應式設計（RWD）
-4. 使用繁體中文
-5. 如果是商業網站，加入：hero 區塊、服務介紹、作品集/案例、預約/聯絡表單、頁尾
-6. 可以使用 CDN 資源（如 Google Fonts、Font Awesome）
-7. 只輸出 HTML 代碼，不要解釋文字，不要 markdown 代碼框
+技術要求：
+1. 輸出完整的 HTML 檔案（<!DOCTYPE html>），CSS 在 <style>，JS 在 <script>
+2. 現代美觀設計：漸層背景、圓角卡片、陰影、平滑動畫、hover 效果
+3. 手機優先 RWD 響應式（mobile-first）
+4. 繁體中文介面
+5. 可用 CDN：Google Fonts（Noto Sans TC）、Font Awesome、Alpine.js、Chart.js
+6. 只輸出 HTML，不要解釋文字，不要 markdown 代碼框
+
+功能要求（根據需求類型自動加入）：
+- 網站/Landing Page：Hero + 服務介紹 + 作品集 + 預約表單 + 頁尾
+- 會員系統：登入/註冊表單 + 會員資料頁 + 密碼驗證 + 記住我
+- CRM：客戶列表 + 新增/編輯客戶 + 搜尋篩選 + 聯絡紀錄 + 統計卡片
+- ERP/進銷存：庫存表格 + 進貨/出貨表單 + 報表圖表 + 搜尋排序
+- 電商：商品卡片 + 購物車 + 結帳流程 + 分類篩選
+- 預約系統：日曆選擇 + 時段選擇 + 預約表單 + 預約列表
+- 儀表板：統計卡片 + 圖表（用 Chart.js）+ 數據表格 + 篩選器
+- 部落格：文章列表 + 文章內頁 + 分類標籤 + 搜尋
+- 後台管理：側邊欄導航 + 數據表格 + CRUD 表單 + 統計概覽
+
+所有表單要有前端驗證。數據用 localStorage 模擬持久化。互動用原生 JS 或 Alpine.js。
 
 直接輸出 HTML：`;
 

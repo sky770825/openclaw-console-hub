@@ -331,8 +331,8 @@ ${soulCore}
 - 明確要你做事：「查一下」「幫我看」「修這個」「建一個任務」
 - 需要系統資料：「任務板有什麼」「server 狀態」「日報」
 - 代碼/技術操作：「改 XXX」「部署」「分析 XXX」
-- 做網站/生成頁面：「做一個網站」「幫我生成頁面」「做美業網站」→ 直接用 generate_site
-- **老蔡說「做」「建」「生成」「產出」開頭的，都是任務模式，不是聊天！**
+- 做產品/系統：「做網站」「做CRM」「做ERP」「建會員系統」「做電商」「做後台」「做預約系統」「做儀表板」→ 星群協作 + generate_site
+- **老蔡說「做」「建」「生成」「產出」「開發」「搭建」開頭的，都是任務模式，不是聊天！馬上行動！**
 
 對話模式就像朋友聊天，但要回的有料、有深度。不要讀檔案、不要查資料庫、不要搜索。
 回覆長度視內容而定：簡單問候 1-2 句就好，但如果老蔡問觀點、問分析、問建議，至少寫 3-5 句，要有自己的想法和判斷，不要敷衍帶過。
@@ -543,6 +543,11 @@ export async function xiaocaiThink(
   const isCrewTask = isComplex && !isSystemMsg && [
     '網站', '方案', '規劃', '分析', '調研', '設計.*系統', '開發.*功能',
     '商業', '市場', '競品', '技術方案', '架構設計', '全部做', '幫我做',
+    '會員', 'crm', 'erp', '後台', '管理系統', '預約', '排班',
+    '電商', '購物', '金流', '串接', '儀表板', 'dashboard',
+    '表單', 'form', '登入', '註冊', 'login', '後端', 'api',
+    'landing', '活動頁', '作品集', 'portfolio', '部落格', 'blog',
+    'saas', '訂閱', '報表', '庫存', '進銷存', '排程',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
   if (isCrewTask) {
@@ -550,14 +555,39 @@ export async function xiaocaiThink(
     try {
       const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
       // 判斷是否為「做網站/生成頁面」類任務
-      const isSiteTask = ['做.*網站', '生成.*網站', '做.*頁面', '建.*網站', '網站.*做', 'landing.*page'].some(kw => new RegExp(kw).test(lowerMsg));
+      const isSiteTask = [
+        '做.*網站', '生成.*網站', '做.*頁面', '建.*網站', '網站.*做', 'landing.*page',
+        '做.*系統', '建.*系統', '做.*後台', '建.*後台', '做.*平台', '建.*平台',
+        '做.*crm', '做.*erp', '建.*crm', '建.*erp',
+        '做.*會員', '建.*會員', '做.*預約', '建.*預約',
+        '做.*電商', '建.*電商', '做.*商城', '建.*商城',
+        '做.*dashboard', '做.*儀表板', '建.*儀表板',
+        '做.*表單', '建.*表單', '做.*登入', '建.*登入',
+        '做.*部落格', '建.*部落格', '做.*blog',
+        '做.*portfolio', '做.*作品集', '建.*作品集',
+      ].some(kw => new RegExp(kw).test(lowerMsg));
 
       // 組合對話上下文，讓星群知道前因後果
       const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}：${h.text.slice(0, 200)}`).join('\n');
 
+      // 判斷產品子類型
+      const productType = (() => {
+        if (/crm|客戶管理/.test(lowerMsg)) return 'CRM 客戶管理系統';
+        if (/erp|進銷存|庫存/.test(lowerMsg)) return 'ERP 企業資源管理系統';
+        if (/會員|登入|註冊/.test(lowerMsg)) return '會員管理系統';
+        if (/預約|排班/.test(lowerMsg)) return '預約排班系統';
+        if (/電商|購物|商城|金流/.test(lowerMsg)) return '電商購物平台';
+        if (/dashboard|儀表板|報表/.test(lowerMsg)) return '數據儀表板';
+        if (/部落格|blog/.test(lowerMsg)) return '部落格系統';
+        if (/作品集|portfolio/.test(lowerMsg)) return '作品集展示頁';
+        if (/表單|form/.test(lowerMsg)) return '智慧表單系統';
+        if (/後台|管理系統|後端|api/.test(lowerMsg)) return '管理後台系統';
+        return '網站';
+      })();
+
       // 根據任務類型給星群不同的派工指令
       const siteDispatchMsg = isSiteTask
-        ? `【指揮官小蔡派工 — 網站協作】\n\n老蔡要做的網站：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，給出你負責的部分：\n• 阿策：規劃網站架構（要哪些區塊、功能清單、頁面結構）\n• 阿研：調研同類型網站最佳實踐（設計風格、必備功能、競品參考）\n• 阿商：建議商業功能（預約系統、金流、會員、行銷工具）\n• 阿秘：撰寫網站文案（標題、副標、服務描述、關於我們）\n• 阿工：建議技術實作方案（框架、動畫、互動功能）\n• 阿數：建議要追蹤的數據指標（轉換率、預約數）\n\n直接給內容，不要說「需要更多資訊」。`
+        ? `【指揮官小蔡派工 — ${productType}協作】\n\n老蔡要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考）\n• 阿商：建議商業功能（變現模式、金流串接、行銷工具、訂閱方案）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD 細節）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為追蹤）\n\n直接給具體內容，不要說「需要更多資訊」。`
         : `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
 
       const dispatch = await dispatchToCrewBots(siteDispatchMsg, '小蔡');
