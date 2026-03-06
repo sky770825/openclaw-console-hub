@@ -3389,13 +3389,16 @@ async function handleGenerateSite(action: Record<string, string>): Promise<Actio
     fs.writeFileSync(filePath, html, 'utf8');
 
     const port = process.env.PORT || '3011';
-    const previewUrl = `http://localhost:${port}/sites/${slug}/index.html`;
+    const localUrl = `http://localhost:${port}/sites/${slug}/index.html`;
+    const publicBase = process.env.TUNNEL_URL || process.env.PUBLIC_URL || '';
+    const publicUrl = publicBase ? `${publicBase}/sites/${slug}/index.html` : '';
+    const previewUrl = publicUrl || localUrl;
 
     log.info(`[GenerateSite] slug=${slug} size=${html.length} url=${previewUrl}`);
 
     return {
       ok: true,
-      output: `✅ 網站已生成！\n\n📁 路徑：${filePath}\n🔗 預覽：${previewUrl}\n📏 大小：${html.length} 字元\n\n老蔡可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
+      output: `✅ 網站已生成！\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📁 路徑：${filePath}\n📏 大小：${html.length} 字元\n\n老蔡可以直接點連結預覽（手機也行）。如果要修改，告訴我哪裡要改。`
     };
   } catch (e) {
     return { ok: false, output: `generate_site 失敗: ${e instanceof Error ? e.message : String(e)}` };
