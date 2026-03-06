@@ -3,9 +3,20 @@
  * Index one markdown file
  * Usage: node scripts/index-one-file.mjs <filepath> [category]
  */
-import { readFileSync } from 'fs';
-import { basename } from 'path';
+import { readFileSync, existsSync } from 'fs';
+import { basename, dirname, join } from 'path';
 import { createHash } from 'crypto';
+import { fileURLToPath } from 'url';
+
+// 自動載入 .env（不依賴 dotenv 套件）
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = join(__dirname, '..', '.env');
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+  }
+}
 
 const filepath = process.argv[2];
 const CATEGORY = process.argv[3] || 'cookbook';
