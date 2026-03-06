@@ -1687,6 +1687,67 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
 
+      // ── 授權切換 Claude Code：老蔡說「同意/授權/可以/批准」→ 把最近任務派給 Claude Code agent ──
+      const authLower = text.trim().toLowerCase();
+      const isAuthApproval = [
+        // 明確授權
+        '同意', '授權', '批准', '可以', '允許', '核准', '准了', '通過',
+        // 催促執行
+        '開始', '去做', '去執行', '快去', '動手', '執行吧', '做吧', '改吧',
+        '開始吧', '好的', '好啊', '沒問題', 'ok', 'yes', '對',
+        // 給權限
+        '授權給你', '給你權限', '直接改', '直接做', '直接寫', '放手做',
+        '你來改', '你來做', '你處理', '你改', '你做', '你寫',
+        // 確認
+        '確認', '確定', '是的', '嗯', '好', '行',
+      ].some(kw => authLower === kw || authLower.includes(kw));
+
+      // 從歷史找小蔡最近是否在要求授權（寫入/修改/部署等）
+      const hist = xiaocaiHistory.get(chatId) || [];
+      const recentBotMsg = [...hist].reverse().find(h => h.role === 'model')?.text || '';
+      const wasAskingPermission = /授權|權限|允許.*寫入|允許.*修改|可以.*改|需要.*批准|你同意|需要你|是否同意|要我.*修|要我.*改|要我.*寫|要我.*建|要我.*做|要我.*執行|我可以|可否|能不能|請問.*可以|老蔡.*確認|確認.*再/i.test(recentBotMsg);
+
+      if (isAuthApproval && wasAskingPermission && hist.length >= 2) {
+        log.info(`[XiaocaiBot] 🔧 老蔡授權，切換 Claude Code agent 執行`);
+        fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
+        }).catch(() => {});
+
+        // 從歷史中還原任務上下文
+        const recentUserMsgs = hist.filter(h => h.role === 'user').slice(-5).map(h => h.text);
+        const taskContext = recentUserMsgs.join('\n');
+
+        try {
+          const taskRes = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENCLAW_API_KEY || ''}` },
+            body: JSON.stringify({
+              name: `[Claude Code] ${recentUserMsgs[0]?.slice(0, 50) || '老蔡授權任務'}`,
+              description: `老蔡對話上下文：\n${taskContext}\n\n小蔡最後回覆：${recentBotMsg.slice(0, 500)}\n\n老蔡已授權，請用 Claude Code 完成任務。`,
+              status: 'ready',
+              priority: 1,
+              owner: '小蔡',
+              cat: 'development',
+            }),
+          });
+          const taskData = await taskRes.json() as any;
+          const taskId = taskData?.task?.id || taskData?.id || '(unknown)';
+
+          await sendTelegramMessageToChat(chatId,
+            `🔧 收到授權！已切換 Claude Code 執行中...\n\n🆔 任務 ID：${String(taskId).slice(0, 8)}\n⏳ Claude Code 正在背景處理，完成後會通知你。`,
+            { token: XIAOCAI_TOKEN }
+          );
+          hist.push({ role: 'user', text });
+          hist.push({ role: 'model', text: `已切換 Claude Code agent 執行，任務 ID: ${taskId}` });
+          xiaocaiHistory.set(chatId, hist.slice(-20));
+          appendInteractionLog(text, [`✅ 切換 Claude Code: ${recentUserMsgs[0]?.slice(0, 40)}`], `老蔡授權，已派 Claude Code`);
+          continue;
+        } catch (e) {
+          log.warn({ err: e }, '[XiaocaiBot] 建 Claude Code 任務失敗，fallback');
+        }
+      }
+
       // ── 多步執行迴路（最多 6 輪連續行動）──
       const MAX_CHAIN_STEPS = 6;  // 對話 chain 最多 6 步，讓小蔡能完成查+分析+執行+驗證
       let currentInput = text;
