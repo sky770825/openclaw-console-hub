@@ -114,8 +114,8 @@ NEUXA_LATEST=""
 NEUXA_GROWTH=""
 NEUXA_REVIEW_PENDING=""
 if [[ -d "$NEUXA_MEMORY_DIR" ]]; then
-  # 最新 session 摘要（取最新檔案的前 5 行）
-  LATEST_FILE=$(ls -t "$NEUXA_MEMORY_DIR"/2026-*.md 2>/dev/null | head -1)
+  # 最新對話（同時看 memory/ 和 memory/daily/ 取最新的）
+  LATEST_FILE=$(ls -t "$NEUXA_MEMORY_DIR"/2026-*.md "$NEUXA_MEMORY_DIR"/daily/2026-*.md 2>/dev/null | head -1)
   if [[ -n "$LATEST_FILE" ]]; then
     LATEST_NAME=$(basename "$LATEST_FILE")
     LATEST_TIME=$(stat -f '%Sm' -t '%H:%M' "$LATEST_FILE" 2>/dev/null || echo "?")
