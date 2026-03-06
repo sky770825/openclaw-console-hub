@@ -132,8 +132,7 @@ PENDING_COUNT=$(ls -1 "$HOME/.openclaw/workspace/review/pending/"*.md 2>/dev/nul
 if [[ "$PENDING_COUNT" -gt 0 ]]; then
   NEUXA_REVIEW_PENDING="⚠️ $PENDING_COUNT 份待審文件在 review/pending/"
 fi
-# gateway 狀態（已停用，bot 功能由 Server 3011 負責）
-GW_STATUS="⏭️ 未啟用（由 Server 負責）"
+# gateway 已移除（bot 功能由 Server 3011 直接負責）
 
 # ── 9. git 最新 commit ──
 GIT_LOG=""
@@ -158,7 +157,7 @@ cat <<HEADER
 | Google | gemini-embedding-001 | 向量 Embedding | ✅ 免費 |
 
 > 🤖 **NEUXA 目前主模型**：\`${CURRENT_MODEL}\`
-> ⚠️ 如果 NEUXA 不回應 → 改 openclaw.json \`agents.defaults.model.primary\` 再 kill -HUP \$(pgrep openclaw-gateway)
+> ⚠️ 如果 NEUXA 不回應 → 重啟 Server：launchctl stop/start com.openclaw.taskboard
 
 ---
 
@@ -179,7 +178,6 @@ ${ACTIVITY:-"(無活動記錄)"}
 $GIT_LOG
 
 ## 🧠 NEUXA 動態
-- **Gateway**：${GW_STATUS}
 - **${NEUXA_LATEST:-"(無最新對話)"}**
 - **${NEUXA_GROWTH:-"(GROWTH.md 未找到)"}**
 - **${NEUXA_REVIEW_PENDING:-"review/pending: 0 份待審"}**
