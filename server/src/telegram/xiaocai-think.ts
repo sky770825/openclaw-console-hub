@@ -486,16 +486,24 @@ export async function xiaocaiThink(
   const startModel = isComplex ? 'claude-opus-cli' : xiaocaiMainModel;
   if (isComplex) log.info(`[XiaocaiAI] 🏆 偵測到複雜任務，升級到 Opus`);
 
-  // ── 階梯式升級鏈：CLI 訂閱制優先 → Gemini → API 付費最後 ──
-  const ESCALATION_CHAIN = [
-    startModel,                                // 第 0 層：主模型（複雜→Opus / 一般→Sonnet）
-    'claude-opus-cli',                         // 第 1 層：Claude Opus CLI（訂閱制，複雜任務）
-    'claude-sonnet-cli',                       // 第 2 層：Claude Sonnet CLI（訂閱制，日常主力）
-    'claude-haiku-cli',                        // 第 3 層：Claude Haiku CLI（訂閱制，快速）
-    'gemini-2.5-flash',                        // 第 4 層：Gemini Flash（免費額度）
-    'gemini-2.5-pro',                          // 第 5 層：Gemini Pro（免費額度）
-    'claude-sonnet-4-6',                       // 第 6 層：Anthropic Sonnet API（付費兜底）
-  ];
+  // ── 階梯式升級鏈 ──
+  // 簡單對話：Gemini 優先（秒回）→ Claude CLI 兜底
+  // 複雜任務：Claude CLI 優先（品質）→ Gemini 兜底
+  const ESCALATION_CHAIN = isComplex
+    ? [
+        startModel,                              // 第 0 層：Opus CLI
+        'claude-sonnet-cli',                     // 第 1 層：Sonnet CLI
+        'gemini-2.5-pro',                        // 第 2 層：Gemini Pro（免費）
+        'gemini-2.5-flash',                      // 第 3 層：Gemini Flash（免費）
+        'claude-sonnet-4-6',                     // 第 4 層：API 付費兜底
+      ]
+    : [
+        'gemini-2.5-flash',                      // 第 0 層：Gemini Flash（免費秒回）
+        'claude-haiku-cli',                      // 第 1 層：Haiku CLI（快速）
+        'gemini-2.5-pro',                        // 第 2 層：Gemini Pro（免費）
+        'claude-sonnet-cli',                     // 第 3 層：Sonnet CLI（兜底）
+        'claude-sonnet-4-6',                     // 第 4 層：API 付費兜底
+      ];
   // 去重（如果主模型已經是某層就不重複）
   const chain = [...new Set(ESCALATION_CHAIN)];
 
