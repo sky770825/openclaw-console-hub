@@ -204,6 +204,15 @@ export async function crewThink(
     for (const jsonStr of actions) {
       try {
         const action = JSON.parse(jsonStr.replace(/~/g, process.env.HOME || '/tmp')) as Record<string, string>;
+        // 常見幻覺 action 自動修正
+        const ACTION_ALIASES: Record<string, string> = {
+          list_files: 'list_dir', ls: 'list_dir', readfile: 'read_file',
+          writefile: 'write_file', search: 'semantic_search', web_fetch: 'web_browse',
+          fetch: 'web_browse', google: 'web_search', browse: 'web_browse',
+        };
+        if (ACTION_ALIASES[action.action]) {
+          action.action = ACTION_ALIASES[action.action];
+        }
         if (!VALID_ACTIONS.has(action.action)) {
           allActionResults.push(`🚫 未知 action: ${action.action}（可用：semantic_search, read_file, query_supabase 等）`);
           log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 幻覺 action=${action.action}`);
