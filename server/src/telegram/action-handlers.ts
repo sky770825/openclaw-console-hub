@@ -3307,6 +3307,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       }
       break;
     }
+    case 'generate_site':
+      result = await handleGenerateSite(action);
+      break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
   }
@@ -3324,6 +3327,79 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
   }
 
   return result;
+}
+
+// ── 網站生成 ──
+
+async function handleGenerateSite(action: Record<string, string>): Promise<ActionResult> {
+  const description = action.description || action.prompt || action.name || '';
+  if (!description) return { ok: false, output: 'generate_site 需要 description 參數（描述你要什麼網站）' };
+
+  const slug = action.slug || `site-${Date.now()}`;
+  const sitesDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'sites', slug);
+  fs.mkdirSync(sitesDir, { recursive: true });
+
+  const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
+  if (!googleKey) return { ok: false, output: 'generate_site: 沒有 GOOGLE_API_KEY' };
+
+  const sitePrompt = `你是專業的前端開發者。請根據以下需求，生成一個完整的單頁 HTML 網站。
+
+需求：${description}
+
+要求：
+1. 輸出完整的 HTML 檔案（包含 <!DOCTYPE html>），CSS 寫在 <style> 裡，JS 寫在 <script> 裡
+2. 使用現代美觀的設計，漸層背景、圓角、陰影、動畫
+3. 手機優先的響應式設計（RWD）
+4. 使用繁體中文
+5. 如果是商業網站，加入：hero 區塊、服務介紹、作品集/案例、預約/聯絡表單、頁尾
+6. 可以使用 CDN 資源（如 Google Fonts、Font Awesome）
+7. 只輸出 HTML 代碼，不要解釋文字，不要 markdown 代碼框
+
+直接輸出 HTML：`;
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: sitePrompt }] }],
+          generationConfig: { maxOutputTokens: 30000, temperature: 0.8 },
+        }),
+        signal: AbortSignal.timeout(120000),
+      }
+    );
+
+    if (!resp.ok) return { ok: false, output: `Gemini API 錯誤: HTTP ${resp.status}` };
+
+    const data = await resp.json() as Record<string, unknown>;
+    const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
+    const contentObj = ((candidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> || {};
+    const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
+    let html = parts.map(p => (p.text as string) || '').join('').trim();
+
+    if (!html) return { ok: false, output: 'Gemini 回傳空內容' };
+
+    // 清理 markdown 代碼框（如果有）
+    html = html.replace(/^```html?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+
+    // 寫入 index.html
+    const filePath = path.join(sitesDir, 'index.html');
+    fs.writeFileSync(filePath, html, 'utf8');
+
+    const port = process.env.PORT || '3011';
+    const previewUrl = `http://localhost:${port}/sites/${slug}/index.html`;
+
+    log.info(`[GenerateSite] slug=${slug} size=${html.length} url=${previewUrl}`);
+
+    return {
+      ok: true,
+      output: `✅ 網站已生成！\n\n📁 路徑：${filePath}\n🔗 預覽：${previewUrl}\n📏 大小：${html.length} 字元\n\n老蔡可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
+    };
+  } catch (e) {
+    return { ok: false, output: `generate_site 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 // ── 自動記憶 ──

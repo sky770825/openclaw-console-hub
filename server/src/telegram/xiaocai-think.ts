@@ -447,7 +447,9 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"send_group","message":"要發到群組的訊息"}
 {"action":"crew_dispatch","message":"任務描述","target":"agong"}
 {"action":"crew_dispatch","message":"全員分析這個問題"}
+{"action":"generate_site","description":"美業預約網站，粉色系，有服務項目和線上預約","slug":"beauty-salon"}
 
+generate_site：老蔡說「做網站」「生成頁面」時用。description 描述需求，slug 是網址名稱。生成後會回傳預覽連結。
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。
 send_group：發訊息到「NEUXA星群指揮處」群組。你是指揮官，群組裡有 6 個 crew bots 會接收你的指令。
 crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ace/ami/ashang/ashu），不加 target 則廣播全員。比 send_group 更直接，bot 會立刻處理並回報。

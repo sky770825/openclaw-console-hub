@@ -4028,7 +4028,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.5.14',
+    version: '2.5.15',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
@@ -4167,6 +4167,11 @@ function requireDashboardBasicAuth(req: express.Request, res: express.Response, 
   }
   next();
 }
+
+// 生成網站靜態目錄（不需登入，方便分享）
+const sitesPath = path.resolve(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'sites');
+if (!fs.existsSync(sitesPath)) fs.mkdirSync(sitesPath, { recursive: true });
+app.use('/sites', express.static(sitesPath));
 
 // 靜態前端檔案 (production build)
 const __filename = fileURLToPath(import.meta.url);
