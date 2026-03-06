@@ -1394,7 +1394,12 @@ function computeRelevanceScore(r: any, queryLower: string): number {
   const zoneScore = r.zone === 'hot' ? 0.10 : (r.zone === 'cold' ? 0.03 : 0.05);
   // Pinned 加成 5%
   const pinScore = r.is_pinned ? 0.05 : 0;
-  return vecScore + kwScore + freshScore + zoneScore + pinScore;
+  // Category 加成：cookbook 知識優先，crew 知識次之
+  const cat = (r.category || '').toLowerCase();
+  const categoryBoost = cat === 'cookbook' ? 0.08
+    : ['crew-knowledge', 'crew-sop', 'crew-rules', 'crew-playbook'].includes(cat) ? 0.03
+    : 0;
+  return vecScore + kwScore + freshScore + zoneScore + pinScore + categoryBoost;
 }
 
 async function handleSemanticSearch(query: string, limit: number = 5, mode: string = 'task'): Promise<ActionResult> {
@@ -1666,18 +1671,19 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
       fileGroups.get(key)!.push(r);
     }
 
+    const MAX_CHUNKS_PER_FILE = 2; // 同一 file_name 最多保留 2 個 chunks，避免單一文件獨佔結果
     const deduped: any[] = [];
     for (const [, chunks] of fileGroups) {
-      // 過濾掉 summary chunks（優先顯示 detail），除非只有 summary / legacy
+      // 按 hybridScore 排序，取最高分的前 MAX_CHUNKS_PER_FILE 條
+      chunks.sort((a, b) => (b._hybridScore || b.similarity || 0) - (a._hybridScore || a.similarity || 0));
+      // 優先選 detail chunks（非 summary）
       const details = chunks.filter(c =>
         c.chunk_index !== -1 && !String(c.content || '').startsWith('[SUMMARY]')
       );
       if (details.length > 0) {
-        details.sort((a, b) => (b._hybridScore || b.similarity || 0) - (a._hybridScore || a.similarity || 0));
-        deduped.push(...details.slice(0, 2)); // 同文件最多 2 條 detail
+        deduped.push(...details.slice(0, MAX_CHUNKS_PER_FILE));
       } else {
         // 只有 summary 或 legacy → 取最高分的 1 條
-        chunks.sort((a, b) => (b._hybridScore || b.similarity || 0) - (a._hybridScore || a.similarity || 0));
         deduped.push(chunks[0]);
       }
     }
@@ -1750,6 +1756,35 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
   }
   if (!fs.existsSync(resolved)) {
     return { ok: false, output: `檔案不存在: ${filePath}（已嘗試 ${NEUXA_WORKSPACE} 和 ${PROJECT_ROOT}）` };
+  }
+
+  // ── 路徑白名單：crew bot 只能索引特定目錄，防止向量庫被灌垃圾 ──
+  const homeDir = process.env.HOME || '/Users/caijunchang';
+  const indexAllowedPrefixes = [
+    path.join(PROJECT_ROOT, 'cookbook'),                                    // cookbook/
+    path.join(homeDir, '.openclaw/workspace/skills'),                      // skills/
+  ];
+
+  const isAllowedForIndex = (p: string): boolean => {
+    // 前綴白名單（cookbook/, skills/）
+    if (indexAllowedPrefixes.some(prefix => p.startsWith(prefix + '/'))) return true;
+    // crew 目錄特殊規則
+    const crewRoot = path.join(homeDir, '.openclaw/workspace/crew');
+    if (p.startsWith(crewRoot + '/') && p.endsWith('.md')) {
+      const rel = p.slice(crewRoot.length + 1);
+      // crew/*/knowledge/ 下的檔案
+      if (rel.includes('/knowledge/')) return true;
+      // crew 根層級 .md（COLLABORATION.md, QA-RULES.md, HANDOFF-TEMPLATE.md 等）
+      if (!rel.includes('/')) return true;
+      // crew/某bot/RULES.md, PLAYBOOK.md 等根層 .md（不含子目錄）
+      const parts = rel.split('/');
+      if (parts.length === 2) return true;
+    }
+    return false;
+  };
+
+  if (!isAllowedForIndex(resolved)) {
+    return { ok: false, output: `index_file 路徑受限：只能索引 cookbook/、crew/knowledge/、crew/*.md、skills/ 目錄的檔案。你傳的路徑: "${filePath}"` };
   }
 
   const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
