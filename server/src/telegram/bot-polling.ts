@@ -1886,11 +1886,12 @@ async function xiaocaiPoll(): Promise<void> {
         if (step === 0) {
           const cleanReply = stripActionJson(reply);
           const replyLen = cleanReply.length;
-          const readOnlyActions = ['read_file', 'semantic_search', 'query_supabase', 'list_dir', 'web_search'];
+          const readOnlyActions = ['read_file', 'semantic_search', 'query_supabase', 'list_dir', 'web_search', 'web_browse', 'grep_project', 'find_symbol'];
           const allReadOnly = actionMatches.every(j => {
             try { const a = JSON.parse(j) as Record<string,string>; return readOnlyActions.includes(a.action); } catch { return false; }
           });
-          // 只在「純查詢 + 回覆已夠長」時才 break（小蔡要先查再做事的流程不截斷）
+          // 只在「純查詢 + 回覆已夠長」時才 break
+          // 有產出型 action（generate_site, write_file, patch_file, create_task 等）時絕不截斷
           const isShortChat = replyLen < 300 && allReadOnly && actionMatches.length <= 2;
           if (isShortChat) {
             log.info(`[NEUXA-Chain] step=0 對話快回（replyLen=${replyLen}, readOnly=${allReadOnly}, actions=${actionMatches.length}），跳過後續 chain`);
