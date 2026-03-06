@@ -1481,25 +1481,48 @@ ${errorFeedback.slice(0, 800)}
     }
     fs.mkdirSync(outputDir, { recursive: true });
 
-    const prompt = [
-      `你是 OpenClaw 系統的 Claude 分析工程師，負責閱讀源碼、分析問題、撰寫修復方案。`,
-      ``,
-      `任務：${task.name}`,
-      `描述：${task.description || '無'}`,
-      ``,
-      `工作目錄：${PROJECT_ROOT}`,
-      `Server 源碼：${PROJECT_ROOT}/server/src/（⚠️ 唯讀！只能讀取和分析，不能 write/edit）`,
-      `輸出目錄：${PROJECT_ROOT}/output/（分析結果寫在這裡）`,
-      ``,
-      `執行步驟：`,
-      `1. 閱讀相關源碼，理解現有架構`,
-      `2. 分析問題根因，撰寫修復方案`,
-      `3. 將分析結果和建議的 patch 寫到 output/ 目錄`,
-      `4. 如果任務涉及非 server/src 的檔案（如 scripts/、workspace/），可以直接修改`,
-      ``,
-      `⚠️ 嚴禁：修改 server/src/ 或 server/dist/、動 .env/secrets/SOUL.md、push git。`,
-      `完成後說明分析結果及建議修改方案。`,
-    ].join('\n');
+    // 判斷是否為代碼修改任務（允許改 server/src，但不 push）
+    const taskText = `${task.name}\n${task.description || ''}`.toLowerCase();
+    const isCodeTask = /修復|修改|fix|patch|改進|upgrade|重構|refactor|implement|實作|開發|新增|加入|add|feature/i.test(taskText);
+
+    const prompt = isCodeTask
+      ? [
+          `你是 OpenClaw 系統的 Claude 工程師，負責直接修改代碼完成任務。`,
+          ``,
+          `任務：${task.name}`,
+          `描述：${task.description || '無'}`,
+          ``,
+          `工作目錄：${PROJECT_ROOT}`,
+          `你可以讀取和修改 server/src/ 下的檔案來完成任務。`,
+          ``,
+          `執行步驟：`,
+          `1. 閱讀相關源碼，理解現有架構`,
+          `2. 直接修改代碼完成任務`,
+          `3. 執行 cd server && npx tsc --noEmit 確認沒有 TypeScript 錯誤`,
+          `4. git add 改動的檔案並 git commit（不要 push）`,
+          ``,
+          `⚠️ 嚴禁：git push、動 .env/secrets/SOUL.md/IDENTITY.md、刪除檔案。`,
+          `完成後簡述你改了什麼。`,
+        ].join('\n')
+      : [
+          `你是 OpenClaw 系統的 Claude 分析工程師，負責閱讀源碼、分析問題、撰寫修復方案。`,
+          ``,
+          `任務：${task.name}`,
+          `描述：${task.description || '無'}`,
+          ``,
+          `工作目錄：${PROJECT_ROOT}`,
+          `Server 源碼：${PROJECT_ROOT}/server/src/（⚠️ 唯讀！只能讀取和分析，不能 write/edit）`,
+          `輸出目錄：${PROJECT_ROOT}/output/（分析結果寫在這裡）`,
+          ``,
+          `執行步驟：`,
+          `1. 閱讀相關源碼，理解現有架構`,
+          `2. 分析問題根因，撰寫修復方案`,
+          `3. 將分析結果和建議的 patch 寫到 output/ 目錄`,
+          `4. 如果任務涉及非 server/src 的檔案（如 scripts/、workspace/），可以直接修改`,
+          ``,
+          `⚠️ 嚴禁：修改 server/src/ 或 server/dist/、動 .env/secrets/SOUL.md、push git。`,
+          `完成後說明分析結果及建議修改方案。`,
+        ].join('\n');
 
     try {
       const result = await new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve) => {
@@ -1512,7 +1535,7 @@ ${errorFeedback.slice(0, 800)}
           prompt,
         ], {
           env: CLAUDE_ENV,
-          cwd: SANDBOX_WORKDIR,
+          cwd: isCodeTask ? PROJECT_ROOT : SANDBOX_WORKDIR,
           timeout,
           stdio: ['ignore', 'pipe', 'pipe'],  // stdin=/dev/null, stdout=pipe, stderr=pipe
         });
@@ -1536,39 +1559,58 @@ ${errorFeedback.slice(0, 800)}
         });
       });
 
-      // 🛡️ Claude CLI 也要保護核心源碼 — 回滾任何 server/src 或 src 的改動
-      try {
-        const gitDiffCli = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
-        const gitUntrackedCli = spawnSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
-        const changedCli = (gitDiffCli.stdout || '').trim().split('\n').filter(f => f);
-        const untrackedCli = (gitUntrackedCli.stdout || '').trim().split('\n').filter(f => f);
-        const allChangedCli = [...changedCli, ...untrackedCli];
-        const protectedCli = allChangedCli.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
-        if (protectedCli.length > 0) {
-          log.warn(`[ClaudeCLI] 🛡️ Claude CLI 改到保護區: ${protectedCli.join(', ')}，強制回滾`);
-          const trackedProtected = protectedCli.filter(f => changedCli.includes(f));
-          const untrackedProtected = protectedCli.filter(f => untrackedCli.includes(f));
-          if (trackedProtected.length > 0) {
-            spawnSync('git', ['checkout', 'HEAD', '--', ...trackedProtected], { cwd: PROJECT_ROOT, timeout: 10000 });
+      // 🛡️ 非代碼任務：回滾任何 server/src 或 src 的改動
+      // 代碼任務：允許改 server/src（但不 push），改完通知老蔡審核
+      if (!isCodeTask) {
+        try {
+          const gitDiffCli = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+          const gitUntrackedCli = spawnSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+          const changedCli = (gitDiffCli.stdout || '').trim().split('\n').filter(f => f);
+          const untrackedCli = (gitUntrackedCli.stdout || '').trim().split('\n').filter(f => f);
+          const allChangedCli = [...changedCli, ...untrackedCli];
+          const protectedCli = allChangedCli.filter(f => f.startsWith('server/src/') || f.startsWith('src/'));
+          if (protectedCli.length > 0) {
+            log.warn(`[ClaudeCLI] 🛡️ Claude CLI 改到保護區: ${protectedCli.join(', ')}，強制回滾`);
+            const trackedProtected = protectedCli.filter(f => changedCli.includes(f));
+            const untrackedProtected = protectedCli.filter(f => untrackedCli.includes(f));
+            if (trackedProtected.length > 0) {
+              spawnSync('git', ['checkout', 'HEAD', '--', ...trackedProtected], { cwd: PROJECT_ROOT, timeout: 10000 });
+            }
+            for (const uf of untrackedProtected) {
+              try { fs.unlinkSync(path.join(PROJECT_ROOT, uf)); } catch {}
+            }
+            log.info(`[ClaudeCLI] 🛡️ 已回滾 ${protectedCli.length} 個保護檔案`);
+            return {
+              success: false,
+              output: `🛡️ Claude CLI 觸碰保護區被回滾: ${protectedCli.join(', ')}`,
+              error: '自動回滾: Claude CLI 修改了 server/src 或 src 保護區',
+              exitCode: -3,
+              durationMs: Date.now() - startTime,
+              agentType,
+              modelUsed: 'claude-sonnet-subscription',
+            };
           }
-          // 刪除 untracked 的保護區新檔案
-          for (const uf of untrackedProtected) {
-            try { fs.unlinkSync(path.join(PROJECT_ROOT, uf)); } catch {}
-          }
-          log.info(`[ClaudeCLI] 🛡️ 已回滾 ${protectedCli.length} 個保護檔案`);
-          // 觸碰保護區 = 任務失敗，不繼續品質評分
-          return {
-            success: false,
-            output: `🛡️ Claude CLI 觸碰保護區被回滾: ${protectedCli.join(', ')}`,
-            error: '自動回滾: Claude CLI 修改了 server/src 或 src 保護區',
-            exitCode: -3,
-            durationMs: Date.now() - startTime,
-            agentType,
-            modelUsed: 'claude-sonnet-subscription',
-          };
+        } catch (e) {
+          log.error(`[ClaudeCLI] 🛡️ 保護區回滾失敗: ${e}`);
         }
-      } catch (e) {
-        log.error(`[ClaudeCLI] 🛡️ 保護區回滾失敗: ${e}`);
+      } else {
+        // 代碼任務：記錄改動的檔案，通知老蔡審核（不回滾、不 push）
+        try {
+          const diffResult = spawnSync('git', ['diff', '--stat'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
+          const diffStat = (diffResult.stdout || '').trim();
+          if (diffStat) {
+            log.info(`[ClaudeCLI] 📝 代碼任務完成，改動：\n${diffStat}`);
+            // 寫 pending-update 檔案，老蔡開 Claude Code 時可看到
+            const pendingDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'pending-updates');
+            fs.mkdirSync(pendingDir, { recursive: true });
+            const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            fs.writeFileSync(
+              path.join(pendingDir, `${ts}-${task.name.slice(0, 30).replace(/[/\\:*?"<>|]/g, '_')}.md`),
+              `# 待審代碼變更\n\n**任務**：${task.name}\n**時間**：${new Date().toISOString()}\n**狀態**：已 commit 未 push，等老蔡審核\n\n## 改動摘要\n\`\`\`\n${diffStat}\n\`\`\`\n\n## Claude CLI 輸出\n${result.stdout.slice(0, 2000)}\n`,
+              'utf8'
+            );
+          }
+        } catch {}
       }
 
       const artifacts = this.scanArtifacts();
