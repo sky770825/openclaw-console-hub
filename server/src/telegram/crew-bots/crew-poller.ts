@@ -340,7 +340,7 @@ export function stopCrewPolling(): void {
 // ── Inbox 掃描間隔（不需要每 6 秒掃，30 秒一次即可）──
 const INBOX_SCAN_INTERVAL_MS = 30_000;
 const lastInboxScan = new Map<string, number>();
-let inboxProcessing = new Set<string>();  // 防並發
+const inboxProcessing = new Set<string>();  // 防並發
 
 /**
  * 單一 bot 的 polling 迴圈

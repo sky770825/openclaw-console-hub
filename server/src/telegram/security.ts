@@ -49,13 +49,9 @@ export function isPathSafe(targetPath: string, operation: 'read' | 'write'): { s
   }
 
   // 禁止寫入 server 源碼目錄 — 但放行 crew-bots/ 子目錄（小蔡可自行優化星群）
-  if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
-    // 星群相關檔案 — 小蔡可改
-    if (resolved.includes('/server/src/telegram/crew-bots/')) {
-      // 放行 crew-bots/ 子目錄
-    } else {
-      return { safe: false, reason: '🛑 禁止寫入 server 源碼目錄，只有老蔡能改（crew-bots/ 除外）' };
-    }
+  if ((resolved.includes('/server/src/') || resolved.includes('/server/dist/'))
+    && !resolved.includes('/server/src/telegram/crew-bots/')) {
+    return { safe: false, reason: '🛑 禁止寫入 server 源碼目錄，只有老蔡能改（crew-bots/ 除外）' };
   }
 
   return { safe: true };

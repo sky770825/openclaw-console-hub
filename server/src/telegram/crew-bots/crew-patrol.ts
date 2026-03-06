@@ -48,15 +48,15 @@ const patrolTasks: PatrolTask[] = [
   {
     botId: 'ami',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
-      '{"action":"query_supabase","table":"openclaw_tasks","select":"name,status,priority,owner","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
-      '拿到結果後，整理簡短清單：高優先 / 進行中 / 待處理。',
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
+      '拿到結果後，整理簡短清單：進行中 / 待處理。',
     lastRun: 0,
   },
   {
     botId: 'ace',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
-      '{"action":"query_supabase","table":"openclaw_tasks","select":"name,status,priority,owner","filters":[{"column":"status","op":"in","value":"pending,queued,running,blocked"}],"limit":30}\n\n' +
-      '拿到結果後，做策略評估：1) 有沒有卡住或被 block 的任務？2) 優先級排對了嗎？3) 資源分配有沒有問題？給出具體建議。',
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running,blocked"}],"limit":30}\n\n' +
+      '拿到結果後，做策略評估：1) 有沒有卡住的任務？2) 任務排列合理嗎？3) 給出具體建議。',
     lastRun: 0,
   },
   {
@@ -70,7 +70,7 @@ const patrolTasks: PatrolTask[] = [
     botId: 'ashang',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n' +
-      '{"action":"query_supabase","table":"openclaw_tasks","select":"name,status,owner","filters":[{"column":"status","op":"eq","value":"done"}],"limit":10}\n\n' +
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,updated_at","filters":[{"column":"status","op":"eq","value":"done"}],"limit":10}\n\n' +
       '拿到結果後，做效率評估：1) 系統運行狀態如何？2) 最近完成的任務有沒有可以自動化的重複模式？3) 有什麼流程可以用 n8n 自動化來加速？',
     lastRun: 0,
   },
