@@ -3336,8 +3336,10 @@ export function appendInteractionLog(
 ): void {
   try {
     const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toTimeString().split(' ')[0];
+    // 用台灣時間 (UTC+8) 作為日期分割點
+    const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const dateStr = twNow.toISOString().split('T')[0];
+    const timeStr = twNow.toISOString().split('T')[1].split('.')[0];
     const dailyDir = path.join(NEUXA_WORKSPACE, 'memory', 'daily');
     fs.mkdirSync(dailyDir, { recursive: true });
     const logPath = path.join(dailyDir, `${dateStr}.md`);
