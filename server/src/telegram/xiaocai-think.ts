@@ -245,6 +245,39 @@ export function loadAwakeningContext(userMessage: string): string {
     }
   }
 
+  // 星群進度覺醒：老蔡問進度/回報/結果時，自動載入最近的 crew notes
+  const progressKeywords = ['進度', '回報', '結果', '做完了嗎', '好了嗎', '怎麼樣了', '星群', 'crew', '阿研', '阿工', '阿策', '阿秘', '阿商', '阿數'];
+  if (progressKeywords.some(kw => msgLower.includes(kw))) {
+    const crewDir = path.join(workspace, 'crew');
+    try {
+      if (fs.existsSync(crewDir)) {
+        const botDirs = fs.readdirSync(crewDir).filter(d => {
+          try { return fs.statSync(path.join(crewDir, d)).isDirectory(); } catch { return false; }
+        });
+        // 收集所有 bot 的最新 notes（按 mtime 排序取最新 3 個）
+        const allNotes: Array<{ bot: string; file: string; mtime: number; path: string }> = [];
+        for (const bot of botDirs) {
+          const notesDir = path.join(crewDir, bot, 'notes');
+          try {
+            if (fs.existsSync(notesDir)) {
+              for (const f of fs.readdirSync(notesDir).filter(x => x.endsWith('.md'))) {
+                try {
+                  const fp = path.join(notesDir, f);
+                  allNotes.push({ bot, file: f, mtime: fs.statSync(fp).mtimeMs, path: fp });
+                } catch { /* skip */ }
+              }
+            }
+          } catch { /* skip */ }
+        }
+        allNotes.sort((a, b) => b.mtime - a.mtime);
+        for (const n of allNotes.slice(0, 3)) {
+          const content = readFileSlice(n.path, 1000);
+          if (content) chunks.push(`=== 星群回報：${n.bot}/${n.file} ===\n${content}`);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
   return chunks.length ? '\n\n## 覺醒記憶\n' + chunks.join('\n\n') : '';
 }
 
