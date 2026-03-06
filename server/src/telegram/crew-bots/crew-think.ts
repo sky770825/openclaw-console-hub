@@ -1279,7 +1279,7 @@ ${bot.responseStyle}
 {"action":"update_task","id":"t1234567890","status":"done","result":"完成摘要"}
 {"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/MEMORY.md"}  ← 讀檔案（不能讀目錄！讀目錄用 list_dir）
 {"action":"read_file","path":"~/.openclaw/workspace/crew/${bot.id}/knowledge/tools-reference.md"}  ← 讀你的專屬知識庫
-{"action":"write_file","path":"~/.openclaw/workspace/crew/${bot.id}/notes.md","content":"內容"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/${bot.id}/notes.md","content":"內容"}  ← path 必須是完整檔案路徑（不能空！不能只寫目錄！）
 {"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}
 {"action":"reindex_knowledge","mode":"append"}
 {"action":"list_dir","path":"~/.openclaw/workspace"}  ← 看目錄內容用這個（不要用 read_file 讀目錄）
@@ -1290,11 +1290,17 @@ ${bot.responseStyle}
 {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}
 {"action":"web_search","query":"搜尋關鍵字","limit":"5"}
 {"action":"web_browse","url":"https://example.com"}
-{"action":"query_supabase","table":"openclaw_tasks","select":"*","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
+{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status","filters":[{"column":"status","op":"eq","value":"queued"}],"limit":50}
+⚠️ Supabase 真實欄位（不要幻想不存在的欄位！）：
+  openclaw_tasks: id, title, status, cat, progress, auto, thought, subs, created_at, updated_at
+  openclaw_runs: id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at
+  ❌ 不存在的欄位：name, owner, priority, assignee, result, description, agent, params, action, payload, logs — 不要用！
 {"action":"grep_project","pattern":"functionName","filePattern":"*.ts"}
 {"action":"find_symbol","symbol":"functionName","type":"function"}
 {"action":"analyze_symbol","symbol":"functionName"}
-{"action":"patch_file","path":"server/src/xxx.ts","search":"舊內容","replace":"新內容"}
+{"action":"patch_file","path":"~/.openclaw/workspace/crew/${bot.id}/notes.md","old":"舊內容","new":"新內容"}  ← 必須用 old+new（不是 search/replace）
+{"action":"patch_file","path":"xxx.ts","insert_after":"某行內容","content":"要插入的新行"}  ← 插入模式
+{"action":"patch_file","path":"xxx.ts","from_line":10,"to_line":12}  ← 刪行模式
 {"action":"code_eval","code":"console.log('hello')"}
 {"action":"delegate_agents","agents":[{"role":"角色","model":"flash","task":"任務"}],"context":"背景"}
 

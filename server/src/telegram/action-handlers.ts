@@ -2632,9 +2632,13 @@ function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; re
     }
   }
 
-  // 禁止修改 server 源碼目錄 — 只有老蔡能改（防小蔡 patch_file 搞壞核心）
+  // 禁止修改 server 源碼目錄 — 但放行 crew-bots/（小蔡可自行優化星群）
   if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
-    return { safe: false, resolved, reason: '🛑 禁止修改 server 源碼目錄，只有老蔡能改' };
+    if (resolved.includes('/server/src/telegram/crew-bots/')) {
+      // 放行 crew-bots/ 子目錄
+    } else {
+      return { safe: false, resolved, reason: '🛑 禁止修改 server 源碼目錄，只有老蔡能改（crew-bots/ 除外）' };
+    }
   }
 
   // 只擋系統目錄，其他全放行（靈魂文件已在上面攔截）

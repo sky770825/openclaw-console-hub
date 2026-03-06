@@ -389,7 +389,7 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"grep_project","pattern":"functionName","filePattern":"*.ts"}
 {"action":"find_symbol","symbol":"functionName","type":"function"}
 {"action":"analyze_symbol","symbol":"functionName"}
-{"action":"patch_file","path":"server/src/xxx.ts","search":"舊內容","replace":"新內容"}
+{"action":"patch_file","path":"server/src/xxx.ts","old":"舊內容","new":"新內容"}  ← 必須用 old+new（不是 search/replace）
 {"action":"code_eval","code":"console.log('hello')"}
 {"action":"plan_project","goal":"要達成的目標","weeks":"4","detail_level":"medium"}
 {"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
@@ -419,7 +419,10 @@ crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ac
 {"action":"send_group","message":"各位，請分析一下最近系統的健康狀態，各自從自己的專長角度回報"}
 {"action":"send_group","message":"阿研，幫我調研 Live2D 技術方案"}
 {"action":"send_group","message":"阿工 阿策，這個 bug 修復方案你們怎麼看？"}
-Supabase 欄位：openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at。
+⚠️ Supabase 真實欄位（不要用不存在的欄位！）：
+  openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at
+  openclaw_runs: id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at
+  ❌ 不存在：owner, priority, assignee, result, description, agent, params, action, payload, logs
 可一次放多個 action，每個獨立一行。路徑用 ~ 開頭。主工作區：~/.openclaw/workspace/
 
 ## 你的能力範圍（放心做，全開放）
