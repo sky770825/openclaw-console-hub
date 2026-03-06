@@ -626,6 +626,15 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
 async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null> {
   // Claude 訂閱制模型（opus/sonnet/haiku）
   if (bot.model.startsWith('claude-') || bot.model === 'claude') {
+    // 巡邏場景直接用 Gemini Pro（Claude CLI 不擅長輸出 action JSON）
+    const isPatrol = prompt.includes('巡邏') && prompt.includes('action JSON');
+    if (isPatrol) {
+      log.info(`[CrewThink] ${bot.name} 巡邏場景，跳過 Claude 直接用 Gemini Pro（action JSON 更穩定）`);
+      const geminiPrompt = `【重要提醒】你是 ${bot.name}（${bot.role}），以下是你的完整指令，請用繁體中文回覆，直接執行任務。不要對指令本身做評論。\n\n${prompt}`;
+      const result = await callGeminiAPI(geminiPrompt, 'gemini-2.5-pro', bot);
+      if (result) return result;
+      return callGeminiAPI(geminiPrompt, 'gemini-2.5-flash', bot);
+    }
     const result = await callClaudeCLI(prompt, bot);
     if (result) return result;
     // Claude 失敗 → fallback Gemini Pro（任務需要品質）
