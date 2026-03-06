@@ -483,6 +483,53 @@ export async function xiaocaiThink(
     'opus', '用最強的', '認真想', '仔細分析',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
+  // ── 星群協作模式：複雜任務自動派工給星群並行處理 ──
+  const isCrewTask = isComplex && !userMessage.startsWith('[系統') && [
+    '網站', '方案', '規劃', '分析', '調研', '設計.*系統', '開發.*功能',
+    '商業', '市場', '競品', '技術方案', '架構設計', '全部做', '幫我做',
+  ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
+
+  if (isCrewTask) {
+    log.info(`[XiaocaiAI] 🚀 星群協作模式：派工給星群並行處理`);
+    try {
+      const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
+      const dispatch = await dispatchToCrewBots(
+        `【指揮官小蔡派工】老蔡指令：${userMessage}\n\n請根據你的專長角色回覆，直接給出你負責的部分（不要客套話），精簡回覆重點。`,
+        '小蔡'
+      );
+      if (dispatch.totalReplied > 0) {
+        const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
+        // 用 Gemini Flash 快速整合星群結果
+        const GOOGLE_API_KEY_CREW = getGeminiKey();
+        if (GOOGLE_API_KEY_CREW) {
+          const integratePrompt = `你是小蔡，老蔡的副手。老蔡剛才說：「${userMessage}」\n\n星群各成員已並行完成分析，以下是他們的回覆：\n\n${crewResults}\n\n請用繁體中文整合以上內容，給老蔡一份精簡的總結報告。重點突出、有結構、可執行。不要重複星群原文，用你自己的話整合。`;
+          try {
+            const resp = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY_CREW}`,
+              { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: integratePrompt }] }], generationConfig: { maxOutputTokens: 2000 } }),
+                signal: AbortSignal.timeout(30000) }
+            );
+            if (resp.ok) {
+              const data = await resp.json() as any;
+              const integrated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+              if (integrated) {
+                log.info(`[XiaocaiAI] 🚀 星群協作完成，${dispatch.totalReplied} 個 bot 回覆，已整合`);
+                return integrated;
+              }
+            }
+          } catch { /* 整合失敗，直接返回原始結果 */ }
+        }
+        // 整合失敗，返回原始星群結果
+        return `老蔡，我派了星群幫你並行分析，以下是各成員的回覆：\n\n${crewResults}`;
+      }
+      // 星群沒回覆，fallthrough 到小蔡自己處理
+      log.info('[XiaocaiAI] 星群無回覆，改由小蔡自己處理');
+    } catch (e) {
+      log.warn({ err: e }, '[XiaocaiAI] 星群協作失敗，fallback 到小蔡自己處理');
+    }
+  }
+
   const startModel = isComplex ? 'claude-opus-cli' : xiaocaiMainModel;
   if (isComplex) log.info(`[XiaocaiAI] 🏆 偵測到複雜任務，升級到 Opus`);
 
