@@ -2197,6 +2197,21 @@ async function heartbeatTick(): Promise<void> {
         if (ownerChatId) {
           await sendTelegramMessageToChat(ownerChatId, summary, { token: XIAOCAI_TOKEN, silent: true, parseMode: 'HTML' });
         }
+        // n8n 心跳異常 webhook
+        try {
+          const n8nUrl = process.env.N8N_API_URL?.replace(/\/$/, '');
+          if (n8nUrl) {
+            fetch(`${n8nUrl}/webhook/heartbeat-alert`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                totalActions: allResults.length,
+                failedCount: errorLines.length,
+                failures: errorLines.map(r => ({ action: r.slice(2, 50), reason: r.slice(0, 150) })),
+              }),
+            }).catch(() => {});
+          }
+        } catch { /* n8n optional */ }
       }
       appendInteractionLog('[心跳]', allResults, hasRealError ? '心跳異常' : '心跳正常');
     }

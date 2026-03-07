@@ -3592,6 +3592,23 @@ ${html}`;
 
     log.info(`[GenerateSite] ✅ 完成 slug=${slug} size=${html.length} phases=${needsFix ? 3 : 2}${issueNote}`);
 
+    // n8n 網站生成完成 webhook
+    try {
+      const n8nUrl = process.env.N8N_API_URL?.replace(/\/$/, '');
+      if (n8nUrl) {
+        fetch(`${n8nUrl}/webhook/site-generated`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            siteName: slug,
+            url: publicUrl || previewUrl,
+            productType: action.productType || action.type || 'website',
+            auditScore: needsFix ? 'fixed' : 'pass',
+          }),
+        }).catch(() => {});
+      }
+    } catch { /* n8n optional */ }
+
     return {
       ok: true,
       output: `✅ 網站已生成！${phaseInfo}\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📏 大小：${html.length} 字元${issueNote}\n\n老蔡可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
