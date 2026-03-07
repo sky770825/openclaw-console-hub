@@ -10,7 +10,7 @@
 
 import { createLogger } from '../../logger.js';
 import { sendTelegramMessageToChat } from '../../utils/telegram.js';
-import { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
+import { ACTIVE_CREW_BOTS, STANDBY_CREW_BOTS, CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
 import type { CrewBotConfig } from './crew-config.js';
 
 const log = createLogger('crew-doctor');
@@ -63,9 +63,22 @@ export type RepairAction =
   | 'notify_owner'     // 通知老蔡
   | 'restart_polling';  // 重啟 polling
 
+// ── Standby Bot 簡要健康紀錄 ──
+
+interface StandbyHealthRecord {
+  botId: string;
+  /** 最近一次被啟用的時間戳 */
+  lastActivatedAt: number;
+  /** 累計啟用次數 */
+  totalActivations: number;
+  /** 最近一次錯誤訊息 */
+  lastError: string | null;
+}
+
 // ── 健康資料庫（記憶體內） ──
 
 const healthDB = new Map<string, BotHealthRecord>();
+const standbyHealthDB = new Map<string, StandbyHealthRecord>();
 
 function getHealth(botId: string): BotHealthRecord {
   if (!healthDB.has(botId)) {
@@ -82,6 +95,42 @@ function getHealth(botId: string): BotHealthRecord {
     });
   }
   return healthDB.get(botId)!;
+}
+
+function getStandbyHealth(botId: string): StandbyHealthRecord {
+  if (!standbyHealthDB.has(botId)) {
+    standbyHealthDB.set(botId, {
+      botId,
+      lastActivatedAt: 0,
+      totalActivations: 0,
+      lastError: null,
+    });
+  }
+  return standbyHealthDB.get(botId)!;
+}
+
+/** 記錄 standby bot 被啟用 */
+export function recordStandbyActivation(botId: string): void {
+  const s = getStandbyHealth(botId);
+  s.lastActivatedAt = Date.now();
+  s.totalActivations++;
+  s.lastError = null;
+  log.info(`[CrewDoctor] Standby bot ${botId} 啟用 (total: ${s.totalActivations})`);
+}
+
+/** 記錄 standby bot 錯誤 */
+export function recordStandbyError(botId: string, error: string): void {
+  const s = getStandbyHealth(botId);
+  s.lastError = error;
+  log.warn(`[CrewDoctor] Standby bot ${botId} 錯誤: ${error}`);
+}
+
+/** 取得所有 standby bot 的簡要狀態 */
+export function getStandbyStatus(): Array<StandbyHealthRecord & { botName: string; emoji: string }> {
+  return STANDBY_CREW_BOTS.map(bot => {
+    const s = getStandbyHealth(bot.id);
+    return { ...s, botName: bot.name, emoji: bot.emoji };
+  });
 }
 
 // ── 記錄事件 ──
@@ -178,11 +227,10 @@ export function diagnose(botId: string): DiagnosisResult | null {
   return result;
 }
 
-/** 診斷所有 bot */
+/** 診斷所有 active bot（standby bot 不做定期診斷） */
 export function diagnoseAll(): DiagnosisResult[] {
   const results: DiagnosisResult[] = [];
-  for (const bot of CREW_BOTS) {
-    if (!bot.token) continue;
+  for (const bot of ACTIVE_CREW_BOTS) {
     const d = diagnose(bot.id);
     if (d) results.push(d);
   }
@@ -260,8 +308,9 @@ export function detectStuck(thresholdMs: number = 180_000): Array<{ botId: strin
 export function generateHealthReport(): string {
   const lines: string[] = ['🏥 <b>星群健康報告</b>', ''];
 
-  for (const bot of CREW_BOTS) {
-    if (!bot.token) continue;
+  // ── Active Bots 完整 metrics ──
+  lines.push('<b>🟢 Active Bots</b>');
+  for (const bot of ACTIVE_CREW_BOTS) {
     const h = getHealth(bot.id);
     const total = h.totalSuccess + h.totalFail;
     const rate = total > 0 ? Math.round((h.totalSuccess / total) * 100) : 100;
@@ -279,6 +328,25 @@ export function generateHealthReport(): string {
       (h.consecutiveFails > 0 ? ` | ⚠️ 連失${h.consecutiveFails}` : '') +
       (cooling ? ' | ❄️冷卻中' : ''),
     );
+  }
+
+  // ── Standby Bots 簡要狀態 ──
+  if (STANDBY_CREW_BOTS.length > 0) {
+    lines.push('');
+    lines.push('<b>💤 Standby Bots</b>');
+    for (const bot of STANDBY_CREW_BOTS) {
+      const s = getStandbyHealth(bot.id);
+      const lastActive = s.lastActivatedAt > 0
+        ? `上次啟用 ${Math.round((Date.now() - s.lastActivatedAt) / 60000)}m ago`
+        : '從未啟用';
+      const errorTag = s.lastError ? ` | ⚠️ ${s.lastError}` : '';
+      lines.push(
+        `💤 ${bot.emoji} <b>${bot.name}</b>` +
+        ` | ${lastActive}` +
+        ` | 啟用 ${s.totalActivations} 次` +
+        errorTag,
+      );
+    }
   }
 
   const stuck = detectStuck();
@@ -300,8 +368,8 @@ export async function sendHealthReport(): Promise<void> {
 
   const report = generateHealthReport();
 
-  // 用小蔡的 token 發（找第一個有 token 的 bot）
-  const senderBot = CREW_BOTS.find(b => b.token);
+  // 用 active bot 的 token 發
+  const senderBot = ACTIVE_CREW_BOTS[0];
   if (!senderBot) return;
 
   try {
@@ -342,7 +410,7 @@ export async function autoRepair(diagnosis: DiagnosisResult): Promise<boolean> {
     case 'notify_owner': {
       // 通知老蔡
       if (!CREW_GROUP_CHAT_ID) return false;
-      const alertBot = CREW_BOTS.find(b => b.token);
+      const alertBot = ACTIVE_CREW_BOTS[0];
       if (!alertBot) return false;
 
       const msg = `🚨 <b>星群醫生告警</b>\n\n${diagnosis.detail}\n\n建議：手動檢查或重啟 server`;
@@ -370,7 +438,8 @@ export async function autoRepair(diagnosis: DiagnosisResult): Promise<boolean> {
 // ── 綜合健檢（定期呼叫） ──
 
 /**
- * 完整健康檢查 + 自動修復
+ * 完整健康檢查 + 自動修復（僅 Active Bots）
+ * Standby bot 不做定期健檢，用 getStandbyStatus() 查詢狀態
  * 回傳：有問題的 bot 列表
  */
 export async function fullCheckup(): Promise<DiagnosisResult[]> {
@@ -404,9 +473,9 @@ export function resetHealth(botId: string): void {
   log.info(`[CrewDoctor] ${botId} 健康紀錄已重置`);
 }
 
-/** 取得所有 bot 的健康狀態 */
+/** 取得所有 active bot 的健康狀態 */
 export function getAllHealthStatus(): Array<BotHealthRecord & { cooling: boolean }> {
-  return CREW_BOTS.filter(b => b.token).map(bot => {
+  return ACTIVE_CREW_BOTS.map(bot => {
     const h = getHealth(bot.id);
     return { ...h, cooling: isCoolingDown(bot.id) };
   });

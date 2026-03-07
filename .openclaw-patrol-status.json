@@ -1,1 +1,23 @@
-{"lastPatrol":"2026-02-19T22:00:06Z","status":"ok","tasks":36,"unresolved":0}
+{
+  "lastPatrol": "2026-03-07T08:27:04Z",
+  "status": "ok",
+  "tasks": 27,
+  "unresolved": 0,
+  "details": {
+    "server": "v2.5.22 online, uptime 763s",
+    "supabase": "ok",
+    "telegram": "configured",
+    "n8n": "configured",
+    "autoExecutor": "running, dispatch mode",
+    "memory": "RSS 100MB / Heap 27MB",
+    "logErrors": 0,
+    "taskStats": {
+      "done": 27,
+      "pending": 0,
+      "queued": 0,
+      "running": 0,
+      "failed": 0
+    }
+  },
+  "patrolBy": "claude-opus (manual)"
+}

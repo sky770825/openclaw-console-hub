@@ -14,7 +14,7 @@ import { createLogger } from '../../logger.js';
 import { executeNEUXAAction } from '../action-handlers.js';
 import { getTaskSnapshot, getSystemStatus, claudeCliCircuitOpen, claudeCliRecordFail, claudeCliRecordSuccess } from '../xiaocai-think.js';
 import type { CrewBotConfig } from './crew-config.js';
-import { CREW_BOTS } from './crew-config.js';
+import { ACTIVE_CREW_BOTS } from './crew-config.js';
 import { wsManager } from '../../websocket.js';
 import { recordSuccess, recordFailure, markThinkStart, markThinkEnd, isCoolingDown } from './crew-doctor.js';
 import { getInboxContext } from './crew-inbox.js';
@@ -35,6 +35,51 @@ const VALID_ACTIONS = new Set([
   'code_eval', 'index_file', 'reindex_knowledge', 'web_search',
   'web_browse', 'proxy_fetch', 'delegate_agents', 'mkdir', 'move_file',
 ]);
+
+// ── 動態模型選擇 ──
+function selectModel(bot: CrewBotConfig, taskComplexity: 'simple' | 'medium' | 'complex'): string {
+  if (taskComplexity === 'simple') return 'gemini-flash';
+  if (bot.model === 'claude-opus' && taskComplexity === 'medium') return 'claude-sonnet';
+  return bot.model; // complex 用原始模型
+}
+
+// ── 任務複雜度評估 ──
+function assessComplexity(text: string): 'simple' | 'medium' | 'complex' {
+  const len = text.length;
+  const hasCode = /```|function|class|import/.test(text);
+  const hasMultiStep = /步驟|phase|階段|然後|接著/.test(text);
+  if (hasCode || hasMultiStep || len > 500) return 'complex';
+  if (len > 200) return 'medium';
+  return 'simple';
+}
+
+// ── 回覆品質驗證 ──
+function validateReply(reply: string, actions: string[] | null): { ok: boolean; reason?: string } {
+  if (!reply || reply.trim().length < 20) {
+    return { ok: false, reason: 'reply_too_short' };
+  }
+  // 純 emoji 或純招呼語
+  const stripped = reply.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]/gu, '');
+  if (stripped.length < 10) {
+    return { ok: false, reason: 'pure_emoji_or_greeting' };
+  }
+  const greetingOnly = /^(你好|哈囉|嗨|hi|hello|hey|早安|晚安)[!！。.~～]?\s*$/i.test(reply.trim());
+  if (greetingOnly) {
+    return { ok: false, reason: 'greeting_only' };
+  }
+  // 如果有 action，檢查是否在白名單內
+  if (actions && actions.length > 0) {
+    for (const jsonStr of actions) {
+      try {
+        const parsed = JSON.parse(jsonStr) as Record<string, string>;
+        if (parsed.action && !VALID_ACTIONS.has(parsed.action)) {
+          return { ok: false, reason: `invalid_action:${parsed.action}` };
+        }
+      } catch { /* ignore parse errors, handled elsewhere */ }
+    }
+  }
+  return { ok: true };
+}
 
 // ── Claude 併發鎖 + 全局冷卻 ──
 let claudeRunning = 0;
@@ -138,6 +183,13 @@ export async function crewThink(
   let finalReply = '';
   const allActionResults: string[] = [];
 
+  // 動態模型選擇：根據任務複雜度選擇模型
+  const taskComplexity = assessComplexity(userMessage);
+  const dynamicModel = selectModel(bot, taskComplexity);
+  if (dynamicModel !== bot.model) {
+    log.info(`[CrewThink] ${bot.emoji} ${bot.name} 複雜度=${taskComplexity}，模型 ${bot.model} → ${dynamicModel}`);
+  }
+
   // 模型策略：auto 模式智慧判斷
   // - 指揮官指令 / 訊息觸及 bot 職責關鍵字 → 直接用原配模型（做事）
   // - 純閒聊短句 → Flash（省額度）
@@ -145,7 +197,8 @@ export async function crewThink(
   if (!useFullModel && mode === 'auto') {
     useFullModel = shouldUseFullModel(bot, userMessage, senderName);
     if (useFullModel) {
-      log.info(`[CrewThink] ${bot.emoji} ${bot.name} 偵測到任務意圖，直接用 ${bot.model} 模型`);
+      // 即使 shouldUseFullModel 為 true，仍受動態模型選擇影響（medium 降級）
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} 偵測到任務意圖，使用 ${dynamicModel} 模型`);
     }
   }
 
@@ -154,9 +207,11 @@ export async function crewThink(
       ? fullPrompt
       : `[系統回饋] 你上一步的 action 執行結果：\n${allActionResults.slice(-5).join('\n')}\n\n繼續下一步。如果所有步驟都完成了，給出最終回覆（不帶 action JSON）。`;
 
+    // 使用動態模型選擇：useFullModel 時用 dynamicModel（可能被降級），否則用 flash
+    const effectiveModel = useFullModel ? dynamicModel : 'gemini-2.5-flash';
     const reply = useFullModel
       ? await callAI(input, bot)
-      : await callGeminiAPI(input, 'gemini-2.5-flash', bot);
+      : await callGeminiAPI(input, effectiveModel, bot);
     if (!reply) {
       if (step === 0) {
         recordFailure(bot.id, 'empty_reply');
@@ -238,6 +293,32 @@ export async function crewThink(
 
     if (step === MAX_CHAIN_STEPS - 1) {
       finalReply = cleanReply || `（${bot.name}已執行 ${allActionResults.length} 個動作）`;
+    }
+  }
+
+  // ── 驗證迴圈：品質檢查 + 重試 ──
+  if (finalReply) {
+    const lastActions = extractActionJsons(finalReply);
+    const validation = validateReply(finalReply, lastActions);
+    if (!validation.ok) {
+      log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 回覆品質不通過: ${validation.reason}，用更強模型重試`);
+      // 重試 1 次，用原始（更強）模型
+      const retryInput = `${fullPrompt}\n\n⚠️ 你上次的回覆品質不足（${validation.reason}），請重新回答，給出有實質內容的回覆。`;
+      const retryReply = await callAI(retryInput, bot);
+      if (retryReply) {
+        const retryClean = stripActionJson(retryReply);
+        const retryValidation = validateReply(retryClean, extractActionJsons(retryReply));
+        if (retryValidation.ok) {
+          log.info(`[CrewThink] ${bot.emoji} ${bot.name} 重試成功，採用新回覆`);
+          finalReply = retryClean;
+        } else {
+          log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 重試仍不通過: ${retryValidation.reason}，返回 null`);
+          finalReply = '';
+        }
+      } else {
+        log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 重試返回空，返回 null`);
+        finalReply = '';
+      }
     }
   }
 
@@ -1201,7 +1282,7 @@ function buildCrewPrompt(
   taskSnap: string,
   botMemory: string,
 ): string {
-  const otherBots = CREW_BOTS
+  const otherBots = ACTIVE_CREW_BOTS
     .filter(b => b.id !== bot.id && b.token)
     .map(b => `${b.name}(${b.role})`)
     .join('、');
@@ -1241,7 +1322,7 @@ ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的
 不是你專長的事，轉給對的人。用 write_file 寫 inbox 檔案 + 群組 @提及。
 
 **星群成員專長速查：**
-${CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b.name}**（${b.role}）：${b.duties[0]}`).join('\n')}
+${ACTIVE_CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b.name}**（${b.role}）：${b.duties[0]}`).join('\n')}
 - 🧠 **小蔡**（指揮官）：git push、部署、重大決策
 
 **轉介規則：**

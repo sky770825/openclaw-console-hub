@@ -1,16 +1,18 @@
 /**
- * NEUXA 星群 — 巡邏機制（心跳開關版）
+ * NEUXA 星群 — 巡邏機制（事件驅動 + 心跳開關版）
  * 手動觸發：群組喊「巡邏」「報到」
- * 自動心跳：API 開關 on/off，預設關閉，間隔可調
+ * 事件驅動：onErrorDetected / onMetricsAnomaly 即時觸發
+ * 自動心跳：API 開關 on/off，預設關閉，間隔 60 分鐘
  *
- * 阿研：掃 log 異常
- * 阿數：查 metrics / 任務統計
- * 阿秘：整理待辦摘要
+ * 阿研：log + metrics 巡邏
+ * 阿工：工程診斷
+ * 阿策：策略 + 效率評估
+ * 阿秘：待辦整理
  */
 
 import { createLogger } from '../../logger.js';
 import { sendTelegramMessageToChat } from '../../utils/telegram.js';
-import { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
+import { ACTIVE_CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
 import { crewThink, pushHistory, type CrewThinkResult } from './crew-think.js';
 
 const log = createLogger('crew-patrol');
@@ -18,7 +20,7 @@ const log = createLogger('crew-patrol');
 // ── 心跳狀態 ──
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let heartbeatEnabled = false;
-let heartbeatIntervalMs = 30 * 60 * 1000; // 預設 30 分鐘
+let heartbeatIntervalMs = 60 * 60 * 1000; // 預設 60 分鐘（有事件驅動補充）
 let heartbeatBusy = false;
 let lastHeartbeatAt = 0;
 let heartbeatCount = 0;
@@ -31,35 +33,17 @@ interface PatrolTask {
 
 const patrolTasks: PatrolTask[] = [
   {
+    // 阿研：log + metrics 巡邏（合併原阿研 + 阿數）
     botId: 'ayan',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
-      '{"action":"run_script","command":"tail -50 ~/.openclaw/logs/server.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n\n' +
-      '拿到結果後，分析有無異常。有異常就報告嚴重程度，沒異常就說「巡邏完畢，系統正常」。',
-    lastRun: 0,
-  },
-  {
-    botId: 'ashu',
-    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
+      '{"action":"run_script","command":"tail -50 ~/.openclaw/logs/server.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n' +
       '{"action":"query_supabase","table":"openclaw_tasks","select":"status","filters":[],"limit":200}\n' +
       '{"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n\n' +
-      '拿到結果後，彙整：任務統計（各狀態幾個）+ 系統健康。',
+      '拿到結果後，彙整：1) log 有無異常（嚴重程度）2) 任務統計（各狀態幾個）3) 系統健康。沒異常就說「巡邏完畢，系統正常」。',
     lastRun: 0,
   },
   {
-    botId: 'ami',
-    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
-      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
-      '拿到結果後，整理簡短清單：進行中 / 待處理。',
-    lastRun: 0,
-  },
-  {
-    botId: 'ace',
-    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
-      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running,blocked"}],"limit":30}\n\n' +
-      '拿到結果後，做策略評估：1) 有沒有卡住的任務？2) 任務排列合理嗎？3) 給出具體建議。',
-    lastRun: 0,
-  },
-  {
+    // 阿工：工程診斷（不變）
     botId: 'agong',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"run_script","command":"tail -80 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|fail|crash|ECONNREFUSED|ETIMEOUT|TypeError|ReferenceError\\" | tail -15"}\n\n' +
@@ -67,11 +51,21 @@ const patrolTasks: PatrolTask[] = [
     lastRun: 0,
   },
   {
-    botId: 'ashang',
+    // 阿策：策略 + 效率評估（合併原阿策 + 阿商）
+    botId: 'ace',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running,blocked"}],"limit":30}\n' +
       '{"action":"run_script","command":"curl -s http://localhost:3011/api/health"}\n' +
       '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,updated_at","filters":[{"column":"status","op":"eq","value":"done"}],"limit":10}\n\n' +
-      '拿到結果後，做效率評估：1) 系統運行狀態如何？2) 最近完成的任務有沒有可以自動化的重複模式？3) 有什麼流程可以用 n8n 自動化來加速？',
+      '拿到結果後：1) 有沒有卡住的任務？2) 任務排列合理嗎？3) 最近完成的任務有可自動化的重複模式嗎？4) 給出具體建議。',
+    lastRun: 0,
+  },
+  {
+    // 阿秘：待辦整理（不變）
+    botId: 'ami',
+    prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
+      '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
+      '拿到結果後，整理簡短清單：進行中 / 待處理。',
     lastRun: 0,
   },
 ];
@@ -145,6 +139,48 @@ async function heartbeatTick(): Promise<void> {
   }
 }
 
+// ── 事件驅動觸發 ──
+
+/** 偵測到錯誤時，直接觸發阿工的工程診斷，不等定時巡邏 */
+export function onErrorDetected(errorMsg: string): void {
+  const agongTask = patrolTasks.find(t => t.botId === 'agong');
+  if (!agongTask) return;
+
+  const bot = ACTIVE_CREW_BOTS.find(b => b.id === 'agong');
+  if (!bot?.token || !CREW_GROUP_CHAT_ID) return;
+
+  log.info(`[CrewPatrol] onErrorDetected 觸發阿工診斷: ${errorMsg.slice(0, 100)}`);
+
+  const eventTask: PatrolTask = {
+    botId: 'agong',
+    prompt: `系統偵測到錯誤事件，請立即診斷：\n\n錯誤訊息：${errorMsg}\n\n` + agongTask.prompt,
+    lastRun: 0,
+  };
+  executePatrol(eventTask).catch(err =>
+    log.error({ err }, '[CrewPatrol] onErrorDetected 執行失敗')
+  );
+}
+
+/** 偵測到 metrics 異常時，直接觸發阿研的數據分析 */
+export function onMetricsAnomaly(metric: string, value: number): void {
+  const ayanTask = patrolTasks.find(t => t.botId === 'ayan');
+  if (!ayanTask) return;
+
+  const bot = ACTIVE_CREW_BOTS.find(b => b.id === 'ayan');
+  if (!bot?.token || !CREW_GROUP_CHAT_ID) return;
+
+  log.info(`[CrewPatrol] onMetricsAnomaly 觸發阿研分析: ${metric}=${value}`);
+
+  const eventTask: PatrolTask = {
+    botId: 'ayan',
+    prompt: `系統偵測到 metrics 異常，請立即分析：\n\n指標：${metric}\n數值：${value}\n\n` + ayanTask.prompt,
+    lastRun: 0,
+  };
+  executePatrol(eventTask).catch(err =>
+    log.error({ err }, '[CrewPatrol] onMetricsAnomaly 執行失敗')
+  );
+}
+
 // ── 原有功能 ──
 
 /**
@@ -170,7 +206,7 @@ export function stopCrewPatrol(): void {
  * 手動觸發所有巡邏任務（群組喊「巡邏」時呼叫）
  */
 export async function triggerPatrolNow(): Promise<void> {
-  const activeBots = new Set(CREW_BOTS.filter(b => b.token).map(b => b.id));
+  const activeBots = new Set(ACTIVE_CREW_BOTS.map(b => b.id));
   const tasks = patrolTasks.filter(t => activeBots.has(t.botId));
 
   if (tasks.length === 0) {
@@ -197,7 +233,7 @@ export async function triggerPatrolNow(): Promise<void> {
 }
 
 async function executePatrol(task: PatrolTask): Promise<void> {
-  const bot = CREW_BOTS.find(b => b.id === task.botId);
+  const bot = ACTIVE_CREW_BOTS.find(b => b.id === task.botId);
   if (!bot?.token) return;
 
   const chatId = Number(CREW_GROUP_CHAT_ID);

@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "enabledAt": "2026-02-28T22:32:33.418Z",
+  "enabledAt": "2026-03-07T08:30:00.000Z",
   "enabledBy": "telegram-group",
   "maxTasksPerRun": 3,
   "allowedTags": [

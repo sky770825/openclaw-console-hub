@@ -1,6 +1,8 @@
 /**
- * NEUXA 星群 — Inbox 協作引擎
- * 讓 bots 能讀取、處理、回報彼此的 inbox 檔案
+ * Inbox 系統 — 精簡版
+ * 歷史使用率 0%，保留基本功能供未來啟用
+ * 掃描頻率：5 分鐘（原 30 秒）
+ * 只掃描 ACTIVE bot 的 inbox
  *
  * 協作流程：bot A write_file → bot B inbox scan → crewThink 處理 → 歸檔 + 群組回報
  */
@@ -8,14 +10,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createLogger } from '../../logger.js';
-import { CREW_BOTS } from './crew-config.js';
+import { ACTIVE_CREW_BOTS } from './crew-config.js';
 
 const log = createLogger('crew-inbox');
 
 const CREW_DIR = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'crew');
 
-/** 合法 bot ID 集合（避免掃到孤兒目錄） */
-const VALID_BOT_IDS = new Set(CREW_BOTS.map(b => b.id));
+/** 合法 bot ID 集合（只掃 ACTIVE bots，避免掃到孤兒目錄） */
+const VALID_BOT_IDS = new Set(ACTIVE_CREW_BOTS.map(b => b.id));
 
 // ── 型別 ──
 

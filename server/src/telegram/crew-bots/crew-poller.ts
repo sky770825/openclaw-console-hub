@@ -1,11 +1,11 @@
 /**
- * NEUXA 星群 Crew Bots — 統一 Polling 管理器
- * 6 個 bot 各自獨立 polling，共享路由決策
+ * NEUXA Crew Bots -- Orchestrator-Worker Polling
+ * 4 bot active polling + 2 standby (on-demand spawn)
  */
 
 import { createLogger } from '../../logger.js';
 import { sendTelegramMessageToChat } from '../../utils/telegram.js';
-import { CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
+import { ACTIVE_CREW_BOTS, CREW_BOTS, STANDBY_CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
 import type { CrewBotConfig } from './crew-config.js';
 import { routeMessage } from './crew-router.js';
 import { crewThink, pushHistory } from './crew-think.js';
@@ -15,23 +15,50 @@ import { scanInbox, archiveInboxFile, type InboxFile } from './crew-inbox.js';
 
 const log = createLogger('crew-poller');
 
-/**
- * 格式化 crew bot 回覆為 HTML（專業排版）
- * 格式：emoji <b>名字</b>（角色）\n回覆內容
- */
-function formatBotReplyHTML(bot: CrewBotConfig, reply: string): string {
-  // 台灣時區時間戳
-  const now = new Date();
-  const twTime = now.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit' });
-  return `${bot.emoji} <b>${bot.name}</b>（${bot.role}）<i>${twTime}</i>\n\n${reply}`;
+// ── Interfaces ──
+
+export interface StructuredTask {
+  id: string;
+  description: string;
+  assignedTo: string;  // bot id
+  expectedOutput: string;
+  context?: string;
+  deadline?: number;  // ms timeout
 }
 
-const POLL_INTERVAL_MS = 6000;          // 每 6 秒 poll 一次（省資源）
-const GET_UPDATES_TIMEOUT_SEC = 15;     // Telegram long polling timeout
-const FETCH_TIMEOUT_MS = 25_000;        // fetch 超時
-const STAGGER_DELAY_MS = 800;           // bot 之間交錯啟動
-const RESPONSE_DELAY_BASE_MS = 2000;    // 回覆延遲基底
-const RESPONSE_DELAY_RAND_MS = 3000;    // 額外隨機延遲
+export interface DispatchResult {
+  totalReplied: number;
+  replies: RoundReply[];
+}
+
+export interface RoundReply {
+  botId: string;
+  botName: string;
+  reply: string;
+}
+
+export interface DispatchOptions {
+  targetBots?: string[];
+  structured?: boolean;
+}
+
+// ── Constants ──
+
+const POLL_INTERVAL_MS = 10_000;           // 10 sec (4 bots is enough)
+const GET_UPDATES_TIMEOUT_SEC = 15;
+const FETCH_TIMEOUT_MS = 25_000;
+const STAGGER_DELAY_MS = 800;
+const RESPONSE_DELAY_BASE_MS = 2000;
+const RESPONSE_DELAY_RAND_MS = 3000;
+
+const MAX_DISPATCH_ROUNDS = 3;
+const ROUND_DELAY_MS = 2000;
+const BOT_STAGGER_MS = 1500;
+const MIN_REPLY_FOR_CONTINUE = 15;
+
+const HANDOFF_TIMEOUT_MS = 30_000;
+
+// ── State ──
 
 interface BotState {
   offset: number;
@@ -41,41 +68,170 @@ interface BotState {
 
 const botStates = new Map<string, BotState>();
 
-/** 訊息去重：message_id → RoutingDecision（防多 bot 重複處理同一條） */
+/** message_id -> RoutingDecision (dedup across bots) */
 const routingCache = new Map<number, ReturnType<typeof routeMessage>>();
 const ROUTING_CACHE_MAX = 200;
 
-/** 已回覆記錄：`${botId}:${messageId}` → true */
+/** `${botId}:${messageId}` -> true */
 const repliedSet = new Set<string>();
 
-const MAX_DISPATCH_ROUNDS = 3;           // 最多 3 輪對話
-const ROUND_DELAY_MS = 2000;              // 輪次間隔
-const BOT_STAGGER_MS = 1500;              // 同輪 bot 之間間隔
-const MIN_REPLY_FOR_CONTINUE = 15;        // 回覆少於 15 字視為收斂
-let dispatchRunning = false;              // 防並發
+let dispatchRunning = false;
 
-/**
- * 內部調度 — 小蔡(bot)發訊息後，直接觸發 crew bots 多輪對話
- * 繞過 Telegram getUpdates（Forum 群組 bot→bot 訊息不推送）
- *
- * 流程：小蔡發話 → crew bots 第 1 輪回覆 → 匯總 → 有追問/互動再 dispatch 第 2 輪 → 最多 3 輪
- */
-export interface DispatchResult {
-  totalReplied: number;
-  replies: RoundReply[];
+/** Track temporarily spawned standby bots so we can stop them */
+const standbyPollingStates = new Map<string, BotState>();
+
+// ── Helpers ──
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function dispatchToCrewBots(text: string, senderName: string = '小蔡'): Promise<DispatchResult> {
+/**
+ * Format crew bot reply as HTML
+ */
+function formatBotReplyHTML(bot: CrewBotConfig, reply: string): string {
+  const now = new Date();
+  const twTime = now.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit' });
+  return `${bot.emoji} <b>${bot.name}</b>(${bot.role}) <i>${twTime}</i>\n\n${reply}`;
+}
+
+// ── Standby Bot Spawner ──
+
+/**
+ * Spawn a standby bot on-demand, execute a structured task, then stop polling.
+ * Used to temporarily bring ashang/ashu online for specific tasks.
+ */
+export async function spawnStandbyBot(botId: string, task: StructuredTask): Promise<string> {
+  const bot = STANDBY_CREW_BOTS.find(b => b.id === botId) || CREW_BOTS.find(b => b.id === botId);
+  if (!bot) {
+    log.warn(`[SpawnStandby] Bot ${botId} not found`);
+    return `[error] bot ${botId} not found`;
+  }
+  if (!bot.token) {
+    log.warn(`[SpawnStandby] Bot ${botId} has no token`);
+    return `[error] bot ${botId} has no token`;
+  }
+
+  log.info(`[SpawnStandby] Spawning ${bot.emoji} ${bot.name} for task: ${task.id}`);
+
+  const timeout = task.deadline || HANDOFF_TIMEOUT_MS;
+
+  // Build prompt from structured task
+  const prompt = [
+    `[Structured Task ${task.id}]`,
+    `Description: ${task.description}`,
+    `Expected Output: ${task.expectedOutput}`,
+    task.context ? `Context: ${task.context}` : '',
+  ].filter(Boolean).join('\n');
+
+  try {
+    const result = await Promise.race([
+      crewThink(bot, prompt, 'orchestrator', 'full'),
+      sleep(timeout).then(() => ({ reply: '[timeout]', actionResults: [] as string[] })),
+    ]);
+
+    const reply = result.reply || '[no reply]';
+
+    // If we have a group chat, send the result there
+    if (CREW_GROUP_CHAT_ID && reply !== '[timeout]' && reply !== '[no reply]') {
+      const chatId = Number(CREW_GROUP_CHAT_ID);
+      const htmlMsg = formatBotReplyHTML(bot, `[Task ${task.id}]\n${reply}`);
+      await sendTelegramMessageToChat(chatId, htmlMsg, {
+        token: bot.token,
+        silent: true,
+        parseMode: 'HTML',
+      }).catch(() => {});
+    }
+
+    log.info(`[SpawnStandby] ${bot.emoji} ${bot.name} completed task ${task.id} (len=${reply.length})`);
+    return reply;
+
+  } catch (err) {
+    log.error({ err }, `[SpawnStandby] ${bot.name} task ${task.id} failed`);
+    return `[error] ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
+
+// ── Handoff ──
+
+/**
+ * Handoff mode: send a message directly to a specific bot and wait for reply.
+ * Works for both active and standby bots.
+ * Timeout: 30 seconds.
+ */
+export async function handoffToBot(botId: string, message: string, context?: string): Promise<string> {
+  const bot = CREW_BOTS.find(b => b.id === botId);
+  if (!bot) {
+    log.warn(`[Handoff] Bot ${botId} not found`);
+    return `[error] bot ${botId} not found`;
+  }
+  if (!bot.token) {
+    log.warn(`[Handoff] Bot ${botId} has no token`);
+    return `[error] bot ${botId} has no token`;
+  }
+
+  log.info(`[Handoff] -> ${bot.emoji} ${bot.name}: "${message.slice(0, 60)}"`);
+
+  const prompt = context ? `[Context] ${context}\n\n${message}` : message;
+
+  try {
+    const result = await Promise.race([
+      crewThink(bot, prompt, 'orchestrator'),
+      sleep(HANDOFF_TIMEOUT_MS).then(() => ({ reply: '[timeout]', actionResults: [] as string[] })),
+    ]);
+
+    const reply = result.reply || '[no reply]';
+
+    // Record to history
+    pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
+
+    log.info(`[Handoff] ${bot.emoji} ${bot.name} replied (len=${reply.length})`);
+    return reply;
+
+  } catch (err) {
+    log.error({ err }, `[Handoff] ${bot.name} failed`);
+    return `[error] ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
+
+// ── Dispatch (Orchestrator Mode) ──
+
+/**
+ * Orchestrator dispatch: route tasks to specific bots, collect results, verify, report.
+ *
+ * Options:
+ * - targetBots: only dispatch to these bot IDs (skip routing)
+ * - structured: use structured task format
+ *
+ * If targetBots is provided, only those bots receive the message.
+ * Otherwise, routing decides who responds.
+ */
+export async function dispatchToCrewBots(
+  text: string,
+  senderName: string = 'xiaocai',
+  options?: DispatchOptions,
+): Promise<DispatchResult> {
   if (!CREW_GROUP_CHAT_ID) return { totalReplied: 0, replies: [] };
   if (dispatchRunning) {
-    log.warn('[CrewDispatch] 已有調度在跑，跳過');
+    log.warn('[CrewDispatch] Already running, skip');
     return { totalReplied: 0, replies: [] };
   }
 
-  const decision = routeMessage(text, 'xiaoji_cai_bot', true);
-  log.info(`[CrewDispatch] R1 text="${text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
+  // Determine which bots should respond
+  let respondingBotIds: string[];
 
-  if (decision.filtered || decision.respondingBots.length === 0) return { totalReplied: 0, replies: [] };
+  if (options?.targetBots && options.targetBots.length > 0) {
+    // Orchestrator mode: only dispatch to specified bots
+    respondingBotIds = options.targetBots;
+    log.info(`[CrewDispatch] Orchestrator mode: target=${respondingBotIds.join(',')}`);
+  } else {
+    // Routing mode: let router decide
+    const decision = routeMessage(text, 'xiaoji_cai_bot', true);
+    log.info(`[CrewDispatch] R1 text="${text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
+
+    if (decision.filtered || decision.respondingBots.length === 0) return { totalReplied: 0, replies: [] };
+    respondingBotIds = decision.respondingBots.map(b => b.botId);
+  }
 
   dispatchRunning = true;
   const chatId = Number(CREW_GROUP_CHAT_ID);
@@ -83,44 +239,40 @@ export async function dispatchToCrewBots(text: string, senderName: string = '小
   const allReplies: RoundReply[] = [];
 
   try {
-    // 記錄發起者的訊息
     pushHistory({ role: 'user', text, fromName: senderName, timestamp: Date.now() });
 
-    // ── 第 1 輪：所有被路由的 bot 回覆 ──
-    const round1Replies = await executeRound(decision.respondingBots.map(b => b.botId), text, senderName, chatId, 1);
+    // -- Round 1: targeted bots respond --
+    const round1Replies = await executeRound(respondingBotIds, text, senderName, chatId, 1);
     totalReplied += round1Replies.length;
     allReplies.push(...round1Replies);
 
     if (round1Replies.length === 0) return { totalReplied, replies: allReplies };
 
-    // ── 後續輪次：檢測互動需求 ──
+    // -- Subsequent rounds: detect follow-up needs --
     const repliedBotIds = new Set(round1Replies.map(r => r.botId));
     let prevReplies = round1Replies;
 
     for (let round = 2; round <= MAX_DISPATCH_ROUNDS; round++) {
       await sleep(ROUND_DELAY_MS);
 
-      // 匯總上一輪回覆，找出需要繼續的 bot
       const nextBots = detectFollowUp(prevReplies, repliedBotIds);
       if (nextBots.length === 0) {
-        log.info(`[CrewDispatch] R${round} 對話收斂，結束`);
+        log.info(`[CrewDispatch] R${round} converged, done`);
         break;
       }
 
-      log.info(`[CrewDispatch] R${round} 繼續: ${nextBots.join(',')}`);
+      log.info(`[CrewDispatch] R${round} continue: ${nextBots.join(',')}`);
 
-      // 匯總上輪回覆作為上下文
       const summary = prevReplies.map(r => `[${r.botName}] ${r.reply}`).join('\n');
-      const followUpText = `（接續討論）\n${summary}\n\n請針對以上回覆補充你的看法，或回應同事的觀點。如果沒有要補充的，回覆「沒有補充」即可。`;
+      const followUpText = `(follow-up)\n${summary}\n\nPlease add your perspective or respond to your colleagues. If nothing to add, reply "no comment".`;
 
-      const roundReplies = await executeRound(nextBots, followUpText, '系統', chatId, round);
+      const roundReplies = await executeRound(nextBots, followUpText, 'system', chatId, round);
       totalReplied += roundReplies.length;
       allReplies.push(...roundReplies);
 
-      // 收斂偵測：全部回覆都太短 → 結束
-      const allShort = roundReplies.every(r => r.reply.length < MIN_REPLY_FOR_CONTINUE || r.reply.includes('沒有補充'));
+      const allShort = roundReplies.every(r => r.reply.length < MIN_REPLY_FOR_CONTINUE || r.reply.includes('no comment') || r.reply.includes('没有补充'));
       if (allShort || roundReplies.length === 0) {
-        log.info(`[CrewDispatch] R${round} 回覆收斂（短回覆/沒有補充），結束`);
+        log.info(`[CrewDispatch] R${round} converged (short replies), done`);
         break;
       }
 
@@ -134,13 +286,9 @@ export async function dispatchToCrewBots(text: string, senderName: string = '小
   return { totalReplied, replies: allReplies };
 }
 
-export interface RoundReply {
-  botId: string;
-  botName: string;
-  reply: string;
-}
+// ── Round Execution ──
 
-/** 執行一輪：所有 bot 並行思考，按完成順序交錯發送（自然感） */
+/** Execute one round: all bots think in parallel, stagger sends for natural feel */
 async function executeRound(
   botIds: string[],
   text: string,
@@ -149,48 +297,49 @@ async function executeRound(
   round: number,
 ): Promise<RoundReply[]> {
   const replies: RoundReply[] = [];
-  const bots = botIds.map(id => CREW_BOTS.find(b => b.id === id)).filter((b): b is typeof CREW_BOTS[number] => !!b?.token);
+
+  // Resolve bot IDs: look in all bots (active + standby)
+  const bots = botIds
+    .map(id => CREW_BOTS.find(b => b.id === id))
+    .filter((b): b is CrewBotConfig => !!b?.token);
 
   if (bots.length === 0) return replies;
 
-  // 過濾冷卻中的 bot
+  // Filter cooling-down bots
   const activeBots = bots.filter(bot => {
     if (isCoolingDown(bot.id)) {
-      log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 冷卻中，跳過`);
+      log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} cooling down, skip`);
       return false;
     }
     return true;
   });
   if (activeBots.length === 0) return replies;
 
-  // 所有 bot 並行思考（不再串行等待，速度提升 N 倍）
   let sendCount = 0;
   const thinkPromises = activeBots.map(async (bot) => {
     try {
       const result = await crewThink(bot, text, senderName);
       const reply = result.reply;
-      if (reply && !reply.includes('沒有補充')) {
-        // 交錯發送（自然感：第一個立刻發，後續間隔 1.5-3 秒）
+      if (reply && !reply.includes('no comment') && !reply.includes('没有补充')) {
         if (sendCount > 0) await sleep(BOT_STAGGER_MS + Math.random() * 1500);
         sendCount++;
         const htmlMsg = formatBotReplyHTML(bot, reply);
         await sendTelegramMessageToChat(chatId, htmlMsg, { token: bot.token, silent: true, parseMode: 'HTML' });
         pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
         replies.push({ botId: bot.id, botName: bot.name, reply });
-        log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} 回覆了 (len=${reply.length}, actions=${result.actionResults.length})`);
+        log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} replied (len=${reply.length}, actions=${result.actionResults.length})`);
 
-        // 轉交偵測：回覆中提到其他 bot → 自動 handoff
+        // Auto-handoff detection
         detectAndHandoff(reply, bot, chatId).catch(() => {});
       } else {
-        // 沒回覆 → 自動診斷修復
         const diag = diagnose(bot.id);
         if (diag) {
-          log.warn(`[CrewDoctor] R${round} ${bot.emoji} ${bot.name} 診斷: ${diag.detail}`);
+          log.warn(`[CrewDoctor] R${round} ${bot.emoji} ${bot.name} diagnosis: ${diag.detail}`);
           autoRepair(diag).catch(() => {});
         }
       }
     } catch (err) {
-      log.error({ err }, `[CrewDispatch] R${round} ${bot.name} 回覆失敗`);
+      log.error({ err }, `[CrewDispatch] R${round} ${bot.name} reply failed`);
       recordFailure(bot.id, 'unknown');
       const diag = diagnose(bot.id);
       if (diag) autoRepair(diag).catch(() => {});
@@ -201,36 +350,33 @@ async function executeRound(
   return replies;
 }
 
-/** 偵測哪些 bot 需要繼續回覆（被提到 / 有追問 / 相關專長） */
+// ── Follow-Up Detection ──
+
+/** Detect which bots should continue in the next round */
 function detectFollowUp(prevReplies: RoundReply[], alreadyReplied: Set<string>): string[] {
   const nextBots: string[] = [];
   const allText = prevReplies.map(r => r.reply).join(' ').toLowerCase();
 
-  for (const bot of CREW_BOTS) {
+  // Only check active bots for follow-up (standby bots need explicit spawn)
+  for (const bot of ACTIVE_CREW_BOTS) {
     if (!bot.token) continue;
-    // 已回覆過的 bot 不重複（除非被點名）
     const wasMentioned = allText.includes(bot.name) || allText.includes(`@${bot.username.toLowerCase()}`);
     const selfReplied = prevReplies.some(r => r.botId === bot.id);
 
     if (wasMentioned && !selfReplied) {
-      // 被其他 bot 點名但自己還沒回 → 加入
       nextBots.push(bot.id);
     } else if (wasMentioned && selfReplied) {
-      // 被點名且已回過 → 追問情境，可以再回一次
       nextBots.push(bot.id);
     }
   }
 
-  // 如果沒人被點名，看有沒有「？」追問 → 讓最相關的 1-2 個 bot 回
   if (nextBots.length === 0) {
-    const hasQuestion = allText.includes('？') || allText.includes('?');
+    const hasQuestion = allText.includes('?') || allText.includes('?');
     if (!hasQuestion) return [];
 
-    // 找上一輪沒回的、但有 token 的 bot（輪流參與）
-    for (const bot of CREW_BOTS) {
+    for (const bot of ACTIVE_CREW_BOTS) {
       if (!bot.token) continue;
       if (!alreadyReplied.has(bot.id)) {
-        // 檢查專長關鍵字匹配
         const hasRelevance = bot.expertiseKeywords.some(kw => allText.includes(kw.toLowerCase()));
         if (hasRelevance) nextBots.push(bot.id);
       }
@@ -241,13 +387,10 @@ function detectFollowUp(prevReplies: RoundReply[], alreadyReplied: Set<string>):
   return nextBots;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// ── Auto-Handoff Detection ──
 
 /**
- * 偵測回覆中是否提到其他 crew bot，如果有則自動轉交
- * 最多轉交 1 個 bot（避免連鎖反應）
+ * Detect if a reply mentions another crew bot -> auto handoff (max 1)
  */
 async function detectAndHandoff(
   reply: string,
@@ -255,18 +398,16 @@ async function detectAndHandoff(
   chatId: number,
 ): Promise<void> {
   try {
-    // 找出回覆中被提到的其他 bot（排除自己）
     const mentionedBot = CREW_BOTS.find(
       b => b.id !== originalBot.id && b.token && reply.includes(b.name),
     );
     if (!mentionedBot) return;
 
-    log.info(`[CrewHandoff] ${originalBot.emoji} ${originalBot.name} 提到了 ${mentionedBot.emoji} ${mentionedBot.name}，自動轉交`);
+    log.info(`[CrewHandoff] ${originalBot.emoji} ${originalBot.name} mentioned ${mentionedBot.emoji} ${mentionedBot.name}, auto handoff`);
 
-    // 延遲 2-3 秒（自然感）
     await sleep(2000 + Math.random() * 1000);
 
-    const handoffPrompt = `[${originalBot.name} 轉交] ${reply}`;
+    const handoffPrompt = `[${originalBot.name} handoff] ${reply}`;
     const result = await crewThink(mentionedBot, handoffPrompt, originalBot.name);
     const handoffReply = result.reply;
 
@@ -283,43 +424,44 @@ async function detectAndHandoff(
         fromName: mentionedBot.name,
         timestamp: Date.now(),
       });
-      log.info(`[CrewHandoff] ${mentionedBot.emoji} ${mentionedBot.name} 接手回覆了 (len=${handoffReply.length}, actions=${result.actionResults.length})`);
+      log.info(`[CrewHandoff] ${mentionedBot.emoji} ${mentionedBot.name} took over (len=${handoffReply.length}, actions=${result.actionResults.length})`);
     }
   } catch (err) {
-    log.error({ err }, `[CrewHandoff] ${originalBot.name} → 轉交失敗`);
+    log.error({ err }, `[CrewHandoff] ${originalBot.name} -> handoff failed`);
   }
 }
 
+// ── Polling Lifecycle ──
+
 /**
- * 啟動所有 crew bot 的 polling
+ * Start polling for ACTIVE crew bots only (4 bots).
+ * Standby bots (ashang/ashu) are NOT polled; use spawnStandbyBot() or handoffToBot() instead.
  */
 export function startCrewPolling(): void {
   if (!CREW_GROUP_CHAT_ID) {
-    log.warn('[CrewPoller] 無 CREW_GROUP_CHAT_ID，跳過啟動');
+    log.warn('[CrewPoller] No CREW_GROUP_CHAT_ID, skip');
     return;
   }
 
-  const activeBots = CREW_BOTS.filter(b => b.token);
+  const activeBots = ACTIVE_CREW_BOTS.filter(b => b.token);
   if (activeBots.length === 0) {
-    log.warn('[CrewPoller] 沒有任何 crew bot 有 token，跳過啟動');
+    log.warn('[CrewPoller] No active crew bots with token, skip');
     return;
   }
 
-  log.info(`[CrewPoller] 啟動 ${activeBots.length} 個 crew bots，群組 ${CREW_GROUP_CHAT_ID}`);
+  log.info(`[CrewPoller] Starting ${activeBots.length} active bots (standby: ${STANDBY_CREW_BOTS.map(b => b.name).join(',')}), group ${CREW_GROUP_CHAT_ID}`);
 
   for (let i = 0; i < activeBots.length; i++) {
     const bot = activeBots[i];
     const state: BotState = { offset: 0, running: true, consecutiveFailures: 0 };
     botStates.set(bot.id, state);
 
-    // 交錯啟動：每個 bot 延遲 i * 500ms
     const delay = i * STAGGER_DELAY_MS;
     setTimeout(() => {
-      // 先清 webhook，再開始 polling
       fetch(`https://api.telegram.org/bot${bot.token}/deleteWebhook?drop_pending_updates=true`)
         .catch(() => {})
         .finally(() => {
-          log.info(`[CrewPoller] ${bot.emoji} ${bot.name} (@${bot.username}) polling 已啟動`);
+          log.info(`[CrewPoller] ${bot.emoji} ${bot.name} (@${bot.username}) polling started`);
           botLoop(bot);
         });
     }, delay);
@@ -327,34 +469,42 @@ export function startCrewPolling(): void {
 }
 
 /**
- * 停止所有 crew bot 的 polling
+ * Stop all crew bot polling (active + any spawned standby)
  */
 export function stopCrewPolling(): void {
   for (const [id, state] of botStates) {
     state.running = false;
   }
   botStates.clear();
-  log.info('[CrewPoller] 所有 crew bots 已停止');
+
+  // Also stop any temporarily spawned standby bots
+  for (const [id, state] of standbyPollingStates) {
+    state.running = false;
+  }
+  standbyPollingStates.clear();
+
+  log.info('[CrewPoller] All crew bots stopped');
 }
 
-// ── Inbox 掃描間隔（不需要每 6 秒掃，30 秒一次即可）──
+// ── Inbox Scanning ──
+
 const INBOX_SCAN_INTERVAL_MS = 30_000;
 const lastInboxScan = new Map<string, number>();
-const inboxProcessing = new Set<string>();  // 防並發
+const inboxProcessing = new Set<string>();
 
 /**
- * 單一 bot 的 polling 迴圈
+ * Single bot polling loop
  */
 function botLoop(bot: CrewBotConfig): void {
   const state = botStates.get(bot.id);
   if (!state?.running) return;
 
-  // ── 優先：Inbox 掃描（每 30 秒一次）──
+  // Inbox scan (every 30s)
   const now = Date.now();
   const lastScan = lastInboxScan.get(bot.id) || 0;
   if (now - lastScan >= INBOX_SCAN_INTERVAL_MS && !inboxProcessing.has(bot.id) && !isCoolingDown(bot.id)) {
     lastInboxScan.set(bot.id, now);
-    processInbox(bot).catch(err => log.error({ err }, `[CrewInbox] ${bot.name} inbox 處理失敗`));
+    processInbox(bot).catch(err => log.error({ err }, `[CrewInbox] ${bot.name} inbox failed`));
   }
 
   pollBot(bot, state)
@@ -370,8 +520,8 @@ function botLoop(bot: CrewBotConfig): void {
 }
 
 /**
- * 處理 bot 的 inbox 檔案：掃描 → crewThink → 發群組 → 歸檔
- * 每次最多處理 2 個（避免阻塞 Telegram polling 太久）
+ * Process inbox files: scan -> crewThink -> send to group -> archive
+ * Max 2 per cycle to avoid blocking polling
  */
 async function processInbox(bot: CrewBotConfig): Promise<void> {
   if (!bot.token || !CREW_GROUP_CHAT_ID) return;
@@ -383,44 +533,41 @@ async function processInbox(bot: CrewBotConfig): Promise<void> {
   const chatId = Number(CREW_GROUP_CHAT_ID);
 
   try {
-    // 最多處理前 2 個（P0/P1 優先）
     const toProcess = items.slice(0, 2);
-    log.info(`[CrewInbox] ${bot.emoji} ${bot.name} 發現 ${items.length} 個 inbox，處理前 ${toProcess.length} 個`);
+    log.info(`[CrewInbox] ${bot.emoji} ${bot.name} found ${items.length} inbox, processing ${toProcess.length}`);
 
     for (const item of toProcess) {
       try {
-        // 組裝 prompt：告訴 bot 這是 inbox 任務
         const inboxPrompt = [
-          `📬 你收到一個 inbox 任務（來自 ${item.fromBot}，${TYPE_LABELS[item.type] || '未知類型'}，P${item.priority}）`,
+          `inbox task (from ${item.fromBot}, ${TYPE_LABELS[item.type] || 'unknown'}, P${item.priority})`,
           '',
-          `檔案：${item.fileName}`,
-          '內容：',
-          item.content.length > 2000 ? item.content.slice(0, 2000) + '\n...(截斷)' : item.content,
+          `File: ${item.fileName}`,
+          'Content:',
+          item.content.length > 2000 ? item.content.slice(0, 2000) + '\n...(truncated)' : item.content,
           '',
-          '請根據內容執行對應工作，完成後給出簡短結論。',
+          'Execute accordingly and give a brief conclusion.',
         ].join('\n');
 
         const result = await crewThink(bot, inboxPrompt, item.fromBot, 'full');
         const { reply, actionResults } = result;
 
-        // 有回覆 → 發群組通知
         if (reply && reply.length > 5) {
           const msgLines = [
-            `${bot.emoji} <b>${bot.name}</b>（處理 inbox）`,
-            `📬 來自 <b>${item.fromBot}</b> 的${TYPE_LABELS[item.type] || '訊息'}`,
+            `${bot.emoji} <b>${bot.name}</b> (inbox)`,
+            `From <b>${item.fromBot}</b> - ${TYPE_LABELS[item.type] || 'message'}`,
             '',
             ...(actionResults.length > 0 ? [
-              `<b>📋 執行動作 (${actionResults.length})</b>`,
+              `<b>Actions (${actionResults.length})</b>`,
               ...actionResults.slice(0, 3).map(ar => {
                 const t = ar.length > 200 ? ar.slice(0, 200) + '...' : ar;
-                return `  • ${t}`;
+                return `  - ${t}`;
               }),
               '',
             ] : []),
             reply,
           ];
           const msg = msgLines.join('\n');
-          const truncated = msg.length > 3900 ? msg.slice(0, 3900) + '\n...(截斷)' : msg;
+          const truncated = msg.length > 3900 ? msg.slice(0, 3900) + '\n...(truncated)' : msg;
 
           await sendTelegramMessageToChat(chatId, truncated, {
             token: bot.token,
@@ -430,20 +577,18 @@ async function processInbox(bot: CrewBotConfig): Promise<void> {
 
           pushHistory({
             role: 'model',
-            text: `[inbox→${item.fromBot}] ${reply}`,
+            text: `[inbox<-${item.fromBot}] ${reply}`,
             fromName: bot.name,
             timestamp: Date.now(),
           });
 
-          log.info(`[CrewInbox] ${bot.emoji} ${bot.name} 處理完 ${item.fileName}，已回報群組`);
+          log.info(`[CrewInbox] ${bot.emoji} ${bot.name} processed ${item.fileName}`);
         }
 
-        // 歸檔
         archiveInboxFile(item);
 
       } catch (err) {
-        log.error({ err }, `[CrewInbox] ${bot.name} 處理 ${item.fileName} 失敗`);
-        // 失敗不歸檔，下次重試
+        log.error({ err }, `[CrewInbox] ${bot.name} failed on ${item.fileName}`);
       }
     }
   } finally {
@@ -452,15 +597,17 @@ async function processInbox(bot: CrewBotConfig): Promise<void> {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  alert: '告警',
-  task: '任務',
-  data: '數據',
-  req: '請求',
-  report: '報告',
+  alert: 'alert',
+  task: 'task',
+  data: 'data',
+  req: 'request',
+  report: 'report',
 };
 
+// ── Single Poll ──
+
 /**
- * 單次 poll：getUpdates → 路由 → 思考 → 回覆
+ * Single poll: getUpdates -> route -> think -> reply
  */
 async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
   const url = `https://api.telegram.org/bot${bot.token}/getUpdates?offset=${state.offset}&timeout=${GET_UPDATES_TIMEOUT_SEC}`;
@@ -501,26 +648,25 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
       const msg = update.message;
       if (!msg?.text || !msg.from) continue;
 
-      // 只處理群組訊息
+      // Only process group messages
       if (String(msg.chat.id) !== CREW_GROUP_CHAT_ID) continue;
 
       const messageId = msg.message_id;
       const replyKey = `${bot.id}:${messageId}`;
 
-      // 已經回覆過 → 跳過
       if (repliedSet.has(replyKey)) continue;
 
-      // ─── 巡邏觸發偵測（任何人喊「巡邏」就觸發，只需第一個 bot 執行） ───
-      const PATROL_KEYWORDS = ['巡邏', '系統巡檢', '系統檢查'];
+      // Patrol trigger detection
+      const PATROL_KEYWORDS = ['patrol', 'system check', 'health check'];
       if (PATROL_KEYWORDS.some(kw => msg.text!.includes(kw)) && !routingCache.has(messageId)) {
         routingCache.set(messageId, { respondingBots: [], filtered: true, filterReason: 'patrol triggered' });
         repliedSet.add(replyKey);
-        log.info(`[CrewPoller] 偵測到巡邏指令 from=${msg.from!.username} text="${msg.text!.slice(0, 30)}"，觸發手動巡邏`);
-        triggerPatrolNow().catch(err => log.error({ err }, '[CrewPoller] 巡邏觸發失敗'));
+        log.info(`[CrewPoller] Patrol command detected from=${msg.from!.username} text="${msg.text!.slice(0, 30)}"`);
+        triggerPatrolNow().catch(err => log.error({ err }, '[CrewPoller] Patrol trigger failed'));
         continue;
       }
 
-      // 路由決策（只做一次，其他 bot 查 cache）
+      // Route decision (once per message, cached for other bots)
       if (!routingCache.has(messageId)) {
         const decision = routeMessage(
           msg.text,
@@ -528,40 +674,35 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
           msg.from.is_bot || false,
         );
         routingCache.set(messageId, decision);
-        log.info(`[CrewPoller] 路由決策 msg=${messageId} from=${msg.from.username || msg.from.first_name} is_bot=${msg.from.is_bot} text="${msg.text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
+        log.info(`[CrewPoller] Route msg=${messageId} from=${msg.from.username || msg.from.first_name} is_bot=${msg.from.is_bot} text="${msg.text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
 
-        // 記錄到群組歷史
         if (!decision.filtered) {
           pushHistory({
             role: 'user',
             text: msg.text,
-            fromName: msg.from.first_name || msg.from.username || '用戶',
+            fromName: msg.from.first_name || msg.from.username || 'user',
             timestamp: Date.now(),
           });
         }
 
-        // 清理過舊的 cache
+        // Cache cleanup
         if (routingCache.size > ROUTING_CACHE_MAX) {
           const keys = [...routingCache.keys()];
           for (let i = 0; i < keys.length - 100; i++) routingCache.delete(keys[i]);
         }
-        // 清理 repliedSet
         if (repliedSet.size > 500) repliedSet.clear();
       }
 
       const decision = routingCache.get(messageId)!;
       if (decision.filtered) continue;
 
-      // 這個 bot 該不該回？
       const shouldRespond = decision.respondingBots.some(b => b.botId === bot.id);
       if (!shouldRespond) continue;
 
-      // 標記已回覆
       repliedSet.add(replyKey);
 
-      // 延遲回覆（自然感）
       const delay = RESPONSE_DELAY_BASE_MS + Math.random() * RESPONSE_DELAY_RAND_MS;
-      const senderName = msg.from.first_name || msg.from.username || '用戶';
+      const senderName = msg.from.first_name || msg.from.username || 'user';
       const chatId = msg.chat.id;
       const text = msg.text;
 
@@ -576,20 +717,18 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
               silent: true,
               parseMode: 'HTML',
             });
-            // 記錄 bot 回覆到歷史
             pushHistory({
               role: 'model',
               text: reply,
               fromName: bot.name,
               timestamp: Date.now(),
             });
-            log.info(`[CrewPoller] ${bot.emoji} ${bot.name} 回覆了 (msg=${messageId}, actions=${result.actionResults.length})`);
+            log.info(`[CrewPoller] ${bot.emoji} ${bot.name} replied (msg=${messageId}, actions=${result.actionResults.length})`);
 
-            // 轉交偵測：回覆中提到其他 bot → 自動 handoff
             detectAndHandoff(reply, bot, chatId).catch(() => {});
           }
         } catch (err) {
-          log.error({ err }, `[CrewPoller] ${bot.name} 回覆失敗`);
+          log.error({ err }, `[CrewPoller] ${bot.name} reply failed`);
         }
       }, delay);
     }

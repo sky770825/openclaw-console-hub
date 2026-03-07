@@ -21,7 +21,7 @@ import { NEUXA_WORKSPACE } from './security.js';
 import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './action-handlers.js';
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
 import { getGlobalRateLimiter } from './action-rate-limiter.js';
-import { startCrewBots, stopCrewBots, CREW_BOTS } from './crew-bots/index.js';
+import { startCrewBots, stopCrewBots, CREW_BOTS, ACTIVE_CREW_BOTS } from './crew-bots/index.js';
 
 const log = createLogger('telegram');
 
@@ -2265,7 +2265,7 @@ export function startTelegramStopPoll(): void {
   }
 
   // Crew bots 啟用時跳過舊 groupPoll（避免同 token 做兩個 getUpdates 導致 409）
-  const crewEnabled = CREW_BOTS.some((b: { token: string }) => b.token);
+  const crewEnabled = ACTIVE_CREW_BOTS.length > 0;
   if (GROUP_TOKEN && GROUP_CHAT_ID && !crewEnabled) {
     groupRunning = true;
     const gBotId = GROUP_TOKEN.split(':')[0] || '(unknown)';
