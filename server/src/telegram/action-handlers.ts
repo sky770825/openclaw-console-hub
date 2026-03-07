@@ -1770,11 +1770,15 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
   const indexAllowedPrefixes = [
     path.join(PROJECT_ROOT, 'cookbook'),                                    // cookbook/
     path.join(homeDir, '.openclaw/workspace/skills'),                      // skills/
+    path.join(homeDir, '.openclaw/workspace/knowledge'),                   // knowledge/
   ];
 
   const isAllowedForIndex = (p: string): boolean => {
-    // 前綴白名單（cookbook/, skills/）
+    // 前綴白名單（cookbook/, skills/, knowledge/）
     if (indexAllowedPrefixes.some(prefix => p.startsWith(prefix + '/'))) return true;
+    // workspace 根層級 .md（GROWTH.md, HEARTBEAT.md 等）
+    const wsRoot = path.join(homeDir, '.openclaw/workspace');
+    if (p.startsWith(wsRoot + '/') && p.endsWith('.md') && !p.slice(wsRoot.length + 1).includes('/')) return true;
     // crew 目錄特殊規則
     const crewRoot = path.join(homeDir, '.openclaw/workspace/crew');
     if (p.startsWith(crewRoot + '/') && p.endsWith('.md')) {
@@ -1791,7 +1795,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
   };
 
   if (!isAllowedForIndex(resolved)) {
-    return { ok: false, output: `index_file 路徑受限：只能索引 cookbook/、crew/knowledge/、crew/*.md、skills/ 目錄的檔案。你傳的路徑: "${filePath}"` };
+    return { ok: false, output: `index_file 路徑受限：只能索引 cookbook/、workspace/*.md、knowledge/、crew/、skills/ 目錄的檔案。你傳的路徑: "${filePath}"` };
   }
 
   const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
