@@ -544,7 +544,7 @@ export async function xiaocaiThink(
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
   // ── 星群協作模式：複雜任務自動派工給星群並行處理 ──
-  const isCrewTask = isComplex && !isSystemMsg && [
+  const isCrewTask = !isSystemMsg && lowerMsg.length >= 5 && [
     '網站', '方案', '規劃', '分析', '調研', '設計.*系統', '開發.*功能',
     '商業', '市場', '競品', '技術方案', '架構設計', '全部做', '幫我做',
     '會員', 'crm', 'erp', '後台', '管理系統', '預約', '排班',
@@ -694,6 +694,20 @@ ${crewResults}
       log.info('[XiaocaiAI] 星群無回覆，改由小蔡自己處理');
     } catch (e) {
       log.warn({ err: e }, '[XiaocaiAI] 星群協作失敗，fallback 到小蔡自己處理');
+    }
+  }
+
+
+  // ── Standby Bot 智能路由：檢查是否需要喚醒阿商/阿數 ──
+  if (!isCrewTask && !isSystemMsg && lowerMsg.length >= 5) {
+    try {
+      const { checkStandbyNeed } = await import('./crew-bots/crew-standby.js');
+      const standbyResult = await checkStandbyNeed(userMessage);
+      if (standbyResult.triggered) {
+        log.info(`[XiaocaiAI] 🔔 Standby bot ${standbyResult.botId} 已被自動喚醒`);
+      }
+    } catch (e) {
+      log.warn({ err: e }, '[XiaocaiAI] checkStandbyNeed 失敗');
     }
   }
 
