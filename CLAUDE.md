@@ -228,7 +228,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## 📚 知識庫（cookbook）— 不會的先查這裡
 
-`cookbook/` 目錄有 13 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
+`cookbook/` 目錄有 71 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
 
 | # | 檔案 | 什麼時候查 |
 |---|------|-----------|
@@ -245,16 +245,22 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 | 11 | 任務狀態機.md | 任務卡住 |
 | 12 | 匯報與溝通協議.md | 不確定要不要跟老蔡說 |
 | 13 | 編碼品質.md | 寫程式前後的品質檢查 |
+| 14-20 | 路徑與檔案系統～自救SOP.md | 系統路徑/驗收/能力邊界/ask_ai/自主判斷/自救 |
+| 21-28 | 接案SOP～網站交付.md | 接案流程/LINE OA/n8n/通訊串接/SEO/RWD/圖片/交付 |
+| 29-40 | CMS選型～API串接大全.md | CMS/會員金流/設計稿/報價合約/DNS/GA/表單/Email/多語系/安全/資料庫/API |
+| 41-57 | 客戶溝通～Webhook.md | 客戶FAQ/作品集/專案管理/電商/效能/WordPress/Landing/備份/AI客服/AI圖片/行銷/廣告/漏斗/排程/Webhook |
+| 58-68 | POS～預約排班.md | POS收銀/訂位點餐/排隊叫號/外送/餐飲/ERP/CRM/儀表板/通知/LINE Bot/預約排班 |
+| 69-71 | Manus～Lovable AI.md | Manus AI設計理念/Ready AI即時生成/Lovable AI美學 |
 
 ---
 
 ## 📡 目前系統狀態（2026-03-04 更新）
 
 - 9 個甲板全部建立完成（AI/後勤/工程/自動化/通信/輪機/防禦/保護/科技）
-- Server：v2.5.16，port 3011，autoExecutor 運行中，crew-doctor + crew-inbox 協作引擎已上線
+- Server：v2.5.16，port 3011，autoExecutor + generate_site 四階段品質引擎 + 星群協作 + cloudflared tunnel
 - 小蔡：AGENTS.md v7.0 / SOUL.md v3.0 / 22 個 action / 20 個模型可調度
 - 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
 - Owner 密碼：sky36990
 - API Key 已寫入 `.env`，小蔡可直接寫入任務
-- NEUXA 知識庫 cookbook/ 已同步（47 份手冊）
+- NEUXA 知識庫 cookbook/ 已同步（71 份手冊，含 14 本新產品線 + 3 本 AI 設計理念）
 - NEUXA workspace 工具包已同步（armory/skills/scripts/knowledge）
