@@ -27,6 +27,50 @@ category: cookbook
 | 11 | [任務狀態機.md](11-任務狀態機.md) | 任務狀態流程圖、Auto-Executor 決策樹、品質評分 | 建任務或任務卡住的時候 |
 | 12 | [匯報與溝通協議.md](12-匯報與溝通協議.md) | 什麼時候報、怎麼報、老蔡的溝通偏好 | 不確定要不要跟老蔡說的時候 |
 | 13 | [編碼品質.md](13-編碼品質.md) | TypeScript/Bash/Python 編碼規範、常見錯誤、安全編碼、自檢清單 | 寫程式之前和之後 |
+| 14 | [路徑與檔案系統.md](14-路徑與檔案系統.md) | 路徑決策樹、workspace 目錄結構、常見路徑錯誤 | action 碰到路徑問題 |
+| 15 | [驗收對治法.md](15-驗收對治法.md) | 四層驗證、虛假驗收辨別、產出物檢查 | 標完成之前必看 |
+| 16 | [雙手能力邊界.md](16-雙手能力邊界.md) | 8 個 action 的完整 spec、限制、組合策略 | 不確定 action 能不能做某事 |
+| 17 | [ask_ai協作指南.md](17-ask_ai協作指南.md) | 模型選擇決策樹、子代理協作、AI 協作夥伴用法 | 要用 ask_ai 或派子代理 |
+| 18 | [連續行動與自主判斷.md](18-連續行動與自主判斷.md) | chain 機制、self-drive、行動序列設計、何時停下 | 設計多步驟行動序列 |
+| 19 | [小蔡協作指南.md](19-小蔡協作指南.md) | Deputy 協作、小蔡分派、Claude Code 副手用法 | 要派小蔡做事 |
+| 20 | [自救SOP.md](20-自救SOP.md) | 五類常見錯誤、對症下藥、自修流程 | 出錯了先自己修 |
+| 21 | [接案SOP.md](21-接案SOP.md) | 接案標準流程、客戶對接、報價到交付全流程 | 接新案子的時候 |
+| 22 | [LINE-OA設定指南.md](22-LINE-OA設定指南.md) | LINE Official Account 設定、Messaging API、n8n 自動回覆 | 幫客戶設定 LINE OA |
+| 23 | [n8n-Workflow模板.md](23-n8n-Workflow模板.md) | 8 套 n8n Workflow 模板、LINE OA、AI 客服、表單通知 | 要建 n8n 工作流 |
+| 24 | [通訊平台串接指南.md](24-通訊平台串接指南.md) | LINE/Facebook/Telegram/WhatsApp/Discord/Slack 串接 | 串接通訊平台 |
+| 25 | [SEO基礎與上線檢查表.md](25-SEO基礎與上線檢查表.md) | SEO meta、sitemap、Core Web Vitals、PageSpeed | 網站上線前 SEO 檢查 |
+| 26 | [響應式設計與跨瀏覽器測試.md](26-響應式設計與跨瀏覽器測試.md) | Mobile First、RWD、media query、跨瀏覽器 QA | 做響應式或測試相容性 |
+| 27 | [圖片素材優化指南.md](27-圖片素材優化指南.md) | WebP、lazy-load、CDN、圖片壓縮、SVG 優化 | 處理圖片素材 |
+| 28 | [網站交付與客戶教學.md](28-網站交付與客戶教學.md) | 交付前檢查、客戶教學、帳號移交、維護合約、保固 | 網站要交付給客戶 |
+| 29 | [CMS選型與快速建站.md](29-CMS選型與快速建站.md) | WordPress/Next.js/Webflow 選型、Headless CMS、No-Code | 幫客戶選 CMS 或快速建站 |
+| 30 | [會員系統與金流串接.md](30-會員系統與金流串接.md) | 會員系統、ECPay/LINE Pay/Stripe 金流串接 | 做會員或金流功能 |
+| 31 | [設計稿轉代碼指南.md](31-設計稿轉代碼指南.md) | Figma 交接、Design Token、切版方法、CSS 架構、動畫 | 拿到設計稿要切版 |
+| 32 | [報價模板與合約範本.md](32-報價模板與合約範本.md) | 報價行情、合約範本、收費模式、付款條件 | 要報價或簽合約 |
+| 33 | [DNS網域與SSL設定.md](33-DNS網域與SSL設定.md) | DNS、網域、SSL、HTTPS、Cloudflare、Let's Encrypt | 設定網域或 SSL 憑證 |
+| 34 | [GA與Search-Console設定.md](34-GA與Search-Console設定.md) | GA4 安裝、Search Console、GTM、事件追蹤、報表 | 幫客戶裝 GA 或 Search Console |
+| 35 | [表單設計與驗證.md](35-表單設計與驗證.md) | 表單 UX、React Hook Form、Zod 驗證、檔案上傳 | 做表單功能 |
+| 36 | [Email系統串接.md](36-Email系統串接.md) | Email 選型、模板開發、可送達性優化、部署 | 串接 Email 系統 |
+| 37 | [多語系i18n網站.md](37-多語系i18n網站.md) | i18n 多語系架構、翻譯管理、語系切換 | 做多語系網站 |
+| 38 | [網站安全加固.md](38-網站安全加固.md) | OWASP Top 10、前後端防護、WordPress 安全、應急處置 | 網站安全加固 |
+| 39 | [資料庫選型與設計.md](39-資料庫選型與設計.md) | 資料庫選型、schema 設計、效能優化 | 選資料庫或設計 schema |
+| 40 | [第三方API串接大全.md](40-第三方API串接大全.md) | 各種第三方 API 串接實作範例 | 要串接第三方 API |
+| 41 | [客戶溝通與需求訪談.md](41-客戶溝通與需求訪談.md) | 需求訪談技巧、客戶溝通、需求確認 | 跟客戶開會或訪談需求 |
+| 42 | [作品集與提案簡報.md](42-作品集與提案簡報.md) | 作品集製作、提案簡報、案例展示 | 準備作品集或提案 |
+| 43 | [專案管理與時程控制.md](43-專案管理與時程控制.md) | 時程估算、Notion 管理、多案並行、里程碑 | 管專案或排時程 |
+| 44 | [客戶FAQ大全.md](44-客戶FAQ大全.md) | 60 題客戶常見問答、8 大分類、標準回答與話術 | 客戶問了不知道怎麼答 |
+| 45 | [電商網站完整指南.md](45-電商網站完整指南.md) | 電商架構、購物車、訂單、物流、金流整合 | 做電商網站 |
+| 46 | [網站效能優化.md](46-網站效能優化.md) | Core Web Vitals、效能檢查、載入速度優化 | 網站跑太慢要優化 |
+| 47 | [WordPress深度指南.md](47-WordPress深度指南.md) | WP 主機、主題開發、ACF、REST API、WooCommerce | 做 WordPress 專案 |
+| 48 | [Landing-Page高轉換設計.md](48-Landing-Page高轉換設計.md) | LP 結構、文案、CTA、A/B 測試、轉換追蹤 | 做 Landing Page |
+| 49 | [網站備份與災難復原.md](49-網站備份與災難復原.md) | 備份策略、自動化腳本、災難復原 SOP | 設定備份或出事要復原 |
+| 50 | [AI客服聊天機器人.md](50-AI客服聊天機器人.md) | RAG AI 客服、知識庫向量搜尋、LINE/Telegram 雙平台 | 做 AI 客服機器人 |
+| 51 | [AI內容生成與SEO文案.md](51-AI內容生成與SEO文案.md) | AI 文案生成、SEO 內容策略、部落格自動化 | 用 AI 寫文案或 SEO 內容 |
+| 52 | [AI圖片生成與處理.md](52-AI圖片生成與處理.md) | DALL-E/Stable Diffusion、圖片處理管線、WebP 優化 | 用 AI 生成或處理圖片 |
+| 53 | [社群引流與自動化行銷.md](53-社群引流與自動化行銷.md) | 社群引流、自動化行銷、UTM 追蹤、排程發文 | 做社群行銷或引流 |
+| 54 | [廣告投放與數據追蹤.md](54-廣告投放與數據追蹤.md) | Google/Facebook/LINE 廣告投放、轉換追蹤、ROI 優化 | 投廣告或追蹤數據 |
+| 55 | [自動化行銷漏斗.md](55-自動化行銷漏斗.md) | 行銷漏斗設計、lead nurturing、n8n 自動化工作流 | 建行銷漏斗 |
+| 56 | [排程自動化與Cron任務.md](56-排程自動化與Cron任務.md) | Node.js 排程、launchd、n8n Cron、定時備份與監控 | 設定排程或 Cron 任務 |
+| 57 | [Webhook架構與事件驅動.md](57-Webhook架構與事件驅動.md) | Webhook 收發、事件驅動架構、任務佇列、即時推播 | 做 Webhook 或事件驅動 |
 
 ---
 

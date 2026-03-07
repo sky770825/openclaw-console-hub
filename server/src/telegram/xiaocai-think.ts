@@ -429,6 +429,8 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}
 {"action":"reindex_knowledge","mode":"append"}
 {"action":"list_dir","path":"~/.openclaw/workspace"}
+{"action":"mkdir","path":"目錄路徑"}
+{"action":"move_file","from":"來源路徑","to":"目標路徑"}
 {"action":"ask_ai","model":"flash","prompt":"問題"}
 {"action":"ask_ai","model":"pro","prompt":"架構分析","context":"背景"}
 {"action":"ask_ai","model":"claude","prompt":"代碼問題","context":"相關代碼"}
@@ -443,8 +445,10 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"find_symbol","symbol":"functionName","type":"function"}
 {"action":"analyze_symbol","symbol":"functionName"}
 {"action":"patch_file","path":"server/src/xxx.ts","old":"舊內容","new":"新內容"}  ← 必須用 old+new（不是 search/replace）
+{"action":"analyze_code","path":"檔案路徑"}
 {"action":"code_eval","code":"console.log('hello')"}
 {"action":"plan_project","goal":"要達成的目標","weeks":"4","detail_level":"medium"}
+{"action":"roadmap","description":"需求描述"}
 {"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
 {"action":"send_group","message":"要發到群組的訊息"}
 {"action":"crew_dispatch","message":"任務描述","target":"agong"}

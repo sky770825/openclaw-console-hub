@@ -73,9 +73,9 @@ const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
   index_file:       { windowMs: ONE_MINUTE, maxRequests: 20, cost: 2 },
   reindex_knowledge:{ windowMs: ONE_MINUTE, maxRequests: 5,  cost: 2 },
 
-  // 任務操作 — cost 1
+  // 任務操作 — cost 1~2
   create_task:      { windowMs: ONE_MINUTE, maxRequests: 15, cost: 1 },
-  read_task:        { windowMs: ONE_MINUTE, maxRequests: 20, cost: 1 },
+  update_task:      { windowMs: ONE_MINUTE, maxRequests: 10, cost: 2 },
 
   // 執行類 — 嚴格，cost 3
   code_eval:        { windowMs: ONE_MINUTE, maxRequests: 5,  cost: 3 },
@@ -85,7 +85,13 @@ const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
   analyze_code:     { windowMs: ONE_MINUTE, maxRequests: 10, cost: 2 },
   analyze_symbol:   { windowMs: ONE_MINUTE, maxRequests: 10, cost: 2 },
 
-  // 外部呼叫類 — 嚴格，cost 3（避免打爆外部 API）
+  // 檔案操作 — cost 1~2
+  mkdir:            { windowMs: ONE_MINUTE, maxRequests: 10, cost: 1 },
+  move_file:        { windowMs: ONE_MINUTE, maxRequests: 5,  cost: 2 },
+
+  // 外部呼叫類 — 嚴格，cost 3~5（避免打爆外部 API）
+  crew_dispatch:    { windowMs: ONE_MINUTE, maxRequests: 3,  cost: 5 },
+  send_group:       { windowMs: ONE_MINUTE, maxRequests: 5,  cost: 3 },
   proxy_fetch:      { windowMs: ONE_MINUTE, maxRequests: 10, cost: 5 },
   web_fetch:        { windowMs: ONE_MINUTE, maxRequests: 10, cost: 3 },
   web_browse:       { windowMs: ONE_MINUTE, maxRequests: 8,  cost: 3 },
@@ -99,8 +105,9 @@ const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
   // 資料庫 — cost 1
   query_supabase:   { windowMs: ONE_MINUTE, maxRequests: 15, cost: 1 },
 
-  // 規劃類 — cost 2
+  // 規劃類 — cost 2~3
   plan_project:     { windowMs: ONE_MINUTE, maxRequests: 10, cost: 2 },
+  roadmap:          { windowMs: ONE_MINUTE, maxRequests: 3,  cost: 3 },
 };
 
 /** 未列出的 action 用這個（cost 預設 1，向後兼容） */

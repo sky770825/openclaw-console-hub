@@ -215,7 +215,7 @@ check_cr6() {
     failed=$((failed+1))
   fi
 
-  if ! curl -s -o /dev/null -w '' --max-time 5 http://localhost:5678/healthz &>/dev/null 2>&1; then
+  if ! curl -s -o /dev/null -w '' --max-time 5 https://sky770825.zeabur.app/healthz &>/dev/null 2>&1; then
     log_fail "n8n 無回應"
     failed=$((failed+1))
   fi

@@ -9,12 +9,12 @@ echo "🔗 OpenClaw → n8n 自動化整合"
 echo "=============================="
 
 # 設定變數
-N8N_WEBHOOK="http://host.docker.internal:5678/webhook/openclaw-memory"
+N8N_WEBHOOK="https://sky770825.zeabur.app/webhook/openclaw-memory"
 WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
 
 # 檢查 n8n 是否就緒
 echo "🔍 檢查 n8n 服務..."
-if ! curl -s http://localhost:5678/healthz > /dev/null 2>&1; then
+if ! curl -s https://sky770825.zeabur.app/healthz > /dev/null 2>&1; then
     echo "❌ n8n 服務未運行，請先執行部署"
     exit 1
 fi
@@ -59,7 +59,7 @@ cat > "$WORKSPACE_DIR/scripts/test-n8n-bridge.sh" << 'TESTEOF'
 
 echo "🧪 測試 n8n 記憶串接..."
 
-N8N_URL="http://localhost:5678/webhook/openclaw-memory"
+N8N_URL="https://sky770825.zeabur.app/webhook/openclaw-memory"
 
 # 測試請求
 RESPONSE=$(curl -s -X POST "$N8N_URL" \
@@ -106,7 +106,7 @@ cat > "$WORKSPACE_DIR/docs/openclaw-n8n-usage.md" << 'DOCEOF'
 
 ```
 方法: POST
-URL: http://host.docker.internal:5678/webhook/openclaw-memory
+URL: https://sky770825.zeabur.app/webhook/openclaw-memory
 Headers:
   Content-Type: application/json
 Body (JSON):
@@ -123,7 +123,7 @@ Body (JSON):
 
 ```javascript
 // 呼叫 n8n 記憶服務
-const response = await fetch('http://host.docker.internal:5678/webhook/openclaw-memory', {
+const response = await fetch('https://sky770825.zeabur.app/webhook/openclaw-memory', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -193,7 +193,7 @@ echo ""
 
 # 1. 測試 n8n
 echo "步驟 1/3: 測試 n8n 連線..."
-if curl -s http://localhost:5678/healthz > /dev/null 2>&1; then
+if curl -s https://sky770825.zeabur.app/healthz > /dev/null 2>&1; then
     echo "✅ n8n 運行中"
 else
     echo "❌ n8n 未運行"
@@ -215,7 +215,7 @@ fi
 
 # 3. 測試 Webhook
 echo "步驟 3/3: 測試 Webhook..."
-RESPONSE=$(curl -s -X POST http://localhost:5678/webhook/openclaw-memory \
+RESPONSE=$(curl -s -X POST https://sky770825.zeabur.app/webhook/openclaw-memory \
   -H "Content-Type: application/json" \
   -d '{"sessionId":"install-test","userMessage":"安裝測試","context":{}}' \
   --max-time 5 2>/dev/null || echo "")
@@ -233,7 +233,7 @@ echo "=============================="
 echo "安裝完成！"
 echo ""
 echo "📚 下一步:"
-echo "   1. 開啟 n8n: http://localhost:5678"
+echo "   1. 開啟 n8n: https://sky770825.zeabur.app"
 echo "   2. Import 工作流: n8n-workflows/openclaw-memory-agent.json"
 echo "   3. 設定 Credentials (OpenAI + Qdrant)"
 echo "   4. Activate 工作流"

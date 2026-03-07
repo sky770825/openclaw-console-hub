@@ -23,7 +23,7 @@ check_service() {
 check_service "OpenClaw Server" "http://localhost:3011/api/health"
 
 # 2. n8n (本地)
-check_service "n8n (本地)" "http://localhost:5678"
+check_service "n8n (Zeabur)" "https://sky770825.zeabur.app"
 
 # 3. Google AI（雲端 — 不需本地檢查）
 

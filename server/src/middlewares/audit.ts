@@ -40,7 +40,7 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
       action: req.method,
       resource: req.path,
       resource_id: resourceId ? String(resourceId) : null,
-      user_id: 'api-key',
+      user_id: null,   // column is uuid — non-UUID strings cause insert failures
       ip: req.ip || req.socket?.remoteAddress || null,
       diff: sanitizeDiff(req.body) ?? null,
       created_at: new Date().toISOString(),

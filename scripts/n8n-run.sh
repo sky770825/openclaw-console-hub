@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # N8N CLI：用環境變數的 API Key 觸發或查詢 workflow
 # 使用方式：
-#   export N8N_BASE_URL=http://localhost:5678
+#   export N8N_BASE_URL=https://sky770825.zeabur.app
 #   export N8N_API_KEY=eyJhbGciOiJIUzI1NiIs...
 #   ./scripts/n8n-run.sh list
 #   ./scripts/n8n-run.sh run "OpenClaw Run Index Reporter"
@@ -9,7 +9,7 @@
 
 set -e
 # 優先 N8N_BASE_URL，其次 N8N_API_URL（與 .env 一致），預設本機
-BASE="${N8N_BASE_URL:-${N8N_API_URL:-http://localhost:5678}}"
+BASE="${N8N_BASE_URL:-${N8N_API_URL:-https://sky770825.zeabur.app}}"
 KEY="${N8N_API_KEY:-}"
 
 if [ -z "$KEY" ]; then

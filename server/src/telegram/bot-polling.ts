@@ -92,6 +92,7 @@ let groupOffset = 0;
 let groupRunning = false;
 let groupConsecutiveFailures = 0;
 let groupNextDelayMs = POLL_INTERVAL_MS;
+let groupBot401Count = 0;
 
 // ── 工具函數 ──
 
@@ -173,8 +174,8 @@ function saveTelegramState(): void {
     const dir = path.dirname(TELEGRAM_STATE_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({ xiaocaiMainModel, savedAt: new Date().toISOString() }, null, 2) + '\n', 'utf8');
-  } catch {
-    // ignore
+  } catch (e) {
+    log.warn('[TelegramState] 儲存失敗:', e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -1220,10 +1221,13 @@ async function groupPoll(): Promise<void> {
       if (res.status === 409) {
         log.warn('[GroupBot] 409 Conflict — 另一個 polling 在跑，等待重試');
       } else if (res.status === 401) {
-        // 401 只每 60 秒 log 一次，避免洗版
+        // 401 指數退避：token 無效時避免瘋狂重試，最長 5 分鐘
+        groupBot401Count++;
+        groupNextDelayMs = Math.min(300000, 5000 * Math.pow(2, groupBot401Count));
         const now = Date.now();
         if (now - lastUnauthorizedNotifyAt > 60000) {
-          log.error({ status: res.status }, '[GroupBot] 401 Unauthorized — token 失效或已被踢出，退避重試');
+          log.error({ status: res.status, retryIn: groupNextDelayMs, count: groupBot401Count },
+            '[GroupBot] 401 Unauthorized — token 可能無效或已被 revoke，指數退避中');
           lastUnauthorizedNotifyAt = now;
         }
       } else {
@@ -1232,6 +1236,7 @@ async function groupPoll(): Promise<void> {
       return;
     }
     groupConsecutiveFailures = 0;
+    groupBot401Count = 0;
     groupNextDelayMs = POLL_INTERVAL_MS;
     const json = await res.json() as { ok?: boolean; result?: Array<Record<string, unknown>> };
     if (!json.ok || !Array.isArray(json.result)) return;
@@ -2016,7 +2021,7 @@ async function xiaocaiPoll(): Promise<void> {
               const driveMax = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
               driveResults.push(`${icon} ${action.action}: ${sanitize(result.output.slice(0, driveMax))}`);
               log.info(`[XiaocaiSelfDrive] round=${selfDrive} ${action.action} → ok=${result.ok}${!result.ok ? ` reason=${result.output.slice(0, 120)}` : ''}`);
-            } catch { /* skip */ }
+            } catch (e) { log.warn('[SelfDrive] JSON parse failed:', e instanceof Error ? e.message : String(e)); }
             driveText = driveText.replace(jsonStr, '').trim();
           }
           driveText = stripActionJson(driveText);
@@ -2081,7 +2086,7 @@ function xiaocaiLoop(): void {
 async function heartbeatTick(): Promise<void> {
   if (!XIAOCAI_TOKEN) return;
 
-  // 老蔡最近 5 分鐘有活動 → 不打擾，跳過
+  // 老蔡最近 10 分鐘有活動 → 不打擾，跳過
   if (lastUserActivityAt > 0 && (Date.now() - lastUserActivityAt) < HEARTBEAT_IDLE_THRESHOLD_MS) {
     log.info('[Heartbeat] 老蔡活躍中，跳過心跳');
     return;
@@ -2230,7 +2235,7 @@ export function startTelegramStopPoll(): void {
     const xcBotId = XIAOCAI_TOKEN.split(':')[0] || '(unknown)';
     log.info(`[XiaocaiBot] 啟動小蔡 bot polling bot_id=${xcBotId}`);
     fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/deleteWebhook?drop_pending_updates=true`)
-      .catch(() => {})
+      .catch(e => log.warn('[Telegram] deleteWebhook 失敗:', e instanceof Error ? e.message : String(e)))
       .finally(() => xiaocaiLoop());
 
     // 啟動心跳 — 每 15 分鐘自主思考
@@ -2247,7 +2252,7 @@ export function startTelegramStopPoll(): void {
     const gBotId = GROUP_TOKEN.split(':')[0] || '(unknown)';
     log.info(`[GroupBot] 啟動群組偵測 bot_id=${gBotId} chat=${GROUP_CHAT_ID}`);
     fetch(`https://api.telegram.org/bot${GROUP_TOKEN}/deleteWebhook?drop_pending_updates=false`)
-      .catch(() => {})
+      .catch(e => log.warn('[Telegram] deleteWebhook 失敗:', e instanceof Error ? e.message : String(e)))
       .finally(() => groupLoop());
   } else if (crewEnabled) {
     log.info('[GroupBot] Crew bots 已啟用，跳過舊 groupPoll');

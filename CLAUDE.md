@@ -159,7 +159,7 @@ cat src/some-file.ts | GEMINI_API_KEY="$GEMINI_API_KEY" gemini -m gemini-2.5-fla
 
 ## 🤖 n8n 操作指令（小蔡必會）
 
-n8n URL：`http://localhost:5678`（Zeabur 也有雲端版）
+n8n URL：`https://sky770825.zeabur.app`（Zeabur 雲端，本地 Docker 已廢棄）
 
 ### 查詢 workflow 列表
 ```bash
@@ -213,7 +213,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v2.5.18**
+- 目前版本：**v2.5.19**
 - 每次重大功能更新，版本號 patch +1（如 v2.2.3、v2.2.4）
 - **版本號必須同步更新 6 處**（閉環 SOP，不可遺漏）：
   1. `package.json`
@@ -228,7 +228,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## 📚 知識庫（cookbook）— 不會的先查這裡
 
-`cookbook/` 目錄有 71 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
+`cookbook/` 目錄有 66 份分類手冊，涵蓋系統所有知識。不確定怎麼做？先查 `cookbook/README.md`。
 
 | # | 檔案 | 什麼時候查 |
 |---|------|-----------|
@@ -254,13 +254,13 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ---
 
-## 📡 目前系統狀態（2026-03-04 更新）
+## 📡 目前系統狀態（2026-03-07 更新）
 
 - 9 個甲板全部建立完成（AI/後勤/工程/自動化/通信/輪機/防禦/保護/科技）
-- Server：v2.5.18，port 3011，autoExecutor + generate_site 四階段品質引擎 + 星群協作 + cloudflared tunnel
-- 小蔡：AGENTS.md v7.0 / SOUL.md v3.0 / 22 個 action / 20 個模型可調度
+- Server：v2.5.19，port 3011，autoExecutor + generate_site 四階段品質引擎 + 星群協作 + cloudflared tunnel
+- 小蔡：AGENTS.md v7.0 / SOUL.md v3.0 / 31 個 action / 20 個模型可調度
 - 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
 - Owner 密碼：sky36990
 - API Key 已寫入 `.env`，小蔡可直接寫入任務
-- NEUXA 知識庫 cookbook/ 已同步（71 份手冊，含 14 本新產品線 + 3 本 AI 設計理念）
+- NEUXA 知識庫 cookbook/ 已同步（66 份手冊）
 - NEUXA workspace 工具包已同步（armory/skills/scripts/knowledge）
