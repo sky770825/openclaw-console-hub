@@ -273,11 +273,15 @@ export async function crewThink(
           log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 幻覺 action=${action.action}`);
           continue;
         }
-        // 禁止 crew bot 建立/更新任務 — 避免垃圾任務堆積
-        if (action.action === 'create_task' || action.action === 'update_task') {
-          allActionResults.push(`🚫 crew bot 不能直接建任務。如需建任務，請通知小蔡。`);
-          log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 試圖 ${action.action}，已攔截`);
-          continue;
+        // crew bot 建任務：允許，但強制 owner=bot.name + status=pending（需老蔡審核）
+        if (action.action === 'create_task') {
+          action.owner = bot.name;
+          action.status = 'pending';
+          log.info(`[CrewThink] ${bot.emoji} ${bot.name} 建任務（pending，待審核）: ${(action.name || '').slice(0, 50)}`);
+        }
+        // crew bot 更新任務：允許（讓 bot 能回報任務結果）
+        if (action.action === 'update_task') {
+          log.info(`[CrewThink] ${bot.emoji} ${bot.name} 更新任務: ${action.id}`);
         }
         const result = await executeNEUXAAction(action);
         const output = result.output.length > MAX_ACTION_OUTPUT
