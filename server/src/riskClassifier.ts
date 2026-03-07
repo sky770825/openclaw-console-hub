@@ -1,8 +1,8 @@
 /**
  * 風險分類器 — 根據任務內容自動判斷風險等級
  * 🟢 none     = 自動通過（查資料、健康檢查）
- * 🟡 low      = Claude 審核（一般開發任務）
- * 🔴 medium   = Claude 審慎執行（刪檔、改 DB、改 auth）
+ * 🟡 low      = Claude 自動執行（一般開發任務）
+ * 🔴 medium   = Claude 直接審核執行（刪檔、改 DB、改 auth）— 不需老蔡審核
  * 🟣 critical = 老蔡親審（部署、改密鑰、花錢）
  */
 

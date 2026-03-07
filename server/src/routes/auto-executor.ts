@@ -601,12 +601,12 @@ async function executeNextPendingTask(): Promise<void> {
       for (const candidate of pendingTasks) {
         const riskLevel = classifyTaskRisk(candidate);
         const bossApproved = approvedCriticalTaskIds.has(candidate.id);
-        // critical 和 medium 都需要老蔡審核
-        if ((riskLevel === 'critical' || riskLevel === 'medium') && !bossApproved) {
+        // 只有 critical 需要老蔡審核，medium 由 Claude 直接執行
+        if (riskLevel === 'critical' && !bossApproved) {
           const alreadyPending = autoExecutorState.pendingReviews.some((r) => r.taskId === candidate.id);
           if (!alreadyPending) {
-            const emoji = riskLevel === 'critical' ? '🟣' : '🔴';
-            const label = riskLevel === 'critical' ? '高風險' : '中風險';
+            const emoji = '🟣';
+            const label = '高風險';
             autoExecutorState.pendingReviews.push({
               taskId: candidate.id,
               taskName: candidate.name || '未命名任務',
@@ -670,27 +670,7 @@ async function executeNextPendingTask(): Promise<void> {
       if (bossApproved) {
         log.info(`[AutoDispatch] ✅ 任務「${task.name}」已獲老蔡批准，跳過風險派工，直接執行`);
       } else if (riskLevel === 'medium') {
-        // medium 也需要老蔡審核 — 規劃/設計類任務不應自動執行
-        const alreadyPending = autoExecutorState.pendingReviews.some((r) => r.taskId === task.id);
-        if (!alreadyPending) {
-          autoExecutorState.pendingReviews.push({
-            taskId: task.id,
-            taskName: task.name || '未命名任務',
-            riskLevel,
-            reason: '中風險任務需老蔡確認',
-            queuedAt: new Date().toISOString(),
-          });
-          await upsertOpenClawTask({ id: task.id, status: 'pending_review' as never });
-          await sendTelegramMessage(
-            `🔴 <b>中風險任務等待審核</b>\n\n` +
-            `<b>任務：</b>${task.name}\n` +
-            `<b>風險：</b>medium\n` +
-            `<b>說明：</b>${(task.description || '無').slice(0, 200)}`,
-            { parseMode: 'HTML' }
-          );
-          log.info(`[AutoDispatch] 🔴 中風險任務「${task.name}」需老蔡審核，已排入待審佇列`);
-        }
-        return; // 不自動執行
+        log.info(`[AutoDispatch] 🟡 中風險任務「${task.name}」，Claude 直接審核執行`);
       } else if (riskLevel === 'low') {
         log.info(`[AutoDispatch] 🟡 低風險任務「${task.name}」，Claude 審核執行`);
       } else {
@@ -1111,7 +1091,7 @@ autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
     }
     startDispatchDigestTimer();
     await sendTelegramMessage(
-      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，Agent 向 Claude 報告\n紫燈任務將暫存等老蔡審核',
+      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，直接審核派工\n僅紫燈（critical）任務需老蔡確認',
       { parseMode: 'HTML' }
     );
   }
