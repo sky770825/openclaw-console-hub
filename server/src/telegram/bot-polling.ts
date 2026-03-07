@@ -1947,10 +1947,8 @@ async function xiaocaiPoll(): Promise<void> {
         log.info(`[NEUXA-Memory] 跳過記憶：無回覆且無 action（text=${text.slice(0, 30)}）`);
       }
 
-      // 自驅動（只有明確「要做事」的指令才跑，純查看/確認/閒聊不跑）
-      const TASK_ACTION_PATTERNS = /幫我(修|改|建|做|寫|刪|部署|執行)|麻煩|請你(修|改|建|做|寫)|執行|部署|修復|修改|建立.*任務|分析一下|掃描/;
-      const isTaskMessage = text.length > 12 && TASK_ACTION_PATTERNS.test(text) && !isXiaocaiChitChat(text);
-      const SELF_DRIVE_ENABLED = isTaskMessage;
+      // 自驅動：有產生 action 就繼續跑（不限特定關鍵字），純閒聊除外
+      const SELF_DRIVE_ENABLED = !isXiaocaiChitChat(text) && text.length > 5;
 
       if (SELF_DRIVE_ENABLED && allActionResults.length > 0 && finalReply) {
         const TG_LIMIT_PRE = 4000;
@@ -1965,7 +1963,7 @@ async function xiaocaiPoll(): Promise<void> {
           }
         }
 
-        for (let selfDrive = 0; selfDrive < 3; selfDrive++) {
+        for (let selfDrive = 0; selfDrive < 8; selfDrive++) {
           const driveReply = await xiaocaiThink(chatId,
             '[系統] 你剛才的行動已完成。現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給老蔡一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。',
             xiaocaiMainModel, xiaocaiHistory

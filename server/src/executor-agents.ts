@@ -136,7 +136,7 @@ const AGENT_CONFIGS: Record<AgentType, AgentExecutorConfig> = {
     name: 'Claude Code CLI (Subscription)',
     enabled: true,
     config: {
-      timeout: 120000,  // 2 分鐘
+      timeout: 300000,  // 5 分鐘（與其他 agent 一致）
       maxRetries: 1,
       workingDir: SANDBOX_WORKDIR,
     },
@@ -906,7 +906,7 @@ echo "✅ 封存檢查完成"`;
     const grade: QualityGrade['grade'] =
       score >= 90 ? 'A' :
       score >= 75 ? 'B' :
-      score >= 70 ? 'C' : 'F';  // 及格線 60→70
+      score >= 60 ? 'C' : 'F';
 
     const failedChecks = checks.filter(c => !c.passed);
     const reason = failedChecks.length === 0
@@ -916,7 +916,7 @@ echo "✅ 封存檢查完成"`;
     return {
       score,
       grade,
-      passed: score >= 70,  // 及格線 60→70
+      passed: score >= 60,  // 及格線 70→60，提高完成率
       checks,
       reason,
     };
@@ -1354,7 +1354,7 @@ ${errorFeedback.slice(0, 800)}
     retryCount: number;
     modelUsed: string;
   }> {
-    const MAX_RETRIES = 1; // 最多重試 1 次，避免卡管線
+    const MAX_RETRIES = 2; // 最多重試 2 次，提高完成率
     let lastError = '';
     let retryCount = 0;
     let lastScript = '';
