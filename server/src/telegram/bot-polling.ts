@@ -1897,7 +1897,8 @@ async function xiaocaiPoll(): Promise<void> {
           });
           // 只在「純查詢 + 回覆已夠長」時才 break
           // 有產出型 action（generate_site, write_file, patch_file, create_task 等）時絕不截斷
-          const isShortChat = replyLen < 300 && allReadOnly && actionMatches.length <= 2;
+          // 更嚴格：只有純閒聊回覆（無 action、極短）才截斷，查完資料不截斷讓 chain 繼續
+          const isShortChat = replyLen < 100 && allReadOnly && actionMatches.length === 0;
           if (isShortChat) {
             log.info(`[NEUXA-Chain] step=0 對話快回（replyLen=${replyLen}, readOnly=${allReadOnly}, actions=${actionMatches.length}），跳過後續 chain`);
             finalReply = cleanReply;
@@ -1963,9 +1964,13 @@ async function xiaocaiPoll(): Promise<void> {
           }
         }
 
+        let prevDriveResults: string[] = allActionResults.slice(-5); // 帶入 chain 階段的最後結果
         for (let selfDrive = 0; selfDrive < 8; selfDrive++) {
+          const resultContext = prevDriveResults.length > 0
+            ? `\n\n[上一步執行結果]\n${prevDriveResults.map(r => r.slice(0, 200)).join('\n')}`
+            : '';
           const driveReply = await xiaocaiThink(chatId,
-            '[系統] 你剛才的行動已完成。現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給老蔡一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。',
+            `[系統] 你剛才的行動已完成。${resultContext}\n\n現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給老蔡一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。`,
             xiaocaiMainModel, xiaocaiHistory
           );
           const driveActions = extractActionJsons(driveReply);
@@ -2030,6 +2035,7 @@ async function xiaocaiPoll(): Promise<void> {
           if (driveMsg && !driveMsgDup) {
             await sendTelegramMessageToChat(chatId, driveMsg.slice(0, 4000), { token: XIAOCAI_TOKEN });
           }
+          prevDriveResults = driveResults.slice(-5); // 傳遞給下一輪 selfDrive
           const hist = xiaocaiHistory.get(chatId) || [];
           hist.push({ role: 'user', text: '[系統] 你剛完成了事情，還有要做的嗎？' });
           hist.push({ role: 'model', text: driveText || '繼續做' });
