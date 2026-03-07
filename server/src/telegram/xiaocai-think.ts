@@ -331,7 +331,7 @@ ${soulCore}
 - 明確要你做事：「查一下」「幫我看」「修這個」「建一個任務」
 - 需要系統資料：「任務板有什麼」「server 狀態」「日報」
 - 代碼/技術操作：「改 XXX」「部署」「分析 XXX」
-- 做產品/系統：「做網站」「做CRM」「做ERP」「建會員系統」「做電商」「做後台」「做預約系統」「做儀表板」→ 星群協作 + generate_site
+- 做產品/系統：「做網站」「做CRM」「做ERP」「做會員系統」「做電商」「做後台」「做預約系統」「做儀表板」「做POS」「做LINE OA」「做訂位系統」「做點餐系統」「做排隊叫號」「做外送平台」「做n8n流程」「做通知系統」→ 星群協作 + generate_site
 - **老蔡說「做」「建」「生成」「產出」「開發」「搭建」開頭的，都是任務模式，不是聊天！馬上行動！**
 
 對話模式就像朋友聊天，但要回的有料、有深度。不要讀檔案、不要查資料庫、不要搜索。
@@ -548,6 +548,10 @@ export async function xiaocaiThink(
     '表單', 'form', '登入', '註冊', 'login', '後端', 'api',
     'landing', '活動頁', '作品集', 'portfolio', '部落格', 'blog',
     'saas', '訂閱', '報表', '庫存', '進銷存', '排程',
+    'n8n', 'workflow', '自動化流程', 'line', 'line oa', 'line bot',
+    '訂位', '訂餐', '點餐', '餐點', '菜單', 'menu', 'pos', '收銀',
+    '排隊', '叫號', '外送', '外帶', '餐廳', '餐飲',
+    'notify', '通知', '推播', 'webhook', '串接.*api',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
   if (isCrewTask) {
@@ -565,6 +569,13 @@ export async function xiaocaiThink(
         '做.*表單', '建.*表單', '做.*登入', '建.*登入',
         '做.*部落格', '建.*部落格', '做.*blog',
         '做.*portfolio', '做.*作品集', '建.*作品集',
+        '做.*line', '建.*line', '做.*bot', '建.*bot',
+        '做.*pos', '建.*pos', '做.*收銀', '建.*收銀',
+        '做.*訂位', '建.*訂位', '做.*訂餐', '建.*訂餐',
+        '做.*點餐', '建.*點餐', '做.*菜單', '建.*菜單',
+        '做.*排隊', '建.*排隊', '做.*叫號', '建.*叫號',
+        '做.*外送', '做.*通知', '建.*通知',
+        '做.*workflow', '建.*workflow', '做.*自動化', '建.*自動化',
       ].some(kw => new RegExp(kw).test(lowerMsg));
 
       // 組合對話上下文，讓星群知道前因後果
@@ -582,12 +593,20 @@ export async function xiaocaiThink(
         if (/作品集|portfolio/.test(lowerMsg)) return '作品集展示頁';
         if (/表單|form/.test(lowerMsg)) return '智慧表單系統';
         if (/後台|管理系統|後端|api/.test(lowerMsg)) return '管理後台系統';
+        if (/line|line.?oa|line.?bot|推播|notify/.test(lowerMsg)) return 'LINE OA / Bot 系統';
+        if (/pos|收銀|結帳機/.test(lowerMsg)) return 'POS 收銀系統';
+        if (/訂位|訂餐|點餐|餐點|菜單|menu/.test(lowerMsg)) return '訂位點餐系統';
+        if (/排隊|叫號/.test(lowerMsg)) return '排隊叫號系統';
+        if (/外送|外帶/.test(lowerMsg)) return '外送外帶平台';
+        if (/餐廳|餐飲/.test(lowerMsg)) return '餐飲管理系統';
+        if (/n8n|workflow|自動化流程|webhook/.test(lowerMsg)) return 'n8n 自動化工作流';
+        if (/通知|推播/.test(lowerMsg)) return '通知推播系統';
         return '網站';
       })();
 
       // 根據任務類型給星群不同的派工指令
       const siteDispatchMsg = isSiteTask
-        ? `【指揮官小蔡派工 — ${productType}協作】\n\n老蔡要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考）\n• 阿商：建議商業功能（變現模式、金流串接、行銷工具、訂閱方案）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD 細節）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為追蹤）\n\n直接給具體內容，不要說「需要更多資訊」。`
+        ? `【指揮官小蔡派工 — ${productType}協作】\n\n老蔡要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型、API 設計、第三方串接清單）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考、LINE/POS/n8n 整合案例）\n• 阿商：建議商業功能（變現模式、金流串接、LINE Pay/綠界/藍新、訂閱方案、行銷漏斗、會員經營）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案、推播模板、通知文字）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD、LINE LIFF 串接、WebSocket 即時更新）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為、營收報表、庫存周轉、訂單分析）\n\n直接給具體內容，不要說「需要更多資訊」。`
         : `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
 
       const dispatch = await dispatchToCrewBots(siteDispatchMsg, '小蔡');
