@@ -14,6 +14,7 @@ import { createLogger } from '../../logger.js';
 import { sendTelegramMessageToChat } from '../../utils/telegram.js';
 import { ACTIVE_CREW_BOTS, CREW_GROUP_CHAT_ID } from './crew-config.js';
 import { crewThink, pushHistory, type CrewThinkResult } from './crew-think.js';
+import { triggerDataAnalysis } from './crew-standby.js';
 
 const log = createLogger('crew-patrol');
 
@@ -161,7 +162,7 @@ export function onErrorDetected(errorMsg: string): void {
   );
 }
 
-/** 偵測到 metrics 異常時，直接觸發阿研的數據分析 */
+/** 偵測到 metrics 異常時，觸發阿研初篩 + 阿數深度分析 */
 export function onMetricsAnomaly(metric: string, value: number): void {
   const ayanTask = patrolTasks.find(t => t.botId === 'ayan');
   if (!ayanTask) return;
@@ -178,6 +179,11 @@ export function onMetricsAnomaly(metric: string, value: number): void {
   };
   executePatrol(eventTask).catch(err =>
     log.error({ err }, '[CrewPatrol] onMetricsAnomaly 執行失敗')
+  );
+
+  // 阿數（standby）做深度分析
+  triggerDataAnalysis(`metrics 異常告警：${metric}=${value}，需深度分析根因和趨勢`).catch(err =>
+    log.error({ err }, '[CrewPatrol] onMetricsAnomaly 阿數深度分析失敗')
   );
 }
 

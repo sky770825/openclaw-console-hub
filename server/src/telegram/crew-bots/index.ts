@@ -5,15 +5,18 @@
 
 import { startCrewPolling, stopCrewPolling } from './crew-poller.js';
 import { startCrewPatrol, stopCrewPatrol, triggerPatrolNow, onErrorDetected, onMetricsAnomaly } from './crew-patrol.js';
+import { startStandbyScheduler, stopStandbyScheduler } from './crew-standby.js';
 
 export function startCrewBots(): void {
   startCrewPolling();
   startCrewPatrol();
+  startStandbyScheduler();
 }
 
 export function stopCrewBots(): void {
   stopCrewPolling();
   stopCrewPatrol();
+  stopStandbyScheduler();
 }
 
 // 巡邏
@@ -49,3 +52,15 @@ export {
   getInboxStats,
   getInboxContext,
 } from './crew-inbox.js';
+
+// Standby Bot 自動啟動
+export {
+  triggerSaasAudit,
+  triggerWorkflowDesign,
+  triggerAutomationScan,
+  triggerDataAnalysis,
+  triggerDeepQuery,
+  triggerDailyInsightReport,
+  checkStandbyNeed,
+  getStandbySchedulerStatus,
+} from './crew-standby.js';
