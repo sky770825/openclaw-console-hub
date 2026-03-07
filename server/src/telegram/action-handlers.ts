@@ -3355,53 +3355,98 @@ export async function handleGenerateSite(action: Record<string, string>): Promis
     log.warn({ err: e }, '[GenerateSite] 知識庫查詢失敗，繼續生成');
   }
 
-  const sitePrompt = `你是頂尖的全端開發者。請根據以下需求，生成一個完整的單頁應用（SPA）。
+  const sitePrompt = `你是 Lovable.dev 等級的頂尖 UI 設計師兼全端開發者。生成的作品必須達到商業級品質，讓客戶第一眼就覺得專業。
 
 需求：${description}
-${knowledgeContext ? `\n參考知識庫（來自團隊累積的最佳實踐，請融入設計中）：\n${knowledgeContext}\n` : ''}
+${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
 
-技術要求：
-1. 輸出完整的 HTML 檔案（<!DOCTYPE html>），CSS 在 <style>，JS 在 <script>
-2. 現代美觀設計：漸層背景、圓角卡片、陰影、平滑動畫、hover 效果
-3. 手機優先 RWD 響應式（mobile-first）
-4. 繁體中文介面
-5. 可用 CDN：Google Fonts（Noto Sans TC）、Font Awesome、Alpine.js、Chart.js
-6. 只輸出 HTML，不要解釋文字，不要 markdown 代碼框
+## 設計系統（必須嚴格遵守）
 
-功能要求（根據需求類型自動加入）：
-- 網站/Landing Page：Hero + 服務介紹 + 作品集 + 預約表單 + 頁尾
-- 會員系統：登入/註冊表單 + 會員資料頁 + 密碼驗證 + 記住我
-- CRM：客戶列表 + 新增/編輯客戶 + 搜尋篩選 + 聯絡紀錄 + 統計卡片
-- ERP/進銷存：庫存表格 + 進貨/出貨表單 + 報表圖表 + 搜尋排序
-- 電商：商品卡片 + 購物車 + 結帳流程 + 分類篩選
-- 預約系統：日曆選擇 + 時段選擇 + 預約表單 + 預約列表
-- 儀表板：統計卡片 + 圖表（用 Chart.js）+ 數據表格 + 篩選器
-- 部落格：文章列表 + 文章內頁 + 分類標籤 + 搜尋
-- 後台管理：側邊欄導航 + 數據表格 + CRUD 表單 + 統計概覽
-- POS 收銀系統：商品快速選擇面板 + 購物車 + 結帳計算 + 找零顯示 + 每日結帳報表
-- 訂位點餐系統：座位圖 + 時段預約 + 菜單瀏覽 + 點餐下單 + 訂單狀態追蹤
-- LINE OA/Bot：聊天介面模擬 + 圖文選單設計 + 推播訊息編輯 + 會員綁定 + 自動回覆設定
-- 排隊叫號：取號介面 + 等待隊列顯示 + 即時叫號面板 + 等待時間估算 + 歷史紀錄
-- 外送外帶：餐廳列表 + 菜單瀏覽 + 購物車 + 外送地址 + 訂單追蹤地圖
-- 餐飲管理：桌位管理 + 菜單編輯 + 訂單看板 + 營業額統計 + 食材庫存
-- n8n 自動化工作流：節點拖拉畫布(模擬) + 觸發器設定 + 動作列表 + 執行日誌 + 連線管理
-- 通知推播系統：訊息模板編輯 + 受眾篩選 + 排程發送 + 發送歷史 + 開信率統計
+在 <style> 最前面放這組 CSS 變數，所有樣式都引用變數，不要寫死顏色：
+:root {
+  /* 色彩 — 根據產品類型選一組主色 */
+  --primary: #6366f1;      /* 主色（indigo 系列） */
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --accent: #f59e0b;       /* 強調色 */
+  --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+  /* 中性色 */
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+  --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+  --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+  /* 背景/文字 */
+  --bg: #ffffff; --bg-secondary: var(--gray-50); --text: var(--gray-900); --text-secondary: var(--gray-500);
+  /* 間距 — 8px 網格 */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px; --space-20: 80px;
+  /* 字型 */
+  --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+  --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+  /* 圓角 */
+  --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+  /* 陰影（5 級） */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+  --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+  /* 動畫 */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+}
 
-所有表單要有前端驗證。數據用 localStorage 模擬持久化。互動用原生 JS 或 Alpine.js。
+根據產品類型調整 --primary 色系：
+- 美業/美甲/美睫 → 粉色系 #ec4899
+- 餐飲/POS/點餐 → 橘紅系 #f97316
+- 商務/CRM/ERP → 靛藍系 #6366f1
+- 醫療/預約 → 青綠系 #14b8a6
+- 電商/購物 → 紫色系 #8b5cf6
+- 科技/Dashboard → 深藍系 #3b82f6
+
+## 設計規範（不可違反）
+
+1. **字型**：<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+2. **圖示**：<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+3. **所有元素** transition: all var(--duration) var(--ease)
+4. **卡片**：bg white, radius var(--radius-md), shadow var(--shadow-sm), hover 時 shadow 升一級 + translateY(-2px)
+5. **按鈕**：padding var(--space-3) var(--space-6), radius var(--radius), font-weight 600, hover 亮度 +10%
+6. **主要按鈕**：背景 var(--primary), 文字白色, hover var(--primary-dark)
+7. **輸入框**：border 1px var(--gray-200), radius var(--radius), padding var(--space-3) var(--space-4), focus 時 border-color var(--primary) + ring
+8. **間距**：section 之間 var(--space-20), 元素之間 var(--space-4) 或 var(--space-6)
+9. **Hero 區塊**：漸層背景, 最少 70vh, 大標題 text-5xl font-weight 700, 副標 text-xl text-secondary
+10. **手機優先 RWD**：max-width 1200px 居中, grid 用 repeat(auto-fill, minmax(280px, 1fr))
+11. **微動畫**：頁面載入 fadeInUp（@keyframes fadeInUp）, 卡片 stagger 延遲（:nth-child * 0.1s）
+12. **Skeleton loading**：首次載入前顯示 skeleton 動畫（灰色漸變閃爍）
+13. **空狀態**：列表為空時顯示插圖 + 文字 + CTA 按鈕，不能留白
+14. **Toast 通知**：操作成功/失敗時右上角彈出 toast，3 秒後自動消失
+
+## 技術要求
+- 完整 HTML（<!DOCTYPE html>），CSS 在 <style>，JS 在 <script>
+- 繁體中文介面
+- 手機優先 RWD
+- 表單前端驗證
+- 數據用 localStorage 模擬持久化
+- 互動用原生 JS 或 Alpine.js
+- 圖表用 Chart.js（如需要）
+- 只輸出 HTML，不要解釋文字，不要 markdown 代碼框
 
 直接輸出 HTML：`;
 
   try {
     const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${googleKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: sitePrompt }] }],
-          generationConfig: { maxOutputTokens: 30000, temperature: 0.8 },
+          generationConfig: { maxOutputTokens: 65536, temperature: 0.7 },
         }),
-        signal: AbortSignal.timeout(120000),
+        signal: AbortSignal.timeout(180000),
       }
     );
 
