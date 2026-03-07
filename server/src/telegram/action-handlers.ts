@@ -3440,32 +3440,138 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
 
 直接輸出 HTML：`;
 
-  try {
+  // ── Gemini 呼叫工具 ──
+  async function callGemini(model: string, prompt: string, maxTokens: number, timeout: number): Promise<string> {
     const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${googleKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: sitePrompt }] }],
-          generationConfig: { maxOutputTokens: 65536, temperature: 0.7 },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.7 },
         }),
-        signal: AbortSignal.timeout(180000),
+        signal: AbortSignal.timeout(timeout),
       }
     );
-
-    if (!resp.ok) return { ok: false, output: `Gemini API 錯誤: HTTP ${resp.status}` };
-
+    if (!resp.ok) throw new Error(`Gemini ${model} HTTP ${resp.status}`);
     const data = await resp.json() as Record<string, unknown>;
     const candidates = (data.candidates || []) as Array<Record<string, unknown>>;
     const contentObj = ((candidates[0] || {}) as Record<string, unknown>).content as Record<string, unknown> || {};
     const parts = (contentObj.parts || []) as Array<Record<string, unknown>>;
-    let html = parts.map(p => (p.text as string) || '').join('').trim();
+    return parts.map(p => (p.text as string) || '').join('').trim();
+  }
 
-    if (!html) return { ok: false, output: 'Gemini 回傳空內容' };
+  function cleanHtml(raw: string): string {
+    return raw.replace(/^```html?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  }
 
-    // 清理 markdown 代碼框（如果有）
-    html = html.replace(/^```html?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+  try {
+    // ═══════════════════════════════════════════
+    // Phase 1: Pro 生成初版
+    // ═══════════════════════════════════════════
+    log.info(`[GenerateSite] Phase 1: Pro 生成初版...`);
+    const rawHtml = await callGemini('gemini-2.5-pro', sitePrompt, 65536, 180000);
+    if (!rawHtml) return { ok: false, output: 'Gemini Pro 回傳空內容' };
+    let html = cleanHtml(rawHtml);
+
+    // ═══════════════════════════════════════════
+    // Phase 2: Flash 品質審核（快速+便宜）
+    // ═══════════════════════════════════════════
+    log.info(`[GenerateSite] Phase 2: Flash 品質審核...`);
+    const auditPrompt = `你是頂尖的 UI/UX 審核員。請嚴格審核以下 HTML 網站代碼，找出所有問題。
+
+審核清單（每項打 ✅ 或 ❌）：
+1. **內容完整性**：所有區塊是否有實際文字內容？有沒有空白區塊、placeholder、"即將推出"？
+2. **JS 注入問題**：主要內容（服務項目、價格、描述）是否直接寫在 HTML？有沒有用 display:none + JS 動態注入？
+3. **CSS 設計系統**：是否使用 CSS 變數（--primary 等）？色彩是否統一？
+4. **RWD 響應式**：有沒有 viewport meta？有沒有 media query 或 grid/flex 自適應？
+5. **字型載入**：有沒有引入 Google Fonts（Noto Sans TC）？
+6. **圖示**：有沒有引入 Font Awesome 或其他圖示庫？
+7. **動畫效果**：有沒有 hover 效果、transition、@keyframes？
+8. **表單驗證**：預約/聯絡表單有沒有前端驗證？
+9. **視覺層次**：Hero 區塊是否夠大（70vh+）？標題大小層次是否分明？
+10. **整體美感**：以 Lovable.dev / Dribbble 水準，1-10 分打幾分？
+
+最後輸出格式：
+SCORE: X/10
+ISSUES:
+- 具體問題1：如何修正
+- 具體問題2：如何修正
+VERDICT: PASS 或 NEEDS_FIX
+
+HTML 代碼（前 15000 字）：
+${html.slice(0, 15000)}`;
+
+    let auditResult = '';
+    let needsFix = false;
+    try {
+      auditResult = await callGemini('gemini-2.5-flash', auditPrompt, 2000, 30000);
+      needsFix = auditResult.includes('NEEDS_FIX');
+      const scoreMatch = auditResult.match(/SCORE:\s*(\d+)/);
+      const score = scoreMatch ? parseInt(scoreMatch[1], 10) : 0;
+      log.info(`[GenerateSite] Phase 2 審核結果: score=${score}/10 needsFix=${needsFix}`);
+
+      // 7 分以下才修正，7 分以上直接過
+      if (score >= 7) needsFix = false;
+    } catch (e) {
+      log.warn({ err: e }, '[GenerateSite] Phase 2 審核失敗，跳過修正');
+    }
+
+    // ═══════════════════════════════════════════
+    // Phase 3: Pro 根據審核修正（如果需要）
+    // ═══════════════════════════════════════════
+    if (needsFix && auditResult) {
+      log.info(`[GenerateSite] Phase 3: Pro 根據審核修正...`);
+      const fixPrompt = `你是頂尖的 UI 設計師。以下 HTML 網站有品質問題，請根據審核意見修正並輸出完整的修正版 HTML。
+
+## 審核意見
+${auditResult}
+
+## 修正要求
+1. 修正所有 ❌ 的項目
+2. 所有內容必須直接寫在 HTML，禁止 JS 動態注入
+3. 保留原有的好設計，只修問題
+4. 確保美感至少 8/10
+5. 只輸出完整修正後的 HTML，不要解釋
+
+## 原始 HTML
+${html}`;
+
+      try {
+        const fixedRaw = await callGemini('gemini-2.5-pro', fixPrompt, 65536, 180000);
+        if (fixedRaw && fixedRaw.length > html.length * 0.5) {
+          html = cleanHtml(fixedRaw);
+          log.info(`[GenerateSite] Phase 3 修正完成: ${html.length} 字元`);
+        }
+      } catch (e) {
+        log.warn({ err: e }, '[GenerateSite] Phase 3 修正失敗，使用初版');
+      }
+    }
+
+    // ═══════════════════════════════════════════
+    // Phase 4: 程式化品質檢查（硬規則）
+    // ═══════════════════════════════════════════
+    const issues: string[] = [];
+    if (!html.includes('<!DOCTYPE html')) issues.push('缺少 DOCTYPE');
+    if (!html.includes('viewport')) issues.push('缺少 viewport meta');
+    if (!html.includes('Noto Sans') && !html.includes('noto-sans')) issues.push('缺少 Noto Sans TC 字型');
+    if (!html.includes('font-awesome') && !html.includes('fontawesome')) issues.push('缺少 Font Awesome');
+    if (!html.includes('--primary')) issues.push('缺少 CSS 變數系統');
+    if (html.includes('display: none') || html.includes('display:none')) issues.push('⚠️ 有 display:none 可能隱藏內容');
+    if (html.includes('Lorem ipsum') || html.includes('即將推出')) issues.push('有 placeholder 文字');
+    if (!/@keyframes|animation|transition/.test(html)) issues.push('缺少動畫效果');
+
+    // 自動修補缺失
+    if (!html.includes('viewport')) {
+      html = html.replace('<head>', '<head>\n<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    }
+    if (!html.includes('Noto Sans') && !html.includes('noto-sans')) {
+      html = html.replace('</head>', '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">\n</head>');
+    }
+    if (!html.includes('font-awesome') && !html.includes('fontawesome')) {
+      html = html.replace('</head>', '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">\n</head>');
+    }
 
     // 寫入 index.html
     const filePath = path.join(sitesDir, 'index.html');
@@ -3477,11 +3583,14 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
     const publicUrl = publicBase ? `${publicBase}/sites/${slug}/index.html` : '';
     const previewUrl = publicUrl || localUrl;
 
-    log.info(`[GenerateSite] slug=${slug} size=${html.length} url=${previewUrl}`);
+    const phaseInfo = needsFix ? '（經過 AI 審核+修正）' : '（一次通過審核）';
+    const issueNote = issues.length > 0 ? `\n⚠️ 自動修補: ${issues.join(', ')}` : '';
+
+    log.info(`[GenerateSite] ✅ 完成 slug=${slug} size=${html.length} phases=${needsFix ? 3 : 2}${issueNote}`);
 
     return {
       ok: true,
-      output: `✅ 網站已生成！\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📁 路徑：${filePath}\n📏 大小：${html.length} 字元\n\n老蔡可以直接點連結預覽（手機也行）。如果要修改，告訴我哪裡要改。`
+      output: `✅ 網站已生成！${phaseInfo}\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📏 大小：${html.length} 字元${issueNote}\n\n老蔡可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
     };
   } catch (e) {
     return { ok: false, output: `generate_site 失敗: ${e instanceof Error ? e.message : String(e)}` };
