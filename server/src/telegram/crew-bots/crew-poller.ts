@@ -77,6 +77,18 @@ const repliedSet = new Set<string>();
 
 let dispatchRunning = false;
 
+// ── 閉環回傳：收集星群回覆 → 彙整 → 發回老蔡私訊 ──
+interface ReplyCollector {
+  messageId: number;
+  originalText: string;
+  senderName: string;
+  expectedBots: string[];
+  replies: { botName: string; reply: string }[];
+  timer: ReturnType<typeof setTimeout> | null;
+}
+const replyCollectors = new Map<number, ReplyCollector>();
+const COLLECTOR_TIMEOUT_MS = 90_000; // 90 秒等待所有 bot 回覆
+
 /** Track temporarily spawned standby bots so we can stop them */
 const standbyPollingStates = new Map<string, BotState>();
 
@@ -683,6 +695,16 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
             fromName: msg.from.first_name || msg.from.username || 'user',
             timestamp: Date.now(),
           });
+
+          // 閉環回傳：非 bot 用戶在群組發話 → 啟動回覆收集器
+          if (!msg.from.is_bot && decision.respondingBots.length > 0) {
+            startReplyCollector(
+              messageId,
+              msg.text,
+              msg.from.first_name || msg.from.username || 'user',
+              decision.respondingBots.map(b => b.botId),
+            );
+          }
         }
 
         // Cache cleanup
@@ -725,6 +747,9 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
             });
             log.info(`[CrewPoller] ${bot.emoji} ${bot.name} replied (msg=${messageId}, actions=${result.actionResults.length})`);
 
+            // 閉環回傳：收集回覆
+            collectReplyForOwner(messageId, bot.name, reply);
+
             detectAndHandoff(reply, bot, chatId).catch(() => {});
           }
         } catch (err) {
@@ -739,3 +764,125 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
     throw err;
   }
 }
+
+// ── 閉環回傳：星群結果自動彙整回傳老蔡 ──
+
+function startReplyCollector(messageId: number, originalText: string, senderName: string, expectedBotIds: string[]): void {
+  if (replyCollectors.has(messageId)) return;
+
+  const collector: ReplyCollector = {
+    messageId,
+    originalText,
+    senderName,
+    expectedBots: expectedBotIds,
+    replies: [],
+    timer: setTimeout(() => {
+      flushCollector(messageId).catch(err =>
+        log.error({ err }, `[CrewClosedLoop] flush timeout failed msg=${messageId}`)
+      );
+    }, COLLECTOR_TIMEOUT_MS),
+  };
+
+  replyCollectors.set(messageId, collector);
+  log.info(`[CrewClosedLoop] 啟動回覆收集器 msg=${messageId} expecting=${expectedBotIds.join(',')}`);
+}
+
+function collectReplyForOwner(messageId: number, botName: string, reply: string): void {
+  const collector = replyCollectors.get(messageId);
+  if (!collector) return;
+
+  collector.replies.push({ botName, reply });
+
+  // 所有預期的 bot 都回覆了 → 立即 flush
+  const repliedBotNames = new Set(collector.replies.map(r => r.botName));
+  const allBots = ACTIVE_CREW_BOTS.filter(b => collector.expectedBots.includes(b.id));
+  const allReplied = allBots.every(b => repliedBotNames.has(b.name));
+
+  if (allReplied) {
+    if (collector.timer) clearTimeout(collector.timer);
+    // 延遲 3 秒，等可能的 follow-up 回合
+    collector.timer = setTimeout(() => {
+      flushCollector(messageId).catch(err =>
+        log.error({ err }, `[CrewClosedLoop] flush failed msg=${messageId}`)
+      );
+    }, 3000);
+  }
+}
+
+async function flushCollector(messageId: number): Promise<void> {
+  const collector = replyCollectors.get(messageId);
+  if (!collector) return;
+  replyCollectors.delete(messageId);
+  if (collector.timer) clearTimeout(collector.timer);
+
+  if (collector.replies.length === 0) return;
+
+  const ownerChatId = process.env.TELEGRAM_OWNER_CHAT_ID?.trim();
+  const xiaocaiToken = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim();
+  if (!ownerChatId || !xiaocaiToken) {
+    log.warn('[CrewClosedLoop] 缺少 OWNER_CHAT_ID 或 XIAOCAI_BOT_TOKEN，無法回傳');
+    return;
+  }
+
+  log.info(`[CrewClosedLoop] 彙整 ${collector.replies.length} 個回覆，回傳老蔡`);
+
+  // 用 Gemini Flash 彙整
+  const crewResults = collector.replies.map(r => `【${r.botName}】：${r.reply}`).join('\n\n');
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
+
+  let summary = '';
+  if (GOOGLE_API_KEY) {
+    try {
+      const prompt = `你是小蔡，老蔡的副手。老蔡在星群說了：「${collector.originalText}」
+
+星群各成員的回覆：
+${crewResults}
+
+請用繁體中文整合以上內容，給老蔡一份精簡的總結報告。格式：
+1. 開頭一句話總結
+2. 各成員重點（用 bullet points）
+3. 結論/建議行動
+
+不要重複原文，用你自己的話整合。簡潔有力。`;
+
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 1500 },
+          }),
+          signal: AbortSignal.timeout(30000),
+        }
+      );
+      if (resp.ok) {
+        const data = await resp.json() as any;
+        summary = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      }
+    } catch (e) {
+      log.warn({ err: e }, '[CrewClosedLoop] Gemini 彙整失敗');
+    }
+  }
+
+  // fallback：沒有 Gemini 就直接拼接
+  if (!summary) {
+    summary = `老蔡，星群 ${collector.replies.length} 個成員回覆了你的「${collector.originalText.slice(0, 30)}」：\n\n${collector.replies.map(r => `• ${r.botName}：${r.reply.slice(0, 200)}`).join('\n')}`;
+  }
+
+  // 截斷避免 Telegram 4096 限制
+  if (summary.length > 3900) {
+    summary = summary.slice(0, 3900) + '\n...（已截斷）';
+  }
+
+  const finalMsg = `🚀 【星群協作報告】\n\n${summary}`;
+
+  try {
+    await sendTelegramMessageToChat(Number(ownerChatId), finalMsg, { token: xiaocaiToken });
+    log.info(`[CrewClosedLoop] ✅ 已回傳老蔡私訊 (len=${finalMsg.length})`);
+  } catch (e) {
+    log.error({ err: e }, '[CrewClosedLoop] 發送老蔡私訊失敗');
+  }
+}
+
