@@ -346,13 +346,13 @@ export async function crewThink(
     .replace(/\n{3,}/g, '\n\n')                       // 連續空行壓縮
     .trim();
 
-  // Telegram 訊息上限 4096，留 200 給 bot header → 1500 字是安全上限
+  // Telegram 訊息上限 4096，留 200 給 bot header → 3500 字是安全上限（Telegram 上限 4096）
   // 超長回覆 → 用 Gemini Flash 自動摘要重點，保留完整分析但精簡表達
   let truncated = clean;
-  if (clean.length > 1500) {
+  if (clean.length > 3500) {
     log.info(`[CrewThink] ${bot.emoji} ${bot.name} 回覆過長(${clean.length}字)，自動摘要`);
     const summary = await summarizeReply(clean, bot);
-    truncated = summary || smartTruncate(clean, 1500);
+    truncated = summary || smartTruncate(clean, 3500);
   }
 
   // 自動追加工作紀錄到 bot 的 MEMORY.md
