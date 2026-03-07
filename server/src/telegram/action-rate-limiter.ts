@@ -100,7 +100,7 @@ const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
   // AI 呼叫 — 重操作，cost 5（token 成本考量）
   ask_ai:           { windowMs: ONE_MINUTE, maxRequests: 10, cost: 5 },
   delegate_agents:  { windowMs: ONE_MINUTE, maxRequests: 5,  cost: 5 },
-  generate_site:    { windowMs: ONE_MINUTE, maxRequests: 3,  cost: 5 },
+  generate_site:    { windowMs: ONE_MINUTE, maxRequests: 10, cost: 5 },
 
   // 資料庫 — cost 1
   query_supabase:   { windowMs: ONE_MINUTE, maxRequests: 15, cost: 1 },
