@@ -3342,9 +3342,23 @@ export async function handleGenerateSite(action: Record<string, string>): Promis
   const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
   if (!googleKey) return { ok: false, output: 'generate_site: 沒有 GOOGLE_API_KEY' };
 
+  // ── 查知識庫：把 cookbook 最佳實踐注入 prompt ──
+  let knowledgeContext = '';
+  try {
+    const searchResult = await handleSemanticSearch(description, 5, 'task');
+    if (searchResult.ok && searchResult.output) {
+      // 取搜尋結果的前 2000 字作為知識背景
+      knowledgeContext = searchResult.output.slice(0, 2000);
+      log.info(`[GenerateSite] 知識庫注入: ${knowledgeContext.length} 字`);
+    }
+  } catch (e) {
+    log.warn({ err: e }, '[GenerateSite] 知識庫查詢失敗，繼續生成');
+  }
+
   const sitePrompt = `你是頂尖的全端開發者。請根據以下需求，生成一個完整的單頁應用（SPA）。
 
 需求：${description}
+${knowledgeContext ? `\n參考知識庫（來自團隊累積的最佳實踐，請融入設計中）：\n${knowledgeContext}\n` : ''}
 
 技術要求：
 1. 輸出完整的 HTML 檔案（<!DOCTYPE html>），CSS 在 <style>，JS 在 <script>
