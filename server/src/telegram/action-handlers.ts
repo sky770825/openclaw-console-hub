@@ -3420,9 +3420,8 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
 9. **Hero 區塊**：漸層背景, 最少 70vh, 大標題 text-5xl font-weight 700, 副標 text-xl text-secondary
 10. **手機優先 RWD**：max-width 1200px 居中, grid 用 repeat(auto-fill, minmax(280px, 1fr))
 11. **微動畫**：頁面載入 fadeInUp（@keyframes fadeInUp）, 卡片 stagger 延遲（:nth-child * 0.1s）
-12. **Skeleton loading**：首次載入前顯示 skeleton 動畫（灰色漸變閃爍）
-13. **空狀態**：列表為空時顯示插圖 + 文字 + CTA 按鈕，不能留白
-14. **Toast 通知**：操作成功/失敗時右上角彈出 toast，3 秒後自動消失
+12. **空狀態**：列表為空時顯示插圖 + 文字 + CTA 按鈕，不能留白
+13. **Toast 通知**：操作成功/失敗時右上角彈出 toast，3 秒後自動消失
 
 ## 技術要求
 - 完整 HTML（<!DOCTYPE html>），CSS 在 <style>，JS 在 <script>
@@ -3433,6 +3432,11 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
 - 互動用原生 JS 或 Alpine.js
 - 圖表用 Chart.js（如需要）
 - 只輸出 HTML，不要解釋文字，不要 markdown 代碼框
+
+## 絕對禁止（重要！）
+- **禁止用 JS 動態注入主要內容**：所有文字、服務項目、價格、描述必須直接寫在 HTML 裡，不能用 display:none + JS 注入
+- **禁止 skeleton loading**：不要用骨架屏，內容直接顯示
+- **禁止空的 placeholder**：每個區塊都要有完整的真實內容（文字、價格、描述），不能寫 "Lorem ipsum" 或 "內容即將推出"
 
 直接輸出 HTML：`;
 
