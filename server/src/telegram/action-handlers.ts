@@ -1993,13 +1993,64 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
         const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
 
         const sections = content.split(/(?=^## )/m).filter(s => s.trim().length > 50);
-        totalChunks += sections.length;
+        if (sections.length === 0) { filesDone++; continue; }
+
+        // 推斷 content_type / zone / is_pinned（與 index_file 一致）
+        const inferredContentType = (() => {
+          if (['soul', 'identity'].includes(cat)) return 'soul';
+          if (['cookbook', 'sop', 'instruction'].includes(cat)) return 'sop';
+          if (cat === 'codebase') return 'codebase';
+          if (cat === 'reports') return 'diagnosis';
+          if (cat === 'proposals') return 'plan';
+          if (cat === 'learning') return 'exercise';
+          const lowerName = fileName.toLowerCase();
+          if (lowerName.includes('soul') || lowerName.includes('identity') || lowerName.includes('awakening')) return 'soul';
+          if (lowerName.includes('report') || lowerName.includes('diagnosis') || lowerName.includes('error-report')) return 'diagnosis';
+          if (lowerName.includes('plan') || lowerName.includes('proposal') || lowerName.includes('roadmap')) return 'plan';
+          if (lowerName.includes('exercise') || lowerName.includes('practice')) return 'exercise';
+          return 'reference';
+        })();
+        const inferredZone = ['reports', 'proposals'].includes(cat) ? 'cold' : 'hot';
+        const isPinned = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md'].includes(fileName);
+
+        // 去重：先刪除同檔案的舊 chunks（與 index_file 一致）
+        await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
+
+        // ── Step 1: SUMMARY chunk（chunk_index = -1）──
+        const sectionTitles = sections
+          .map(s => { const m = s.match(/^## (.+)/m); return m ? m[1].replace(/#/g, '').trim() : ''; })
+          .filter(Boolean);
+        const first200 = content.replace(/^#.*\n/m, '').trim().slice(0, 200);
+        const summaryContent = `[SUMMARY] ${docTitle}: ${sectionTitles.join(', ')}. ${first200}`;
+        const summaryEmbedText = `[SUMMARY] [${docTitle}] [${cat}] 章節: ${sectionTitles.join(', ')}. ${first200}`;
+        const summaryVector = await googleEmbed(summaryEmbedText);
+
+        if (summaryVector) {
+          const summaryHash = crypto.createHash('md5').update(`${relPath}:summary`).digest('hex');
+          const summaryPointId = parseInt(summaryHash.slice(0, 15), 16);
+          const { error: sumErr } = await sb.from('openclaw_embeddings').upsert({
+            id: summaryPointId,
+            doc_title: docTitle, section_title: '[SUMMARY]',
+            content: summaryContent, content_preview: summaryContent.slice(0, 200),
+            file_path: relPath, file_name: fileName, category: cat,
+            chunk_index: -1, chunk_total: sections.length,
+            size: summaryContent.length, date: new Date().toISOString().split('T')[0],
+            embedding: JSON.stringify(summaryVector),
+            status: 'active', content_type: inferredContentType,
+            zone: inferredZone, is_pinned: isPinned,
+            indexed_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
+          if (!sumErr) totalIndexed++;
+        }
+
+        // ── Step 2: DETAIL chunks（chunk_index >= 0）──
+        totalChunks += sections.length + 1; // +1 for summary
 
         for (let i = 0; i < sections.length; i++) {
           const section = sections[i].trim();
           const secMatch = section.match(/^## (.+)/m);
           const secTitle = secMatch ? secMatch[1].replace(/#/g, '').trim() : `chunk-${i}`;
-          const embedText = `[${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}`;
+          const embedText = `[DETAIL] [${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}`;
 
           const vector = await googleEmbed(embedText);
           if (!vector) continue;
@@ -2010,11 +2061,14 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
           const { error } = await sb.from('openclaw_embeddings').upsert({
             id: pointId,
             doc_title: docTitle, section_title: secTitle,
-            content: section, content_preview: section.slice(0, 200),
+            content: `[DETAIL] ${section}`, content_preview: section.slice(0, 200),
             file_path: relPath, file_name: fileName, category: cat,
             chunk_index: i, chunk_total: sections.length,
             size: section.length, date: new Date().toISOString().split('T')[0],
             embedding: JSON.stringify(vector),
+            status: 'active', content_type: inferredContentType,
+            zone: inferredZone, is_pinned: isPinned,
+            indexed_at: new Date().toISOString(),
           }, { onConflict: 'id' });
 
           if (!error) totalIndexed++;
@@ -3335,7 +3389,40 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
 
 // ── 網站生成 ──
 
+// ── generate_site 防護：並行鎖 + 全局超時 ──
+let _generateSiteBusy = false;
+const GENERATE_SITE_TIMEOUT_MS = 5 * 60 * 1000; // 5 分鐘硬上限
+
 export async function handleGenerateSite(action: Record<string, string>): Promise<ActionResult> {
+  // 並行鎖：同一時間只能跑一個 generate_site
+  if (_generateSiteBusy) {
+    return { ok: false, output: 'generate_site 正在執行中，請等前一個完成再試（防止 server 凍結）' };
+  }
+  _generateSiteBusy = true;
+
+  // 全局超時：5 分鐘內必須完成，否則中斷
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), GENERATE_SITE_TIMEOUT_MS);
+
+  try {
+    const result = await Promise.race([
+      _handleGenerateSiteInner(action),
+      new Promise<ActionResult>((_, reject) => {
+        ac.signal.addEventListener('abort', () =>
+          reject(new Error(`generate_site 超時（超過 ${GENERATE_SITE_TIMEOUT_MS / 1000} 秒），已中斷`))
+        );
+      }),
+    ]);
+    return result;
+  } catch (e) {
+    return { ok: false, output: `generate_site 中斷: ${e instanceof Error ? e.message : String(e)}` };
+  } finally {
+    clearTimeout(timer);
+    _generateSiteBusy = false;
+  }
+}
+
+async function _handleGenerateSiteInner(action: Record<string, string>): Promise<ActionResult> {
   const description = action.description || action.prompt || action.name || '';
   if (!description) return { ok: false, output: 'generate_site 需要 description 參數（描述你要什麼網站）' };
 
@@ -3403,6 +3490,21 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
   --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
 }
 
+/* 暗色模式 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a; --bg-secondary: #1e293b;
+    --text: #f1f5f9; --text-secondary: #94a3b8;
+    --gray-50: #1e293b; --gray-100: #334155; --gray-200: #475569;
+    --gray-800: #e2e8f0; --gray-900: #f8fafc;
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.3);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.3);
+  }
+}
+
 根據產品類型調整 --primary 色系：
 - 美業/美甲/美睫 → 粉色系 #ec4899
 - 餐飲/POS/點餐 → 橘紅系 #f97316
@@ -3426,6 +3528,7 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
 11. **微動畫**：頁面載入 fadeInUp（@keyframes fadeInUp）, 卡片 stagger 延遲（:nth-child * 0.1s）
 12. **空狀態**：列表為空時顯示插圖 + 文字 + CTA 按鈕，不能留白
 13. **Toast 通知**：操作成功/失敗時右上角彈出 toast，3 秒後自動消失
+14. **暗色模式**：加入 @media (prefers-color-scheme: dark) 變體，科技類/儀表板類預設暗色
 
 ## 技術要求
 - 完整 HTML（<!DOCTYPE html>），CSS 在 <style>，JS 在 <script>
@@ -3496,6 +3599,7 @@ ${knowledgeContext ? `\n參考知識庫：\n${knowledgeContext}\n` : ''}
 8. **表單驗證**：預約/聯絡表單有沒有前端驗證？
 9. **視覺層次**：Hero 區塊是否夠大（70vh+）？標題大小層次是否分明？
 10. **整體美感**：以 Lovable.dev / Dribbble 水準，1-10 分打幾分？
+11. **暗色模式**：是否有 prefers-color-scheme: dark 支援？
 
 最後輸出格式：
 SCORE: X/10

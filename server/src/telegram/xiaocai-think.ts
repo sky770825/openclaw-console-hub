@@ -738,6 +738,24 @@ ${crewResults}
   /** 嘗試用指定模型生成回覆 */
   async function tryModel(modelId: string): Promise<string | null> {
     const prov = getModelProvider(modelId);
+
+    // 無 API Key 的 provider 直接跳過，不浪費升級鏈時間
+    if (prov === 'kimi' || prov === 'deepseek' || prov === 'xai' || prov === 'openrouter') {
+      const key = prov === 'openrouter'
+        ? (process.env.OPENROUTER_API_KEY?.trim() || getProviderKey('openrouter'))
+        : getProviderKey(prov);
+      if (!key) {
+        log.info(`[XiaocaiAI] ⏩ skip ${modelId}: no API key for ${prov}`);
+        return null;
+      }
+    } else if (prov === 'anthropic') {
+      const key = process.env.ANTHROPIC_API_KEY?.trim() || getProviderKey('Anthropic');
+      if (!key) {
+        log.info(`[XiaocaiAI] ⏩ skip ${modelId}: no API key for ${prov}`);
+        return null;
+      }
+    }
+
     // Claude CLI 熔斷：連續失敗 3+ 次 → 5 分鐘內直接跳過，省掉無謂重試
     if (prov === 'claude-cli' && claudeCliCircuitOpen()) {
       log.info(`[XiaocaiAI] ⚡ Claude CLI 熔斷中（${claudeCliFailCount} 連敗），跳過 ${modelId}`);

@@ -6,6 +6,7 @@
 import { createLogger } from './logger.js';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
+import { URL } from 'url';
 
 const log = createLogger('websocket');
 
@@ -27,9 +28,59 @@ class WebSocketManager {
   initialize(server: Server): void {
     this.wss = new WebSocketServer({ server, path: '/ws' });
 
-    this.wss.on('connection', (ws) => {
-      log.info('[WebSocket] 新客戶端連線');
-      
+    this.wss.on('connection', (ws, req) => {
+      // ── Auth gate: validate API key from query parameter ──
+      const validKeys = [process.env.OPENCLAW_READ_KEY, process.env.OPENCLAW_API_KEY].filter(Boolean);
+      let authenticated = false;
+
+      if (validKeys.length === 0) {
+        // No keys configured — allow connections (dev mode)
+        authenticated = true;
+      } else {
+        try {
+          const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+          const apiKey = url.searchParams.get('apiKey');
+          if (apiKey && validKeys.includes(apiKey)) {
+            authenticated = true;
+          }
+        } catch {
+          // URL parse failed — not authenticated
+        }
+      }
+
+      if (!authenticated) {
+        // Allow first message to carry the key
+        let authTimeout: NodeJS.Timeout | null = null;
+
+        const onFirstMessage = (data: Buffer | ArrayBuffer | Buffer[]) => {
+          try {
+            const msg = JSON.parse(data.toString());
+            if (msg.apiKey && validKeys.includes(msg.apiKey)) {
+              ws.removeListener('message', onFirstMessage);
+              if (authTimeout) clearTimeout(authTimeout);
+              setupClient(ws);
+            } else {
+              ws.close(4001, 'Invalid API key');
+            }
+          } catch {
+            ws.close(4001, 'Invalid API key');
+          }
+        };
+
+        ws.on('message', onFirstMessage);
+        authTimeout = setTimeout(() => {
+          ws.removeListener('message', onFirstMessage);
+          ws.close(4001, 'Auth timeout');
+        }, 5000);
+        return;
+      }
+
+      setupClient(ws);
+    });
+
+    const setupClient = (ws: WebSocket) => {
+      log.info('[WebSocket] 新客戶端連線（已驗證）');
+
       const client: ClientConnection = {
         ws,
         subscriptions: new Set(),
@@ -73,7 +124,7 @@ class WebSocketManager {
         log.error({ err: error }, '[WebSocket] 錯誤');
         this.clients.delete(ws);
       });
-    });
+    };
 
     // 啟動心跳檢查
     this.startHeartbeat();

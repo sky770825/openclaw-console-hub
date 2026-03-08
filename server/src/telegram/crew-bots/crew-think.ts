@@ -1009,7 +1009,12 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
 // ── 智慧模型判斷 ──
 
 /** 管理員/指揮官 username */
-const COMMANDER_USERNAMES = new Set(['xiaoji_cai_bot', 'gousmaaa', 'sky770825']);
+const COMMANDER_USERNAMES = new Set(
+  (process.env.COMMANDER_USERNAMES || 'xiaoji_cai_bot,gousmaaa,sky770825')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+);
 
 /** 任務意圖關鍵字（跨 bot 通用） */
 const TASK_INTENT_KEYWORDS = [
