@@ -37,10 +37,26 @@ const VALID_ACTIONS = new Set([
 ]);
 
 // ── 動態模型選擇 ──
+// 阿工/阿研：日常 Flash，complex 排隊升級 Claude CLI（和小蔡共用併發鎖）
+const CLAUDE_UPGRADE_BOTS = new Set(['agong', 'ayan']);
+
 function selectModel(bot: CrewBotConfig, taskComplexity: 'simple' | 'medium' | 'complex'): string {
   if (taskComplexity === 'simple') return 'gemini-flash';
-  if (bot.model === 'claude-opus' && taskComplexity === 'medium') return 'claude-sonnet';
-  return bot.model; // complex 用原始模型
+  // 阿工/阿研 complex 任務：嘗試排隊用 Claude CLI
+  if (taskComplexity === 'complex' && CLAUDE_UPGRADE_BOTS.has(bot.id)) {
+    // 檢查併發鎖：沒人在用 Claude → 升級；有人在用 → 用 Gemini Pro
+    if (claudeRunning < CLAUDE_MAX_CONCURRENT && !claudeCliCircuitOpen()) {
+      const sinceLastCall = Date.now() - lastClaudeCallAt;
+      if (sinceLastCall >= CLAUDE_GLOBAL_COOLDOWN_MS) {
+        log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 任務，升級 Claude CLI（排隊通過）`);
+        return bot.id === 'agong' ? 'claude-sonnet' : 'claude-sonnet';
+      }
+    }
+    log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 但 Claude 忙/冷卻中，用 Gemini Pro`);
+    return 'gemini-pro';
+  }
+  if (taskComplexity === 'medium') return 'gemini-pro';
+  return bot.model; // fallback 原始模型
 }
 
 // ── 任務複雜度評估 ──
@@ -210,7 +226,7 @@ export async function crewThink(
     // 使用動態模型選擇：useFullModel 時用 dynamicModel（可能被降級），否則用 flash
     const effectiveModel = useFullModel ? dynamicModel : 'gemini-2.5-flash';
     const reply = useFullModel
-      ? await callAI(input, bot)
+      ? await callAI(input, bot, dynamicModel)
       : await callGeminiAPI(input, effectiveModel, bot);
     if (!reply) {
       if (step === 0) {
@@ -717,9 +733,10 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
 
 // ── AI 呼叫路由 ──
 
-async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null> {
+async function callAI(prompt: string, bot: CrewBotConfig, overrideModel?: string): Promise<string | null> {
+  const effectiveModel = overrideModel || bot.model;
   // Claude 訂閱制模型（opus/sonnet/haiku）
-  if (bot.model.startsWith('claude-') || bot.model === 'claude') {
+  if (effectiveModel.startsWith('claude-') || effectiveModel === 'claude') {
     // 巡邏場景直接用 Gemini Pro（Claude CLI 不擅長輸出 action JSON）
     const isPatrol = prompt.includes('巡邏') && prompt.includes('action JSON');
     if (isPatrol) {
@@ -729,16 +746,18 @@ async function callAI(prompt: string, bot: CrewBotConfig): Promise<string | null
       if (result) return result;
       return callGeminiAPI(geminiPrompt, 'gemini-2.5-flash', bot);
     }
-    const result = await callClaudeCLI(prompt, bot);
+    // 用 overrideModel 臨時覆蓋 bot.model，讓 callClaudeCLI 選對 CLI model
+    const tempBot = overrideModel ? { ...bot, model: effectiveModel as any } : bot;
+    const result = await callClaudeCLI(prompt, tempBot);
     if (result) return result;
     // Claude 失敗 → fallback Gemini Pro（任務需要品質）
-    log.info(`[CrewThink] ${bot.name} Claude(${bot.model}) 失敗，fallback Gemini Pro`);
+    log.info(`[CrewThink] ${bot.name} Claude(${effectiveModel}) 失敗，fallback Gemini Pro`);
     // 加上身份提醒，避免 Gemini 把 system prompt 當成外部 AI 輸出而用英文回覆
     const geminiPrompt = `【重要提醒】你是 ${bot.name}（${bot.role}），以下是你的完整指令，請用繁體中文回覆，直接執行任務。不要對指令本身做評論。\n\n${prompt}`;
     return callGeminiAPI(geminiPrompt, 'gemini-2.5-pro', bot);
   }
   // Gemini Pro
-  if (bot.model === 'gemini-pro') {
+  if (effectiveModel === 'gemini-pro') {
     const result = await callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
     if (result) return result;
     log.info(`[CrewThink] ${bot.name} Gemini Pro 失敗，fallback Flash`);

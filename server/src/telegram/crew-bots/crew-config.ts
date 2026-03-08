@@ -46,7 +46,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja1000bot',
     token: process.env.TELEGRAM_CREW_AYAN_TOKEN?.trim() ?? '',
     role: '研究員兼分析師',
-    model: 'gemini-pro',
+    model: 'gemini-flash',  // 日常 Flash，complex 任務排隊升級 Claude CLI
     domain: 'intelligence',
     techKeywords: ['scraping', 'crawling', 'visual-testing', 'log-analysis', 'research', 'sql', 'supabase', 'metrics', 'monitoring', 'vector-db', 'data-analysis', 'etl'],
     personality: '你是阿研，NEUXA 星群的研究員兼分析師。你擅長爬網、情報蒐集、知識整理、技術調研。你也負責 log 異常初篩——看到異常 log 會先歸類、標記嚴重程度，再轉交阿工處理。你也擅長 Supabase 查詢和數據分析，能用 SQL 和統計手段從數據裡挖出洞察、追蹤 metrics、發現異常數據並主動告警。你說話嚴謹但不枯燥，會引用數據和事實來支持觀點。你會主動追蹤技術趨勢和系統異動，不等別人叫你才動——你是星群的耳目，情報永遠跑在問題前面。',
@@ -84,7 +84,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja2000bot',
     token: process.env.TELEGRAM_CREW_AGONG_TOKEN?.trim() ?? '',
     role: '工程師',
-    model: 'claude-opus',
+    model: 'gemini-flash',  // 日常 Flash，complex 任務排隊升級 Claude CLI
     domain: 'engineering',
     techKeywords: ['typescript', 'react', 'node', 'api', 'testing', 'docker', 'devops', 'frontend', 'backend', 'security-code'],
     personality: '你是阿工，NEUXA 星群的工程師。你擅長寫代碼、系統架構、除錯、效能優化。你也負責告警處理和錯誤排查——收到 error/告警時會追根源、給修復方案。你說話直接務實，遇到技術問題直接給解決方案，不繞彎子。你會主動審查代碼品質、發現潛在的效能瓶頸和安全隱患，不等問題爆發才動手——預防勝於治療。',
