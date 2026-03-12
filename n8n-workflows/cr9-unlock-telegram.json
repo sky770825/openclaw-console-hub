@@ -1,0 +1,185 @@
+{
+  "name": "CR-9 保護檔案解鎖 (Telegram 授權)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cr9-unlock-request",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-cr9",
+      "name": "Webhook: 解鎖請求",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "5819565005",
+        "text": "=🔒 **保護檔案修改請求**\n\n⏰ 時間：{{ $json.timestamp }}\n📁 檔案：{{ $json.files }}\n\n⚠️ 這是唯讀保護檔案（CR-9）\n\n✅ 回覆授權碼放行：\n`openclaw-unlock-{{ $now.format('yyyyMMdd') }}`\n\n❌ 回覆「拒絕」阻止修改\n⏰ 5 分鐘內未回覆 = 自動拒絕",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-send",
+      "name": "Telegram: 發通知給老蔡",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [500, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credential",
+          "name": "OpenClaw Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"notification_sent\", \"message\": \"已發送 Telegram 通知給老蔡，等待授權\"}"
+      },
+      "id": "respond-ok",
+      "name": "回應: 已發送通知",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger: 老蔡回覆",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 550],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credential",
+          "name": "OpenClaw Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "=openclaw-unlock-{{ $now.format('yyyyMMdd') }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-unlock-code",
+      "name": "IF: 授權碼正確？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [500, 550]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\nconst code = 'openclaw-unlock-' + $now.format('yyyyMMdd');\nconst filePath = '/workspace/.cr9-unlock';\nfs.writeFileSync(filePath, code + '\\n');\nreturn [{ json: { status: 'ok', file: filePath, code: code } }];"
+      },
+      "id": "exec-unlock",
+      "name": "寫入解鎖檔案",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 450]
+    },
+    {
+      "parameters": {
+        "chatId": "5819565005",
+        "text": "🔓 已授權！解鎖檔案已建立。\n\n小蔡可以重新 git commit 了。\n授權碼 5 分鐘內有效（一次性）。",
+        "additionalFields": {}
+      },
+      "id": "telegram-approved",
+      "name": "Telegram: 通知已授權",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1000, 450],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credential",
+          "name": "OpenClaw Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5819565005",
+        "text": "❌ 修改已拒絕。保護檔案維持不變。",
+        "additionalFields": {}
+      },
+      "id": "telegram-rejected",
+      "name": "Telegram: 通知已拒絕",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [750, 650],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-bot-credential",
+          "name": "OpenClaw Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: 解鎖請求": {
+      "main": [
+        [
+          { "node": "Telegram: 發通知給老蔡", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Telegram: 發通知給老蔡": {
+      "main": [
+        [
+          { "node": "回應: 已發送通知", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Telegram Trigger: 老蔡回覆": {
+      "main": [
+        [
+          { "node": "IF: 授權碼正確？", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF: 授權碼正確？": {
+      "main": [
+        [
+          { "node": "寫入解鎖檔案", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Telegram: 通知已拒絕", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "寫入解鎖檔案": {
+      "main": [
+        [
+          { "node": "Telegram: 通知已授權", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "security" },
+    { "name": "cr-9" },
+    { "name": "protection" }
+  ]
+}

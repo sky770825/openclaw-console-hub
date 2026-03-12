@@ -1,0 +1,4 @@
+# Suggested Cron Jobs for OpenClaw
+*/15 * * * * /Users/caijunchang/.openclaw/workspace/scripts/monitor_and_move.sh >> /Users/caijunchang/.openclaw/workspace/logs/monitor.log 2>&1
+0 * * * * /Users/caijunchang/.openclaw/workspace/scripts/auto-checkpoint.sh >> /Users/caijunchang/.openclaw/workspace/logs/checkpoint.log 2>&1
+*/5 * * * * /Users/caijunchang/.openclaw/workspace/scripts/docker-n8n-recovery.sh >> /Users/caijunchang/.openclaw/workspace/logs/recovery.log 2>&1

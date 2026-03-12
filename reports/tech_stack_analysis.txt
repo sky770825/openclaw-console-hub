@@ -1,0 +1,5 @@
+Tech Stack Detection:
+- Styling: tailwind
+- Animation: framer-motion
+- Icons: lucide-react
+- Base Framework: React (determined by project metadata)

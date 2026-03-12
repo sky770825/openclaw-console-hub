@@ -1,0 +1,8 @@
+NEUXA Knowledge Audit Report - Sat Feb 28 13:23:53 CST 2026
+======================================
+[WARNING] SYSTEM-RESOURCES.md not found in workspace root.
+[WARNING] CODEBASE-INDEX.md not found in workspace root.
+[WARNING] TOOLS.md not found in workspace root.
+[WARNING] cookbook directory not found.
+Audit complete. Updated knowledge files (proposals) are in /Users/caijunchang/.openclaw/workspace/sandbox/output/updated_knowledge
+Verification script created at /Users/caijunchang/.openclaw/workspace/sandbox/output/verify_drift.sh

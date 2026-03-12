@@ -1,0 +1,11 @@
+{
+  "window_size": 5,
+  "dominant_threshold": 0.7,
+  "turns": [],
+  "proportions": {},
+  "current_topic": "",
+  "topic_summary": "",
+  "last_updated": "",
+  "miss_count": {},
+  "_note": "turns: 每輪一筆 { turn_id, ts, sections_hit: [區塊名] }，只保留最近 window_size 筆。proportions: 視窗內各區塊命中比例，輪結束重算。若某區塊 ≥ dominant_threshold 則本輪只載入主導+有匹配的區塊，不重複引入低比例區塊。詳見 docs/記憶索引-比例分配與實作流程.md"
+}

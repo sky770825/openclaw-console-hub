@@ -1,0 +1,13 @@
+{
+  "name": "Resolve memory dirty state (3 files dirty)",
+  "problem": "Memory: 3 files · 4 chunks · dirty; inconsistent vector/fts/qmd recall.",
+  "expectedOutput": "Memory clean; indexes rebuilt; qmd search verified fast.",
+  "acceptanceCriteria": [
+    "openclaw status: memory clean (no dirty)",
+    "qmd search '關鍵字' returns relevant results <2s"
+  ],
+  "riskLevel": "low",
+  "rollbackPlan": "Restart OpenClaw memory service; no data loss.",
+  "assignedAgent": "ollama",
+  "source": "internal-optimization"
+}

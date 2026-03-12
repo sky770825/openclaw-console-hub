@@ -1,0 +1,482 @@
+/* NEUXA 旗艦微雕視覺模組 v4.0 - 人間因果典藏 */
+:root {
+    --void: #050505; 
+    --gold: #b8860b; 
+    --goldBright: #ffd700; 
+    --cinnabar: #8b0000; 
+    --paper: #e8e2d0;
+    --shadow-gold: rgba(184, 134, 11, 0.4);
+}
+
+body {
+    background-color: var(--void);
+    color: var(--paper);
+    font-family: 'Noto Serif TC', serif !important;
+    font-size: 1.1rem !important;
+    line-height: 1.8 !important;
+    letter-spacing: 0.05em;
+    overflow-x: hidden;
+}
+
+/* 標題：石碑刻印感 */
+h1, h2, h3 {
+    font-weight: 900 !important;
+    color: var(--gold) !important;
+    letter-spacing: 0.3em !important;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.8), 0 0 25px var(--shadow-gold);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+}
+
+/* HERO Section Adjustments */
+h1.text-8xl {
+    font-size: 7rem !important;
+    letter-spacing: 0.3em !important;
+}
+
+p.text-2xl {
+    font-size: 1.5rem !important;
+    letter-spacing: 0.5em !important;
+}
+
+/* 首頁 HERO：因果真相 — 天理・鐵律・莊嚴 + 抽象背景 */
+.hero-causelaw {
+    background-color: #050508;
+}
+.hero-causelaw-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    /* 深黑底 + 極淡金/褐中心：天理・鐵律的微光，不搶戲 */
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 35%, rgba(0, 0, 0, 0.4) 0%, transparent 60%),
+        radial-gradient(ellipse 120% 90% at 50% 45%, rgba(28, 18, 8, 0.5) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 100% at 50% 50%, rgba(45, 25, 5, 0.2) 0%, transparent 45%),
+        #050508;
+    /* 暗角：邊緣壓暗，視線收束到「因果真相」四字 */
+    box-shadow: inset 0 0 30vmin 5vmin rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+}
+/* 抽象背景層：光暈・薄霧・能量感（不搶主標） */
+.hero-causelaw-abstract {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.85;
+    background:
+        /* 中心上方：極淡金色光暈 */
+        radial-gradient(ellipse 90% 40% at 50% 25%, rgba(180, 140, 60, 0.08) 0%, transparent 50%),
+        /* 兩側：若有若無的薄霧狀 */
+        radial-gradient(ellipse 60% 80% at 15% 50%, rgba(80, 50, 20, 0.06) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 80% at 85% 50%, rgba(80, 50, 20, 0.06) 0%, transparent 55%),
+        /* 中下：極淡暖色暈染 */
+        radial-gradient(ellipse 100% 60% at 50% 75%, rgba(40, 28, 12, 0.12) 0%, transparent 50%),
+        /* 細微紋理：低對比雜點感（抽象、不說教） */
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* 導航列會員按鈕：與主導航視覺平衡，不顯過小 */
+.member-nav-btn {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #a8a29e;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid rgba(184, 134, 11, 0.35);
+    border-radius: 0.35rem;
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.member-nav-btn:hover {
+    color: var(--gold);
+    border-color: rgba(184, 134, 11, 0.55);
+    background: rgba(184, 134, 11, 0.08);
+}
+.member-nav-btn--muted {
+    font-size: 0.8rem;
+    color: #78716c;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+.member-nav-btn--muted:hover {
+    color: #fca5a5;
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.06);
+}
+
+/* 討論區：會員登入與我要投稿同級按鈕，大小一致 */
+.member-action-btn {
+    display: inline-block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    padding: 0.6rem 1.25rem;
+    border: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 0.4rem;
+    color: var(--gold);
+    background: transparent;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.member-action-btn:hover {
+    border-color: rgba(184, 134, 11, 0.65);
+    background: rgba(184, 134, 11, 0.1);
+    color: var(--goldBright);
+}
+.member-action-btn--primary {
+    background: var(--gold);
+    color: #0a0a0a;
+    border-color: var(--gold);
+}
+.member-action-btn--primary:hover {
+    background: var(--goldBright);
+    border-color: var(--goldBright);
+    color: #0a0a0a;
+}
+
+/* 導航欄微調（含手機安全區域） */
+.nav-premium {
+    padding: 1rem 2rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(1rem, env(safe-area-inset-top));
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(184, 134, 11, 0.15);
+}
+
+/* 手機版：Hero 主標與副標縮放，避免溢出 */
+@media (max-width: 768px) {
+    .hero-causelaw h1.text-\[7rem\] { font-size: clamp(2.5rem, 12vw, 4.5rem) !important; letter-spacing: 0.15em !important; }
+    .hero-causelaw p.text-3xl { font-size: 1.25rem !important; letter-spacing: 0.3em !important; }
+}
+@media (max-width: 480px) {
+    .hero-causelaw h1.text-\[7rem\] { font-size: clamp(2rem, 10vw, 3.5rem) !important; }
+    .hero-causelaw p.text-3xl { font-size: 1.1rem !important; letter-spacing: 0.2em !important; }
+}
+
+/* 旗艦按鈕設計：光流與材質 */
+.btn-premium {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem !important;
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    border: 1px solid rgba(184, 134, 11, 0.25);
+    background: rgba(10, 10, 10, 0.9);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    cursor: pointer;
+    min-height: 160px;
+}
+
+.btn-premium::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-premium:hover {
+    color: #fff;
+    border-color: var(--goldBright);
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+    transform: translateY(-3px);
+}
+
+.btn-premium:hover::before {
+    left: 100%;
+}
+
+.btn-premium:active {
+    transform: scale(0.95);
+}
+
+/* 影像容器：完整顯示圖片、不裁切，比例隨圖片自適應 */
+.visual-frame-premium {
+    width: 100%;
+    max-width: 720px;
+    margin: 4rem auto;
+    border: 1px solid rgba(184, 134, 11, 0.2);
+    background-color: #0a0a0a;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.visual-frame-premium img,
+.deity-img-full {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    max-height: 70vh;
+    display: block;
+    object-fit: contain; /* 完整顯示，不裁切 */
+    object-position: center;
+    image-rendering: auto;
+    filter: sepia(0.2) contrast(1.1) brightness(0.7);
+    transition: 1.5s ease;
+}
+
+.visual-frame-premium:hover img {
+    filter: sepia(0) contrast(1.2) brightness(1);
+    transform: scale(1.08);
+}
+
+/* 返回頂端按鈕優化：預設隱藏，捲動後顯示 */
+.back-to-top {
+    position: fixed; bottom: 40px; right: 40px;
+    width: 60px; height: 60px;
+    background: rgba(139, 0, 0, 0.1);
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 1.5rem;
+    z-index: 1000; cursor: pointer;
+    transition: 0.4s;
+    opacity: 0;
+    pointer-events: none;
+}
+.back-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 音頻組件 */
+.audio-player {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(0,0,0,0.7);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+}
+.audio-visualizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 15px;
+}
+.visual-bar {
+    width: 2px;
+    background: var(--gold);
+    animation: bar-dance 1s infinite ease-in-out;
+}
+@keyframes bar-dance {
+    0%, 100% { height: 5px; }
+    50% { height: 15px; }
+}
+
+/* Tailwind CDN fallback utility colors used across pages */
+.text-gold { color: var(--gold) !important; }
+.text-goldBright { color: var(--goldBright) !important; }
+.text-cinnabar { color: var(--cinnabar) !important; }
+.text-gold\/90 { color: rgba(184, 134, 11, 0.9) !important; }
+.bg-gold { background-color: var(--gold) !important; }
+.bg-cinnabar { background-color: var(--cinnabar) !important; }
+.bg-gold\/5 { background-color: rgba(184, 134, 11, 0.05) !important; }
+.bg-cinnabar\/5 { background-color: rgba(139, 0, 0, 0.05) !important; }
+.border-gold { border-color: var(--gold) !important; }
+.border-cinnabar { border-color: var(--cinnabar) !important; }
+.border-gold\/10 { border-color: rgba(184, 134, 11, 0.1) !important; }
+.border-gold\/20 { border-color: rgba(184, 134, 11, 0.2) !important; }
+.border-gold\/30 { border-color: rgba(184, 134, 11, 0.3) !important; }
+.border-gold\/40 { border-color: rgba(184, 134, 11, 0.4) !important; }
+.border-cinnabar\/30 { border-color: rgba(139, 0, 0, 0.3) !important; }
+.hover\:bg-goldBright:hover { background-color: var(--goldBright) !important; }
+
+/* User-generated content safety: avoid long tokens breaking layout */
+.post-preview,
+.post-content,
+.comment-card,
+.comment-reply,
+.wall-modal-text,
+.whitespace-pre-line {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Nav module: desktop keeps full menu, mobile uses clean collapsible panel */
+.cl-nav-toggle {
+    display: none;
+    appearance: none;
+    border: 1px solid rgba(184, 134, 11, 0.4);
+    background: rgba(184, 134, 11, 0.08);
+    color: var(--gold);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 0.42rem 0.68rem;
+    border-radius: 0.45rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.cl-nav-toggle:hover {
+    background: rgba(184, 134, 11, 0.18);
+    border-color: rgba(184, 134, 11, 0.7);
+    color: var(--goldBright);
+}
+.cl-nav-mobile-panel {
+    display: none;
+}
+body.cl-nav-lock {
+    overflow: hidden;
+}
+/* Prevent initial nav transition artifacts during hard refresh */
+html:not(.cl-ready) nav.cl-nav-ready,
+html:not(.cl-ready) nav.cl-nav-ready * {
+    transition: none !important;
+    animation: none !important;
+}
+@media (max-width: 900px) {
+    nav.cl-nav-ready {
+        padding: 0.62rem 0.85rem !important;
+        gap: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        background: rgba(0, 0, 0, 0.94) !important;
+    }
+    nav.cl-nav-ready .cl-nav-brand {
+        order: 1;
+        border-left: 0 !important;
+        padding-left: 0 !important;
+        font-size: 0.92rem !important;
+        letter-spacing: 0.1em !important;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    nav.cl-nav-ready .cl-nav-toggle {
+        order: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    nav.cl-nav-ready .cl-nav-member {
+        order: 3;
+        width: 100%;
+        margin-top: 0.15rem;
+        padding: 0.55rem;
+        border: 1px solid rgba(184, 134, 11, 0.2);
+        border-radius: 0.65rem;
+        background: rgba(6, 6, 6, 0.94);
+        display: none;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        align-items: center;
+        max-height: 22vh;
+        overflow-y: auto;
+    }
+    nav.cl-nav-ready .cl-nav-member .member-nav-btn {
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        padding: 0.4rem 0.62rem;
+    }
+    nav.cl-nav-ready .cl-nav-links {
+        display: none !important;
+    }
+    nav.cl-nav-ready .cl-nav-mobile-panel {
+        order: 4;
+        width: 100%;
+        margin-top: 0.1rem;
+        padding: 0.65rem;
+        border: 1px solid rgba(184, 134, 11, 0.2);
+        border-radius: 0.65rem;
+        background: rgba(6, 6, 6, 0.94);
+        display: none;
+        max-height: 56vh;
+        overflow-y: auto;
+    }
+    nav.cl-nav-ready .cl-nav-group + .cl-nav-group {
+        margin-top: 0.55rem;
+        padding-top: 0.55rem;
+        border-top: 1px dashed rgba(184, 134, 11, 0.25);
+    }
+    nav.cl-nav-ready .cl-nav-group-title {
+        color: rgba(184, 134, 11, 0.85);
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        margin: 0 0 0.4rem;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    nav.cl-nav-ready .cl-nav-group-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.38rem;
+    }
+    nav.cl-nav-ready .cl-nav-link-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.2rem;
+        padding: 0.25rem 0.38rem;
+        border: 1px solid rgba(184, 134, 11, 0.22);
+        border-radius: 0.45rem;
+        font-size: 0.8rem !important;
+        letter-spacing: 0.06em !important;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.35);
+        text-decoration: none;
+        color: #a8a29e;
+    }
+    nav.cl-nav-ready .cl-nav-link-item:hover {
+        border-color: rgba(184, 134, 11, 0.62);
+        color: var(--goldBright);
+        background: rgba(184, 134, 11, 0.12);
+    }
+    nav.cl-nav-ready .cl-nav-link-item.text-gold,
+    nav.cl-nav-ready .cl-nav-link-item.text-purple-400,
+    nav.cl-nav-ready .cl-nav-link-item[aria-current="page"] {
+        border-color: rgba(184, 134, 11, 0.55);
+        background: rgba(184, 134, 11, 0.12);
+        color: var(--gold);
+    }
+    nav.cl-nav-ready .cl-nav-link-item.text-purple-400 {
+        color: #c4b5fd !important;
+        border-color: rgba(196, 181, 253, 0.5);
+        background: rgba(139, 92, 246, 0.15);
+    }
+    nav.cl-nav-ready.is-open .cl-nav-mobile-panel {
+        display: block;
+    }
+    nav.cl-nav-ready.is-open .cl-nav-member {
+        display: flex;
+    }
+}
+@media (max-width: 480px) {
+    nav.cl-nav-ready .cl-nav-brand {
+        font-size: 0.84rem !important;
+    }
+    nav.cl-nav-ready .cl-nav-group-grid {
+        gap: 0.34rem;
+    }
+    nav.cl-nav-ready .cl-nav-link-item {
+        font-size: 0.76rem !important;
+        min-height: 2.05rem;
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "source": "A-Yan Calibration",
+  "entities": ["Linear", "Vercel", "Raycast"],
+  "principles": {
+    "animation": "GPU-accelerated, spring-physics, intersection-observer",
+    "loading": "Streaming, ISR, Skeleton states",
+    "ux": "Zero-latency feeling, keyboard-driven, high accessibility"
+  },
+  "last_updated": "Wed Mar  4 20:34:14 CST 2026"
+}

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="透過互動題目測試你的因果敏感度，快速檢視決策習慣與可能承擔的行為後果。">
+    <meta property="og:title" content="因果覺醒測驗 | 分毫不差">
+    <meta property="og:description" content="透過互動題目測試你的因果敏感度，快速檢視決策習慣與可能承擔的行為後果。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/quiz.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="因果覺醒測驗 | 分毫不差">
+    <meta name="twitter:description" content="透過互動題目測試你的因果敏感度，快速檢視決策習慣與可能承擔的行為後果。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>因果覺醒測驗 | 分毫不差</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../causelaw-config.js" defer></script>
+    <script src="../causelaw-client.js" defer></script>
+    <script src="../causelaw-ui.js" defer></script>
+    <script src="../causelaw-auth.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .quiz-container { max-width: 800px; margin: 0 auto; background: rgba(10, 20, 30, 0.9); border: 2px solid #00d4ff; padding: 4rem; text-align: center; position: relative; }
+        .option-btn { display: block; width: 100%; padding: 1.2rem; margin: 1rem 0; border: 1px solid rgba(0, 212, 255, 0.3); background: black; color: white; cursor: pointer; transition: 0.3s; font-size: 1.1rem; text-align: left; padding-left: 2rem; }
+        .option-btn:hover { border-color: #00d4ff; background: rgba(0, 212, 255, 0.1); }
+        .progress-bar { width: 100%; height: 4px; background: #111; margin-bottom: 2rem; }
+        .progress-inner { height: 100%; background: #00d4ff; width: 0%; transition: 0.5s; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition text-gold">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 px-10">
+        <div class="quiz-container">
+            <div class="progress-bar"><div id="progress" class="progress-inner"></div></div>
+            <h1 class="text-4xl text-[#00d4ff] mb-8 tracking-widest">因果覺醒測驗</h1>
+            
+            <div id="quiz-ui">
+                <p id="question-text" class="text-2xl mb-10 leading-loose min-h-[100px]"></p>
+                <div id="options-container" class="space-y-4"></div>
+            </div>
+
+            <div id="result-ui" class="hidden">
+                <div id="score-circle" class="text-6xl font-black mb-6 text-gold"></div>
+                <h2 id="result-title" class="text-3xl mb-6 font-bold"></h2>
+                <p id="result-desc" class="text-lg text-stone-400 leading-loose mb-10"></p>
+                <div class="flex flex-col gap-4">
+                    <button class="btn-premium" onclick="location.reload()">重新參悟</button>
+                    <a href="hell.html" class="text-stone-500 hover:text-gold underline">了解業力結算地點 (十八地獄)</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const questions = [
+            {
+                q: "1. 若在路上撿到鉅額現金，且四下無人，您的第一直覺是？",
+                options: [
+                    { text: "據為己有，這是天降橫財。", score: -20 },
+                    { text: "原地等待或送交警局，非我之物不可取。", score: 20 },
+                    { text: "拿走一部分，其餘留給別人撿。", score: -10 }
+                ]
+            },
+            {
+                q: "2. 當您看到競爭對手遭遇不幸（如生意失敗或家庭變故）時？",
+                options: [
+                    { text: "幸災樂禍，覺得這是對方的報應。", score: -15 },
+                    { text: "心生同情，若有機會願意給予適度協助。", score: 20 },
+                    { text: "不關我的事，冷眼旁觀。", score: 0 }
+                ]
+            },
+            {
+                q: "3. 為了達成業績或目的，您是否會稍微美化事實（說善意的謊言）？",
+                options: [
+                    { text: "經常如此，這只是商業手段。", score: -20 },
+                    { text: "絕不欺瞞，堅持誠信是底線。", score: 20 },
+                    { text: "偶爾為之，只要不造成大傷害就好。", score: -5 }
+                ]
+            },
+            {
+                q: "4. 您如何看待「佔小便宜」這件事？（如逃票、拿取公物等）",
+                options: [
+                    { text: "這沒什麼，大家都在做。", score: -10 },
+                    { text: "勿以惡小而為之，分毫都要清爽。", score: 20 },
+                    { text: "有機會就佔，沒機會就算了。", score: -5 }
+                ]
+            },
+            {
+                q: "5. 若有人對您惡語相向，您的反應通常是？",
+                options: [
+                    { text: "加倍罵回去，不能吃虧。", score: -10 },
+                    { text: "靜心觀之，不隨其能量起舞。", score: 20 },
+                    { text: "記恨在心，尋找機會報復。", score: -20 }
+                ]
+            },
+            {
+                q: "6. 對於長輩或父母的付出，您平常的態度是？",
+                options: [
+                    { text: "視為理所當然，他們本來就該幫我。", score: -15 },
+                    { text: "心懷感恩，有機會就回報、陪伴。", score: 20 },
+                    { text: "偶爾會感謝，但忙起來就忘了。", score: 0 }
+                ]
+            },
+            {
+                q: "7. 在網路或群組裡，看到有人被攻擊、抹黑時，您會？",
+                options: [
+                    { text: "跟著起鬨或按讚，反正匿名。", score: -20 },
+                    { text: "不參與，或適度為被攻擊者說句公道話。", score: 15 },
+                    { text: "只看不發言，保持中立。", score: 0 }
+                ]
+            },
+            {
+                q: "8. 當您有能力捐助或幫助陌生人時？",
+                options: [
+                    { text: "從不捐，自己的錢自己用。", score: -10 },
+                    { text: "量力而為，有餘力時會幫助。", score: 20 },
+                    { text: "只幫認識的人，不幫陌生人。", score: 0 }
+                ]
+            },
+            {
+                q: "9. 做錯事被發現時，您的第一反應通常是？",
+                options: [
+                    { text: "找藉口、推卸責任或說謊掩蓋。", score: -15 },
+                    { text: "承認錯誤，並思考如何彌補。", score: 20 },
+                    { text: "能瞞就瞞，瞞不過再認。", score: -10 }
+                ]
+            },
+            {
+                q: "10. 您相信「善有善報、惡有惡報」這句話嗎？",
+                options: [
+                    { text: "完全相信，並以此約束自己的行為。", score: 20 },
+                    { text: "半信半疑，有時覺得好人沒好報。", score: 0 },
+                    { text: "不太信，覺得只是勸人向善的說法。", score: -10 }
+                ]
+            },
+            {
+                q: "11. 看到他人成功或得獎，您內心的感受是？",
+                options: [
+                    { text: "真心為對方高興，或受其激勵。", score: 15 },
+                    { text: "酸葡萄心理，覺得對方只是運氣好。", score: -15 },
+                    { text: "無感，與我無關。", score: 0 }
+                ]
+            },
+            {
+                q: "12. 對於自己曾傷害過的人（包括無心之過），您會？",
+                options: [
+                    { text: "找機會道歉或彌補，心裡才踏實。", score: 20 },
+                    { text: "過去就過去了，不想再提。", score: -5 },
+                    { text: "覺得對方小題大作，不願認錯。", score: -20 }
+                ]
+            }
+        ];
+
+        let currentStep = 0;
+        let totalScore = 0;
+
+        function renderQuestion() {
+            const q = questions[currentStep];
+            document.getElementById('question-text').innerText = q.q;
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => nextQuestion(opt.score);
+                container.appendChild(btn);
+            });
+
+            document.getElementById('progress').style.width = `${(currentStep / questions.length) * 100}%`;
+        }
+
+        function nextQuestion(score) {
+            totalScore += score;
+            currentStep++;
+            
+            if(currentStep < questions.length) {
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('result-ui').classList.remove('hidden');
+            document.getElementById('progress').style.width = '100%';
+            
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const scoreDisplay = document.getElementById('score-circle');
+
+            scoreDisplay.innerText = `業力積分：${totalScore}`;
+
+            if(totalScore >= 80) {
+                title.innerText = "【福德圓滿：高頻覺醒者】";
+                title.style.color = "#00d4ff";
+                desc.innerText = "您的內在頻率極高，正直與善念已為您建立強大的正面場域。在宇宙的算法中，您屬於「優選執行者」，未來將有更多正能量共振，逢凶化吉，分毫不差。";
+            } else if(totalScore >= 0) {
+                title.innerText = "【平衡維護：凡塵修行者】";
+                title.style.color = "#ffd700";
+                desc.innerText = "您在善惡之間維持著微妙的平衡。雖有私慾但尚能自律。提醒您：因果具有複利效應，微小的善念累積亦能改變命運軌跡。請保持警覺。";
+            } else {
+                title.innerText = "【負債警訊：業力積壓者】";
+                title.style.color = "#ff1100";
+                desc.innerText = "警報！您的決策模式正在積累沉重的業力負債。根據天地鐵律，這些負能量將在特定時間點進行清算。若不立即止損（遷善改過），未來的回饋恐難以承受。";
+            }
+        }
+
+        renderQuestion();
+    </script>
+</body>
+</html>

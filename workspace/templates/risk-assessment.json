@@ -1,0 +1,11 @@
+{
+  "risk_assessment_template": {
+    "task_name": "",
+    "impact_scope": 0,
+    "reversibility": 0,
+    "complexity": 0,
+    "risk_score": 0,
+    "assigned_to": "",
+    "notes": ""
+  }
+}

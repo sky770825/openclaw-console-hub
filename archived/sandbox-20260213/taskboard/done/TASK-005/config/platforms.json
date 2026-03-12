@@ -1,0 +1,49 @@
+{
+  "facebook": {
+    "enabled": false,
+    "name": "Facebook",
+    "description": "Facebook 粉絲專頁 & Marketplace",
+    "icon": "f",
+    "page_id": "",
+    "access_token": "",
+    "app_id": "",
+    "marketplace_enabled": true,
+    "shop_enabled": true,
+    "features": [
+      "粉絲專頁貼文",
+      "Marketplace 上架",
+      "商品目錄"
+    ]
+  },
+  "instagram": {
+    "enabled": false,
+    "name": "Instagram",
+    "description": "Instagram 購物功能",
+    "icon": "📷",
+    "account_id": "",
+    "access_token": "",
+    "business_account": false,
+    "shopping_enabled": true,
+    "features": [
+      "動態貼文",
+      "購物貼文",
+      "故事貼文"
+    ]
+  },
+  "shopee": {
+    "enabled": false,
+    "name": "蝦皮購物",
+    "description": "蝦皮購物平台",
+    "icon": "🛍️",
+    "shop_id": "",
+    "partner_id": "",
+    "partner_key": "",
+    "api_url": "https://partner.shopeemobile.com/api/v2",
+    "features": [
+      "商品上架",
+      "商品變體",
+      "庫存管理",
+      "訂單管理"
+    ]
+  }
+}

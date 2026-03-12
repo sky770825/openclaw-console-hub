@@ -1,0 +1,29 @@
+{
+  "id": "81fd2368-c432-45f2-97c0-134808af2627",
+  "session_id": "test-session",
+  "timestamp": "2026-02-17T01:10:05.454684",
+  "task": "批准測試",
+  "thinking": {
+    "understanding": "...",
+    "category": "中",
+    "sop_ref": "SOP-15",
+    "environmental_check": "🟢 正常",
+    "options": [
+      {
+        "id": "1",
+        "description": "D",
+        "reason": "R",
+        "risk": "K"
+      }
+    ],
+    "selected_option": "1",
+    "rationale": "Rat"
+  },
+  "intervention": {
+    "required": true,
+    "status": "approved",
+    "user_input": "Looks good",
+    "intervened_at": "2026-02-17T01:10:05.454907"
+  },
+  "history": []
+}

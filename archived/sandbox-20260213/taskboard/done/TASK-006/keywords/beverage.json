@@ -1,0 +1,33 @@
+{
+  "business_name": "飲料店",
+  "industry": "餐飲零售/手搖飲",
+  "last_updated": "2026-02-13",
+  "keywords": {
+    "primary": [
+      {"keyword": "手搖飲", "type": "category", "priority": "high"},
+      {"keyword": "手搖杯", "type": "category", "priority": "high"},
+      {"keyword": "飲料店", "type": "category", "priority": "high"}
+    ],
+    "competitors": [
+      {"keyword": "50嵐", "type": "competitor", "priority": "high"},
+      {"keyword": "清心福全", "type": "competitor", "priority": "high"},
+      {"keyword": "CoCo都可", "type": "competitor", "priority": "high"},
+      {"keyword": "迷客夏", "type": "competitor", "priority": "high"}
+    ],
+    "trends": [
+      {"keyword": "珍珠奶茶", "type": "product", "priority": "high"},
+      {"keyword": "鮮奶茶", "type": "product", "priority": "high"},
+      {"keyword": "水果茶", "type": "product", "priority": "medium"},
+      {"keyword": "無糖飲料", "type": "trend", "priority": "high"}
+    ]
+  },
+  "alert_thresholds": {
+    "search_volume_spike": 35,
+    "negative_sentiment": 35
+  },
+  "data_sources": [
+    "Google Trends",
+    "PTT 飲料板",
+    "Dcard 美食板"
+  ]
+}

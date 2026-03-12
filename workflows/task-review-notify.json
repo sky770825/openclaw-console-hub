@@ -1,0 +1,150 @@
+{
+  "name": "task-review-notify",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "everyMinute"
+      },
+      "id": "1",
+      "name": "Cron Every Minute",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:3011/api/tasks?status=review",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Get Review Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Has Tasks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get tasks from input\nconst inputData = $input.all();\nconst tasks = inputData[0].json;\n\nif (!tasks || tasks.length === 0) {\n  return [];\n}\n\nlet message = '🚨 *Review Tasks Pending* 🚨\\n\\n';\n\nfor (const task of tasks) {\n  message += `🆔 *ID:* ${task.id}\\n`;\n  message += `📋 *Name:* ${task.name}\\n`;\n  message += `📝 *Summary:* ${task.summary || 'No summary provided'}\\n`;\n  if (task.evidenceLinks && task.evidenceLinks.length > 0) {\n    message += `📎 *RESULT.md:* ${task.evidenceLinks[0]}\\n`;\n  }\n  message += `⏰ *Updated:* ${new Date(task.updatedAt).toLocaleString('zh-TW')}\\n\\n`;\n}\n\nmessage += `Total: ${tasks.length} tasks. Check http://localhost:3011`;\n\nreturn [{ json: { message, parse_mode: 'Markdown' } }];"
+      },
+      "id": "4",
+      "name": "Format Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "@gousmaaa",
+        "text": "={{ $json.message }}",
+        "otherOptions": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "5",
+      "name": "Notify @gousmaaa",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot (setup required)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron Every Minute": {
+      "main": [
+        [
+          {
+            "node": "Get Review Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Review Tasks": {
+      "main": [
+        [
+          {
+            "node": "Has Tasks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Tasks?": {
+      "main": [
+        [
+          {
+            "node": "Format Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        null
+      ]
+    },
+    "Format Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Notify @gousmaaa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-16T09:30:00.000Z",
+  "versionId": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "active": false
+}

@@ -1,0 +1,10 @@
+{
+  "project": "Xiao Cai Brain Defrost",
+  "status": "Deployed",
+  "components": {
+    "protection": "SOUL & AGENTS prioritization",
+    "cleanup": "Regex and JQ based turn limiting",
+    "snapshot": "JSON-based state recovery"
+  },
+  "limit": "25,000 context window management active"
+}

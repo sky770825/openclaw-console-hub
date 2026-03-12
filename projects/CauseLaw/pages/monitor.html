@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>宇宙業力監測系統 | 因果真相</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono&family=Noto+Serif+TC:wght@900&display=swap" rel="stylesheet">
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Noto Sans Mono', monospace; }
+        .monitor-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; padding: 2rem; }
+        .box { border: 1px solid #004400; padding: 1.5rem; background: rgba(0, 20, 0, 0.2); position: relative; overflow: hidden; }
+        .box::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #0f0; animation: scan 3s infinite linear; opacity: 0.3; }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
+        .status-active { color: #0f0; text-shadow: 0 0 10px #0f0; }
+        .log-line { font-size: 0.8rem; margin-bottom: 0.2rem; white-space: nowrap; opacity: 0.7; }
+        .danger { color: #f00; text-shadow: 0 0 10px #f00; }
+        .gold-text { color: #d4af37; text-shadow: 0 0 10px #d4af37; }
+    </style>
+</head>
+<body>
+    <div class="flex justify-between items-center px-8 py-4 border-b border-green-900 bg-black sticky top-0 z-50">
+        <div class="text-xl font-bold tracking-tighter">CELESTIAL_MONITORING_SYSTEM v4.6</div>
+        <div class="flex gap-6 text-xs uppercase tracking-widest">
+            <span class="status-active">● NODE_EARTH_01: ONLINE</span>
+            <span>UPTIME: 4,500,000,000Y</span>
+            <a href="../index.html" class="text-white hover:text-green-400">[EXIT_LOGOUT]</a>
+        </div>
+    </div>
+
+    <div class="monitor-grid">
+        <!-- Real-time Log -->
+        <div class="box h-[80vh] flex flex-col">
+            <h3 class="text-green-700 mb-4 border-b border-green-900 pb-2">GLOBAL_KARMA_FLOW_REPORTS</h3>
+            <div id="log-container" class="flex-1 overflow-hidden flex flex-col-reverse">
+                <!-- Logs will be injected here -->
+            </div>
+        </div>
+
+        <!-- Global Stats -->
+        <div class="flex flex-col gap-4">
+            <div class="box">
+                <h3 class="text-green-700 mb-2">FIELD_DENSITY</h3>
+                <div class="text-4xl mb-2" id="density">0.992837</div>
+                <div class="w-full h-2 bg-green-900"><div id="density-bar" class="h-full bg-green-500" style="width: 90%"></div></div>
+            </div>
+
+            <div class="box">
+                <h3 class="text-green-700 mb-2">REALM_DISTRIBUTION</h3>
+                <div class="text-xs space-y-2">
+                    <div class="flex justify-between"><span>DEVA_REALM</span><span class="gold-text">0.02%</span></div>
+                    <div class="flex justify-between"><span>HUMAN_REALM</span><span class="text-blue-400">12.4%</span></div>
+                    <div class="flex justify-between"><span>ASURA_REALM</span><span class="text-orange-400">8.2%</span></div>
+                    <div class="flex justify-between"><span>ANIMAL_REALM</span><span class="text-stone-500">28.1%</span></div>
+                    <div class="flex justify-between"><span>GHOST_REALM</span><span class="text-purple-400">22.3%</span></div>
+                    <div class="flex justify-between"><span>HELL_REALM</span><span class="danger">28.98%</span></div>
+                </div>
+            </div>
+
+            <div class="box flex-1">
+                <h3 class="text-green-700 mb-2">SYSTEM_ALERTS</h3>
+                <div id="alerts" class="text-[10px] space-y-1">
+                    <div class="danger">[ALERT] CRITICAL_NEGATIVE_PEAK_DETECTED_IN_SECTOR_7G</div>
+                    <div class="text-yellow-500">[INFO] RECONCILIATION_PROCESS_STARTED_FOR_USER_ID_8832</div>
+                    <div class="text-blue-500">[INFO] NEW_BLOSSOM_IN_PURE_LAND_DETECTION</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const logs = [
+            "TX_ID: {ID} | ACTION: DONATION | MAGNITUDE: +45.2 | STATUS: COMMITTED",
+            "TX_ID: {ID} | ACTION: DECEPTION | MAGNITUDE: -128.9 | STATUS: PENDING_SETTLEMENT",
+            "TX_ID: {ID} | ACTION: COMPASSION | MAGNITUDE: +12.0 | STATUS: RESONATING",
+            "TX_ID: {ID} | ACTION: MALICE | MAGNITUDE: -500.0 | STATUS: IMMEDIATE_CORRECTION_TRIGGERED",
+            "TX_ID: {ID} | ACTION: FILIAL_PIETY | MAGNITUDE: +1000.0 | STATUS: ANCESTRAL_REWARD_INJECTED",
+            "TX_ID: {ID} | ACTION: ARROGANCE | MAGNITUDE: -15.5 | STATUS: FREQUENCY_DEGRADATION",
+            "TX_ID: {ID} | ACTION: HUMILITY | MAGNITUDE: +8.8 | STATUS: FIELD_STABILIZATION"
+        ];
+
+        const container = document.getElementById('log-container');
+        const densityEl = document.getElementById('density');
+        const densityBar = document.getElementById('density-bar');
+
+        function addLog() {
+            const id = Math.random().toString(16).slice(2, 10).toUpperCase();
+            const template = logs[Math.floor(Math.random() * logs.length)];
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            if (template.includes('-')) line.classList.add('danger');
+            if (template.includes('+1000')) line.classList.add('gold-text');
+            
+            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+            line.innerText = `[${timestamp}] ${template.replace('{ID}', id)}`;
+            
+            container.prepend(line);
+            if (container.children.length > 40) container.lastChild.remove();
+
+            // Update density
+            const d = (Math.random() * 0.1 + 0.9).toFixed(6);
+            densityEl.innerText = d;
+            densityBar.style.width = (d * 100) + '%';
+        }
+
+        setInterval(addLog, 800);
+        for(let i=0; i<20; i++) addLog();
+    </script>
+</body>
+</html>

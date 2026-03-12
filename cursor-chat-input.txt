@@ -1,0 +1,24 @@
+這是 OpenClaw 的問題，請依路徑幫忙解決。
+
+---
+**問題：**
+請審查 OpenClaw 任務板的設計架構，詳細需求請見 cursor-task-review.md 檔案。
+
+主要審查項目：
+1. 架構設計缺失（Singleton、Race Condition、錯誤處理）
+2. 效能優化（輪詢間隔、記憶體洩漏、並發控制）
+3. 安全性（權限控管、輸入驗證、注入風險）
+4. 可擴展性（Gateway 整合、技能整合、執行模式）
+5. 缺失功能（實務需求、日誌監控、任務依賴）
+
+請：
+- 閱讀 server/src/auto-executor.ts、task-runner.ts、index.ts
+- 列出所有設計缺失並分類（Critical/High/Medium/Low）
+- 提供具體改進建議與程式碼範例
+- 給出優先實作順序建議
+
+完成後請將審查報告寫入 /Users/caijunchang/.openclaw/workspace/taskboard-audit-report.md
+
+**路徑：**
+/Users/caijunchang/Downloads/openclaw-console-hub-main/server
+---

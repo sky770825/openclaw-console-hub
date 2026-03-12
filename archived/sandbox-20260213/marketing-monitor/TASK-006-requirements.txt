@@ -1,0 +1,33 @@
+# Market Monitoring System Requirements
+# 市場需求監控系統依賴清單
+
+# 數據收集
+requests>=2.28.0
+beautifulsoup4>=4.11.0
+pytrends>=4.7.0
+selenium>=4.0.0
+
+# 數據處理
+pandas>=1.5.0
+numpy>=1.23.0
+
+# 文本處理和分析
+jieba>=0.42.0
+nltk>=3.8.0
+
+# 視覺化
+matplotlib>=3.6.0
+plotly>=5.0.0
+
+# 排程和自動化
+schedule>=1.1.0
+APScheduler>=3.10.0
+
+# JSON 和配置
+pyyaml>=6.0
+
+# 日誌
+python-logging-loki>=0.3.0
+
+# 工具
+python-dotenv>=0.20.0

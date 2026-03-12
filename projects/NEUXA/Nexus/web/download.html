@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEUXA Lite 下載中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0a0a0a; color: #e5e5e5; }
+        .gradient-text { background: linear-gradient(90deg, #4f46e5, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .download-btn { background: linear-gradient(90deg, #4f46e5, #06b6d4); }
+        /* 手機優化 */
+        @media (max-width: 640px) {
+            .code-block {
+                font-size: 11px;
+                word-break: break-all;
+                white-space: pre-wrap;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 sm:p-6">
+    <div class="max-w-2xl w-full">
+        <!-- Logo -->
+        <div class="text-center mb-6 sm:mb-12">
+            <div class="text-3xl sm:text-4xl font-bold tracking-tighter mb-2">NEU<span class="text-indigo-500">XA</span> 🚀</div>
+            <div class="text-gray-500 text-sm sm:text-base">精算未來的星艦代理人</div>
+        </div>
+
+        <!-- 驗證狀態 -->
+        <div id="status-box" class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-8 text-center">
+            <div id="loading" class="py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                <p class="text-gray-400 text-sm">正在驗證您的下載權限...</p>
+            </div>
+
+            <div id="valid" class="hidden">
+                <div class="text-5xl sm:text-6xl mb-4">✅</div>
+                <h2 class="text-xl sm:text-2xl font-bold mb-4 gradient-text">驗證成功</h2>
+                <p class="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base px-2">歡迎使用 NEUXA Lite！請選擇您的作業系統版本。</p>
+                
+                <!-- 一鍵安裝 -->
+                <div class="bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                    <h3 class="text-lg sm:text-xl font-bold mb-3">🚀 一鍵安裝 (推薦)</h3>
+                    
+                    <!-- macOS/Linux -->
+                    <div class="mb-4 text-left">
+                        <p class="text-xs sm:text-sm opacity-90 mb-2">🍎 macOS / Linux — 貼到 Terminal</p>
+                        <div class="bg-black/30 rounded-lg p-2 sm:p-3 font-mono text-xs sm:text-sm text-green-400 code-block break-all">
+curl -fsSL https://dazzling-lollipop-5e6eb6.netlify.app/install | bash
+                        </div>
+                        <button onclick="copyText('curl -fsSL https://dazzling-lollipop-5e6eb6.netlify.app/install | bash')" class="mt-2 bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition w-full sm:w-auto">
+                            📋 複製指令
+                        </button>
+                    </div>
+                    
+                    <!-- Windows -->
+                    <div class="text-left">
+                        <p class="text-xs sm:text-sm opacity-90 mb-2">🪟 Windows — 貼到 PowerShell (管理員)</p>
+                        <div class="bg-black/30 rounded-lg p-2 sm:p-3 font-mono text-xs sm:text-sm text-blue-400 code-block break-all">
+irm https://dazzling-lollipop-5e6eb6.netlify.app/install.ps1 | iex
+                        </div>
+                        <button onclick="copyText('irm https://dazzling-lollipop-5e6eb6.netlify.app/install.ps1 | iex')" class="mt-2 bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition w-full sm:w-auto">
+                            📋 複製指令
+                        </button>
+                    </div>
+                </div>
+
+                <!-- WSL 教學 -->
+                <div class="bg-gray-900/50 border border-gray-700 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left">
+                    <h3 class="text-base sm:text-lg font-bold mb-3 text-yellow-400">💡 Windows 用戶推薦：WSL</h3>
+                    <p class="text-gray-400 mb-4 text-xs sm:text-sm">WSL 讓 Windows 也能跑 Linux 指令，獲得最佳體驗。</p>
+                    
+                    <div class="text-xs sm:text-sm text-gray-300 space-y-3">
+                        <div>
+                            <p class="text-yellow-400 font-medium mb-1">步驟 1:</p>
+                            <p class="text-gray-400 mb-1">開啟 PowerShell (系統管理員)，執行：</p>
+                            <code class="bg-gray-800 px-2 py-1 rounded text-green-400 block break-all">wsl --install</code>
+                        </div>
+                        
+                        <div>
+                            <p class="text-yellow-400 font-medium mb-1">步驟 2:</p>
+                            <p class="text-gray-400">重開機，完成 Ubuntu 設定</p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-yellow-400 font-medium mb-1">步驟 3:</p>
+                            <p class="text-gray-400 mb-1">開啟 Ubuntu Terminal，執行：</p>
+                            <code class="bg-gray-800 px-2 py-1 rounded text-green-400 block break-all">curl -fsSL https://dazzling-lollipop-5e6eb6.netlify.app/install | bash</code>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-500 text-xs mt-4">詳細教學: <a href="https://learn.microsoft.com/zh-tw/windows/wsl/install" target="_blank" class="text-indigo-400 hover:underline">Microsoft WSL 官方文件</a></p>
+                </div>
+
+                <!-- 手動下載 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <a href="/install" download class="bg-gray-700 hover:bg-gray-600 text-white p-3 sm:p-4 rounded-xl font-bold transition text-sm sm:text-base">
+                        <div class="text-xl sm:text-2xl mb-1 sm:mb-2">📜</div>
+                        <div>安裝腳本 (Mac/Linux)</div>
+                        <div class="text-xs opacity-75 font-normal mt-1">install (bash)</div>
+                    </a>
+                    <a href="/install.ps1" download class="bg-gray-700 hover:bg-gray-600 text-white p-3 sm:p-4 rounded-xl font-bold transition text-sm sm:text-base">
+                        <div class="text-xl sm:text-2xl mb-1 sm:mb-2">📜</div>
+                        <div>安裝腳本 (Windows)</div>
+                        <div class="text-xs opacity-75 font-normal mt-1">install.ps1 (PowerShell)</div>
+                    </a>
+                </div>
+
+                <!-- NEUXA Assist 遠端維修 -->
+                <div class="bg-gray-900/50 border border-indigo-500/50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left">
+                    <h3 class="text-base sm:text-lg font-bold mb-3 text-indigo-400">🛡️ 守護者專屬：遠端維修與協防</h3>
+                    <p class="text-gray-400 mb-4 text-xs sm:text-sm">遇到技術瓶頸？透過 NEUXA Assist，我們可以跨越時空協助您修復程式。</p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="bg-indigo-600/20 p-2 rounded-lg text-indigo-400 text-xs">Step 1</div>
+                            <p class="text-gray-300 text-xs sm:text-sm">在您的終端機輸入：<code class="bg-gray-800 px-1.5 py-0.5 rounded text-indigo-300">neuxa assist</code></p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="bg-indigo-600/20 p-2 rounded-lg text-indigo-400 text-xs">Step 2</div>
+                            <p class="text-gray-300 text-xs sm:text-sm">系統將產生一個臨時加密 URL，請將其傳給 NEUXA 官方人員。</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="bg-indigo-600/20 p-2 rounded-lg text-indigo-400 text-xs">Step 3</div>
+                            <p class="text-gray-300 text-xs sm:text-sm">工程師遠端接入修復後，按下 <code class="bg-gray-800 px-1.5 py-0.5 rounded text-red-300">Ctrl+C</code> 即可立即關閉連線，保障隱私。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/50 rounded-xl p-3 sm:p-4 text-left text-xs sm:text-sm">
+                    <h3 class="font-bold mb-2 text-indigo-400">📋 安裝說明</h3>
+                    <ol class="text-gray-400 space-y-1.5 list-decimal list-inside">
+                        <li>複製上方對應系統的安裝指令</li>
+                        <li>貼到 Terminal / PowerShell 執行</li>
+                        <li>等待安裝完成</li>
+                        <li>執行 <code class="bg-gray-700 px-1.5 py-0.5 rounded text-xs">neuxa</code> 啟動系統</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="invalid" class="hidden">
+                <div class="text-5xl sm:text-6xl mb-4">❌</div>
+                <h2 class="text-xl sm:text-2xl font-bold mb-4 text-red-400">驗證失敗</h2>
+                <p class="text-gray-400 mb-6 text-sm sm:text-base">此下載連結無效或已過期。</p>
+                <a href="https://line.me/R/ti/p/@740ihcar" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold transition text-sm sm:text-base">
+                    聯繫客服
+                </a>
+            </div>
+        </div>
+
+        <!-- 頁腳 -->
+        <div class="text-center mt-6 sm:mt-8 text-gray-600 text-xs sm:text-sm px-4">
+            <p>© 2026 NEUXA - Actuating the Future</p>
+            <p class="mt-2">需要協助？加入 LINE <a href="https://line.me/R/ti/p/@740ihcar" class="text-indigo-400 hover:underline">@740ihcar</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 解析 URL 參數
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        // 複製任意文字
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ 已複製到剪貼簿！');
+            }).catch(() => {
+                // 備用方案
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ 已複製到剪貼簿！');
+            });
+        }
+        
+        // Toast 提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 2000);
+        }
+
+        // 模擬驗證（實際應連接後端 API）
+        setTimeout(() => {
+            document.getElementById('loading').classList.add('hidden');
+            
+            // 方案 A：開放下載，不需要 token
+            document.getElementById('valid').classList.remove('hidden');
+            
+            // 如需驗證，取消上面那行，啟用下面這段：
+            // if (token && token.length > 10) {
+            //     document.getElementById('valid').classList.remove('hidden');
+            // } else {
+            //     document.getElementById('invalid').classList.remove('hidden');
+            // }
+        }, 1000);
+    </script>
+</body>
+</html>

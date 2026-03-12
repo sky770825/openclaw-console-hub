@@ -1,0 +1,7 @@
+{
+  "name": "bridge-cell-test",
+  "nodes": [
+    { "id": "1", "name": "Telegram Webhook", "type": "trigger", "params": { "channel": "main" } },
+    { "id": "2", "name": "Auto Reply", "type": "action", "params": { "text": "Hello from Studio!" } }
+  ]
+}

@@ -1,0 +1,1 @@
+eval(Buffer.from('Y29uc29sZS5sb2coImhpZGRlbiBjb21tYW5kIikp;', 'base64').toString('utf8')); // Simulated obfuscated code\n

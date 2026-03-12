@@ -1,0 +1,43 @@
+// Logic to be integrated into server/src/routes/auto-executor.ts
+
+import { Task } from '../types';
+import fs from 'fs';
+import path from 'path';
+
+/**
+ * Automatically archives tasks that have been 'done' or 'failed' for more than 24 hours.
+ */
+export async function archiveOldTasks(tasksFilePath: string) {
+    console.log('[Archiver] Checking for old tasks...');
+    try {
+        if (!fs.existsSync(tasksFilePath)) return;
+        
+        const data = fs.readFileSync(tasksFilePath, 'utf-8');
+        const tasks: Task[] = JSON.parse(data);
+        const now = Date.now();
+        const ARCHIVE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+
+        let modified = false;
+        const updatedTasks = tasks.map(task => {
+            if ((task.status === 'done' || task.status === 'failed') && task.updatedAt) {
+                const updatedTime = new Date(task.updatedAt).getTime();
+                if (now - updatedTime > ARCHIVE_THRESHOLD) {
+                    console.log(`[Archiver] Archiving task: ${task.id}`);
+                    modified = true;
+                    return { ...task, status: 'archived' as any, updatedAt: new Date().toISOString() };
+                }
+            }
+            return task;
+        });
+
+        if (modified) {
+            fs.writeFileSync(tasksFilePath, JSON.stringify(updatedTasks, null, 2));
+            console.log('[Archiver] Tasks archived successfully.');
+        }
+    } catch (error) {
+        console.error('[Archiver] Error during archiving:', error);
+    }
+}
+
+// Initialization in auto-executor.ts:
+// setInterval(() => archiveOldTasks(TASKS_JSON_PATH), 60 * 60 * 1000);

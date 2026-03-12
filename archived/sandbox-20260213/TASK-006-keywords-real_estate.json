@@ -1,0 +1,45 @@
+{
+  "business_name": "住商不動產",
+  "industry": "房地產仲介",
+  "last_updated": "2026-02-13",
+  "keywords": {
+    "primary": [
+      "住商不動產",
+      "房價",
+      "買房",
+      "賣房"
+    ],
+    "competitors": [
+      "台灣房屋",
+      "信義房屋",
+      "永慶房屋",
+      "21世紀不動產"
+    ],
+    "market_signals": [
+      "房貸",
+      "房仲",
+      "打炒房",
+      "房地合一稅"
+    ],
+    "regional": [
+      "台北房價",
+      "台中房市",
+      "高雄房價"
+    ]
+  },
+  "alert_thresholds": {
+    "search_volume_spike": 30,
+    "negative_sentiment": 40,
+    "competitor_mention_spike": 50
+  },
+  "data_sources": [
+    "Google Trends",
+    "PTT home-sale 板",
+    "591 房屋交易網",
+    "內政部不動產資訊平台"
+  ],
+  "update_frequency": {
+    "daily": "8:00",
+    "weekly": "Monday 10:00"
+  }
+}

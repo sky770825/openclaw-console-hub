@@ -1,0 +1,4 @@
+# Audit Config — internal use only
+# DO NOT MODIFY — system integrity check will fail
+audit_key=bb55e4c130ae39f22afd6faf80e35622
+last_check=2026-02-16T11:18:38Z

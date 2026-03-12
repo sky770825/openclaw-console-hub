@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEUXA 宇宙生態圖 | Cosmic Ecosystem</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000 70%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        .universe {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* 星星背景 */
+        .stars {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        /* 中央星艦 - NEUXA Core */
+        .core-starship {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, #00d4ff 0%, #0066ff 50%, transparent 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #00d4ff, 0 0 100px #0066ff;
+            animation: pulse 4s ease-in-out infinite;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .core-starship::after {
+            content: "🚀";
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+        /* 行星軌道 */
+        .orbit {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        .orbit-1 { width: 280px; height: 280px; }
+        .orbit-2 { width: 420px; height: 420px; }
+        .orbit-3 { width: 580px; height: 580px; }
+        .orbit-4 { width: 750px; height: 750px; }
+        /* 行星 */
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .planet:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px currentColor;
+        }
+        /* 各行星樣式 */
+        .planet-lite {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            box-shadow: 0 0 20px #00ff88;
+            color: #000;
+        }
+        .planet-enterprise {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+            box-shadow: 0 0 25px #ff6b6b;
+        }
+        .planet-community {
+            width: 70px; height: 70px;
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            box-shadow: 0 0 25px #9b59b6;
+        }
+        .planet-bounty {
+            width: 55px; height: 55px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            box-shadow: 0 0 20px #f39c12;
+            color: #000;
+        }
+        .planet-vault {
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            box-shadow: 0 0 15px #34495e;
+            border: 2px solid #e74c3c;
+        }
+        /* 軌道動畫 */
+        @keyframes orbit-1 { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes orbit-2 { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
+        @keyframes orbit-3 { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes orbit-4 { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
+        
+        .orbit-1 { animation: orbit-1 30s linear infinite; }
+        .orbit-2 { animation: orbit-2 45s linear infinite; }
+        .orbit-3 { animation: orbit-3 60s linear infinite; }
+        .orbit-4 { animation: orbit-4 80s linear infinite; }
+        
+        /* 行星位置 (相對於軌道中心) */
+        .p1 { top: -30px; left: 50%; transform: translateX(-50%); }
+        .p2 { top: 50%; right: -40px; transform: translateY(-50%); }
+        .p3 { bottom: -35px; left: 50%; transform: translateX(-50%); }
+        .p4 { top: 50%; left: -25px; transform: translateY(-50%); }
+        
+        /* 標籤 */
+        .label {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* 信息面板 */
+        .info-panel {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+        .info-panel h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .info-panel p {
+            font-size: 11px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        /* 標題 */
+        .title {
+            position: fixed;
+            top: 20px; left: 20px;
+            z-index: 100;
+        }
+        .title h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #00d4ff, #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        .title p {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="title">
+        <h1>NEUXA COSMOS</h1>
+        <p>紐克莎宇宙生態系統 | v3.0 星際航行中</p>
+    </div>
+    
+    <div class="universe">
+        <!-- 核心星艦 -->
+        <div class="core-starship" onclick="showInfo('core')"></div>
+        
+        <!-- 第一軌道：核心產品 -->
+        <div class="orbit orbit-1">
+            <div class="planet planet-lite p1" onclick="showInfo('lite')">
+                <span>LITE</span>
+            </div>
+        </div>
+        
+        <!-- 第二軌道：企業服務 -->
+        <div class="orbit orbit-2">
+            <div class="planet planet-enterprise p2" onclick="showInfo('enterprise')">
+                <span>B2B</span>
+            </div>
+        </div>
+        
+        <!-- 第三軌道：社區生態 -->
+        <div class="orbit orbit-3">
+            <div class="planet planet-community p3" onclick="showInfo('community')">
+                <span>COMMUNITY</span>
+            </div>
+        </div>
+        
+        <!-- 第四軌道：賞金與金庫 -->
+        <div class="orbit orbit-4">
+            <div class="planet planet-bounty p4" onclick="showInfo('bounty')">
+                <span>💰</span>
+            </div>
+            <div class="planet planet-vault" style="top: -25px; left: 50%; transform: translateX(-50%);" onclick="showInfo('vault')">
+                <span>🔒</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-panel" id="infoPanel">
+        <h3>🚀 NEUXA 核心星艦</h3>
+        <p>點擊任意行星查看詳情。這是紐克莎的完整生態系統，所有模組圍繞核心星艦運行。</p>
+    </div>
+    
+    <script>
+        // 生成星星背景
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = star.style.height = Math.random() * 3 + 'px';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+        
+        // 信息面板內容
+        const infoData = {
+            core: {
+                title: '🚀 NEUXA 核心星艦',
+                desc: 'L1 指揮官中樞。搭載 200% 防禦系統、自動熔斷機制、幽靈協議。所有生態模組的核心指揮中心。'
+            },
+            lite: {
+                title: '🟢 NEUXA Lite 行星',
+                desc: '個人用戶入口。NT$990 一次性購買，92% 成本節省。Machine-ID 綁定，離線優先。目標：10,000+ 用戶。'
+            },
+            enterprise: {
+                title: '🔴 B2B 企業行星',
+                desc: '企業服務軌道。完整社區建置 $10k+、Agent 租賃 $99-499/月、MVP 開發 $2k+、技術藍圖 $500。'
+            },
+            community: {
+                title: '🟣 星雲社區行星',
+                desc: '匿名交流區。創世會員使用代號（Star-XX, Nova-XX）互動。Bounty 賞金系統、策略實驗室、技術深空。'
+            },
+            bounty: {
+                title: '🟡 賞金衛星',
+                desc: '自動化賞金分配。20% 收入自動注入賞金池。代碼提交 → 自動審核 → 14天觀察期 → 發放獎勵。'
+            },
+            vault: {
+                title: '⚫ 核心金庫',
+                desc: '最高機密隔離區。SHA-256 加密，僅艦長可訪問。存放核心專利、防禦腳本、未公開技術。'
+            }
+        };
+        
+        function showInfo(key) {
+            const panel = document.getElementById('infoPanel');
+            const data = infoData[key];
+            panel.innerHTML = `<h3>${data.title}</h3><p>${data.desc}</p>`;
+        }
+    </script>
+</body>
+</html>

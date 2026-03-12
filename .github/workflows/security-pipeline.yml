@@ -1,0 +1,59 @@
+name: Security Scan and Auto-Fix
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 1' # 每週一凌晨執行
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'json'
+          output: 'trivy-results.json'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Check for vulnerabilities and trigger auto-fix
+        id: check_vulns
+        run: |
+          if [ -s trivy-results.json ]; then
+            # 檢查是否有找到漏洞 (Results 不是空的或包含漏洞項)
+            VULN_COUNT=$(jq '.Results[].Vulnerabilities | length' trivy-results.json | awk '{s+=$1} END {print s}')
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "found_vulns=true" >> $GITHUB_OUTPUT
+              echo "Vulnerabilities found: $VULN_COUNT"
+            else
+              echo "found_vulns=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "found_vulns=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload results to OpenClaw Gateway (Webhook)
+        if: steps.check_vulns.outputs.found_vulns == 'true'
+        run: |
+          # 這裡模擬將結果傳回給 OpenClaw 監考官
+          # 在實際環境中，這會是一個 curl 呼叫到 OpenClaw 的暴露 API
+          echo "Sending security report to OpenClaw..."
+          # curl -X POST -H "Content-Type: application/json" -d @trivy-results.json ${{ secrets.OPENCLAW_WEBHOOK_URL }}
+
+      - name: Trigger Local Auto-Fix (Simulation)
+        if: steps.check_vulns.outputs.found_vulns == 'true'
+        run: |
+          echo "Triggering oc security auto-fix..."
+          # 解析 trivy-results.json 並針對每個受影響的檔案執行修復
+          # jq -r '.Results[].Vulnerabilities[] | "\(.PkgName) \(.VulnerabilityID)"' trivy-results.json | while read pkg v_id; do
+          #   oc security auto-fix "$v_id" "requirements.txt" 
+          # done

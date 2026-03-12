@@ -1,0 +1,26 @@
+{
+  "name": "github-issue-classifier-skill",
+  "version": "1.0.0",
+  "description": "AI-powered GitHub Issue auto-classification and labeling system",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "watch": "tsc -w"
+  },
+  "keywords": ["github", "issue", "classification", "ai", "automation", "openclaw"],
+  "author": "OpenClaw",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}

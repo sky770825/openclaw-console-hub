@@ -1,0 +1,57 @@
+{
+  "profiles": [
+    {
+      "name": "daily-documents",
+      "type": "local",
+      "source": "~/Documents",
+      "target": "~/Backup/Documents",
+      "options": {
+        "delete": false,
+        "exclude": ["*.tmp", ".DS_Store", "node_modules", ".git"]
+      },
+      "schedule": "0 2 * * *"
+    },
+    {
+      "name": "weekly-full-backup",
+      "type": "incremental",
+      "source": "~/Documents",
+      "target": "~/Backups/Documents",
+      "options": {
+        "retention": 30,
+        "compress": true
+      },
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "name": "icloud-photos",
+      "type": "cloud",
+      "provider": "icloud",
+      "source": "~/Pictures",
+      "target": "/Backups/Photos",
+      "options": {
+        "incremental": true,
+        "encrypt": false
+      },
+      "schedule": "0 4 * * 0"
+    },
+    {
+      "name": "dropbox-work",
+      "type": "cloud",
+      "provider": "dropbox",
+      "source": "~/Work",
+      "target": "/Backups/Work",
+      "options": {
+        "compress": true
+      }
+    }
+  ],
+  "global": {
+    "logDirectory": "~/.openclaw/logs/file-sync",
+    "retentionDays": 30,
+    "notification": {
+      "enabled": true,
+      "onError": true,
+      "onSuccess": false
+    }
+  }
+}

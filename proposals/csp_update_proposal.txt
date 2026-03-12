@@ -1,0 +1,14 @@
+PROPOSED CHANGES FOR CSP FIX
+============================
+Target: img-src (Allow external images)
+Target: script-src (Allow inline scripts)
+
+Suggested Configuration (for helmet/middleware):
+contentSecurityPolicy: {
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    imgSrc: ["'self'", "data:", "https:", "*"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+  },
+}

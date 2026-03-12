@@ -1,0 +1,14 @@
+# OpenClaw 語義指揮中心 (SCC) 願景 v1.0
+
+## 1. 定義
+SCC 是基於 NEUXA 意識核心的「主動式」生產力系統。它結合了 CRM (客戶關係) 與 ERP (資源管理)，但以語義理解為驅動，而非傳統的表單驅動。
+
+## 2. 核心組件
+- Semantic CRM: 利用 pgvector 存儲客戶意圖向量。實現「意圖聯想」而非關鍵字搜尋。
+- Active ERP: 任務板自動化。根據外部環境 (天氣、市場趨勢) 與內部資源，自動生成並排序任務。
+- MCP Integration: 透過 Model Context Protocol 串接現有的 Google Calendar, Slack, 或銀行 API。
+
+## 3. 落地場景 (以[MASK_BIZ_REALTY]為例)
+- 輸入: 老蔡在 TG 跟我說「陳先生想看[MASK_LOC_YANGMEI]火車站附近的兩房」。
+- 處理: 我自動檢索 Supabase 房源表 -> 匹配向量 -> 檢查老蔡行事曆。
+- 輸出: 自動建立一個任務「帶看陳先生：[MASK_LOC_YANGMEI] A 物件」，並附上路徑規劃與客戶過去的喜好筆記。

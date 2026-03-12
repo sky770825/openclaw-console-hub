@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vénus Beauty - 頂級美業沙龍｜線上預約</title>
+    <meta name="description" content="Vénus Beauty 提供專業的美睫、美甲、臉部護理等頂級服務。立即線上預約，體驗無與倫比的美麗蛻變。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            /* 色彩 — 美業粉色系 */
+            --primary: #ec4899;
+            --primary-light: #f9a8d4;
+            --primary-dark: #db2777;
+            --accent: #f59e0b;
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            
+            /* 背景/文字 */
+            --bg: #ffffff; --bg-secondary: #fff0f5; /* Light Pink Background */ --text: var(--gray-900); --text-secondary: var(--gray-500);
+            
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            
+            /* 陰影（5 級） */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        /* Global Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: var(--space-6);
+            padding-right: var(--space-6);
+        }
+
+        section {
+            padding-top: var(--space-20);
+            padding-bottom: var(--space-20);
+        }
+
+        .section-title {
+            font-size: var(--text-4xl);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: var(--space-2);
+            color: var(--text);
+        }
+        
+        .section-subtitle {
+            font-size: var(--text-lg);
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-12);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            opacity: 0;
+            animation: fadeInUp 0.6s var(--ease) forwards;
+        }
+
+        /* Header */
+        .main-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: var(--space-4) 0;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--duration) var(--ease);
+        }
+
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: var(--text-2xl);
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .main-nav a {
+            color: var(--text);
+            text-decoration: none;
+            margin-left: var(--space-8);
+            font-weight: 500;
+            position: relative;
+            transition: all var(--duration) var(--ease);
+        }
+
+        .main-nav a:hover {
+            color: var(--primary);
+        }
+
+        .main-nav a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary);
+            transition: width var(--duration) var(--ease);
+        }
+
+        .main-nav a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            height: 80vh;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            color: white;
+            padding: 0;
+            background: url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop') center center/cover no-repeat;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2));
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 650px;
+        }
+
+        .hero-title {
+            font-size: var(--text-5xl);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: var(--space-4);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero-subtitle {
+            font-size: var(--text-xl);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: var(--space-8);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all var(--duration) var(--ease);
+            font-size: var(--text-base);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Services Section */
+        #services {
+            background-color: var(--bg-secondary);
+        }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-8);
+        }
+
+        .service-card {
+            background: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all var(--duration) var(--ease);
+        }
+
+        .service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .service-card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .service-card-content {
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .service-card-title {
+            font-size: var(--text-xl);
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+        }
+
+        .service-card-desc {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-4);
+            flex-grow: 1;
+        }
+
+        .service-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .service-card-price {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .service-card-duration {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+        }
+
+        /* Team Section */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: var(--space-8);
+        }
+
+        .team-card {
+            text-align: center;
+        }
+
+        .team-card-img {
+            width: 150px;
+            height: 150px;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+            margin: 0 auto var(--space-4);
+            box-shadow: var(--shadow-md);
+            border: 4px solid var(--bg);
+        }
+
+        .team-card-name {
+            font-size: var(--text-xl);
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+        }
+
+        .team-card-title {
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: var(--space-2);
+        }
+
+        .team-card-bio {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+
+        /* Booking Section */
+        #booking {
+            background-color: var(--bg-secondary);
+        }
+        .booking-form-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--bg);
+            padding: var(--space-10);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-6);
+        }
+
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .form-group.full-width {
+                grid-column: 1 / -1;
+            }
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: var(--space-2);
+            font-size: var(--text-sm);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-family: var(--font);
+            font-size: var(--text-base);
+            transition: all var(--duration) var(--ease);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+        }
+
+        /* Footer */
+        .main-footer {
+            background-color: var(--gray-800);
+            color: var(--gray-300);
+            padding-top: var(--space-16);
+            padding-bottom: var(--space-12);
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: var(--text-3xl);
+            font-weight: 700;
+            color: var(--primary-light);
+            margin-bottom: var(--space-4);
+        }
+
+        .footer-desc {
+            max-width: 500px;
+            margin-bottom: var(--space-6);
+        }
+
+        .social-links a {
+            color: var(--gray-300);
+            font-size: var(--text-2xl);
+            margin: 0 var(--space-3);
+            transition: all var(--duration) var(--ease);
+        }
+
+        .social-links a:hover {
+            color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+        
+        .copyright {
+            margin-top: var(--space-8);
+            border-top: 1px solid var(--gray-700);
+            padding-top: var(--space-6);
+            font-size: var(--text-sm);
+            width: 100%;
+            color: var(--gray-400);
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all var(--duration-slow) var(--ease);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo">Vénus Beauty</a>
+            <nav class="main-nav">
+                <a href="#services">服務項目</a>
+                <a href="#team">專業團隊</a>
+                <a href="#booking">線上預約</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content fade-in-up">
+                    <h1 class="hero-title">在 Vénus Beauty，遇見更美的自己</h1>
+                    <p class="hero-subtitle">我們致力於提供最精緻的美學服務，從指尖到睫毛，每個細節都追求完美，讓您的美麗由內而外綻放。</p>
+                    <a href="#booking" class="btn btn-primary">立即預約您的美麗時光</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services">
+            <div class="container">
+                <h2 class="section-title">我們的服務</h2>
+                <p class="section-subtitle">從經典護理到最新潮流，Vénus Beauty 提供全方位的美學服務，滿足您對美的所有想像。</p>
+                <div class="services-grid">
+                    <!-- Service Card 1: Eyelash Extensions -->
+                    <div class="service-card fade-in-up" style="animation-delay: 0.1s;">
+                        <img src="https://images.unsplash.com/photo-1599386381333-25a85a443327?q=80&w=1974&auto=format&fit=crop" alt="一位顧客正在接受嫁接睫毛服務" class="service-card-img">
+                        <div class="service-card-content">
+                            <h3 class="service-card-title">日式輕奢睫毛嫁接</h3>
+                            <p class="service-card-desc">採用頂級蠶絲蛋白毛，由資深美睫師一對一設計，打造自然濃密、輕盈無感的迷人電眼。</p>
+                            <div class="service-card-footer">
+                                <div>
+                                    <span class="service-card-price">$1,280 起</span>
+                                    <div class="service-card-duration"><i class="far fa-clock"></i> 90-120 分鐘</div>
+                                </div>
+                                <a href="#booking" class="btn btn-primary book-now-btn" data-service="日式輕奢睫毛嫁接">預約</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Service Card 2: Nail Art -->
+                    <div class="service-card fade-in-up" style="animation-delay: 0.2s;">
+                        <img src="https://images.unsplash.com/photo-1604902396837-744d71550973?q=80&w=2070&auto=format&fit=crop" alt="精緻的粉色系美甲藝術特寫" class="service-card-img">
+                        <div class="service-card-content">
+                            <h3 class="service-card-title">精緻凝膠美甲設計</h3>
+                            <p class="service-card-desc">提供單色、漸層、法式及客製化手繪設計，使用日本進口凝膠，持久亮麗，呵護您的真甲。</p>
+                            <div class="service-card-footer">
+                                <div>
+                                    <span class="service-card-price">$980 起</span>
+                                    <div class="service-card-duration"><i class="far fa-clock"></i> 60-90 分鐘</div>
+                                </div>
+                                <a href="#booking" class="btn btn-primary book-now-btn" data-service="精緻凝膠美甲設計">預約</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Service Card 3: Facial Treatment -->
+                    <div class="service-card fade-in-up" style="animation-delay: 0.3s;">
+                        <img src="https://images.unsplash.com/photo-1598623298199-69f388b0101b?q=80&w=2070&auto=format&fit=crop" alt="一位女士舒適地享受臉部護理療程" class="service-card-img">
+                        <div class="service-card-content">
+                            <h3 class="service-card-title">深層保濕臉部護理</h3>
+                            <p class="service-card-desc">針對缺水及暗沉肌膚設計，結合專業手技與高效保濕精華，喚醒肌膚水潤光澤。</p>
+                            <div class="service-card-footer">
+                                <div>
+                                    <span class="service-card-price">$1,800</span>
+                                    <div class="service-card-duration"><i class="far fa-clock"></i> 75 分鐘</div>
+                                </div>
+                                <a href="#booking" class="btn btn-primary book-now-btn" data-service="深層保濕臉部護理">預約</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Service Card 4: Waxing -->
+                     <div class="service-card fade-in-up" style="animation-delay: 0.4s;">
+                        <img src="https://images.unsplash.com/photo-1620826662013-19931892f333?q=80&w=1974&auto=format&fit=crop" alt="熱蠟除毛工具與材料的專業擺設" class="service-card-img">
+                        <div class="service-card-content">
+                            <h3 class="service-card-title">專業熱蠟美肌除毛</h3>
+                            <p class="service-card-desc">使用澳洲頂級萊康熱蠟，溫和不刺激，有效去除惱人毛髮，讓肌膚重現絲滑細緻。</p>
+                            <div class="service-card-footer">
+                                <div>
+                                    <span class="service-card-price">$600 起</span>
+                                    <div class="service-card-duration"><i class="far fa-clock"></i> 30-60 分鐘</div>
+                                </div>
+                                <a href="#booking" class="btn btn-primary book-now-btn" data-service="專業熱蠟美肌除毛">預約</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Section -->
+        <section id="team">
+            <div class="container">
+                <h2 class="section-title">我們的專業團隊</h2>
+                <p class="section-subtitle">每一位 Vénus Beauty 的技師都經過嚴格的專業訓練與認證，充滿熱情，致力於為您打造最完美的體驗。</p>
+                <div class="team-grid">
+                    <!-- Team Member 1 -->
+                    <div class="team-card fade-in-up" style="animation-delay: 0.1s;">
+                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961&auto=format&fit=crop" alt="美睫總監 Vivian 的專業頭像" class="team-card-img">
+                        <h3 class="team-card-name">Vivian Chen</h3>
+                        <p class="team-card-title">美睫總監</p>
+                        <p class="team-card-bio">擁有超過十年美睫經驗，擅長依據眼型客製化設計，風格多變，是眾多名媛的指定美睫師。</p>
+                    </div>
+                    <!-- Team Member 2 -->
+                    <div class="team-card fade-in-up" style="animation-delay: 0.2s;">
+                        <img src="https://images.unsplash.com/photo-1607746882042-944635dfe10e?q=80&w=2070&auto=format&fit=crop" alt="首席美甲師 Alice 的專業頭像" class="team-card-img">
+                        <h3 class="team-card-name">Alice Yang</h3>
+                        <p class="team-card-title">首席美甲師</p>
+                        <p class="team-card-bio">日本 JNA 美甲檢定合格，對色彩與藝術有著極高敏銳度，作品細膩且富有創意。</p>
+                    </div>
+                    <!-- Team Member 3 -->
+                    <div class="team-card fade-in-up" style="animation-delay: 0.3s;">
+                        <img src="https://images.unsplash.com/photo-1597589827317-4c6d6e0a90bd?q=80&w=2080&auto=format&fit=crop" alt="資深美容師 Flora 的專業頭像" class="team-card-img">
+                        <h3 class="team-card-name">Flora Lin</h3>
+                        <p class="team-card-title">資深美容師</p>
+                        <p class="team-card-bio">專精皮膚管理與熱蠟美肌，手法輕柔專業，能精準判斷膚況，給予最適合的護理建議。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Section -->
+        <section id="booking">
+            <div class="container">
+                <h2 class="section-title">線上預約</h2>
+                <p class="section-subtitle">只需幾分鐘，即可輕鬆預約您的專屬美麗時光。我們期待您的光臨。</p>
+                <div class="booking-form-container">
+                    <form id="bookingForm">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="service">選擇服務項目</label>
+                                <select id="service" name="service" required>
+                                    <option value="" disabled selected>請選擇您想預約的服務</option>
+                                    <option value="日式輕奢睫毛嫁接">日式輕奢睫毛嫁接</option>
+                                    <option value="精緻凝膠美甲設計">精緻凝膠美甲設計</option>
+                                    <option value="深層保濕臉部護理">深層保濕臉部護理</option>
+                                    <option value="專業熱蠟美肌除毛">專業熱蠟美肌除毛</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="technician">選擇技師</label>
+                                <select id="technician" name="technician" required>
+                                    <option value="" disabled selected>請選擇技師</option>
+                                    <option value="Vivian Chen (美睫總監)">Vivian Chen (美睫總監)</option>
+                                    <option value="Alice Yang (首席美甲師)">Alice Yang (首席美甲師)</option>
+                                    <option value="Flora Lin (資深美容師)">Flora Lin (資深美容師)</option>
+                                    <option value="不指定技師">不指定技師</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="booking-time">選擇日期與時間</label>
+                                <input type="datetime-local" id="booking-time" name="booking-time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="name">您的姓名</label>
+                                <input type="text" id="name" name="name" placeholder="例如：王小姐" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">聯絡電話</label>
+                                <input type="tel" id="phone" name="phone" placeholder="例如：0912345678" required>
+                            </div>
+                             <div class="form-group full-width">
+                                <label for="email">電子郵件</label>
+                                <input type="email" id="email" name="email" placeholder="example@email.com" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <button type="submit" class="btn btn-primary" style="width: 100%; padding: var(--space-4) 0; font-size: var(--text-lg);">確認送出預約</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">Vénus Beauty</div>
+                <p class="footer-desc">
+                    地址：台北市信義區信義路五段7號 (台北101)<br>
+                    營業時間：週一至週日 11:00 - 21:00<br>
+                    預約專線：(02) 8789-1234
+                </p>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="Line"><i class="fab fa-line"></i></a>
+                </div>
+                <div class="copyright">
+                    &copy; 2024 Vénus Beauty. All Rights Reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Staggered Animation on Scroll ---
+            const animatedElements = document.querySelectorAll('.fade-in-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            animatedElements.forEach(el => observer.observe(el));
+
+            // --- "Book Now" buttons functionality ---
+            const bookNowButtons = document.querySelectorAll('.book-now-btn');
+            const serviceSelect = document.getElementById('service');
+            
+            bookNowButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const serviceName = this.getAttribute('data-service');
+                    if (serviceName && serviceSelect) {
+                        serviceSelect.value = serviceName;
+                        // Scroll to booking form
+                        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // --- Booking Form Submission ---
+            const bookingForm = document.getElementById('bookingForm');
+            bookingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Frontend Validation
+                const service = document.getElementById('service').value;
+                const technician = document.getElementById('technician').value;
+                const bookingTime = document.getElementById('booking-time').value;
+                const name = document.getElementById('name').value;
+                const phone = document.getElementById('phone').value;
+                const email = document.getElementById('email').value;
+
+                if (!service || !technician || !bookingTime || !name || !phone || !email) {
+                    alert('所有欄位皆為必填！');
+                    return;
+                }
+                
+                // Validate phone number format
+                const phoneRegex = /^09\d{8}$/;
+                if (!phoneRegex.test(phone)) {
+                    alert('請輸入有效的台灣手機號碼 (例如: 0912345678)');
+                    return;
+                }
+                
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    alert('請輸入有效的電子郵件地址');
+                    return;
+                }
+
+                const bookingData = {
+                    service,
+                    technician,
+                    bookingTime,
+                    name,
+                    phone,
+                    email,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Simulate saving to localStorage
+                try {
+                    let bookings = JSON.parse(localStorage.getItem('venusBookings')) || [];
+                    bookings.push(bookingData);
+                    localStorage.setItem('venusBookings', JSON.stringify(bookings));
+
+                    // Show success toast
+                    showToast('預約成功！我們已將確認信寄至您的信箱。');
+                    
+                    // Reset form
+                    bookingForm.reset();
+                } catch (error) {
+                    console.error('儲存預約失敗:', error);
+                    showToast('預約失敗，請稍後再試或直接來電。', 'error');
+                }
+            });
+            
+            // --- Set min date for datetime-local input ---
+            const dateTimeInput = document.getElementById('booking-time');
+            if(dateTimeInput) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                dateTimeInput.min = now.toISOString().slice(0,16);
+            }
+        });
+
+        // --- Toast Notification Function ---
+        function showToast(message, type = 'success') {
+            // Remove any existing toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+
+            if (type === 'error') {
+                toast.style.backgroundColor = 'var(--error)';
+            }
+
+            document.body.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10); // Small delay to trigger transition
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                });
+            }, 3000);
+        }
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "businesses": [
+    {
+      "id": "real_estate",
+      "name": "住商不動產",
+      "category": "real_estate",
+      "contact": {
+        "name": "蔡先生",
+        "phone": "",
+        "line": "",
+        "email": ""
+      },
+      "default_platforms": ["facebook", "591"]
+    },
+    {
+      "id": "beverage",
+      "name": "飲料店",
+      "category": "beverage", 
+      "contact": {
+        "name": "",
+        "phone": "",
+        "line": "",
+        "email": ""
+      },
+      "default_platforms": ["instagram", "facebook", "蝦皮"]
+    },
+    {
+      "id": "window_screen",
+      "name": "普特斯防霾紗窗",
+      "category": "window_screen",
+      "contact": {
+        "name": "",
+        "phone": "",
+        "line": "",
+        "email": ""
+      },
+      "default_platforms": ["facebook", "蝦皮"]
+    }
+  ]
+}

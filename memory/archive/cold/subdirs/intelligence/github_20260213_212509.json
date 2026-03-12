@@ -1,0 +1,80 @@
+{
+  "name": "awesome-openclaw-usecases",
+  "description": "A community collection of OpenClaw use cases for making life easier.",
+  "stars": 1892,
+  "language": null,
+  "url": "https://github.com/hesamsheikh/awesome-openclaw-usecases",
+  "created": "2026-02-08T22:08:17Z"
+}
+{
+  "name": "secure-openclaw",
+  "description": "A personal 24x7 AI assistant like OpenClaw that runs on your messaging platforms. Send a message on WhatsApp, Telegram, Signal, or iMessage and get responses from Claude with full tool access, persistent memory, scheduled reminders, and integrations with 500+ apps.",
+  "stars": 1478,
+  "language": "JavaScript",
+  "url": "https://github.com/ComposioHQ/secure-openclaw",
+  "created": "2026-02-08T07:55:07Z"
+}
+{
+  "name": "clawra",
+  "description": "Clawra - Openclaw as your girlfriend",
+  "stars": 1259,
+  "language": "TypeScript",
+  "url": "https://github.com/SumeLabs/clawra",
+  "created": "2026-02-08T06:19:44Z"
+}
+{
+  "name": "OneContext",
+  "description": " OneContext is an Agent Self-Managed Context layer, it gives your team a unified context for AII AI Agents. ",
+  "stars": 840,
+  "language": null,
+  "url": "https://github.com/TheAgentContextLab/OneContext",
+  "created": "2026-02-08T14:06:55Z"
+}
+{
+  "name": "x-research-skill",
+  "description": "X/Twitter research skill for Claude Code and OpenClaw. Agentic search, thread following, deep-dives, sourced briefings.",
+  "stars": 704,
+  "language": "TypeScript",
+  "url": "https://github.com/rohunvora/x-research-skill",
+  "created": "2026-02-08T04:35:51Z"
+}
+{
+  "name": "claw-compactor",
+  "description": "🦞 Claw Compactor — The 98% Crusher. Cut your AI agent token spend in half with 5 layered compression techniques.",
+  "stars": 350,
+  "language": "Python",
+  "url": "https://github.com/aeromomo/claw-compactor",
+  "created": "2026-02-10T00:27:08Z"
+}
+{
+  "name": "ClawPhone",
+  "description": "Tweaks for running OpenClaw on a Android smartphone",
+  "stars": 311,
+  "language": "Python",
+  "url": "https://github.com/marshallrichards/ClawPhone",
+  "created": "2026-02-07T08:11:59Z"
+}
+{
+  "name": "code-relay",
+  "description": "AI Coding Agent 工作协议 — 跨会话记忆、多仓库全局视野、结构化上下文管理",
+  "stars": 245,
+  "language": null,
+  "url": "https://github.com/yan5xu/code-relay",
+  "created": "2026-02-10T07:58:02Z"
+}
+{
+  "name": "model-hierarchy-skill",
+  "description": "OpenClaw skill for cost-optimized model routing based on task complexity",
+  "stars": 232,
+  "language": "Python",
+  "url": "https://github.com/zscole/model-hierarchy-skill",
+  "created": "2026-02-11T23:54:32Z"
+}
+{
+  "name": "openclaw-runbook",
+  "description": null,
+  "stars": 195,
+  "language": null,
+  "url": "https://github.com/digitalknk/openclaw-runbook",
+  "created": "2026-02-10T04:07:34Z"
+}

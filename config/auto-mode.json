@@ -1,0 +1,89 @@
+{
+  "version": "3.1",
+  "enabled": true,
+  "mode": "proactive",
+  "_notice": "這是設計規格文件，目前沒有系統在讀取它。實際執行用的是 server/src/routes/auto-executor.ts。此檔保留作為未來實作參考。",
+  "description": "主動探索模式：掃描→決策→產生任務→執行（含風險分級備份）",
+  "rules": {
+    "summary": "主動掃描系統→自主決策→自動產生任務→分級備份→執行→寫入任務板",
+    "scan_interval_minutes": 1,
+    "auto_generate_tasks": true,
+    "backup_strategy": "tiered",
+    "task_fields_required": [
+      "taskType",
+      "complexity",
+      "riskLevel",
+      "rollbackPlan",
+      "acceptanceCriteria"
+    ]
+  },
+  "backup": {
+    "strategy": "tiered",
+    "tiers": {
+      "low": {
+        "enabled": true,
+        "type": "pre-check",
+        "description": "不備份，只做執行前檢查"
+      },
+      "medium": {
+        "enabled": true,
+        "type": "diff-cache",
+        "ttl_hours": 24,
+        "keep_versions": 2,
+        "description": "差異快取備份，TTL 24h，保留 1-2 版"
+      },
+      "high": {
+        "enabled": true,
+        "type": "snapshot",
+        "auto_rollback": true,
+        "description": "強制快照備份，失敗自動 rollback"
+      },
+      "critical": {
+        "enabled": true,
+        "type": "snapshot",
+        "auto_rollback": true,
+        "description": "強制快照備份，失敗自動 rollback"
+      }
+    },
+    "local_execution": true,
+    "avoid_ai_dialog": true
+  },
+  "approval": {
+    "timeout_seconds": 60,
+    "rules": {
+      "low_medium": {
+        "on_timeout": "auto_approve",
+        "requires_backup": false,
+        "description": "60秒超時自動放行執行"
+      },
+      "high_critical": {
+        "on_timeout": "backup_then_approve",
+        "requires_backup": true,
+        "description": "60秒超時必須先備份才可執行（不可跳過）"
+      }
+    }
+  },
+  "executor": {
+    "poll_interval_seconds": 60,
+    "mode": "continuous",
+    "concurrency": {
+      "max_parallel": 3,
+      "high_risk_serialization": true,
+      "description": "高風險任務一律串行，不並行搶資源"
+    },
+    "selection_strategy": "priority_based",
+    "auto_execute_on_idle": true
+  },
+  "scan_targets": {
+    "cron_jobs": true,
+    "context_usage": true,
+    "memory_age": true,
+    "backup_count": true,
+    "log_size": true
+  },
+  "notification": {
+    "onTaskGenerated": true,
+    "onTaskExecuted": true,
+    "onError": true
+  }
+}

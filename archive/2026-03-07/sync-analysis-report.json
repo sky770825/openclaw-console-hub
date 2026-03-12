@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>星艦指揮中心</title>
+    <meta name="description" content="星艦指揮中心 — 行星防禦任務管理系統" />
+    <meta name="author" content="Lovable" />
+    <meta name="theme-color" content="#06060a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="星艦指揮中心" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta property="og:title" content="星艦指揮中心" />
+    <meta property="og:description" content="星艦指揮中心 — 行星防禦任務管理系統" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <script type="module" crossorigin src="/assets/index-BuCSFXPC.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CUCg9KI1.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-ui-XMMJtWN0.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-Cieujz6O.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-three-CXYn3-p9.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-uqXHhn3v.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-PgtVWMi9.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-BzDZA09X.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

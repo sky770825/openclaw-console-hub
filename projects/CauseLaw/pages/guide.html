@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>因果導航 | 生活行動指南</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .guide-container { max-width: 900px; margin: 0 auto; }
+        .guide-step { 
+            background: rgba(15, 15, 15, 0.8); 
+            border-left: 5px solid var(--gold); 
+            padding: 3rem; 
+            margin-bottom: 3rem; 
+            position: relative;
+            transition: 0.4s;
+        }
+        .guide-step:hover { background: rgba(25, 25, 25, 0.9); transform: translateX(10px); }
+        .step-num { 
+            position: absolute; top: 1rem; right: 2rem; 
+            font-size: 5rem; font-weight: 900; color: rgba(212, 175, 55, 0.05); 
+            font-family: serif;
+        }
+        .step-title { color: var(--gold); font-size: 2rem; font-weight: 900; margin-bottom: 1.5rem; position: relative; z-index: 2; }
+        .step-desc { color: #ccc; line-height: 2.2; font-size: 1.1rem; position: relative; z-index: 2; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔牆</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 px-6">
+        <div class="text-center mb-20">
+            <h1 class="text-6xl mb-10 tracking-[0.6em] text-gold">因果導航</h1>
+            <p class="text-2xl text-stone-500 tracking-widest">如何在因果中導航你的人生 — 五個修行之道</p>
+        </div>
+
+        <div class="guide-container">
+            <!-- Step 1 -->
+            <div class="guide-step">
+                <div class="step-num">壹</div>
+                <h3 class="step-title">覺察輸入 — 三思而後行</h3>
+                <p class="step-desc">
+                    在每個行動之前，問自己三個問題：這個選擇會傷害誰？這個言語會帶來什麼後果？這個念頭是善是惡？覺察是改變因果的第一步。不覺察的人生，如同閉眼駕車。
+                </p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="guide-step">
+                <div class="step-num">貳</div>
+                <h3 class="step-title">口業清淨 — 善護口舌</h3>
+                <p class="step-desc">
+                    十八層地獄中，拔舌地獄排在第一。口業最重，一句惡語傷人，遠甚刀劍。不妄語、不兩舌、不惡口、不綺語。讚美代替批評，鼓勵代替嘲諷。管住嘴巴，便化解了大半惡因。
+                </p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="guide-step">
+                <div class="step-num">參</div>
+                <h3 class="step-title">廣種善因 — 日行一善</h3>
+                <p class="step-desc">
+                    不需驚天動地的大善，日常小善累積即成大福。讓座、微笑、幫忙拾物、說句安慰的話。如同存款，一分一毫皆有利息。「積善之家，必有餘慶」，善因的複利效應，遠超你的想像。
+                </p>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="guide-step">
+                <div class="step-num">肆</div>
+                <h3 class="step-title">耐心等待 — 因果不虛但有時差</h3>
+                <p class="step-desc">
+                    因果不是即時的回饋系統，而是長期的編譯器。行善不見善報，非無報也，時候未到。行惡暫時得利，非無報也，惡果正在累積。耐心等待，堅守善道，時間會給你最公正的答案。
+                </p>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="guide-step">
+                <div class="step-num">伍</div>
+                <h3 class="step-title">孝親敬老 — 百善之先</h3>
+                <p class="step-desc">
+                    百善孝為先。父母是世間最大的福田，孝順父母所積之福德，勝過萬千功德。不孝之人，縱有天大本事，亦難逃因果。「樹欲靜而風不止，子欲養而親不待」，行孝要及時，莫留遺憾。
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-40 text-center">
+            <a href="merit.html" class="btn-premium">開始執行功過管理</a>
+        </div>
+    </main>
+
+    <footer class="py-20 text-center border-t border-gold/20">
+        <p class="text-gold tracking-[0.5em] text-xl">因果真相 • 人生導航</p>
+    </footer>
+</body>
+</html>

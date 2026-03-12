@@ -1,0 +1,46 @@
+{
+  "name": "990 產品化落地",
+  "createdAt": "2026-03-02T15:06:29.826Z",
+  "totalWeeks": 4,
+  "currentWeek": 1,
+  "milestones": [
+    {
+      "name": "SLM 效能基準測試",
+      "week": 1,
+      "done": false
+    },
+    {
+      "name": "核心邏輯遷移",
+      "week": 2,
+      "done": false
+    },
+    {
+      "name": "API 介面標準化",
+      "week": 3,
+      "done": false
+    },
+    {
+      "name": "產品化部署與驗收",
+      "week": 4,
+      "done": false
+    }
+  ],
+  "weeklyGoals": {
+    "W1": {
+      "goal": "",
+      "tasks": []
+    },
+    "W2": {
+      "goal": "",
+      "tasks": []
+    },
+    "W3": {
+      "goal": "",
+      "tasks": []
+    },
+    "W4": {
+      "goal": "",
+      "tasks": []
+    }
+  }
+}

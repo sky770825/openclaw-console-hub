@@ -1,0 +1,6 @@
+{
+  "nodes": [
+    { "name": "檢查天氣", "type": "condition", "params": { "logic": "temp > 30" } },
+    { "name": "開啟冷氣", "type": "action", "params": { "desc": "設定為 26 度" } }
+  ]
+}

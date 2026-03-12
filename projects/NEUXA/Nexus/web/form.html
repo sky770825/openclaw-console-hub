@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEUXA 數位協防協議簽署</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0a0a0a; color: #e5e5e5; }
+        .gradient-text { background: linear-gradient(90deg, #4f46e5, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .input-field { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px; width: 100%; color: white; }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="max-w-xl mx-auto">
+        <h1 class="text-3xl font-bold mb-2 gradient-text text-center">數位協防協議</h1>
+        <p class="text-gray-400 text-center mb-8 text-sm">加入 NEUXA 守護者體系，共建自癒安全網路</p>
+
+        <form id="guard-form" class="space-y-6">
+            <!-- 個人資料 -->
+            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                <h2 class="text-xl font-bold mb-4 text-indigo-400">1. 守護者基本資料</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">姓名 / 組織名稱</label>
+                        <input type="text" name="name" required class="input-field" placeholder="如何稱呼您">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">聯絡電話</label>
+                        <input type="tel" name="phone" required class="input-field" placeholder="方便聯繫的號碼">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">行業領域</label>
+                        <select name="industry" class="input-field">
+                            <option value="retail">一般商業/零售</option>
+                            <option value="it">資訊科技</option>
+                            <option value="realestate">不動產</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 協議內容 -->
+            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                <h2 class="text-xl font-bold mb-4 text-cyan-400">2. 協防協議條款</h2>
+                <div class="h-40 overflow-y-scroll bg-black/30 p-4 rounded-lg text-xs text-gray-400 leading-relaxed mb-4">
+                    【NEUXA 數位協防協議 v1.0】<br><br>
+                    1. 協防宗旨：簽署人同意將其部署之 NEUXA Lite 節點納入自癒協防網路，共同抵禦數位威脅。<br>
+                    2. 數據主權：NEUXA 承諾不獲取用戶之業務私密數據，僅針對系統安全性節點進行同步與保護。<br>
+                    3. 資源共享：當某節點遭受攻擊時，協防網路將自動同步防禦策略至所有成員節點。<br>
+                    4. 守護義務：簽署人需確保其系統遵守基礎安全規範，不利用 NEUXA 進行非法活動。<br>
+                    5. 退出機制：簽署人可隨時終止協防關係，終止後自癒功能將回歸基礎模式。
+                </div>
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" id="agree" required class="mt-1 w-5 h-5 accent-indigo-500">
+                    <label for="agree" class="text-sm text-gray-300">我已詳細閱讀並同意上述協防協議內容</label>
+                </div>
+            </div>
+
+            <!-- 簽名區 -->
+            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                <h2 class="text-xl font-bold mb-4 text-emerald-400">3. 數位確認簽署</h2>
+                <p class="text-xs text-gray-500 mb-4">請在下方輸入您的身分證字號末四碼或自訂簽名碼以完成確認</p>
+                <input type="text" name="signature" required class="input-field" placeholder="數位簽署碼">
+                
+                <button type="submit" class="w-full mt-6 bg-gradient-to-r from-indigo-600 to-cyan-600 py-4 rounded-xl font-bold text-lg hover:scale-[1.02] transition">
+                    提交簽署並加入協防
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('guard-form').onsubmit = function(e) {
+            e.preventDefault();
+            alert('✅ 協議已成功簽署！NEUXA 守護中心已收到您的申請。');
+            window.location.href = 'https://line.me/R/ti/p/@740ihcar';
+        };
+    </script>
+</body>
+</html>

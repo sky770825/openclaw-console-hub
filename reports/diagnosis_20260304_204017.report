@@ -1,0 +1,41 @@
+==========================================
+  [阿秘] 執行老蔡核心指令：自主排解診斷
+  時間: Wed Mar  4 20:40:17 CST 2026
+==========================================
+--- [1/4] 專案結構掃描 ---
+✅ 關鍵檔案存在: package.json
+✅ 關鍵檔案存在: server/package.json
+✅ 關鍵檔案存在: src/main.tsx
+✅ 關鍵檔案存在: server/src/index.ts
+
+--- [2/4] 依賴與版本檢查 ---
+Node Version: v25.5.0
+✅ Root node_modules 已安裝
+
+--- [3/4] 端口佔用診斷 ---
+⚠️ 端口 3000 被 PID 490 佔用，可能導致啟動失敗
+✅ 端口 3001 狀態良好 (可用)
+⚠️ 端口 5173 被 PID 50036 佔用，可能導致啟動失敗
+⚠️ 端口 8000 被 PID 95594 佔用，可能導致啟動失敗
+✅ 端口 8080 狀態良好 (可用)
+
+--- [4/4] 掃描程式碼阻塞標籤 (TODO/FIXME) ---
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:118:const FAST_SUBS_TEMPLATES = {
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:128:const DEEP_SUBS_TEMPLATES = {
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:171:const SUBS_TEMPLATES = {
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:211:  for (const key of Object.keys(SUBS_TEMPLATES)) {
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:228:  const templateSet = strategy === "fast" ? FAST_SUBS_TEMPLATES
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:229:    : strategy === "deep" ? DEEP_SUBS_TEMPLATES
+/Users/caijunchang/openclaw任務面版設計/src/hooks/openclawBoardUtils.js:230:    : SUBS_TEMPLATES;
+/Users/caijunchang/openclaw任務面版設計/src/lib/pollRunStatus.ts:9:const MAX_ATTEMPTS = 40; // ~60s 總時長，長時間任務不中斷
+/Users/caijunchang/openclaw任務面版設計/src/lib/pollRunStatus.ts:37:    if (attempts >= MAX_ATTEMPTS) {
+/Users/caijunchang/openclaw任務面版設計/src/data/seedTasks.ts:4: * @see docs/TASK-TEMPLATE.md
+/Users/caijunchang/openclaw任務面版設計/src/pages/TaskBoard.tsx:1376:const TASK_TEMPLATE_PRESETS: TaskTemplatePreset[] = [
+/Users/caijunchang/openclaw任務面版設計/src/pages/TaskBoard.tsx:1501:    const template = TASK_TEMPLATE_PRESETS.find((item) => item.id === templateId);
+/Users/caijunchang/openclaw任務面版設計/src/pages/TaskBoard.tsx:1584:                  {TASK_TEMPLATE_PRESETS.map((tpl) => (
+/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:938:    const MAX_ATTEMPTS = 4;
+/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:940:    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+
+==========================================
+  診斷完成。請參閱報表: /Users/caijunchang/.openclaw/workspace/reports/diagnosis_20260304_204017.report
+==========================================

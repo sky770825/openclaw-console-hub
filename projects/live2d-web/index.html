@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星艦指揮中心 - AI 介面</title>
+    <style>
+        /* --- 全域與變數設定 --- */
+        :root {
+            --bg-color: #050510;
+            --cyan-glow: #00f5ff;
+            --purple-glow: #a855f7;
+            --text-color: #e0e0e0;
+            --border-color: rgba(0, 245, 255, 0.3);
+            --panel-bg: rgba(10, 20, 40, 0.75);
+            --input-bg: rgba(0, 0, 0, 0.5);
+
+            --emotion-happy: #00f5ff;
+            --emotion-error: #ff3333;
+            --emotion-warning: #ffaa00;
+            --emotion-default: #e0e0e0;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--purple-glow) transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Consolas', 'Monaco', 'monospace';
+            font-size: 14px;
+        }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--purple-glow); border-radius: 2px; }
+
+        /* --- 背景特效 --- */
+        #starfield {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
+        }
+
+        body::after {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 3px;
+            animation: scanline 15s linear infinite;
+            pointer-events: none; z-index: -1;
+        }
+
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100vh; }
+        }
+
+        /* --- 主佈局 --- */
+        .app-container {
+            display: flex; flex-direction: column; height: 100vh;
+        }
+
+        .main-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            backdrop-filter: blur(5px);
+            flex-shrink: 0;
+        }
+
+        .main-header h1 { font-size: 1.2em; letter-spacing: 4px; color: var(--cyan-glow); text-shadow: 0 0 5px var(--cyan-glow); }
+
+        .status-indicators { display: flex; align-items: center; gap: 20px; }
+        .status-light { display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: #ff3333; transition: background-color 0.5s; }
+        .status-dot.connected { background-color: #4ade80; box-shadow: 0 0 8px #4ade80; }
+        #clock { font-size: 0.9em; color: var(--text-color); }
+
+        .main-content {
+            display: flex; flex-grow: 1; overflow: hidden;
+        }
+
+        /* --- 左欄：角色區 --- */
+        .left-panel {
+            width: 280px; padding: 20px; display: flex; flex-direction: column; gap: 20px;
+            border-right: 1px solid var(--border-color);
+            background: var(--panel-bg);
+        }
+        
+        .avatar-container {
+            position: relative; width: 240px; height: 240px; margin: 0 auto;
+        }
+
+        .hexagon {
+            width: 100%; height: 100%;
+            background-color: var(--input-bg);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; color: var(--cyan-glow);
+            border: 1px solid var(--border-color);
+        }
+
+        .halo {
+            position: absolute; top: -5%; left: -5%; width: 110%; height: 110%;
+            background: conic-gradient(from 0deg, transparent, var(--purple-glow), transparent 30%);
+            animation: rotate-halo 8s linear infinite;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            z-index: -1;
+        }
+
+        @keyframes rotate-halo { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .info-panel { padding: 15px; border: 1px solid var(--border-color); background: var(--input-bg); border-radius: 4px; }
+        .info-panel h3 { margin-bottom: 10px; color: var(--purple-glow); font-size: 1em; }
+        .info-panel p { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 5px; }
+        .info-panel p span:last-child { color: var(--cyan-glow); }
+        #emotion-display { transition: color 0.3s; }
+
+        /* --- 中欄：對話區 --- */
+        .center-panel {
+            flex-grow: 1; display: flex; flex-direction: column; padding: 20px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .chat-window {
+            flex-grow: 1; overflow-y: auto; margin-bottom: 20px; padding-right: 10px;
+        }
+
+        .chat-bubble {
+            max-width: 80%; margin-bottom: 15px; padding: 12px 18px; border-radius: 10px;
+            animation: slide-in 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            border: 1px solid transparent;
+        }
+
+        @keyframes slide-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .ai-message { background: var(--panel-bg); border-color: var(--border-color); align-self: flex-start; }
+        .user-message { background: var(--input-bg); align-self: flex-end; text-align: right; color: var(--purple-glow); }
+
+        .chat-bubble[data-emotion="happy"] { border-left: 3px solid var(--emotion-happy); }
+        .chat-bubble[data-emotion="error"] { border-left: 3px solid var(--emotion-error); color: var(--emotion-error); }
+        .chat-bubble[data-emotion="warning"] { border-left: 3px solid var(--emotion-warning); color: var(--emotion-warning); }
+        .chat-bubble[data-emotion="default"] { border-left: 3px solid var(--emotion-default); }
+
+        .chat-input-area {
+            display: flex; gap: 10px;
+        }
+
+        #chat-input {
+            flex-grow: 1; background: var(--input-bg); border: 1px solid var(--border-color);
+            color: var(--text-color); padding: 12px; border-radius: 4px; font-family: inherit;
+            outline: none; transition: box-shadow 0.3s;
+        }
+        #chat-input:focus { box-shadow: 0 0 10px var(--cyan-glow); }
+
+        #send-button {
+            background: var(--purple-glow); color: black; border: none; padding: 12px 20px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.3s;
+        }
+        #send-button:hover { box-shadow: 0 0 15px var(--purple-glow); transform: translateY(-2px); }
+
+        /* --- 右欄：狀態面板 --- */
+        .right-panel {
+            width: 260px; padding: 20px; display: flex; flex-direction: column; gap: 20px;
+            border-left: 1px solid var(--border-color);
+            background: var(--panel-bg);
+        }
+
+        .log-window {
+            flex-grow: 1; background: var(--input-bg); padding: 10px;
+            border: 1px solid var(--border-color); border-radius: 4px; overflow-y: auto;
+            font-size: 0.8em;
+        }
+        .log-window h3 { color: var(--purple-glow); margin-bottom: 10px; }
+        #log-list { list-style: none; }
+        #log-list li { margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .log-time { color: var(--text-color); opacity: 0.6; margin-right: 5px; }
+        .log-msg.info { color: var(--cyan-glow); }
+        .log-msg.error { color: var(--emotion-error); }
+        .log-msg.warn { color: var(--emotion-warning); }
+        
+        .value-flash { animation: flash 0.5s ease-out; }
+        @keyframes flash { 0%, 100% { color: var(--text-color); } 50% { color: var(--cyan-glow); transform: scale(1.1); } }
+
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="app-container">
+        <header class="main-header">
+            <h1>星艦指揮中心</h1>
+            <div class="status-indicators">
+                <div class="status-light">
+                    <div id="connection-status-dot" class="status-dot"></div>
+                    <span id="connection-status-text">離線</span>
+                </div>
+                <div id="clock">00:00:00</div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Left Panel -->
+            <aside class="left-panel">
+                <div class="avatar-container">
+                    <div class="halo"></div>
+                    <div class="hexagon" id="live2d-placeholder">小蔡</div>
+                </div>
+                <div class="info-panel">
+                    <h3>AI 狀態</h3>
+                    <p><span>Emotion:</span> <span id="emotion-display">default</span></p>
+                </div>
+            </aside>
+
+            <!-- Center Panel -->
+            <section class="center-panel">
+                <div class="chat-window" id="chat-window"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="在這裡輸入訊息...">
+                    <button id="send-button">發送</button>
+                </div>
+            </section>
+
+            <!-- Right Panel -->
+            <aside class="right-panel">
+                <div class="info-panel">
+                    <h3>伺服器狀態</h3>
+                    <p><span>WebSocket:</span> <span id="ws-connections">0</span></p>
+                    <p><span>今日訊息:</span> <span id="message-count">0</span></p>
+                </div>
+                <div class="log-window">
+                    <h3>系統日誌</h3>
+                    <ul id="log-list"></ul>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 元素選擇器 ---
+            const clockEl = document.getElementById('clock');
+            const connectionDot = document.getElementById('connection-status-dot');
+            const connectionText = document.getElementById('connection-status-text');
+            const emotionDisplay = document.getElementById('emotion-display');
+            const wsConnectionsEl = document.getElementById('ws-connections');
+            const messageCountEl = document.getElementById('message-count');
+            const logList = document.getElementById('log-list');
+            const chatWindow = document.getElementById('chat-window');
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-button');
+
+            let ws;
+            let messageCount = 0;
+
+            // --- 功能函數 ---
+            const updateClock = () => {
+                const now = new Date();
+                clockEl.textContent = now.toTimeString().split(' ')[0];
+            };
+
+            const addLog = (message, level = 'info') => {
+                const li = document.createElement('li');
+                const time = new Date().toLocaleTimeString('en-GB');
+                li.innerHTML = <span class="log-time">${time}</span><span class="log-msg ${level}">${message}</span>;
+                logList.prepend(li);
+                if (logList.children.length > 50) {
+                    logList.removeChild(logList.lastChild);
+                }
+            };
+
+            const addMessageToChat = (text, emotion, sender = 'ai') => {
+                const bubble = document.createElement('div');
+                bubble.classList.add('chat-bubble', sender === 'ai' ? 'ai-message' : 'user-message');
+                bubble.dataset.emotion = emotion || 'default';
+                bubble.textContent = text;
+                chatWindow.appendChild(bubble);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            };
+            
+            const flashValue = (element) => {
+                element.classList.add('value-flash');
+                setTimeout(() => element.classList.remove('value-flash'), 500);
+            }
+
+            // --- WebSocket 連線 ---
+            const connectWebSocket = () => {
+                ws = new WebSocket('ws://localhost:8080/live2d-ws');
+
+                ws.onopen = () => {
+                    connectionDot.classList.add('connected');
+                    connectionText.textContent = '已連線';
+                    addLog('WebSocket 已連線', 'info');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'message') {
+                            addMessageToChat(data.text, data.emotion, 'ai');
+                            emotionDisplay.textContent = data.emotion || 'default';
+                            emotionDisplay.style.color = var(--emotion-${data.emotion || 'default'});
+                            messageCount++;
+                            messageCountEl.textContent = messageCount;
+                            flashValue(messageCountEl);
+                            addLog(收到訊息: ${data.text.substring(0,20)}...);
+                        } else if (data.type === 'status_update') { // 假設有狀態更新
+                             if(data.connections) {
+                                wsConnectionsEl.textContent = data.connections;
+                                flashValue(wsConnectionsEl);
+                             }
+                        }
+                    } catch (e) {
+                        addLog('無法解析收到的訊息', 'error');
+                    }
+                };
+
+                ws.onclose = () => {
+                    connectionDot.classList.remove('connected');
+                    connectionText.textContent = '已離線';
+                    addLog('WebSocket 連線已關閉，5秒後重試', 'warn');
+                    setTimeout(connectWebSocket, 5000);
+                };
+
+                ws.onerror = (error) => {
+                    addLog('WebSocket 發生錯誤', 'error');
+                    ws.close();
+                };
+            };
+
+            // --- 事件監聽 ---
+            const sendMessage = () => {
+                const text = chatInput.value.trim();
+                if (text && ws && ws.readyState === WebSocket.OPEN) {
+                    const message = { type: 'chat', text: text };
+                    ws.send(JSON.stringify(message));
+                    addMessageToChat(text, 'default', 'user');
+                    chatInput.value = '';
+                }
+            };
+
+            sendButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // --- 星空背景初始化 ---
+            const starfield = document.getElementById('starfield');
+            const ctx = starfield.getContext('2d');
+            let stars = [];
+            const numStars = 150;
+
+            const setupStars = () => {
+                starfield.width = window.innerWidth;
+                starfield.height = window.innerHeight;
+                stars = [];
+                for (let i = 0; i < numStars; i++) {
+                    stars.push({
+                        x: Math.random() * starfield.width,
+                        y: Math.random() * starfield.height,
+                        size: Math.random() * 1.5 + 0.5,
+                        speed: Math.random() * 0.2 + 0.1
+                    });
+                }
+            };
+
+            const drawStars = () => {
+                ctx.clearRect(0, 0, starfield.width, starfield.height);
+                ctx.fillStyle = 'white';
+                stars.forEach(star => {
+                    star.y += star.speed;
+                    if (star.y > starfield.height) {
+                        star.y = 0;
+                        star.x = Math.random() * starfield.width;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(drawStars);
+            };
+
+            // --- 啟動 ---
+            updateClock();
+            setInterval(updateClock, 1000);
+            connectWebSocket();
+            setupStars();
+            drawStars();
+            window.addEventListener('resize', setupStars);
+        });
+    </script>
+</body>
+</html>

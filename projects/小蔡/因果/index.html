@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- SEO META START -->
+    <meta name="description" content="揭示宇宙運作的底層代碼。因果不是枷鎖，是導航圖。神明殿堂、十八層地獄、六道輪迴、功過格、因果光場加持台。">
+    <meta property="og:title" content="因果真相 | 旗艦門戶 — 宇宙鐵律，分毫不差">
+    <meta property="og:description" content="揭示宇宙運作的底層代碼。因果不是枷鎖，是導航圖。神明殿堂、十八層地獄、六道輪迴、功過格、因果光場加持台。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="因果真相 | 旗艦門戶 — 宇宙鐵律，分毫不差">
+    <meta name="twitter:description" content="揭示宇宙運作的底層代碼。因果不是枷鎖，是導航圖。神明殿堂、十八層地獄、六道輪迴、功過格、因果光場加持台。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <meta name="theme-color" content="#050505">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <title>因果真相 | 旗艦門戶 — 宇宙鐵律，分毫不差</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="styles.css?v=20260305d">
+    <script src="causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="causelaw-config.js" defer></script>
+    <script src="causelaw-client.js" defer></script>
+    <script src="causelaw-ui.js" defer></script>
+    <script src="causelaw-auth.js" defer></script>
+    <script src="particles.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="nav-premium flex justify-end items-center gap-12">
+        <div id="member-bar" class="flex items-center gap-2">
+            <span id="member-name-display" class="hidden text-gold/90 text-sm font-bold"></span>
+            <button type="button" id="member-auth-btn" class="member-nav-btn">會員登入</button>
+            <button type="button" id="member-set-btn" class="member-nav-btn">設定顯示名稱</button>
+            <button type="button" id="member-clear-btn" class="member-nav-btn member-nav-btn--muted hidden">清除</button>
+        </div>
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400">
+            <a href="pages/deities.html" class="hover:text-gold transition">神明</a>
+            <a href="pages/hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="pages/realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="pages/merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="pages/shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="pages/faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="pages/guide.html" class="hover:text-gold transition">導航</a>
+            <a href="pages/forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="pages/simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="pages/wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="pages/audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="pages/quiz.html" class="hover:text-gold transition">測驗</a>
+            <a href="pages/monitor.html" class="hidden hover:text-gold transition text-green-500">監測</a>
+        </div>
+        <div class="text-3xl font-black text-gold tracking-widest border-l-2 border-gold/30 pl-8">玉帝欽旨</div>
+    </nav>
+
+    <button type="button" id="topBtn" class="back-to-top" onclick="window.scrollTo(0,0)" aria-label="回到頂端">↑</button>
+
+    <!-- 能量音場 -->
+    <div class="audio-player">
+        <div class="audio-visualizer">
+            <div class="visual-bar" style="animation-delay: 0.1s"></div>
+            <div class="visual-bar" style="animation-delay: 0.3s"></div>
+            <div class="visual-bar" style="animation-delay: 0.2s"></div>
+        </div>
+        <button id="music-toggle" class="text-[10px] text-gold tracking-widest font-black opacity-50" onclick="toggleMusic()">AMBIENT: OFF</button>
+        <audio id="bg-music" loop>
+            <source src="https://assets.mixkit.co/music/preview/mixkit-ethereal-zen-meditation-142.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script>
+        // Set hero daily insight quote
+        const heroQuotes = [
+            "諸惡莫作，眾善奉行；自淨其意，是諸佛教。",
+            "一切有為法，如夢幻泡影，如露亦如電。",
+            "種樹者必養其根，種德者必養其心。",
+            "善行無轍跡，善言無瑕讁。",
+            "欲知前世因，今生受者是。",
+            "一念善心起，天堂已誕生。",
+            "天地不判斷，只執行。",
+            "善意如光，不僅照亮他人，更修復了你自己的場域。",
+            "暫時的得失是幻象，長期的業力平衡是絕對真相。",
+            "最高級的智慧，是敬畏規律。"
+        ];
+        function setHeroQuote() {
+            const heroQuoteEl = document.getElementById('hero-quote-text');
+            if (!heroQuoteEl) return;
+            const heroQuote = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
+            heroQuoteEl.innerText = "「" + heroQuote + "」";
+        }
+        document.addEventListener('DOMContentLoaded', setHeroQuote);
+
+        const bgMusic = document.getElementById('bg-music');
+        const musicToggle = document.getElementById('music-toggle');
+        let isMusicPlaying = false;
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicToggle.innerText = "AMBIENT: OFF";
+                musicToggle.classList.add('opacity-50');
+            } else {
+                bgMusic.play().catch(e => console.log("Audio needs user interaction first"));
+                musicToggle.innerText = "AMBIENT: ON";
+                musicToggle.classList.remove('opacity-50');
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+        
+        window.onscroll = function() {
+            const btn = document.getElementById("topBtn");
+            if (!btn) return;
+            if (document.body.scrollTop > 500 || document.documentElement.scrollTop > 500) {
+                btn.classList.add("visible");
+            } else {
+                btn.classList.remove("visible");
+            }
+        };
+    </script>
+
+    <!-- HERO：因果真相 — 天理・鐵律・莊嚴感 + 抽象背景 -->
+    <section class="hero-causelaw h-screen flex flex-col items-center justify-center text-center px-4 relative overflow-hidden">
+        <div class="hero-causelaw-bg" aria-hidden="true"></div>
+        <div class="hero-causelaw-abstract" aria-hidden="true"></div>
+        <h1 class="text-[7rem] font-black text-[#d4af37] mb-6 tracking-[0.35em] relative z-10">因果真相</h1>
+        <p class="text-3xl text-[#d4af37] tracking-[0.6em] mb-8 opacity-90 relative z-10">分毫不差　絕無倖免</p>
+        
+        <!-- Daily Insight -->
+        <div id="hero-daily-insight" class="max-w-3xl mx-auto mb-16 px-8 py-6 border-y border-[#d4af37]/30 backdrop-blur-sm relative z-10">
+            <p id="hero-quote-text" class="text-stone-300 text-xl font-serif italic leading-relaxed tracking-wide"></p>
+            <div class="mt-4 flex items-center justify-center gap-3">
+                <span class="w-8 h-px bg-[#d4af37]/50"></span>
+                <span class="text-[#d4af37]/60 text-xs tracking-[0.3em]">每日一悟</span>
+                <span class="w-8 h-px bg-[#d4af37]/50"></span>
+            </div>
+        </div>
+        
+        <!-- 主要分頁入口 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6 max-w-7xl w-full px-6 relative z-10">
+            <a href="pages/deities.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">神明殿堂</h3>
+                <p class="text-stone-500 text-sm tracking-wide">神明威靈</p>
+            </a>
+            <a href="pages/hell.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">十八地獄</h3>
+                <p class="text-stone-500 text-sm tracking-wide">業力結算</p>
+            </a>
+            <a href="pages/realms.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">六道輪迴</h3>
+                <p class="text-stone-500 text-sm tracking-wide">頻率歸宿</p>
+            </a>
+            <a href="pages/cases.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">因果案例</h3>
+                <p class="text-stone-500 text-sm tracking-wide">真實見證</p>
+            </a>
+            <a href="pages/merit.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">功過格</h3>
+                <p class="text-stone-500 text-sm tracking-wide">善惡值・歸宿預覽</p>
+            </a>
+            <a href="pages/guide.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">生活導航</h3>
+                <p class="text-stone-500 text-sm tracking-wide">行動指南</p>
+            </a>
+            <a href="pages/faq.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">疑難參悟</h3>
+                <p class="text-stone-500 text-sm tracking-wide">破除迷思</p>
+            </a>
+            <a href="pages/audio.html" class="btn-premium group border-purple-900/30">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em] text-purple-400">經咒・禪樂</h3>
+                <p class="text-stone-500 text-sm tracking-wide">佛教・道教經典</p>
+            </a>
+            <a href="pages/monitor.html" class="hidden btn-premium group border-green-900/50">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em] text-green-500">宇宙監測</h3>
+                <p class="text-stone-500 text-sm tracking-wide">實時數據</p>
+            </a>
+        </div>
+    </section>
+
+    <!-- 站長告誡 -->
+    <section class="py-20 bg-[#050505] border-t border-cinnabar/40">
+        <div class="max-w-3xl mx-auto px-6">
+            <div class="border border-cinnabar/40 bg-black/60 px-8 py-10">
+                <h2 class="text-3xl font-black text-cinnabar mb-8 tracking-[0.4em] text-center">站長告誡</h2>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">歡迎來到本站。</p>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                    建立這個網站，不是為了渲染怪力亂神，也不是為了誇大離奇經歷，而是希望透過站長親身所經歷的真實事件，提醒世人：天地之間，確有因果循環，善惡終有報，只是時機未到。
+                </p>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                    於 <span class="text-gold">2026 年 2 月 17 日</span>，站長親身遭遇一場極不尋常的人生劫難。此事涉及冤親債主討債、黑令旗之事，以及現世果報同時顯現。那段期間，站長不僅身心俱疲，更經歷了中邪、見到異常影像，以及被靈體輪流上身等種種難以言喻的痛苦過程。
+                </p>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                    這些經歷，並非憑空捏造，也不是危言聳聽，而是站長親身承受、親自走過的真實事件。所幸，後續已由玉皇上帝慈悲調解，並蒙玄天上帝降駕除靈，才使此事得以化解，保住一命。
+                </p>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                    也因站長體質特殊，與神明有感應，得以溝通、請示，才逐漸明白這一切的根源，皆與因果業力有關。人世間許多事情，不是沒有報應，而是福報尚未耗盡；一旦福薄業現，果報來時，往往令人措手不及。
+                </p>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                    經過這次事件，站長深刻體會到，所謂修行，並不只是形式上的膜拜，而是真正修正自己的心念、言語與行為。人若曾經有錯，就應當懺悔；人若心存偏差，就更應及早改正。唯有修心向善，遠離惡念，才能為自己減少災厄，為人生累積福報。
+                </p>
+                <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                    本站建立的目的，正是希望將這段親身經歷公開，作為一種警示與提醒。願每一位來到這裡的人，都能從中有所省思：不要等到果報現前，才知道後悔；不要等到命懸一線，才明白修正的重要。
+                </p>
+                <p class="text-stone-400 text-sm leading-relaxed mb-4 italic">
+                    人可以不信靈異，但不能不敬因果；人可以有懷疑，但不可失去良知。因為自己所做的一切，終究都會回到自己身上。
+                </p>
+                <p class="text-stone-300 text-sm leading-relaxed text-center">
+                    願見此文者，皆能心存善念，及早改過，遠離惡行，珍惜當下，為自己與家人積累平安與福德。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- LINE 官方帳號 -->
+    <section id="line-cta" class="py-24 bg-[#0a0a0a] border-t border-gold/20">
+        <div class="max-w-4xl mx-auto text-center px-6">
+            <div class="p-12 border-2 border-[#06c755]/30 bg-[#06c755]/5 relative overflow-hidden">
+                <h2 class="text-4xl font-black text-[#06c755] mb-6 tracking-[0.3em]">加入 LINE 官方帳號</h2>
+                <p class="text-xl text-stone-400 mb-8 tracking-wide">每日一悟推播 / 因果測驗互動 / 精選故事推送</p>
+                <div class="flex justify-center gap-4 mb-10 flex-wrap">
+                    <span class="px-5 py-2 bg-[#06c755]/10 border border-[#06c755]/30 text-[#06c755] text-sm">📜 每日晨鐘一悟</span>
+                    <span class="px-5 py-2 bg-[#06c755]/10 border border-[#06c755]/30 text-[#06c755] text-sm">☯️ 參悟測驗</span>
+                    <span class="px-5 py-2 bg-[#06c755]/10 border border-[#06c755]/30 text-[#06c755] text-sm">📖 精選案例推送</span>
+                </div>
+                <a href="https://lin.ee/5sFvkBJ" class="inline-block px-10 py-4 bg-[#06c755] text-white text-xl font-bold hover:shadow-[0_0_30px_#06c755] transition-all tracking-wider">
+                    立即加入　洞察真相
+                </a>
+                <p class="mt-4 text-stone-600 font-mono text-sm">官方 ID: @955ncqxj</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 因果投稿 -->
+    <section id="submit" class="py-24 bg-black border-t border-gold/20">
+        <div class="max-w-3xl mx-auto px-6">
+            <h2 class="text-4xl font-black text-gold text-center mb-12 tracking-[0.3em]">因果案例投稿</h2>
+            <div class="p-10 border border-gold/20 bg-stone-900/20">
+                <p class="text-lg text-stone-400 text-center mb-6 leading-relaxed">您身邊是否有令人警醒的因果故事？<br>歡迎分享，系統會先檢測不雅文字；通過者將自動收錄於「<a href="pages/forum.html" class="text-gold hover:underline">討論區</a>」中，警示世人。</p>
+                <div class="mb-8 p-5 border border-gold/30 bg-gold/5 rounded-lg text-center">
+                    <p class="text-gold font-bold text-sm mb-2">📿 真實投稿經審核通過，可獲功德・福報加分</p>
+                    <p class="text-amber-200/90 text-xs mb-2">投稿與留言將顯示於討論區，<strong>所有人皆可看見</strong>，故資訊須為真實。</p>
+                    <p class="text-stone-500 text-xs mb-3">每位會員如實分享見證，皆有福報累積；但須遵守以下鐵則：</p>
+                    <ul class="text-left text-stone-400 text-xs space-y-1 max-w-md mx-auto list-disc list-inside">
+                        <li><strong class="text-amber-200/90">不可捏造故事</strong> — 虛構內容一經查證將不予採用，且與因果正道相違。</li>
+                        <li><strong class="text-amber-200/90">必須是自己真實的故事</strong> — 本人親身經歷或親見親聞，詳實紀錄，不誇大不杜撰。</li>
+                    </ul>
+                </div>
+                <form id="submit-form" onsubmit="handleSubmit(event)" class="space-y-6">
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">您的稱呼</label>
+                        <input type="text" id="submit-name" name="name" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none" placeholder="可留空（匿名投稿）">
+                    </div>
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">故事標題 <span class="text-red-500">*</span></label>
+                        <input type="text" id="submit-title" name="title" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">故事分類</label>
+                        <select id="submit-category" name="category" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none">
+                            <option value="口業之報">口業之報</option>
+                            <option value="善行之報">善行之報</option>
+                            <option value="貪婪之報">貪婪之報</option>
+                            <option value="偽善之報">偽善之報</option>
+                            <option value="靈異經驗">靈異經驗</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">故事內容（分毫不差，詳實紀錄） <span class="text-red-500">*</span></label>
+                        <textarea id="submit-content" name="content" rows="6" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none" required></textarea>
+                    </div>
+                    <button type="submit" id="submit-btn" class="w-full py-4 bg-gold text-black text-base font-bold tracking-[0.2em] hover:bg-goldBright transition-all rounded border border-gold/50">
+                        提交真相　警示世人
+                    </button>
+                    <p id="submit-status" class="hidden text-sm text-center"></p>
+                    <p class="text-xs text-stone-600 text-center">註：本系統提交前會先檢測不雅文字；未檢出者自動審核通過並顯示於<a href="pages/forum.html" class="text-gold hover:underline">討論區</a>，檢出者會先進入人工複核。捏造或非本人真實經歷不予採用。</p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function uiToast(message, tone) {
+            if (window.CauseLawUI && typeof window.CauseLawUI.showToast === 'function') {
+                window.CauseLawUI.showToast(message, tone || 'info');
+            }
+        }
+
+        async function uiPromptInput(options) {
+            if (window.CauseLawUI && typeof window.CauseLawUI.prompt === 'function') {
+                return window.CauseLawUI.prompt(options || {});
+            }
+            var fallback = prompt((options && options.title) || '請輸入');
+            if (fallback == null) return null;
+            return (fallback || '').trim();
+        }
+
+        function dbTable(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.tables && db.tables[name]) return db.tables[name];
+            return fallback;
+        }
+
+        function dbRpc(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.rpc && db.rpc[name]) return db.rpc[name];
+            return fallback;
+        }
+
+        const FORUM_LIMIT_KEY = 'causelaw_forum_limits_v1';
+        const FORUM_MAX_POSTS_PER_DAY = 3;
+        const FORUM_PROFANITY_TERMS = [
+            '幹你娘', '干你娘', '幹你媽', '干你媽', '操你媽', '操你妈',
+            '靠北', '靠杯', '雞巴', '鸡巴', '雞掰', '机掰', '機掰',
+            '懶叫', '他媽的', '他妈的', '婊子', '王八蛋', '去死', '死全家',
+            'fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy', 'cunt'
+        ];
+
+        function getTodayLocalDate() {
+            var d = new Date();
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate() + 0).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function loadForumDailyState() {
+            var today = getTodayLocalDate();
+            try {
+                var raw = localStorage.getItem(FORUM_LIMIT_KEY);
+                if (!raw) return { date: today, posts: 0, comments: 0 };
+                var obj = JSON.parse(raw);
+                if (!obj || obj.date !== today) return { date: today, posts: 0, comments: 0 };
+                if (typeof obj.posts !== 'number') obj.posts = 0;
+                if (typeof obj.comments !== 'number') obj.comments = 0;
+                return obj;
+            } catch (e) {
+                return { date: today, posts: 0, comments: 0 };
+            }
+        }
+
+        function saveForumDailyState(st) {
+            try {
+                localStorage.setItem(FORUM_LIMIT_KEY, JSON.stringify(st));
+            } catch (e) {}
+        }
+
+        function hasSacredName(text) {
+            var t = (text || '').trim();
+            if (!t) return false;
+            var keywords = ['阿彌陀佛','南無阿彌陀佛','南無本師釋迦牟尼佛','釋迦牟尼佛','觀世音菩薩','南無觀世音菩薩','地藏菩薩','南無地藏菩薩','南無大悲觀世音菩薩','南無準提菩薩'];
+            return keywords.some(function (k) { return t.indexOf(k) !== -1; });
+        }
+
+        function detectForumProfanity(text) {
+            var normalized = (text || '').toString().toLowerCase();
+            if (!normalized) return [];
+            var hits = [];
+            FORUM_PROFANITY_TERMS.forEach(function (term) {
+                var needle = (term || '').toString().toLowerCase();
+                if (!needle) return;
+                if (normalized.indexOf(needle) !== -1 && hits.indexOf(term) === -1) {
+                    hits.push(term);
+                }
+            });
+            return hits;
+        }
+
+        function previewForumModeration(title, content) {
+            var merged = String(title || '') + '\n' + String(content || '');
+            var hits = detectForumProfanity(merged);
+            return {
+                hasProfanity: hits.length > 0,
+                terms: hits,
+                status: hits.length ? 'pending' : 'approved'
+            };
+        }
+
+        function formatDetectedTerms(terms) {
+            var list = Array.isArray(terms) ? terms.slice(0, 6) : [];
+            if (!list.length) return '';
+            return list.join('、') + (terms.length > list.length ? ' 等' : '');
+        }
+
+        function addForumSacredBonusIfNeeded(text) {
+            if (!hasSacredName(text)) return;
+            try {
+                var key = 'causelaw_forum_bonus_total';
+                var cur = parseInt(localStorage.getItem(key) || '0', 10);
+                if (isNaN(cur)) cur = 0;
+                var next = cur + 1;
+                localStorage.setItem(key, String(next));
+                var netRaw = localStorage.getItem('causelaw_merit_net_score');
+                var net = parseInt(netRaw || '0', 10);
+                if (isNaN(net)) net = 0;
+                localStorage.setItem('causelaw_merit_net_score', String(net + 1));
+            } catch (e) {}
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const submitBtn = document.getElementById('submit-btn');
+            const statusEl = document.getElementById('submit-status');
+            const originalText = submitBtn.innerText;
+            var profile = window.CauseLawClient ? window.CauseLawClient.getProfile() : { displayName: '' };
+
+            function setSubmitStatus(message, tone) {
+                if (!statusEl) return;
+                statusEl.classList.remove('hidden', 'text-stone-500', 'text-red-400', 'text-emerald-400');
+                statusEl.classList.add(tone === 'error' ? 'text-red-400' : (tone === 'ok' ? 'text-emerald-400' : 'text-stone-500'));
+                statusEl.textContent = message;
+            }
+            
+            // 取得表單資料
+            const formData = {
+                display_name: document.getElementById('submit-name').value || profile.displayName || '匿名',
+                title: document.getElementById('submit-title').value,
+                category: document.getElementById('submit-category').value,
+                content: document.getElementById('submit-content').value,
+                status: 'pending' // 預設值，送出前會依不雅文字檢測調整
+            };
+            const moderationPreview = previewForumModeration(formData.title, formData.content);
+
+            // 每日投稿上限檢查（每會員／每裝置 3 篇）
+            var limitState = loadForumDailyState();
+            if (limitState.posts >= FORUM_MAX_POSTS_PER_DAY) {
+                setSubmitStatus('今日投稿已達 ' + FORUM_MAX_POSTS_PER_DAY + ' 篇上限，請明日再提交新的案例。', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+                return;
+            }
+
+            if (moderationPreview.hasProfanity) {
+                var termsText = formatDetectedTerms(moderationPreview.terms);
+                var warningMessage = termsText
+                    ? ('提交前偵測到可能不雅文字：' + termsText + '。建議先修正文案；若仍送出將改為人工審核。')
+                    : '提交前偵測到可能不雅文字。建議先修正文案；若仍送出將改為人工審核。';
+                setSubmitStatus(warningMessage, 'error');
+                var continueSubmit = window.confirm(warningMessage + '\n\n按「確定」仍可送出；按「取消」返回修改內容。');
+                if (!continueSubmit) return;
+            } else {
+                setSubmitStatus('內容檢測通過：未偵測到不雅文字，送出後會自動審核通過。', 'ok');
+            }
+
+            // 防止重複提交
+            submitBtn.disabled = true;
+            submitBtn.innerText = '提交中...';
+
+            try {
+                var savedRemote = false;
+                var remoteResult = null;
+                if (window.CauseLawClient && window.CauseLawClient.isReady()) {
+                    var sessionUser = await window.CauseLawClient.getSessionUser();
+                    if (!sessionUser) {
+                        setSubmitStatus('請先登入會員後再投稿。', 'error');
+                        return;
+                    }
+                    if (window.CauseLawClient.ensureMemberProfile) {
+                        await window.CauseLawClient.ensureMemberProfile(sessionUser);
+                    }
+                    remoteResult = await window.CauseLawClient.rpcCall(
+                        dbRpc('submitPost', 'causelaw_yinguo_v1.submit_post'),
+                        {
+                            p_display_name: formData.display_name,
+                            p_title: formData.title,
+                            p_category: formData.category,
+                            p_content: formData.content
+                        },
+                        'submit_post'
+                    );
+                    savedRemote = true;
+                } else {
+                    const submissions = JSON.parse(localStorage.getItem('causelaw_submissions') || '[]');
+                    submissions.push({
+                        ...formData,
+                        status: moderationPreview.status,
+                        id: Date.now().toString(),
+                        created_at: new Date().toISOString()
+                    });
+                    localStorage.setItem('causelaw_submissions', JSON.stringify(submissions));
+                }
+
+                // 記住顯示名稱供下次使用
+                if (formData.display_name && formData.display_name !== '匿名') {
+                    if (window.CauseLawClient) {
+                        window.CauseLawClient.setProfile({ displayName: formData.display_name });
+                    } else {
+                        localStorage.setItem('causelaw_display_name', formData.display_name);
+                    }
+                    updateMemberBar();
+                }
+                // 成功訊息
+                if (savedRemote) {
+                    var finalStatus = remoteResult && remoteResult.status ? remoteResult.status : moderationPreview.status;
+                    if (finalStatus === 'approved') {
+                        setSubmitStatus('投稿已送出並自動審核通過，已顯示於討論區。', 'ok');
+                    } else if (finalStatus === 'pending') {
+                        setSubmitStatus('投稿已送出；偵測到可能不雅文字，已轉人工複核。', 'info');
+                    } else {
+                        setSubmitStatus('投稿已送出，系統已接收資料。', 'ok');
+                    }
+                } else {
+                    setSubmitStatus('投稿已送出（本地模式）。目前尚未設定 Supabase，資料先暫存於此裝置。', 'info');
+                }
+
+                // 更新每日投稿次數與聖號加分
+                limitState.posts = (limitState.posts || 0) + 1;
+                saveForumDailyState(limitState);
+                addForumSacredBonusIfNeeded(formData.content);
+                
+                // 重置表單（保留顯示名稱）
+                form.reset();
+                var savedName = window.CauseLawClient ? window.CauseLawClient.effectiveDisplayName() : localStorage.getItem('causelaw_display_name');
+                if (savedName) document.getElementById('submit-name').value = savedName;
+            } catch (error) {
+                console.error('投稿失敗:', error);
+                var message = error && error.message
+                    ? error.message
+                    : '投稿失敗，請稍後再試。若已填 Supabase 設定，請確認資料表與 RLS 政策。';
+                setSubmitStatus(message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        }
+        async function updateMemberBar() {
+            var user = window.CauseLawClient ? await window.CauseLawClient.getSessionUser() : null;
+            if (user && window.CauseLawClient && window.CauseLawClient.ensureMemberProfile) {
+                try {
+                    await window.CauseLawClient.ensureMemberProfile(user);
+                } catch (err) {
+                    console.error('會員檔案初始化失敗:', err);
+                }
+            }
+            var profile = window.CauseLawClient ? window.CauseLawClient.getProfile() : { displayName: '' };
+            var name = (profile.displayName || '').trim() || (localStorage.getItem('causelaw_display_name') || '').trim();
+            var displayEl = document.getElementById('member-name-display');
+            var authBtn = document.getElementById('member-auth-btn');
+            var setBtn = document.getElementById('member-set-btn');
+            var clearBtn = document.getElementById('member-clear-btn');
+            var authState = user ? '已登入：' : '訪客';
+            var hasCustomName = Boolean(name && name !== '匿名');
+            var accountLabel = '';
+            if (user && user.email && window.CauseLawClient && typeof window.CauseLawClient.emailToAccount === 'function') {
+                accountLabel = window.CauseLawClient.emailToAccount(user.email);
+            } else if (user && user.email) {
+                accountLabel = user.email;
+            }
+            if (authBtn) authBtn.textContent = user ? '登出會員' : '會員登入';
+            if (displayEl) {
+                displayEl.textContent = user
+                    ? (authState + (hasCustomName ? name : (accountLabel || '會員')))
+                    : (hasCustomName ? (authState + '：' + name) : authState);
+                displayEl.classList.remove('hidden');
+            }
+            if (hasCustomName) {
+                setBtn.textContent = '更換';
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } else {
+                setBtn.textContent = '設定顯示名稱';
+                if (clearBtn) clearBtn.classList.add('hidden');
+            }
+            var input = document.getElementById('submit-name');
+            if (input) input.placeholder = hasCustomName ? name : '可留空（匿名投稿）';
+            if (input && !input.value && hasCustomName) input.value = name;
+        }
+        document.addEventListener('DOMContentLoaded', async function () {
+            await updateMemberBar();
+            var nameInput = document.getElementById('submit-name');
+            var initialName = window.CauseLawClient ? window.CauseLawClient.effectiveDisplayName() : localStorage.getItem('causelaw_display_name');
+            if (nameInput && initialName && initialName !== '匿名') {
+                nameInput.value = initialName;
+            }
+        });
+        window.addEventListener('causelaw:auth-state-changed', function () {
+            updateMemberBar();
+        });
+    </script>
+    <!-- ═══════════════════ FOOTER ═══════════════════ -->
+    <footer class="bg-black py-20 px-6 border-t border-gold/10">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
+            <div class="space-y-6 max-w-sm">
+                <div class="text-3xl font-black text-gold tracking-widest">因果真相</div>
+                <p class="text-stone-500 text-sm leading-relaxed">
+                    本網站旨在透過科技美學與傳統智慧的結合，向世人傳遞宇宙能量守恆與因果不虛的鐵律。
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-12">
+                <div class="space-y-4">
+                    <h4 class="text-white font-bold text-xs tracking-widest uppercase">快速導航</h4>
+                    <div class="flex flex-col gap-2 text-stone-500 text-xs">
+                        <a href="pages/deities.html" class="hover:text-gold">諸神殿堂</a>
+                        <a href="pages/hell.html" class="hover:text-gold">十八地獄</a>
+                        <a href="pages/realms.html" class="hover:text-gold">六道輪迴</a>
+                        <a href="pages/monitor.html" class="hidden hover:text-gold">監測系統</a>
+                        <a href="pages/cases.html" class="hover:text-gold">因果案例</a>
+                        <a href="pages/forum.html" class="hover:text-gold">討論區</a>
+                        <a href="pages/faq.html" class="hover:text-gold">疑難參悟</a>
+                        <a href="pages/guide.html" class="hover:text-gold">生活導航</a>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-white font-bold text-xs tracking-widest uppercase">修行工具</h4>
+                    <div class="flex flex-col gap-2 text-stone-500 text-xs">
+                        <a href="pages/merit.html" class="hover:text-gold">每日功過格</a>
+                        <a href="pages/audio.html" class="hover:text-gold text-purple-400/90">經咒・禪樂</a>
+                        <a href="pages/wall.html" class="hover:text-gold">懺悔祈福牆</a>
+                        <a href="pages/guide.html" class="hover:text-gold">生活導航</a>
+                        <a href="pages/quiz.html" class="hover:text-gold">覺醒測驗</a>
+                        <a href="pages/simulator.html" class="hover:text-gold">因果光場加持台</a>
+                        <a href="pages/forum.html" class="hover:text-gold">討論區</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 text-center">
+            <p class="text-[10px] text-stone-700 tracking-[0.4em] uppercase mb-4">
+                Powered by NEUXA • Law of Karma • 2026 Universe Operating System
+            </p>
+            <div class="text-[10px] text-stone-800 space-x-4">
+                <span>免責聲明：本站內容為哲學與宗教研究性質，不構成法律建議。</span>
+                <span>隱私政策：本站功過格數據存於本地瀏覽器，系統不收集個人隱私。</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- NEUXA Smart Assistant Floating Button -->
+    <button id="neuxa-assistant" class="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-[#d4af37]/40 shadow-[0_0_30px_rgba(212,175,55,0.3),0_0_60px_rgba(212,175,55,0.1)] hover:shadow-[0_0_40px_rgba(212,175,55,0.5),0_0_80px_rgba(212,175,55,0.2)] transition-all duration-500 group" onclick="toggleNeuxaAssistant()">
+        <div class="absolute inset-0 rounded-full bg-[#d4af37]/10 animate-pulse"></div>
+        <div class="absolute inset-2 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <svg class="w-8 h-8 mx-auto text-[#d4af37] relative z-10 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+        </svg>
+        <div class="absolute -top-1 -right-1 w-4 h-4 bg-[#d4af37] rounded-full flex items-center justify-center">
+            <div class="w-2 h-2 bg-[#020202] rounded-full animate-pulse"></div>
+        </div>
+    </button>
+    
+    <!-- NEUXA Assistant Modal -->
+    <div id="neuxa-modal" class="fixed bottom-28 right-8 z-50 w-80 bg-[#0a0a0a] border border-[#d4af37]/30 rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.8)] transform translate-y-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="p-4 border-b border-[#d4af37]/20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#d4af37]/30 to-[#d4af37]/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-[#d4af37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-[#d4af37] font-bold text-sm tracking-wider">NEUXA</h4>
+                    <p class="text-stone-500 text-[10px]">Smart Assistant</p>
+                </div>
+            </div>
+            <button onclick="toggleNeuxaAssistant()" class="text-stone-500 hover:text-[#d4af37] transition">×</button>
+        </div>
+        <div class="p-4 space-y-3">
+            <p class="text-stone-400 text-sm leading-relaxed">我是 NEUXA，您的智慧修行助手。</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.location.href='pages/guide.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">生活導航</button>
+                <button onclick="window.location.href='pages/quiz.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">覺醒測驗</button>
+                <button onclick="window.location.href='pages/merit.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">功過格</button>
+                <button onclick="window.location.href='pages/faq.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">疑難參悟</button>
+            </div>
+            <div class="pt-2 border-t border-[#d4af37]/10">
+                <p class="text-stone-600 text-[10px] text-center">Powered by NEUXA Intelligence</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let neuxaOpen = false;
+        function toggleNeuxaAssistant() {
+            const modal = document.getElementById('neuxa-modal');
+            neuxaOpen = !neuxaOpen;
+            if (neuxaOpen) {
+                modal.classList.remove('translate-y-4', 'opacity-0', 'pointer-events-none');
+            } else {
+                modal.classList.add('translate-y-4', 'opacity-0', 'pointer-events-none');
+            }
+        }
+    </script>
+</body>
+</html>

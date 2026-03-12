@@ -1,0 +1,182 @@
+{
+  "metadata": {
+    "survey_date": "2026-02-16",
+    "executor": "Subagent (Gemini Flash 2.5)",
+    "workspace": "~/.openclaw/workspace",
+    "qdrant_status": "stopped",
+    "total_files_found": 26
+  },
+  "qdrant_database": {
+    "status": "not_running",
+    "error": "Connection refused: localhost:6333",
+    "data_directory": "~/.openclaw/qdrant",
+    "collections_dir_empty": true,
+    "configured_collections": [
+      {
+        "name": "memory_smart_chunks",
+        "vector_size": 768,
+        "distance": "Cosine",
+        "purpose": "主要索引（智能切塊）"
+      },
+      {
+        "name": "memory_chunks",
+        "vector_size": 768,
+        "distance": "Cosine",
+        "purpose": "舊版切塊索引"
+      },
+      {
+        "name": "memory_index",
+        "vector_size": 4096,
+        "distance": "Cosine",
+        "purpose": "測試用（qwen3:8b）"
+      }
+    ]
+  },
+  "embedding_models": [
+    {
+      "name": "nomic-embed-text",
+      "dimensions": 768,
+      "source": "Ollama",
+      "status": "primary"
+    },
+    {
+      "name": "mxbai-embed-large",
+      "dimensions": 768,
+      "source": "Ollama",
+      "status": "alternate"
+    },
+    {
+      "name": "google/embeddinggemma-300m",
+      "dimensions": 256,
+      "source": "HuggingFace",
+      "status": "experimental"
+    }
+  ],
+  "core_scripts": [
+    {
+      "path": "scripts/recall",
+      "type": "bash",
+      "function": "快速召回入口",
+      "status": "available"
+    },
+    {
+      "path": "scripts/smart-recall.py",
+      "type": "python",
+      "function": "智能召回核心",
+      "status": "available"
+    },
+    {
+      "path": "scripts/smart-chunk-indexer.sh",
+      "type": "bash",
+      "function": "智能切塊索引器",
+      "status": "available"
+    },
+    {
+      "path": "scripts/index-with-chunks.sh",
+      "type": "bash",
+      "function": "固定切塊索引",
+      "status": "available"
+    },
+    {
+      "path": "scripts/vector-index-manager.sh",
+      "type": "bash",
+      "function": "索引管理系統",
+      "status": "available"
+    },
+    {
+      "path": "scripts/build-vector-index.sh",
+      "type": "bash",
+      "function": "完整向量索引建立",
+      "status": "available"
+    },
+    {
+      "path": "scripts/auto-index-trigger.sh",
+      "type": "bash",
+      "function": "Autopilot自動觸發",
+      "status": "available"
+    },
+    {
+      "path": "scripts/test-recall-accuracy.sh",
+      "type": "bash",
+      "function": "召回準確率測試",
+      "status": "available"
+    },
+    {
+      "path": "scripts/embedding_indexer.py",
+      "type": "python",
+      "function": "EmbeddingGemma索引",
+      "status": "available"
+    }
+  ],
+  "alternative_implementations": [
+    {
+      "path": "memory/scripts/memory_store.py",
+      "type": "python",
+      "backend": "ChromaDB + sentence-transformers",
+      "status": "backup"
+    },
+    {
+      "path": "scripts/memory_recall.js",
+      "type": "nodejs",
+      "backend": "JavaScript",
+      "status": "backup"
+    }
+  ],
+  "documentation": [
+    {
+      "path": "memory/UNIVERSAL-MEMORY-SYSTEM.md",
+      "type": "full_documentation",
+      "topic": "通用記憶系統"
+    },
+    {
+      "path": "scripts/README-UNIVERSAL-MEMORY.md",
+      "type": "quick_reference",
+      "topic": "快速參考"
+    },
+    {
+      "path": "QUICK-START-智能召回.md",
+      "type": "quick_start",
+      "topic": "智能召回快速開始"
+    }
+  ],
+  "technical_specifications": {
+    "vector_dimension": 768,
+    "chunking_strategy": "smart_by_paragraph",
+    "max_chunk_size": 3000,
+    "chunk_overlap": 200,
+    "expected_accuracy": "95%+",
+    "search_latency": "< 3 seconds",
+    "cost": "$0 (local Ollama)"
+  },
+  "issues": {
+    "critical": [
+      {
+        "id": 1,
+        "issue": "Qdrant服務未運行",
+        "impact": "向量搜尋完全無法使用",
+        "solution": "啟動Docker Qdrant容器"
+      },
+      {
+        "id": 2,
+        "issue": "缺少索引資料",
+        "impact": "即使Qdrant啟動也無法搜尋",
+        "solution": "執行./scripts/smart-chunk-indexer.sh"
+      }
+    ],
+    "medium": [
+      {
+        "id": 3,
+        "issue": "元資料提取問題",
+        "detail": "部分檔案日期顯示為1770-90-95",
+        "location": "smart-chunk-indexer.sh"
+      }
+    ],
+    "low": [
+      {
+        "id": 4,
+        "issue": "Collection命名不一致",
+        "detail": "多個腳本使用不同collection名稱"
+      }
+    ]
+  }
+}

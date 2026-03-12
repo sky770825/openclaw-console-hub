@@ -1,0 +1,12 @@
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+RECOVERY_SCRIPT="$SCRIPT_DIR/restore.command"
+
+# 開啟 Terminal 並執行恢復腳本
+osascript <<APPLESCRIPT
+tell application "Terminal"
+    activate
+    do script "cd \"$(dirname "$RECOVERY_SCRIPT")\" && \"$(basename "$RECOVERY_SCRIPT")\"; exit"
+    set window 1's current settings to settings set "Homebrew"
+end tell
+APPLESCRIPT

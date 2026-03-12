@@ -1,0 +1,4 @@
+Project: 因果真相 (Causal Truth)
+Status: Phase 1 Initiated
+Last Updated: Sat Feb 28 10:29:47 CST 2026
+Files Generated: STRATEGY_MEETING_NOTES.md, TASK_BOARD_PHASE_1.md, PROJECT_ROADMAP.md

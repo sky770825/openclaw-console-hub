@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="閱讀單篇投稿全文與留言互動，追蹤每則故事的背景、回饋與後續參悟。">
+    <meta property="og:title" content="投稿詳情 | 因果討論區">
+    <meta property="og:description" content="閱讀單篇投稿全文與留言互動，追蹤每則故事的背景、回饋與後續參悟。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/post.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="投稿詳情 | 因果討論區">
+    <meta name="twitter:description" content="閱讀單篇投稿全文與留言互動，追蹤每則故事的背景、回饋與後續參悟。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>投稿詳情 | 因果討論區</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../causelaw-config.js" defer></script>
+    <script src="../causelaw-client.js" defer></script>
+    <script src="../causelaw-ui.js" defer></script>
+    <script src="../causelaw-auth.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .post-content {
+            border-left: 10px solid var(--gold);
+            background: rgba(20, 20, 20, 0.8);
+            padding: 4rem;
+            margin-bottom: 4rem;
+            box-shadow: 20px 20px 60px rgba(0,0,0,0.5);
+        }
+        .post-category {
+            color: var(--gold);
+            font-weight: bold;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border: 1px solid var(--gold);
+            background: rgba(212,175,55,0.1);
+        }
+        .comment-card {
+            background: rgba(15, 15, 15, 0.6);
+            border-left: 3px solid rgba(212,175,55,0.3);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .comment-card:hover {
+            border-left-color: var(--gold);
+            background: rgba(20, 20, 20, 0.8);
+        }
+        .comment-reply {
+            margin-left: 3rem;
+            margin-top: 1rem;
+            border-left: 2px solid rgba(212,175,55,0.2);
+            padding-left: 2rem;
+        }
+        .comment-form {
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid var(--gold);
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body class="px-6 md:px-20 bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition text-gold">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-5xl mx-auto">
+        <div class="mb-8">
+            <a href="forum.html" class="text-gold hover:text-goldBright transition">← 返回討論區</a>
+        </div>
+
+        <!-- 投稿內容 -->
+        <div id="post-content" class="post-content">
+            <div class="text-center text-stone-500 py-20">
+                <p>載入中...</p>
+            </div>
+        </div>
+
+        <!-- 留言區 -->
+        <div class="mt-12">
+            <h2 class="text-3xl text-gold mb-2 tracking-[0.3em]">留言討論</h2>
+            <p class="text-sm text-amber-200/90 mb-6">所有留言皆為公開可見，請以真實、善意內容回應。</p>
+            
+            <!-- 留言列表 -->
+            <div id="comments-container">
+                <div class="text-center text-stone-500 py-10">
+                    <p>載入留言中...</p>
+                </div>
+            </div>
+
+            <!-- 留言表單 -->
+            <div class="comment-form">
+                <h3 class="text-xl text-gold mb-4">發表留言</h3>
+                <form onsubmit="submitComment(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-gold mb-2 text-sm">您的稱呼</label>
+                        <input type="text" id="comment-name" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none" placeholder="可留空（匿名）">
+                    </div>
+                    <div>
+                        <label class="block text-gold mb-2 text-sm">留言內容（公開可見，請填寫真實、善意內容）</label>
+                        <textarea id="comment-content" rows="4" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none" placeholder="分享您的想法或見證（留言將公開顯示於討論區）..." required></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-4 bg-gold text-black text-lg font-black tracking-[0.2em] hover:bg-goldBright transition-all">
+                        提交留言
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-20 text-center border-t border-gold/20">
+        <p class="text-gold tracking-[0.5em] text-xl">因果真相 • 分毫不差</p>
+    </footer>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+        let currentPost = null;
+        let comments = [];
+        const COMMENT_LIKED_KEY_PREFIX = 'causelaw_comment_liked_';
+        const FORUM_LIMIT_KEY = 'causelaw_forum_limits_v1';
+        const FORUM_MAX_COMMENTS_PER_DAY = 20;
+
+        function uiToast(message, tone) {
+            if (window.CauseLawUI && typeof window.CauseLawUI.showToast === 'function') {
+                window.CauseLawUI.showToast(message, tone || 'info');
+            }
+        }
+
+        function dbTable(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.tables && db.tables[name]) return db.tables[name];
+            return fallback;
+        }
+
+        function dbRpc(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.rpc && db.rpc[name]) return db.rpc[name];
+            return fallback;
+        }
+
+        const MOCK_POSTS = {
+            'sample-1': { id: 'sample-1', title: '長輩告誡勿造口業，多年後我親身應驗', content: '小時候阿嬤常說「話不要亂講，會報在自己身上」，我當時不信。出社會後曾在背後說同事偷懶、搞小團體，結果沒幾年自己換部門被孤立，還因一句玩笑被當成造謠。後來去佛堂聽聞因果，開始每天念〈淨口神咒〉三遍、〈大悲咒〉一遍，並在心裡向被我傷過的人懺悔。大約三個月後，說話前會自然停一下，職場氣氛也慢慢和緩，才真正體會「口業最易造、也最易報」這句話。', category: '口業之報', author: '回頭是岸', viewCount: 128, commentCount: 12, likeCount: 45, createdAt: '2026-02-26T10:30:00.000Z' },
+            'sample-2': { id: 'sample-2', title: '持續助人幾年後，家中長輩奇蹟好轉', content: '母親病了很久，我除了照顧她，也固定捐款、當志工，沒有特別求什麼。主治醫師曾提醒我們「要有心理準備」，那段時間家人開始每天合掌念〈般若波羅蜜多心經〉與「南無阿彌陀佛」，把功德迴向給母親及一切病苦眾生。大約兩個月後回診，檢查指數雖未完全正常，卻穩定下來，母親也漸漸能自己坐起、下床幾步，連醫師都說「恢復速度超出預期」。我不敢說全部是誦經造成，但更願意相信善念與願力確實有影響。', category: '善行之報', author: '一念善', viewCount: 256, commentCount: 28, likeCount: 89, createdAt: '2026-02-25T14:00:00.000Z' },
+            'sample-3': { id: 'sample-3', title: '夢見已故父親指著一筆錢，醒來發現真相', content: '父親過世後我常夢到他。有一晚夢裡，他站在老家書房的櫃子前，一句話都沒說，只是用手一直指著最下層。那陣子我剛開始每天念〈地藏菩薩本願經〉部分品，並以父親名字迴向。隔天回老家整理遺物，在那格櫃子的一本舊書裡，真的翻出一疊他存起來、寫著「孫子學費」的現金，家人誰也不知道有這筆。當下淚流不止，也把錢依他心意用在孩子教育與部分布施，心裡覺得：念經不是在求神蹟，而是在讓自己有力量做對的選擇。', category: '靈異經驗', author: '念親恩', viewCount: 312, commentCount: 41, likeCount: 102, createdAt: '2026-02-24T09:15:00.000Z' },
+            'sample-4': { id: 'sample-4', title: '貪了不該拿的錢，一年內全賠光還倒貼', content: '之前有機會從公款裡「挪一點」沒人發現，我動了貪念，心想「先用一下，之後再補回來」。結果不到一年，投資連續失利、家人住院開刀，把那幾筆全吐回去還不夠，又背上一身債。那時在寺院聽聞〈梁皇寶懺〉與〈地藏菩薩本願經〉，才真正意識到「占公家、騙他人」不是小事。之後我每月固定還款、參加兩次梁皇法會，並每天念幾句「南無地藏王菩薩」提醒自己不再貪。雖然錢沒有突然回來，但心不再那麼慌，工作也慢慢穩定，知道那是自己該承擔的果報。', category: '貪婪之報', author: '悔不當初', viewCount: 198, commentCount: 19, likeCount: 67, createdAt: '2026-02-23T16:45:00.000Z' },
+            'sample-5': { id: 'sample-5', title: '表面做善事、心裡在算計，最後人緣盡失', content: '以前我很愛參加公益活動，看起來很熱心，其實內心一直在算「這樣別人會怎麼看我」。有一次被熟識的師兄當面說：「你做得很多，但好像都在意別人眼光。」當下覺得被冒犯，事後讀〈般若波羅蜜多心經〉時，看見「無所得故」幾個字，突然很刺眼。那段時間我刻意減少發社群貼文，只是安靜去做、做完回家念幾遍心經迴向，不再特別說給誰聽。慢慢地，身邊願意真心相處的人又回來了，也比較能分辨誰是為了「人脈」、誰是真的朋友。', category: '偽善之報', author: '誠實面對自己', viewCount: 176, commentCount: 22, likeCount: 58, createdAt: '2026-02-22T11:20:00.000Z' },
+            'sample-6': { id: 'sample-6', title: '無意間一句話傷了人，多年後對方仍記得', content: '高中時曾當眾嘲笑一位同學的穿著，當時覺得只是玩笑。多年後同學會再見面，他淡淡說：「你以前那句話我記到現在。」我當場道歉，他也說早就放下，但我自己心裡很沉。那之後我每天睡前會念幾遍〈淨口神咒〉與心經，並在心裡向所有被我言語傷過的人說對不起。慢慢發現，自己在開口前會多一點覺察，連家人都說我脾氣變溫和，這讓我更確定改口業是可以一點一滴做到的。', category: '口業之報', author: '慎言', viewCount: 221, commentCount: 31, likeCount: 76, createdAt: '2026-02-21T08:00:00.000Z' },
+            'sample-7': { id: 'sample-7', title: '其他：相信因果之後，心比較安', content: '以前我不太信因果，覺得只要夠努力就能掌控一切。這幾年遇到幾次「剛好」：曾經在工作上佔別人便宜，不久就換成自己被同樣方式對待；也有默默幫忙別人的時候，事後又在別的地方無預期地得到幫助。後來開始固定讀〈地藏菩薩本願經〉與心經，不是為了求什麼，而是提醒自己「每個念頭都算數」。現在做選擇時會多想一層「這樣對別人公平嗎」，心也比以前安定，不再那麼焦躁比較。', category: '其他', author: '過路人', viewCount: 145, commentCount: 15, likeCount: 52, createdAt: '2026-02-20T13:30:00.000Z' }
+        };
+        const MOCK_COMMENTS = {
+            'sample-1': [
+                { id: 's1-c1', author: '蓮友', content: '謝謝分享，口業真的最容易犯。我也在學著話出口前先想三秒，一起共勉。', createdAt: '2026-02-26T14:20:00.000Z', likeCount: 8, parentId: null },
+                { id: 's1-c2', author: '善護口業', content: '能反省並寫出來提醒大家，本身就是很大的功德。願你之後一切順心。', createdAt: '2026-02-26T16:45:00.000Z', likeCount: 5, parentId: null },
+                { id: 's1-c3', author: '路人甲', content: '阿嬤的智慧真的不能輕忽，長輩的話要聽。', createdAt: '2026-02-26T18:10:00.000Z', likeCount: 3, parentId: 's1-c1' }
+            ],
+            'sample-2': [
+                { id: 's2-c1', author: '隨喜', content: '隨喜讚嘆！持續行善、不問回報，這樣的心念本身就有力量。祝伯母身體越來越好。', createdAt: '2026-02-25T18:00:00.000Z', likeCount: 15, parentId: null },
+                { id: 's2-c2', author: '感恩分享', content: '看了很感動，也提醒自己要多付出。善的循環真的存在。', createdAt: '2026-02-25T20:30:00.000Z', likeCount: 9, parentId: null },
+                { id: 's2-c3', author: '一念善', content: '謝謝大家的祝福，母親這幾天精神又更好一點了。感恩。', createdAt: '2026-02-26T09:00:00.000Z', likeCount: 12, parentId: 's2-c1' }
+            ],
+            'sample-3': [
+                { id: 's3-c1', author: '念親恩', content: '補充：後來有把一部分捐給清寒學生，當作父親的遺愛。', createdAt: '2026-02-24T12:00:00.000Z', likeCount: 22, parentId: null },
+                { id: 's3-c2', author: '有緣人', content: '你父親一定很欣慰。把錢用在教育上是最有意義的。', createdAt: '2026-02-24T15:20:00.000Z', likeCount: 11, parentId: 's3-c1' },
+                { id: 's3-c3', author: '感恩', content: '這種感應故事讓人相信冥冥之中有守護，謝謝分享。', createdAt: '2026-02-24T19:45:00.000Z', likeCount: 7, parentId: null }
+            ],
+            'sample-4': [
+                { id: 's4-c1', author: '同路人', content: '能坦誠寫出來需要勇氣。肯改過就是好的開始，祝福你早日還清、心安理得。', createdAt: '2026-02-23T20:00:00.000Z', likeCount: 14, parentId: null },
+                { id: 's4-c2', author: '因果不虛', content: '謝謝你的分享，對大家是很好的警惕。老實還債、不再犯，未來會越來越好的。', createdAt: '2026-02-24T08:30:00.000Z', likeCount: 9, parentId: null }
+            ],
+            'sample-5': [
+                { id: 's5-c1', author: '覺察', content: '能承認自己曾經是「做給別人看」，已經很不容易。心態轉了，福報就會慢慢回來。', createdAt: '2026-02-22T15:00:00.000Z', likeCount: 18, parentId: null },
+                { id: 's5-c2', author: '默默行善', content: '現在學著默默做、不張揚，真的會比較踏實。一起加油。', createdAt: '2026-02-22T17:45:00.000Z', likeCount: 6, parentId: 's5-c1' }
+            ],
+            'sample-6': [
+                { id: 's6-c1', author: '慎言', content: '謝謝樓下各位的鼓勵，我會繼續提醒自己。', createdAt: '2026-02-21T10:00:00.000Z', likeCount: 4, parentId: null },
+                { id: 's6-c2', author: '話到嘴邊留三分', content: '你的經歷對很多人是提醒。能當面道歉並記取教訓，已經很好了。', createdAt: '2026-02-21T12:30:00.000Z', likeCount: 10, parentId: null },
+                { id: 's6-c3', author: '感恩', content: '口業最難修，一起共勉。多念佛、多靜心，話自然會少而穩。', createdAt: '2026-02-21T14:20:00.000Z', likeCount: 7, parentId: null }
+            ],
+            'sample-7': [
+                { id: 's7-c1', author: '信願行', content: '心比較安，就是最大的收穫。因果不是嚇人的，是讓人懂得選擇。', createdAt: '2026-02-20T16:00:00.000Z', likeCount: 11, parentId: null },
+                { id: 's7-c2', author: '過路人', content: '謝謝，也祝大家都能在信與不信之間找到自己的平衡。', createdAt: '2026-02-20T18:30:00.000Z', likeCount: 6, parentId: 's7-c1' }
+            ]
+        };
+
+        function escapeHtml(value) {
+            const d = document.createElement('div');
+            d.textContent = value == null ? '' : String(value);
+            return d.innerHTML;
+        }
+
+
+        function mapDbPost(row) {
+            return {
+                id: row.id,
+                title: row.title || '(未命名)',
+                content: row.content || '',
+                category: row.category || '其他',
+                author: row.display_name || '匿名',
+                viewCount: Number(row.view_count || 0),
+                commentCount: Number(row.comment_count || 0),
+                likeCount: Number(row.like_count || 0),
+                createdAt: row.created_at || new Date().toISOString(),
+                source: 'supabase'
+            };
+        }
+
+        function getTodayLocalDate() {
+            var d = new Date();
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate() + 0).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function loadForumDailyState() {
+            var today = getTodayLocalDate();
+            try {
+                var raw = localStorage.getItem(FORUM_LIMIT_KEY);
+                if (!raw) return { date: today, posts: 0, comments: 0 };
+                var obj = JSON.parse(raw);
+                if (!obj || obj.date !== today) return { date: today, posts: 0, comments: 0 };
+                if (typeof obj.posts !== 'number') obj.posts = 0;
+                if (typeof obj.comments !== 'number') obj.comments = 0;
+                return obj;
+            } catch (e) {
+                return { date: today, posts: 0, comments: 0 };
+            }
+        }
+
+        function saveForumDailyState(st) {
+            try {
+                localStorage.setItem(FORUM_LIMIT_KEY, JSON.stringify(st));
+            } catch (e) {}
+        }
+
+        function hasSacredName(text) {
+            var t = (text || '').trim();
+            if (!t) return false;
+            var keywords = ['阿彌陀佛','南無阿彌陀佛','南無本師釋迦牟尼佛','釋迦牟尼佛','觀世音菩薩','南無觀世音菩薩','地藏菩薩','南無地藏菩薩','南無大悲觀世音菩薩','南無準提菩薩'];
+            return keywords.some(function (k) { return t.indexOf(k) !== -1; });
+        }
+
+        function addForumSacredBonusIfNeeded(text) {
+            if (!hasSacredName(text)) return;
+            try {
+                var key = 'causelaw_forum_bonus_total';
+                var cur = parseInt(localStorage.getItem(key) || '0', 10);
+                if (isNaN(cur)) cur = 0;
+                var next = cur + 1;
+                localStorage.setItem(key, String(next));
+                var netRaw = localStorage.getItem('causelaw_merit_net_score');
+                var net = parseInt(netRaw || '0', 10);
+                if (isNaN(net)) net = 0;
+                localStorage.setItem('causelaw_merit_net_score', String(net + 1));
+            } catch (e) {}
+        }
+
+        function mapDbComment(row) {
+            return {
+                id: row.id,
+                author: row.display_name || '匿名',
+                content: row.content || '',
+                likeCount: Number(row.like_count || 0),
+                createdAt: row.created_at || new Date().toISOString(),
+                parentId: row.parent_id || null
+            };
+        }
+
+        async function loadPost() {
+            if (!postId) {
+                document.getElementById('post-content').innerHTML = '<div class="text-center text-stone-500 py-20"><p>找不到投稿</p></div>';
+                return;
+            }
+
+            if (window.CauseLawClient && window.CauseLawClient.isReady()) {
+                try {
+                    const supabase = window.CauseLawClient.getClient();
+                    const postQuery = await supabase
+                        .from(dbTable('posts', 'causelaw_yinguo_v1.posts'))
+                        .select('id,title,content,category,display_name,view_count,comment_count,like_count,created_at,status')
+                        .eq('id', postId)
+                        .eq('status', 'approved')
+                        .maybeSingle();
+                    if (postQuery.error) throw postQuery.error;
+                    if (postQuery.data) {
+                        currentPost = mapDbPost(postQuery.data);
+                        renderPost();
+                        var viewCount = Number(currentPost.viewCount || 0) + 1;
+                        try {
+                            var viewRpc = await supabase.rpc(dbRpc('incrementPostView', 'causelaw_yinguo_v1.increment_post_view'), { p_post_id: currentPost.id });
+                            if (!viewRpc.error && viewRpc.data != null) {
+                                viewCount = Number(viewRpc.data || viewCount);
+                            } else if (viewRpc.error) {
+                                console.error('更新瀏覽次數失敗:', viewRpc.error);
+                            }
+                        } catch (incErr) {
+                            console.error('更新瀏覽次數失敗:', incErr);
+                        }
+                        currentPost.viewCount = viewCount;
+                        renderPost();
+
+                        const commentsQuery = await supabase
+                            .from(dbTable('comments', 'causelaw_yinguo_v1.comments'))
+                            .select('id,display_name,content,parent_id,like_count,created_at')
+                            .eq('post_id', currentPost.id)
+                            .order('created_at', { ascending: true });
+                        if (commentsQuery.error) throw commentsQuery.error;
+                        comments = (commentsQuery.data || []).map(mapDbComment);
+                        renderComments();
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Supabase 讀取投稿失敗，改用本地資料:', err);
+                }
+            }
+
+            if (postId && postId.indexOf('approved_') === 0) {
+                const approvedRaw = localStorage.getItem('causelaw_approved_posts') || '[]';
+                const approved = JSON.parse(approvedRaw);
+                const found = approved.find(function (p) { return p.id === postId; }) || null;
+                currentPost = found ? {
+                    id: found.id,
+                    title: found.title,
+                    content: found.content,
+                    category: found.category,
+                    author: found.author || found.display_name || '匿名',
+                    viewCount: Number(found.viewCount || found.view_count || 0),
+                    commentCount: Number(found.commentCount || found.comment_count || 0),
+                    likeCount: Number(found.likeCount || found.like_count || 0),
+                    createdAt: found.createdAt || found.created_at || new Date().toISOString(),
+                    source: 'local_approved'
+                } : null;
+                const commentsRaw = localStorage.getItem('causelaw_post_comments_' + postId) || '[]';
+                comments = JSON.parse(commentsRaw);
+            } else {
+                currentPost = MOCK_POSTS[postId] || null;
+                comments = (MOCK_COMMENTS[postId] || []).slice();
+            }
+
+            if (!currentPost) {
+                document.getElementById('post-content').innerHTML = '<div class="text-center text-stone-500 py-20"><p>找不到該投稿</p><a href="forum.html" class="text-gold hover:underline">返回討論區</a></div>';
+                document.getElementById('comments-container').innerHTML = '';
+                return;
+            }
+            renderPost();
+            renderComments();
+        }
+
+        function renderPost() {
+            if (!currentPost) return;
+            const container = document.getElementById('post-content');
+            container.innerHTML = `
+                <span class="post-category">${escapeHtml(currentPost.category || '其他')}</span>
+                <h1 class="text-4xl text-gold mb-6">${escapeHtml(currentPost.title || '(未命名)')}</h1>
+                <div class="flex gap-4 text-stone-500 mb-6 text-sm">
+                    <span>👤 ${escapeHtml(currentPost.author || '匿名')}</span>
+                    <span>👁️ ${Number(currentPost.viewCount || 0)}</span>
+                    <span>💬 ${Number(currentPost.commentCount || 0)}</span>
+                    <span>❤️ ${Number(currentPost.likeCount || 0)}</span>
+                    <span>🕐 ${escapeHtml(formatDate(currentPost.createdAt))}</span>
+                </div>
+                <div class="text-stone-300 leading-relaxed whitespace-pre-line">${escapeHtml(currentPost.content || '')}</div>
+            `;
+        }
+
+        function renderComments() {
+            const container = document.getElementById('comments-container');
+            if (comments.length === 0) {
+                container.innerHTML = '<div class="text-center text-stone-500 py-10"><p>目前沒有留言</p></div>';
+                return;
+            }
+            const mainComments = comments.filter(function (c) { return !c.parentId; });
+            const replies = comments.filter(function (c) { return c.parentId; });
+            container.innerHTML = mainComments.map(function (comment) {
+                const commentReplies = replies.filter(function (r) { return r.parentId === comment.id; });
+                return `
+                    <div class="comment-card">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-gold font-bold">${escapeHtml(comment.author || '匿名')}</span>
+                                <span class="text-stone-500 text-sm ml-3">${escapeHtml(formatDate(comment.createdAt))}</span>
+                            </div>
+                            ${renderLikeButton(comment.id, comment.likeCount)}
+                        </div>
+                        <p class="text-stone-300 leading-relaxed">${escapeHtml(comment.content || '')}</p>
+                        ${commentReplies.map(function (reply) {
+                            return `
+                                <div class="comment-reply">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span class="text-gold font-bold">${escapeHtml(reply.author || '匿名')}</span>
+                                            <span class="text-stone-500 text-sm ml-3">${escapeHtml(formatDate(reply.createdAt))}</span>
+                                        </div>
+                                        ${renderLikeButton(reply.id, reply.likeCount)}
+                                    </div>
+                                    <p class="text-stone-300 leading-relaxed">${escapeHtml(reply.content || '')}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function likedStorageKey() {
+            const scope = (currentPost && currentPost.id) ? currentPost.id : (postId || 'unknown');
+            return COMMENT_LIKED_KEY_PREFIX + scope;
+        }
+
+        function getLikedMap() {
+            try {
+                const raw = localStorage.getItem(likedStorageKey()) || '{}';
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (err) {
+                return {};
+            }
+        }
+
+        function hasLiked(commentId) {
+            const map = getLikedMap();
+            return Boolean(map[commentId]);
+        }
+
+        function markLiked(commentId) {
+            const map = getLikedMap();
+            map[commentId] = Date.now();
+            localStorage.setItem(likedStorageKey(), JSON.stringify(map));
+        }
+
+        function renderLikeButton(commentId, likeCount) {
+            const liked = hasLiked(commentId);
+            const cls = liked
+                ? 'text-gold/70 cursor-not-allowed transition'
+                : 'text-stone-500 hover:text-gold transition';
+            const text = liked ? `已按讚 ${likeCount}` : `❤️ ${likeCount}`;
+            const disabled = liked ? 'disabled aria-disabled="true"' : '';
+            return `<button type="button" class="${cls} comment-like-btn" data-comment-id="${escapeHtml(commentId)}" ${disabled}>${escapeHtml(text)}</button>`;
+        }
+
+        async function submitComment(e) {
+            e.preventDefault();
+            if (!currentPost) return;
+            const form = e.target;
+            const nameInput = document.getElementById('comment-name');
+            const contentInput = document.getElementById('comment-content');
+            const name = (nameInput.value || (window.CauseLawClient ? window.CauseLawClient.effectiveDisplayName() : '匿名') || '匿名').trim();
+            const content = (contentInput.value || '').trim();
+            if (!content) return;
+            if (content.length > 100) {
+                alert('留言字數請控制在 100 字以內（目前約 ' + content.length + ' 字），可精簡重寫後再送出。');
+                return;
+            }
+
+            // 每日留言上限檢查（每會員／每裝置 20 則）
+            var limitState = loadForumDailyState();
+            if (limitState.comments >= FORUM_MAX_COMMENTS_PER_DAY) {
+                alert('今日留言已達 ' + FORUM_MAX_COMMENTS_PER_DAY + ' 則上限，請明日再繼續分享與回應。');
+                return;
+            }
+
+            if (currentPost.source === 'supabase' && window.CauseLawClient && window.CauseLawClient.isReady()) {
+                const sessionUser = await window.CauseLawClient.getSessionUser();
+                if (!sessionUser) {
+                    uiToast('請先登入會員後再留言。', 'error');
+                    return;
+                }
+                try {
+                    if (window.CauseLawClient.ensureMemberProfile) {
+                        await window.CauseLawClient.ensureMemberProfile(sessionUser);
+                    }
+                    const rpcData = await window.CauseLawClient.rpcCall(
+                        dbRpc('submitComment', 'causelaw_yinguo_v1.submit_comment'),
+                        {
+                            p_post_id: currentPost.id,
+                            p_display_name: name || '匿名',
+                            p_content: content,
+                            p_parent_id: null
+                        },
+                        'submit_comment'
+                    );
+                    const commentRow = rpcData && rpcData.comment ? rpcData.comment : rpcData;
+                    if (!commentRow || !commentRow.id) throw new Error('留言回傳資料格式錯誤。');
+                    comments.push(mapDbComment(commentRow));
+                    currentPost.commentCount = Number(
+                        rpcData && rpcData.comment_count != null
+                            ? rpcData.comment_count
+                            : (Number(currentPost.commentCount || 0) + 1)
+                    );
+                    renderPost();
+                    renderComments();
+                    form.reset();
+                    // 更新每日留言次數與聖號加分
+                    limitState.comments = (limitState.comments || 0) + 1;
+                    saveForumDailyState(limitState);
+                    addForumSacredBonusIfNeeded(content);
+                    if (window.CauseLawClient) {
+                        window.CauseLawClient.setProfile({ displayName: name });
+                    }
+                    nameInput.value = name;
+                    return;
+                } catch (err) {
+                    console.error('Supabase 留言失敗:', err);
+                    uiToast((err && err.message) || '留言失敗，請稍後再試。', 'error');
+                    return;
+                }
+            }
+
+            const newComment = {
+                id: Date.now().toString(),
+                author: name || '匿名',
+                content: content,
+                likeCount: 0,
+                createdAt: new Date().toISOString(),
+                parentId: null
+            };
+            comments.push(newComment);
+            if (currentPost && currentPost.id && currentPost.id.indexOf('approved_') === 0) {
+                localStorage.setItem('causelaw_post_comments_' + currentPost.id, JSON.stringify(comments));
+            }
+            currentPost.commentCount = Number(currentPost.commentCount || 0) + 1;
+            renderPost();
+            renderComments();
+            form.reset();
+            limitState.comments = (limitState.comments || 0) + 1;
+            saveForumDailyState(limitState);
+            addForumSacredBonusIfNeeded(content);
+            if (window.CauseLawClient) {
+                window.CauseLawClient.setProfile({ displayName: name });
+            }
+            nameInput.value = name;
+        }
+
+        async function likeComment(commentId) {
+            const comment = comments.find(function (c) { return c.id === commentId; });
+            if (!comment) return;
+            if (hasLiked(commentId)) return;
+            let nextLikeCount = Number(comment.likeCount || 0) + 1;
+
+            if (currentPost && currentPost.source === 'supabase' && window.CauseLawClient && window.CauseLawClient.isReady()) {
+                try {
+                    const sessionUser = await window.CauseLawClient.getSessionUser();
+                    if (!sessionUser) {
+                        uiToast('請先登入會員後再按讚。', 'error');
+                        return;
+                    }
+                    const likeCount = await window.CauseLawClient.rpcCall(
+                        dbRpc('incrementCommentLike', 'causelaw_yinguo_v1.increment_comment_like'),
+                        { p_comment_id: comment.id },
+                        'increment_comment_like'
+                    );
+                    if (likeCount != null) nextLikeCount = Number(likeCount || nextLikeCount);
+                } catch (err) {
+                    console.error('更新留言按讚失敗:', err);
+                    uiToast((err && err.message) || '更新按讚失敗，請稍後重試。', 'error');
+                    return;
+                }
+            }
+            comment.likeCount = nextLikeCount;
+            markLiked(commentId);
+            renderComments();
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / (1000 * 60));
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            if (minutes < 1) return '剛剛';
+            if (minutes < 60) return `${minutes} 分鐘前`;
+            if (hours < 24) return `${hours} 小時前`;
+            if (days === 1) return '昨天';
+            if (days < 7) return `${days} 天前`;
+            return date.toLocaleDateString('zh-TW');
+        }
+
+        function syncCommentProfileName() {
+            var profileName = window.CauseLawClient ? window.CauseLawClient.effectiveDisplayName() : (localStorage.getItem('causelaw_display_name') || '');
+            var nameInput = document.getElementById('comment-name');
+            if (!nameInput) return;
+            if (profileName && profileName !== '匿名') {
+                nameInput.value = profileName;
+                return;
+            }
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) return;
+            window.CauseLawClient.getSessionUser().then(function (user) {
+                if (!user) nameInput.value = '';
+            }).catch(function () {});
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadPost();
+            syncCommentProfileName();
+            var commentsContainer = document.getElementById('comments-container');
+            if (commentsContainer) {
+                commentsContainer.addEventListener('click', function (event) {
+                    var btn = event.target.closest('.comment-like-btn[data-comment-id]');
+                    if (!btn || btn.disabled) return;
+                    likeComment(btn.getAttribute('data-comment-id') || '');
+                });
+            }
+        });
+        window.addEventListener('causelaw:auth-state-changed', function () {
+            syncCommentProfileName();
+        });
+    </script>
+</body>
+</html>

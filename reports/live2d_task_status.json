@@ -1,0 +1,29 @@
+{
+  "project": "Live2D Starship",
+  "tasks": [
+    {
+      "name": "Character Design",
+      "priority": "High",
+      "status": "In-Progress",
+      "updated": "Wed Mar  4 14:23:27 CST 2026"
+    },
+    {
+      "name": "Texture Partitioning",
+      "priority": "Medium",
+      "status": "Pending",
+      "updated": "Wed Mar  4 14:23:27 CST 2026"
+    },
+    {
+      "name": "Cubism Rigging",
+      "priority": "High",
+      "status": "Pending",
+      "updated": "Wed Mar  4 14:23:27 CST 2026"
+    },
+    {
+      "name": "Frontend SDK Integration",
+      "priority": "Critical",
+      "status": "Pending",
+      "updated": "Wed Mar  4 14:23:27 CST 2026"
+    }
+  ]
+}

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>指揮中心報告 - 指揮官小蔡</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* 色彩 — 科技/Dashboard */
+            --primary: #3b82f6;      /* 主色（深藍系） */
+            --primary-light: #60a5fa;
+            --primary-dark: #2563eb;
+            --accent: #f59e0b;       /* 強調色 */
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            /* 背景/文字 */
+            --bg: var(--gray-50); --bg-secondary: #ffffff; --text: var(--gray-900); --text-secondary: var(--gray-500);
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            /* 陰影（5 級） */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-6);
+        }
+        .animated { animation: fadeInUp var(--duration-slow) var(--ease) both; }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+
+        /* 全局過渡 */
+        h1, h2, h3, p, a, button, input, div, section, header, footer {
+            transition: all var(--duration) var(--ease);
+        }
+
+        /* 標題 */
+        .page-title {
+            font-size: var(--text-4xl);
+            font-weight: 700;
+            margin-bottom: var(--space-2);
+            color: var(--text);
+        }
+        .page-subtitle {
+            font-size: var(--text-lg);
+            color: var(--text-secondary);
+            max-width: 600px;
+        }
+
+        /* 卡片 */
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-6);
+            overflow: hidden;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+            border-bottom: 1px solid var(--gray-100);
+            padding-bottom: var(--space-4);
+        }
+        .card-title {
+            font-size: var(--text-xl);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* 按鈕 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn-secondary {
+            background-color: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+        }
+        .btn-secondary:hover {
+            background-color: var(--gray-200);
+        }
+        .btn-icon {
+            background: none;
+            border: none;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: var(--space-2);
+            border-radius: var(--radius-full);
+        }
+        .btn-icon:hover {
+            background-color: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        /* 輸入框 */
+        .form-input {
+            width: 100%;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-base);
+            background-color: var(--bg);
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* 網格佈局 */
+        .grid {
+            display: grid;
+            gap: var(--space-6);
+        }
+        @media (min-width: 640px) {
+            .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+            .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (min-width: 1024px) {
+            .grid-cols-lg-3 { grid-template-columns: repeat(3, 1fr); }
+            .grid-cols-lg-2-1 { grid-template-columns: 2fr 1fr; }
+        }
+
+        /* Header */
+        .main-header {
+            padding: var(--space-4) 0;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--gray-100);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: var(--text-xl);
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        .logo i { font-size: 1.2em; }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+        }
+        .user-name { font-weight: 500; }
+
+        /* Hero Section */
+        .hero {
+            padding: var(--space-12) 0;
+            margin-bottom: var(--space-12);
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .stat-card-icon {
+            font-size: var(--text-xl);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            display: grid;
+            place-items: center;
+        }
+        .icon-success { background-color: #e7f7f1; color: var(--success); }
+        .icon-primary { background-color: #eef2ff; color: var(--primary); }
+        .icon-warning { background-color: #fffbeb; color: var(--warning); }
+        .icon-error { background-color: #fef2f2; color: var(--error); }
+        .stat-card-value {
+            font-size: var(--text-3xl);
+            font-weight: 700;
+        }
+        .stat-card-change {
+            font-size: var(--text-sm);
+            font-weight: 500;
+        }
+        .change-positive { color: var(--success); }
+        .change-negative { color: var(--error); }
+
+        /* Agent Cards */
+        .agent-card .status {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-weight: 500;
+        }
+        .status-online { background-color: #e7f7f1; color: var(--success); }
+        .status-busy { background-color: #fffbeb; color: var(--warning); }
+        .status-offline { background-color: #f1f5f9; color: var(--gray-500); }
+        .agent-card .agent-role {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-4);
+        }
+        .agent-card .agent-suggestion {
+            background-color: var(--gray-50);
+            padding: var(--space-3);
+            border-radius: var(--radius);
+            font-size: var(--text-sm);
+            line-height: 1.6;
+        }
+        .agent-card .agent-suggestion strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        /* To-do List */
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .todo-item:last-child { border-bottom: none; }
+        .todo-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+        }
+        .todo-item label {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+        .todo-item.completed label {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+        .todo-form {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-4);
+        }
+        .empty-state {
+            text-align: center;
+            padding: var(--space-10) var(--space-6);
+            border: 2px dashed var(--gray-200);
+            border-radius: var(--radius-md);
+            margin-top: var(--space-4);
+        }
+        .empty-state i {
+            font-size: var(--text-5xl);
+            color: var(--gray-300);
+            margin-bottom: var(--space-4);
+        }
+        .empty-state p {
+            font-size: var(--text-lg);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-6);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: var(--space-6);
+            right: var(--space-6);
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            z-index: 100;
+            transform: translateX(calc(100% + var(--space-6)));
+            opacity: 0;
+            transition: transform var(--duration-slow) var(--ease), opacity var(--duration-slow) var(--ease);
+        }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast-icon {
+            font-size: var(--text-xl);
+        }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        .toast.error .toast-icon { color: var(--error); }
+
+        /* Footer */
+        .main-footer {
+            margin-top: var(--space-20);
+            padding: var(--space-8) 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            border-top: 1px solid var(--gray-100);
+        }
+    </style>
+</head>
+<body x-data="commanderApp()">
+
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo">
+                <i class="fa-solid fa-microchip"></i>
+                <span>小蔡指揮中心</span>
+            </a>
+            <div class="user-profile">
+                <span class="user-name">指揮官小蔡</span>
+                <img src="https://i.pravatar.cc/40?u=commander-tsai" alt="指揮官小蔡">
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero animated">
+            <h1 class="page-title">好的，指揮官小蔡！</h1>
+            <p class="page-subtitle">綜合團隊建議，我將為您統整一份簡報。以下是各單位回報的關鍵洞察與建議行動方案。</p>
+        </section>
+
+        <section class="kpi-summary animated stagger-1">
+            <div class="grid grid-cols-2 grid-cols-4">
+                <div class="card stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-icon icon-success"><i class="fa-solid fa-shield-heart"></i></div>
+                        <span>團隊健康度</span>
+                    </div>
+                    <div class="stat-card-value">98.5%</div>
+                    <div class="stat-card-change change-positive"><i class="fa-solid fa-arrow-trend-up"></i> +1.2%</div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-icon icon-primary"><i class="fa-solid fa-bullseye"></i></div>
+                        <span>任務成功率</span>
+                    </div>
+                    <div class="stat-card-value">92.1%</div>
+                    <div class="stat-card-change change-positive"><i class="fa-solid fa-arrow-trend-up"></i> +0.5%</div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-icon icon-warning"><i class="fa-solid fa-memory"></i></div>
+                        <span>資源利用率</span>
+                    </div>
+                    <div class="stat-card-value">75.0%</div>
+                    <div class="stat-card-change change-negative"><i class="fa-solid fa-arrow-trend-down"></i> -3.0%</div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-icon icon-error"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <span>待決策項目</span>
+                    </div>
+                    <div class="stat-card-value">3</div>
+                    <div class="stat-card-change change-positive"><i class="fa-solid fa-arrow-trend-up"></i> +1 新增</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="team-status" style="margin-top: var(--space-12);">
+            <h2 class="card-title animated stagger-2" style="margin-bottom: var(--space-6); font-size: var(--text-2xl);">團隊單位報告</h2>
+            <div class="grid grid-cols-lg-3">
+                <div class="card agent-card animated stagger-2">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-brain" style="color: var(--primary); margin-right: var(--space-2);"></i>ask_ai</div>
+                        <div class="status status-online">● 正常</div>
+                    </div>
+                    <p class="agent-role">參謀 (決策分析、代碼審查)</p>
+                    <div class="agent-suggestion">
+                        <strong>建議：</strong> 發現 `flash` 日常模型在處理自然語言查詢時，延遲增加了 15%。建議分配資源審查最新 commit，或回滾至穩定版本 v2.3.1 以確保效能。
+                    </div>
+                </div>
+                <div class="card agent-card animated stagger-3">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-robot" style="color: var(--accent); margin-right: var(--space-2);"></i>auto-executor</div>
+                        <div class="status status-busy">● 高負載</div>
+                    </div>
+                    <p class="agent-role">部隊 (重複、耗時任務)</p>
+                    <div class="agent-suggestion">
+                        <strong>報告：</strong> 已完成 `log_archive_2025_Q4` 任務，釋放 2.5TB 儲存空間。目前正在處理 `data_integrity_check`，預計 4 小時完成。資源利用率偏高，建議夜間執行新任務。
+                    </div>
+                </div>
+                <div class="card agent-card animated stagger-4">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-bolt-lightning" style="color: var(--error); margin-right: var(--space-2);"></i>delegate_agents</div>
+                        <div class="status status-online">● 正常</div>
+                    </div>
+                    <p class="agent-role">並行突擊隊 (多路分析)</p>
+                    <div class="agent-suggestion">
+                        <strong>洞察：</strong> 6 路並行市場情緒分析完成。發現 `Project Phoenix` 相關的負面情緒指標異常升高，主要來源於社群媒體。建議立即啟動公關預警協議。
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="action-items" style="margin-top: var(--space-12);">
+            <div class="grid grid-cols-lg-2-1">
+                <div class="card animated stagger-3">
+                    <div class="card-header">
+                        <h2 class="card-title">行動方案與決策列表</h2>
+                    </div>
+                    <div x-show="tasks.length === 0" class="empty-state">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <p>目前沒有待辦事項</p>
+                        <button class="btn btn-primary" @click="$refs.taskInput.focus()">
+                            <i class="fa-solid fa-plus"></i> 新增第一項任務
+                        </button>
+                    </div>
+                    <div x-show="tasks.length > 0">
+                        <template x-for="task in tasks" :key="task.id">
+                            <div class="todo-item" :class="{ 'completed': task.completed }">
+                                <input type="checkbox" :id="'task-' + task.id" x-model="task.completed">
+                                <label :for="'task-' + task.id" x-text="task.text"></label>
+                                <button class="btn-icon" @click="deleteTask(task.id)">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <form @submit.prevent="addTask" class="todo-form">
+                        <input type="text" x-ref="taskInput" x-model="newTask" class="form-input" placeholder="新增待辦事項...">
+                        <button type="submit" class="btn btn-primary">新增</button>
+                    </form>
+                </div>
+
+                <div class="card animated stagger-4">
+                    <div class="card-header">
+                        <h2 class="card-title">單位效能趨勢 (7日)</h2>
+                    </div>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <p>&copy; 2026 小蔡指揮官系統 v7.0 | 由老蔡 (Caijun Chang) 喚醒</p>
+    </footer>
+    
+    <div id="toast" class="toast">
+        <i id="toast-icon" class="toast-icon"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('commanderApp', () => ({
+                tasks: [],
+                newTask: '',
+                init() {
+                    this.tasks = JSON.parse(localStorage.getItem('commander_tasks')) || [
+                        { id: 1, text: '審查 ask_ai 關於 flash 模型的效能報告', completed: false },
+                        { id: 2, text: '啟動 Project Phoenix 公關預警協議', completed: false },
+                        { id: 3, text: '規劃 auto-executor 夜間任務排程', completed: true },
+                    ];
+                    this.$watch('tasks', () => {
+                        localStorage.setItem('commander_tasks', JSON.stringify(this.tasks));
+                    });
+                    this.initChart();
+                },
+                addTask() {
+                    if (this.newTask.trim() === '') {
+                        this.showToast('任務內容不可為空', 'error');
+                        return;
+                    }
+                    this.tasks.push({
+                        id: Date.now(),
+                        text: this.newTask.trim(),
+                        completed: false
+                    });
+                    this.newTask = '';
+                    this.showToast('任務已新增', 'success');
+                },
+                deleteTask(id) {
+                    this.tasks = this.tasks.filter(task => task.id !== id);
+                    this.showToast('任務已刪除', 'success');
+                },
+                showToast(message, type = 'success') {
+                    const toast = document.getElementById('toast');
+                    const toastIcon = document.getElementById('toast-icon');
+                    const toastMessage = document.getElementById('toast-message');
+
+                    toast.className = 'toast'; // Reset classes
+                    toast.classList.add(type);
+                    
+                    toastIcon.className = 'toast-icon'; // Reset icon classes
+                    if (type === 'success') {
+                        toastIcon.classList.add('fa-solid', 'fa-circle-check');
+                    } else if (type === 'error') {
+                        toastIcon.classList.add('fa-solid', 'fa-circle-xmark');
+                    }
+                    
+                    toastMessage.textContent = message;
+                    toast.classList.add('show');
+                    
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 3000);
+                },
+                initChart() {
+                    const ctx = document.getElementById('performanceChart').getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+                    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['-6d', '-5d', '-4d', '-3d', '-2d', '昨天', '今天'],
+                            datasets: [{
+                                label: 'ask_ai',
+                                data: [88, 90, 92, 85, 88, 91, 86],
+                                borderColor: 'var(--primary)',
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointBackgroundColor: 'var(--primary)',
+                                pointRadius: 0,
+                                pointHoverRadius: 5,
+                            }, {
+                                label: 'auto-executor',
+                                data: [75, 78, 80, 85, 82, 88, 92],
+                                borderColor: 'var(--accent)',
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointBackgroundColor: 'var(--accent)',
+                                pointRadius: 0,
+                                pointHoverRadius: 5,
+                            }, {
+                                label: 'delegate_agents',
+                                data: [95, 96, 94, 98, 97, 95, 99],
+                                borderColor: 'var(--error)',
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointBackgroundColor: 'var(--error)',
+                                pointRadius: 0,
+                                pointHoverRadius: 5,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    align: 'start',
+                                    labels: {
+                                        usePointStyle: true,
+                                        boxWidth: 8,
+                                        padding: 20,
+                                        font: {
+                                            family: "'Inter', sans-serif"
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    grid: {
+                                        color: 'var(--gray-100)',
+                                        drawBorder: false,
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%'
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }));
+        });
+    </script>
+
+</body>
+</html>

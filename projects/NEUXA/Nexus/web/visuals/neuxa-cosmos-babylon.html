@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEUXA COSMOS 3D | Babylon.js 星際引擎</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+        #renderCanvas { width: 100vw; height: 100vh; touch-action: none; }
+        .ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        .title { position: absolute; top: 30px; left: 30px; pointer-events: auto; }
+        .title h1 { font-size: 32px; background: linear-gradient(90deg, #00d4ff, #9b59b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 4px; }
+        .title p { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 5px; letter-spacing: 2px; }
+        .info-panel { position: absolute; bottom: 30px; right: 30px; width: 380px; background: rgba(10,15,40,0.95); border: 1px solid rgba(0,212,255,0.3); border-radius: 12px; padding: 20px; transform: translateX(420px); transition: transform 0.5s; pointer-events: auto; }
+        .info-panel.active { transform: translateX(0); }
+        .info-panel h3 { color: #00d4ff; font-size: 18px; margin-bottom: 15px; }
+        .info-panel p { font-size: 12px; line-height: 1.8; color: rgba(255,255,255,0.8); }
+        .controls { position: absolute; bottom: 30px; left: 30px; display: flex; gap: 10px; pointer-events: auto; }
+        .btn { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: #00d4ff; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 11px; transition: all 0.3s; }
+        .btn:hover { background: rgba(0,212,255,0.2); box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+        .legend { position: absolute; top: 30px; right: 30px; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; pointer-events: auto; }
+        .legend h4 { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 12px; }
+        .legend-item { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 11px; cursor: pointer; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.8s; }
+        .loading.hidden { opacity: 0; pointer-events: none; }
+        .loading-text { font-size: 14px; color: #00d4ff; letter-spacing: 4px; }
+        .loading-bar { width: 200px; height: 2px; background: rgba(0,212,255,0.2); margin-top: 20px; position: relative; overflow: hidden; }
+        .loading-progress { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, #00d4ff, #9b59b6); width: 0%; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-text">NEUXA COSMOS 星際引擎啟動中...</div>
+        <div class="loading-bar"><div class="loading-progress" id="loadingProgress"></div></div>
+    </div>
+    <canvas id="renderCanvas"></canvas>
+    <div class="ui-layer">
+        <div class="title"><h1>NEUXA COSMOS</h1><p>星際生態系統 v3.1 | Babylon.js 引擎</p></div>
+        <div class="legend">
+            <h4>生態層級</h4>
+            <div class="legend-item" onclick="focusPlanet('core')"><div class="legend-dot" style="background: #00d4ff;"></div><span>核心星艦</span></div>
+            <div class="legend-item" onclick="focusPlanet('lite')"><div class="legend-dot" style="background: #00ff88;"></div><span>Lite 行星</span></div>
+            <div class="legend-item" onclick="focusPlanet('enterprise')"><div class="legend-dot" style="background: #ff6b6b;"></div><span>企業行星</span></div>
+            <div class="legend-item" onclick="focusPlanet('community')"><div class="legend-dot" style="background: #9b59b6;"></div><span>社區星雲</span></div>
+            <div class="legend-item" onclick="focusPlanet('bounty')"><div class="legend-dot" style="background: #f39c12;"></div><span>賞金衛星</span></div>
+            <div class="legend-item" onclick="focusPlanet('vault')"><div class="legend-dot" style="background: #34495e;"></div><span>核心金庫</span></div>
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="resetCamera()">⟲ 重置視角</button>
+            <button class="btn" onclick="toggleAutoRotate()">⟲ 自動巡航</button>
+            <button class="btn" onclick="toggleEnergyLines()">⚡ 能量線</button>
+        </div>
+        <div class="info-panel" id="infoPanel">
+            <h3 id="panelTitle">🚀 NEUXA 核心星艦</h3>
+            <p id="panelDesc">點擊任意行星查看詳情</p>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('renderCanvas');
+        const engine = new BABYLON.Engine(canvas, true);
+        let scene, camera, planets = {};
+        let autoRotate = true;
+        const planetData = {
+            core: { name: 'NEUXA 核心星艦', color: new BABYLON.Color3(0, 0.83, 1), radius: 3, distance: 0, speed: 0, desc: 'L1 指揮官中樞。搭載 200% 防禦系統。' },
+            lite: { name: 'Lite 行星', color: new BABYLON.Color3(0, 1, 0.53), radius: 1.5, distance: 15, speed: 0.008, desc: '個人用戶入口。NT$990 一次性購買。' },
+            enterprise: { name: '企業行星', color: new BABYLON.Color3(1, 0.42, 0.42), radius: 2, distance: 25, speed: 0.005, desc: '企業服務軌道。$10k+ 社區建置。' },
+            community: { name: '社區星雲', color: new BABYLON.Color3(0.61, 0.35, 0.71), radius: 1.8, distance: 35, speed: 0.003, desc: '匿名交流區。創世會員代號互動。' },
+            bounty: { name: '賞金衛星', color: new BABYLON.Color3(0.95, 0.61, 0.07), radius: 1.2, distance: 45, speed: 0.006, desc: '自動化賞金分配。20% 收入注入。' },
+            vault: { name: '核心金庫', color: new BABYLON.Color3(0.2, 0.29, 0.37), radius: 1, distance: 55, speed: 0.002, desc: '最高機密隔離區。SHA-256 加密。' }
+        };
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+            scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+            scene.fogDensity = 0.002;
+            camera = new BABYLON.ArcRotateCamera('camera', -Math.PI/2, Math.PI/3, 80, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            camera.lowerRadiusLimit = 20;
+            camera.upperRadiusLimit = 150;
+            new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene).intensity = 0.3;
+            new BABYLON.PointLight('point', BABYLON.Vector3.Zero(), scene).intensity = 1.5;
+            createStarfield(scene);
+            Object.keys(planetData).forEach(key => createPlanet(scene, key, planetData[key]));
+            createStardust();
+            setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1000);
+            return scene;
+        };
+        function createStarfield(scene) {
+            for(let i=0; i<500; i++) {
+                const star = BABYLON.MeshBuilder.CreateSphere('star'+i, {diameter: 0.2+Math.random()*0.3}, scene);
+                star.position = new BABYLON.Vector3((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*400);
+                const mat = new BABYLON.StandardMaterial('starMat'+i, scene);
+                mat.emissiveColor = new BABYLON.Color3(1, 1, 1);
+                star.material = mat;
+            }
+        }
+        function createPlanet(scene, key, data) {
+            const sphere = BABYLON.MeshBuilder.CreateSphere(key, {diameter: data.radius*2, segments: 32}, scene);
+            const material = new BABYLON.StandardMaterial(key+'Mat', scene);
+            material.diffuseColor = data.color;
+            material.emissiveColor = data.color.scale(0.3);
+            sphere.material = material;
+            const glow = BABYLON.MeshBuilder.CreateSphere(key+'Glow', {diameter: data.radius*2.6, segments: 32}, scene);
+            const glowMat = new BABYLON.StandardMaterial(key+'GlowMat', scene);
+            glowMat.emissiveColor = data.color;
+            glowMat.alpha = 0.2;
+            glow.material = glowMat;
+            glow.parent = sphere;
+            if(data.distance > 0) {
+                const angle = Math.random() * Math.PI * 2;
+                sphere.position.x = Math.cos(angle) * data.distance;
+                sphere.position.z = Math.sin(angle) * data.distance;
+                const orbit = BABYLON.MeshBuilder.CreateTorus(key+'Orbit', {diameter: data.distance*2, thickness: 0.05, tessellation: 64}, scene);
+                const orbitMat = new BABYLON.StandardMaterial(key+'OrbitMat', scene);
+                orbitMat.emissiveColor = data.color;
+                orbitMat.alpha = 0.1;
+                orbit.material = orbitMat;
+                orbit.rotation.x = Math.PI/2;
+            }
+            sphere.metadata = { key, data };
+            planets[key] = sphere;
+            sphere.actionManager = new BABYLON.ActionManager(scene);
+            sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+                createParticleExplosion(sphere.position, data.color);
+                showInfo(key);
+            }));
+            
+            // 為核心星艦添加脈動效果
+            if(key === 'core') addPulsingEffect(glow, data.color);
+        }
+        function showInfo(key) {
+            const data = planetData[key];
+            document.getElementById('panelTitle').textContent = data.name;
+            document.getElementById('panelDesc').textContent = data.desc;
+            document.getElementById('infoPanel').classList.add('active');
+        }
+        function focusPlanet(key) {
+            const planet = planets[key];
+            if(planet && camera) {
+                const targetPos = planet.position.clone();
+                camera.setTarget(targetPos);
+                camera.alpha = Math.atan2(targetPos.x, targetPos.z);
+                camera.beta = Math.PI/3;
+                camera.radius = data.distance > 0 ? 25 : 15;
+                showInfo(key);
+            }
+        }
+        function resetCamera() { camera.setTarget(BABYLON.Vector3.Zero()); camera.alpha = -Math.PI/2; camera.beta = Math.PI/3; camera.radius = 80; }
+        function toggleAutoRotate() { autoRotate = !autoRotate; camera.useAutoRotationBehavior = autoRotate; }
+        let energyLinesVisible = false;
+        let energyLines = [];
+        
+        function createEnergyLines() {
+            const keys = Object.keys(planets).filter(k => k !== 'core');
+            keys.forEach(key => {
+                const planet = planets[key];
+                const line = BABYLON.MeshBuilder.CreateTube('energy_'+key, {
+                    path: [BABYLON.Vector3.Zero(), planet.position],
+                    radius: 0.02,
+                    updatable: true
+                }, scene);
+                const mat = new BABYLON.StandardMaterial('energyMat_'+key, scene);
+                mat.emissiveColor = planetData[key].color;
+                mat.alpha = 0.6;
+                line.material = mat;
+                line.isVisible = false;
+                energyLines.push({ mesh: line, target: planet, key: key });
+            });
+        }
+        
+        function toggleEnergyLines() {
+            if(energyLines.length === 0) createEnergyLines();
+            energyLinesVisible = !energyLinesVisible;
+            energyLines.forEach(el => {
+                el.mesh.isVisible = energyLinesVisible;
+            });
+        }
+        
+        function createParticleExplosion(position, color) {
+            const particleSystem = new BABYLON.ParticleSystem('particles', 200, scene);
+            particleSystem.particleTexture = new BABYLON.Texture('https://cdn.babylonjs.com/assets/flare.png', scene);
+            particleSystem.emitter = position;
+            particleSystem.minEmitBox = new BABYLON.Vector3(-0.5, -0.5, -0.5);
+            particleSystem.maxEmitBox = new BABYLON.Vector3(0.5, 0.5, 0.5);
+            particleSystem.color1 = new BABYLON.Color4(color.r, color.g, color.b, 1);
+            particleSystem.color2 = new BABYLON.Color4(color.r, color.g, color.b, 0);
+            particleSystem.minSize = 0.1;
+            particleSystem.maxSize = 0.5;
+            particleSystem.minLifeTime = 0.3;
+            particleSystem.maxLifeTime = 1.5;
+            particleSystem.emitRate = 100;
+            particleSystem.gravity = new BABYLON.Vector3(0, 0, 0);
+            particleSystem.direction1 = new BABYLON.Vector3(-1, 1, -1);
+            particleSystem.direction2 = new BABYLON.Vector3(1, 1, 1);
+            particleSystem.minEmitPower = 1;
+            particleSystem.maxEmitPower = 3;
+            particleSystem.updateSpeed = 0.02;
+            particleSystem.targetStopDuration = 1;
+            particleSystem.start();
+            setTimeout(() => particleSystem.stop(), 1000);
+        }
+        
+        function createStardust() {
+            const stardust = new BABYLON.ParticleSystem('stardust', 1000, scene);
+            stardust.particleTexture = new BABYLON.Texture('https://cdn.babylonjs.com/assets/flare.png', scene);
+            stardust.emitter = new BABYLON.Vector3(0, 0, 0);
+            stardust.minEmitBox = new BABYLON.Vector3(-100, -50, -100);
+            stardust.maxEmitBox = new BABYLON.Vector3(100, 50, 100);
+            stardust.color1 = new BABYLON.Color4(1, 1, 1, 0.3);
+            stardust.color2 = new BABYLON.Color4(0.5, 0.8, 1, 0);
+            stardust.minSize = 0.05;
+            stardust.maxSize = 0.2;
+            stardust.minLifeTime = 5;
+            stardust.maxLifeTime = 10;
+            stardust.emitRate = 50;
+            stardust.gravity = new BABYLON.Vector3(0, 0.02, 0);
+            stardust.start();
+        }
+        
+        function addPulsingEffect(mesh, color) {
+            let alpha = 0.2;
+            let direction = 0.005;
+            scene.registerBeforeRender(() => {
+                alpha += direction;
+                if(alpha > 0.4) direction = -0.005;
+                if(alpha < 0.1) direction = 0.005;
+                if(mesh.material) mesh.material.alpha = alpha;
+            });
+        }
+        scene = createScene();
+        engine.runRenderLoop(function () {
+            Object.keys(planets).forEach(key => {
+                const planet = planets[key];
+                const data = planetData[key];
+                if(data.distance > 0) {
+                    const currentAngle = Math.atan2(planet.position.z, planet.position.x);
+                    const newAngle = currentAngle + data.speed;
+                    planet.position.x = Math.cos(newAngle) * data.distance;
+                    planet.position.z = Math.sin(newAngle) * data.distance;
+                }
+                planet.rotation.y += 0.01;
+            });
+            
+            // 更新能量線位置
+            if(energyLinesVisible) {
+                energyLines.forEach(el => {
+                    const positions = [
+                        BABYLON.Vector3.Zero().x, BABYLON.Vector3.Zero().y, BABYLON.Vector3.Zero().z,
+                        el.target.position.x, el.target.position.y, el.target.position.z
+                    ];
+                    el.mesh = BABYLON.MeshBuilder.CreateTube('energy_'+el.key, {
+                        path: [BABYLON.Vector3.Zero(), el.target.position],
+                        radius: 0.02 + Math.sin(Date.now() * 0.003) * 0.01,
+                        updatable: true,
+                        instance: el.mesh
+                    }, scene);
+                });
+            }
+            
+            scene.render();
+        });
+        window.addEventListener('resize', () => engine.resize());
+    </script>
+</body>
+</html>

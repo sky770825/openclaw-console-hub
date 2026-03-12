@@ -1,0 +1,14 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# OpenClaw Daily Report (Fixed)
+0 9 * * * cd /Users/caijunchang/.openclaw/workspace && ./scripts/daily-report-engine.sh >> taskboard/.history/telegram.log 2>&1
+
+# Unified Monitor
+*/10 * * * * /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh
+
+# Gateway Health Watchdog
+* * * * * /Users/caijunchang/.openclaw/workspace/scripts/gateway-health-watchdog.sh
+
+# Docker/n8n Auto Recovery
+*/5 * * * * /Users/caijunchang/.openclaw/workspace/scripts/docker-n8n-recovery.sh >> /Users/caijunchang/.openclaw/logs/docker-n8n-cron.log 2>&1

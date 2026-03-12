@@ -1,0 +1,25 @@
+[
+  {
+    "id": "task-001",
+    "name": "[OR-Free] 搜尋 LangChain 最新功能",
+    "description": "搜尋 LangChain 2025年最新功能與應用案例",
+    "status": "done",
+    "priority": 1,
+    "completed_at": "2026-02-13T11:35:00+08:00"
+  },
+  {
+    "id": "task-002", 
+    "name": "[Kimi] 撰寫 AI 工具比較文案",
+    "description": "比較 Kimi、GPT-4、Claude 的優缺點",
+    "status": "done",
+    "priority": 2,
+    "completed_at": "2026-02-13T11:36:00+08:00"
+  },
+  {
+    "id": "task-003",
+    "name": "[Cursor] Skill Creator 技術規格",
+    "description": "設計新版 Skill Creator 架構",
+    "status": "done",
+    "completed_at": "2026-02-13T11:37:00+08:00"
+  }
+]

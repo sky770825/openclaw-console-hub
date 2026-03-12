@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="加持商城：以每日功過格累積的會員分數兌換限時能量加持，用於因果光場加持台等場域。">
+    <title>加持商城 | 因果真相</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../causelaw-config.js" defer></script>
+    <script src="../causelaw-client.js" defer></script>
+    <script src="../causelaw-ui.js" defer></script>
+    <script src="../causelaw-auth.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .shop-hero { border: 2px solid rgba(212,175,55,0.35); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; background: rgba(0,0,0,0.4); }
+        .shop-score { font-size: 1.75rem; font-weight: 900; color: var(--gold); letter-spacing: 0.15em; }
+        .shop-product { border: 1px solid rgba(212,175,55,0.25); border-radius: 10px; padding: 1.25rem; background: rgba(15,15,15,0.8); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+        .shop-product-icon { font-size: 2.5rem; }
+        .shop-product-info { flex: 1; min-width: 200px; }
+        .shop-product-name { font-size: 1.2rem; font-weight: 700; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+        .shop-product-desc { font-size: 0.9rem; color: #9ca3af; margin-bottom: 0.5rem; }
+        .shop-product-meta { font-size: 0.8rem; color: #fde68a; }
+        .shop-product-actions { display: flex; align-items: center; gap: 0.75rem; }
+        .shop-product-actions button { padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .shop-product-actions button:hover:not(:disabled) { background: rgba(212,175,55,0.2); }
+        .shop-product-actions button:disabled { opacity: 0.5; cursor: not-allowed; border-color: #666; color: #888; }
+        .shop-active { margin-top: 2rem; padding: 1.5rem; border: 1px solid rgba(212,175,55,0.2); border-radius: 10px; background: rgba(0,0,0,0.3); }
+        .shop-active-title { font-size: 1rem; font-weight: 700; color: var(--gold); letter-spacing: 0.15em; margin-bottom: 0.75rem; }
+        .shop-active-item { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; margin: 0.25rem; border-radius: 999px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); font-size: 0.85rem; color: #e5e7eb; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition text-gold">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-4xl mx-auto px-6">
+        <h1 class="text-5xl mb-4 tracking-[0.4em] text-gold text-center">加持商城</h1>
+        <p class="text-center text-stone-500 mb-10 tracking-widest">以每日功過格累積的會員分數兌換限時加持，於因果光場加持台中使用</p>
+
+        <div class="shop-hero">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <p class="text-stone-500 text-sm mb-1">目前可用分數（功過格淨值 − 已使用）</p>
+                    <p class="shop-score" id="shop-available">0</p>
+                    <p class="text-xs text-stone-500 mt-1">分數來自 <a href="merit.html" class="text-gold hover:underline">每日功過格</a> 的善惡淨值，完成勾選後會同步至此。</p>
+                </div>
+                <a href="merit.html" class="px-5 py-2.5 border border-gold/50 text-gold rounded-lg hover:bg-gold/10 transition text-sm font-bold">前往功過格累積</a>
+            </div>
+        </div>
+
+        <h2 class="text-xl text-gold font-bold mb-4 tracking-widest">可兌換加持</h2>
+        <div id="shop-products"></div>
+
+        <div class="shop-active" id="shop-active-wrap">
+            <p class="shop-active-title">目前生效中的加持</p>
+            <div id="shop-active-list" class="text-stone-400 text-sm">尚無生效中的加持。於加持台啟用後，這裡會顯示剩餘時間。</div>
+        </div>
+
+        <p class="text-center text-stone-500 text-sm mt-12"><a href="simulator.html" class="text-gold hover:underline">前往因果光場加持台</a> 使用已啟用的加持</p>
+    </main>
+
+    <script>
+        (function() {
+            const MERIT_NET_KEY = 'causelaw_merit_net_score';
+            const SPENT_KEY = 'causelaw_merit_spent';
+            const BUFFS_KEY = 'causelaw_active_buffs';
+            const INVENTORY_KEY = 'causelaw_item_inventory_v1';
+
+            const PRODUCTS = [
+                { id: 'lotus-ring', name: '護持蓮花', icon: '🪷', cost: 40, durationMin: 24 * 60, desc: '聚焦【感情與家庭】的柔和守護，願彼此心念柔軟、少爭執。' },
+                { id: 'heart-bell', name: '淨心法鈴', icon: '🔔', cost: 25, durationMin: 24 * 60, desc: '聚焦【工作與事業】的清明判斷，願溝通順暢、決策少偏差。' },
+                { id: 'golden-mandala', name: '金色曼陀羅', icon: '✨', cost: 60, durationMin: 24 * 60, desc: '聚焦【財富與資源】的正向流動，願以正財、善念改善金錢結構。' },
+                { id: 'blessing-cloud', name: '祥雲護持', icon: '☁️', cost: 35, durationMin: 24 * 60, desc: '聚焦【人際與貴人】的祥和氛圍，願相處多理解、少誤會。' },
+                { id: 'lotus-seed', name: '蓮子心燈', icon: '🪷', cost: 20, durationMin: 24 * 60, desc: '聚焦【身心健康】的一點心燈，願身體安穩、情緒平和。' }
+            ];
+
+            function now() { return Date.now(); }
+            function getNet() {
+                const raw = localStorage.getItem(MERIT_NET_KEY);
+                const n = parseInt(raw || '0', 10);
+                return isNaN(n) ? 0 : n;
+            }
+            function getSpent() {
+                const raw = localStorage.getItem(SPENT_KEY);
+                const n = parseInt(raw || '0', 10);
+                return isNaN(n) ? 0 : n;
+            }
+            function setSpent(v) {
+                localStorage.setItem(SPENT_KEY, String(v));
+            }
+            function loadInventory() {
+                try {
+                    const raw = localStorage.getItem(INVENTORY_KEY);
+                    const obj = raw ? JSON.parse(raw) : {};
+                    return obj && typeof obj === 'object' ? obj : {};
+                } catch (e) {
+                    return {};
+                }
+            }
+            function saveInventory(inv) {
+                try {
+                    localStorage.setItem(INVENTORY_KEY, JSON.stringify(inv));
+                } catch (e) {}
+            }
+            function loadBuffs() {
+                try {
+                    const raw = localStorage.getItem(BUFFS_KEY);
+                    const arr = raw ? JSON.parse(raw) : [];
+                    const valid = (Array.isArray(arr) ? arr : []).filter(b => b && b.id && b.expiresAt && b.expiresAt > now());
+                    localStorage.setItem(BUFFS_KEY, JSON.stringify(valid));
+                    return valid;
+                } catch (e) {
+                    return [];
+                }
+            }
+            function saveBuffs(list) {
+                localStorage.setItem(BUFFS_KEY, JSON.stringify(list));
+            }
+
+            function render() {
+                const net = getNet();
+                const spent = getSpent();
+                const available = Math.max(0, net - spent);
+                const buffs = loadBuffs();
+                const activeMap = {};
+                buffs.forEach(b => { activeMap[b.id] = b; });
+                const inventory = loadInventory();
+
+                document.getElementById('shop-available').textContent = available;
+
+                const productsEl = document.getElementById('shop-products');
+                productsEl.innerHTML = '';
+                PRODUCTS.forEach(function(p) {
+                    const durationMs = p.durationMin * 60 * 1000;
+                    const count = inventory[p.id] || 0;
+                    const enough = available >= p.cost;
+                    const btnDisabled = !enough;
+                    const div = document.createElement('div');
+                    div.className = 'shop-product';
+                    div.innerHTML = `
+                        <span class="shop-product-icon">${p.icon}</span>
+                        <div class="shop-product-info">
+                            <div class="shop-product-name">${p.name}</div>
+                            <div class="shop-product-desc">${p.desc}</div>
+                            <div class="shop-product-meta">${p.cost} 分 ／ 1 份（時效 1 天）｜ 庫存：${count} 份</div>
+                        </div>
+                        <div class="shop-product-actions">
+                            <button type="button" data-id="${p.id}" ${btnDisabled ? 'disabled' : ''}>兌換</button>
+                        </div>
+                    `;
+                    const btn = div.querySelector('button');
+                    if (!btnDisabled) {
+                        btn.addEventListener('click', function() {
+                            const id = this.dataset.id;
+                            const prod = PRODUCTS.find(function(x) { return x.id === id; });
+                            if (!prod) return;
+                            const av = Math.max(0, getNet() - getSpent());
+                            if (av < prod.cost) {
+                                alert('目前可用分數不足，請先至功過格累積。');
+                                render();
+                                return;
+                            }
+                            const inv = loadInventory();
+                            inv[prod.id] = (inv[prod.id] || 0) + 1;
+                            saveInventory(inv);
+                            setSpent(getSpent() + prod.cost);
+                            render();
+                        });
+                    }
+                    productsEl.appendChild(div);
+                });
+
+                const activeListEl = document.getElementById('shop-active-list');
+                const wrap = document.getElementById('shop-active-wrap');
+                if (buffs.length === 0) {
+                    activeListEl.textContent = '尚無生效中的加持。購買後請至加持台啟用。';
+                } else {
+                    activeListEl.innerHTML = '';
+                    buffs.forEach(function(b) {
+                        const prod = PRODUCTS.find(function(x) { return x.id === b.id; });
+                        if (!prod) return;
+                        const remain = Math.max(0, Math.ceil((b.expiresAt - now()) / 1000));
+                        const txt = remain >= 60 ? Math.ceil(remain / 60) + ' 分' : remain + ' 秒';
+                        const span = document.createElement('span');
+                        span.className = 'shop-active-item';
+                        span.innerHTML = `${prod.icon} ${prod.name} <span class="text-amber-200/90">${txt}</span>`;
+                        activeListEl.appendChild(span);
+                    });
+                }
+            }
+
+            render();
+            setInterval(render, 10000);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+*.log
+*.tmp
+.env
+.cr9-unlock
+node_modules/
+**/node_modules/
+dist/
+.cr9-unlock
+*.tar.gz
+archive/*/backups/
+.vercel
+node_modules

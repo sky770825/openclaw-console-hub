@@ -1,0 +1,22 @@
+policies:
+  - id: P-001
+    name: "PII Data Isolation"
+    type: DataFlow
+    context:
+      source_tag: "internal"
+      destination_tag: "external"
+    rules:
+      - action: DENY
+        data_type: "user-email"
+        condition: "is_encrypted == false"
+
+  - id: P-002
+    name: "Service Call Authorization"
+    type: AccessControl
+    rules:
+      - service: "frontend"
+        can_call: ["api-gateway"]
+      - service: "api-gateway"
+        can_call: ["auth-service", "data-service"]
+      - service: "data-service"
+        can_call: [] # 故意不包含 external-log-aggregator 以觸發違規

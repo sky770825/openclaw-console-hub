@@ -1,0 +1,104 @@
+{
+  "name": "Project 990 Daily Status",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "trigger-id",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$node[\"Config\"].json[\"api_base\"]}}/api/tasks",
+        "options": {}
+      },
+      "id": "http-fetch-tasks",
+      "name": "Fetch Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = items[0].json;\nconst yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);\n\nconst recentUpdates = tasks.filter(t => new Date(t.updatedAt) > yesterday);\nconst blockers = recentUpdates.filter(t => t.status === 'BLOCKED');\n\nreturn {\n  summary: `Total Updates: ${recentUpdates.length}`,\n  blockers: blockers.map(b => b.title).join(', '),\n  details: recentUpdates.map(t => `- [${t.status}] ${t.title}`).join('\\n')\n};"
+      },
+      "id": "process-logic",
+      "name": "Aggregate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [540, 300]
+    },
+    {
+      "parameters": {
+        "chatInput": "={{$json.details}}",
+        "systemMessage": "You are a project manager assistant. Summarize these task updates for Project 990 into a concise bulleted report."
+      },
+      "id": "ai-summarize",
+      "name": "AI Summarizer",
+      "type": "n8n-nodes-base.aiAgent",
+      "typeVersion": 1,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "webhookUri": "={{$node[\"Config\"].json[\"webhook_url\"]}}",
+        "text": "=🚀 **Project 990 Daily Update**\n\n{{$json.output}}\n\n⚠️ **Blockers:** {{$node[\"Aggregate Data\"].json[\"blockers\"] || 'None'}}",
+        "options": {}
+      },
+      "id": "discord-notify",
+      "name": "Discord Notification",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "api_base",
+              "value": "http://your-zeabur-app.zeabur.app"
+            },
+            {
+              "name": "webhook_url",
+              "value": "https://discord.com/api/webhooks/..."
+            }
+          ]
+        }
+      },
+      "id": "config-node",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [320, 100]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Fetch Tasks", "type": "main", "index": 0 }]]
+    },
+    "Config": {
+      "main": [[{ "node": "Fetch Tasks", "type": "main", "index": 0 }]]
+    },
+    "Fetch Tasks": {
+      "main": [[{ "node": "Aggregate Data", "type": "main", "index": 0 }]]
+    },
+    "Aggregate Data": {
+      "main": [[{ "node": "AI Summarizer", "type": "main", "index": 0 }]]
+    },
+    "AI Summarizer": {
+      "main": [[{ "node": "Discord Notification", "type": "main", "index": 0 }]]
+    }
+  }
+}

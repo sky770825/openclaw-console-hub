@@ -1,0 +1,3 @@
+/Users/caijunchang/openclaw任務面版設計/knowledge/self-healing/README.md:- docker-n8n-recovery.sh: n8n 容器自動修復
+/Users/caijunchang/openclaw任務面版設計/scripts/auto-checkpoint.sh:# auto-checkpoint.sh — Context 監控 + 自幹偵測 v2.0
+/Users/caijunchang/openclaw任務面版設計/scripts/AGENTS.md:- scripts/self-heal.sh、scripts/auto-checkpoint.sh

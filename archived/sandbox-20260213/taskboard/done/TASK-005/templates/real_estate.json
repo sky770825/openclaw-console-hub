@@ -1,0 +1,36 @@
+{
+  "business": "住商不動產",
+  "type": "real_estate",
+  "category": "房屋",
+  "name": "",
+  "description": "",
+  "price": "",
+  "address": "",
+  "area": "",
+  "rooms": "",
+  "floor": "",
+  "images": [],
+  "tags": [],
+  "platform_settings": {
+    "facebook": {
+      "marketplace_listing": true,
+      "page_post": true
+    },
+    "instagram": {
+      "shopping_post": true
+    },
+    "shopee": {
+      "listing": true
+    }
+  },
+  "metadata": {
+    "property_type": "residential",
+    "transaction_type": "sale",
+    "parking": "",
+    "elevator": false,
+    "age_of_building": "",
+    "contact_person": "",
+    "phone": "",
+    "email": ""
+  }
+}

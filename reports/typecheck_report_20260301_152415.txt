@@ -1,0 +1,26 @@
+--- TypeScript Verification Report ---
+Date: Sun Mar  1 15:24:15 CST 2026
+Project: /Users/caijunchang/openclaw任務面版設計/server
+Target File: src/executor-agents.ts
+--------------------------------------
+Executing command: npx tsc --noEmit
+src/heartbeat.ts(28,21): error TS1127: Invalid character.
+src/heartbeat.ts(28,22): error TS1127: Invalid character.
+src/heartbeat.ts(28,29): error TS1434: Unexpected keyword or identifier.
+src/heartbeat.ts(28,44): error TS1005: ',' expected.
+src/heartbeat.ts(28,49): error TS1005: ',' expected.
+src/heartbeat.ts(33,24): error TS1127: Invalid character.
+src/heartbeat.ts(33,35): error TS1434: Unexpected keyword or identifier.
+src/heartbeat.ts(33,50): error TS1005: ',' expected.
+src/heartbeat.ts(33,58): error TS1005: ',' expected.
+src/heartbeat.ts(33,68): error TS1127: Invalid character.
+src/heartbeat.ts(33,71): error TS1005: ',' expected.
+src/heartbeat.ts(33,76): error TS1005: ',' expected.
+src/heartbeat.ts(38,26): error TS1005: ',' expected.
+src/heartbeat.ts(38,29): error TS1005: ',' expected.
+src/heartbeat.ts(48,19): error TS1127: Invalid character.
+src/heartbeat.ts(48,30): error TS1005: ',' expected.
+src/heartbeat.ts(48,33): error TS1005: ',' expected.
+--------------------------------------
+Result: FAILED (Exit Code: 2)
+TypeScript errors were found. Please review the report.

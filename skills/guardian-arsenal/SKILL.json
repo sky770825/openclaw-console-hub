@@ -1,0 +1,93 @@
+{
+  "skill_name": "guardian-arsenal",
+  "display_name": "Guardian Arsenal - 守護者武器庫",
+  "version": "1.0",
+  "description": "從自衛到護人的進階安全能力，保護自己同時保護他人",
+  
+  "capabilities": {
+    "personal_defense": {
+      "status": "deployed",
+      "tools": ["arsenal-auto", "honeypot", "counterstrike"]
+    },
+    "network_defense": {
+      "status": "planned",
+      "tools": [
+        {
+          "name": "Suricata",
+          "type": "IDS/IPS",
+          "function": "網路入侵檢測與阻擋",
+          " protects": "整個網路段"
+        },
+        {
+          "name": "Zeek",
+          "type": "Network Analyzer",
+          "function": "流量分析與異常檢測",
+          "protects": "網路行為監控"
+        }
+      ]
+    },
+    "endpoint_defense": {
+      "status": "planned",
+      "tools": [
+        {
+          "name": "Wazuh",
+          "type": "EDR/SIEM",
+          "function": "端點監控與威脅檢測",
+          "protects": "多台主機/伺服器"
+        }
+      ]
+    },
+    "threat_intelligence": {
+      "status": "planned",
+      "tools": [
+        {
+          "name": "MISP",
+          "type": "Threat Intel Platform",
+          "function": "威脅情報分享與協防",
+          "protects": "整個社群/生態系"
+        }
+      ]
+    }
+  },
+  
+  "service_models": {
+    "personal_guardian": {
+      "target": "個人用戶",
+      "service": "保護個人AI系統與資料",
+      "price_model": "免費/訂閱制"
+    },
+    "smb_guardian": {
+      "target": "小型企業",
+      "service": "基礎資安防護與監控",
+      "price_model": "月費制"
+    },
+    "community_guardian": {
+      "target": "社群/開源專案",
+      "service": "威脅情報分享與協防",
+      "price_model": "免費"
+    }
+  },
+  
+  "deployment_plan": {
+    "phase_1": {
+      "name": "個人防護強化",
+      "duration": "已完成",
+      "tasks": ["Arsenal部署", "自動化監控", "反擊能力"]
+    },
+    "phase_2": {
+      "name": "網路監控能力",
+      "duration": "2-4週",
+      "tasks": ["部署Suricata", "部署Zeek", "建立監控儀表板"]
+    },
+    "phase_3": {
+      "name": "端點保護能力", 
+      "duration": "4-6週",
+      "tasks": ["部署Wazuh", "多主機監控", "自動響應規則"]
+    },
+    "phase_4": {
+      "name": "威脅情報分享",
+      "duration": "6-8週", 
+      "tasks": ["部署MISP", "建立分享社群", "協防機制"]
+    }
+  }
+}

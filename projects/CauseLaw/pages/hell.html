@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>十八層地獄全境實錄 | 因果真相</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../particles.js"></script>
+    <script src="../prompts.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --hell-red-start: #020202;
+            --hell-red-mid: #1a0505;
+            --hell-red-deep: #2d0a0a;
+            --hell-red-intense: #3d0f0f;
+        }
+        body {
+            transition: background-color 0.8s ease;
+        }
+        .visual-hell-compact { width: 100%; max-width: 800px; height: 320px; margin: 2rem auto; border: 2px solid rgba(184, 134, 11, 0.4); overflow: hidden; }
+        .visual-hell-compact img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.5) contrast(1.2) sepia(0.2); }
+        .hell-block { margin-bottom: 8rem; border-bottom: 1px solid rgba(139, 0, 0, 0.3); padding-bottom: 4rem; position: relative; }
+        .hell-block::before {
+            content: '';
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 1rem;
+            background: linear-gradient(to bottom, transparent, rgba(212, 175, 55, 0.3));
+        }
+        .hell-number { 
+            font-size: 1.2rem; 
+            color: #8b0000; 
+            font-weight: 900; 
+            margin-bottom: 0.5rem; 
+            display: block;
+            letter-spacing: 0.3em;
+            text-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+        }
+        .hell-header {
+            position: relative;
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+            border-left: 3px solid #8b0000;
+            padding-left: 2rem;
+        }
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #d4af37, #8b0000);
+            z-index: 100;
+            transition: width 0.1s ease;
+        }
+        .hell-divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.5), transparent);
+            margin: 4rem 0;
+        }
+    </style>
+</head>
+<body class="px-6 md:px-20 text-stone-200 font-serif" id="hell-body">
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress" id="scroll-progress"></div>
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">諸神殿堂</a>
+            <a href="cases.html" class="hover:text-gold transition">真實案例</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-5xl mx-auto">
+        <div class="text-center mb-40">
+            <h1 class="text-6xl mb-10 tracking-[0.8em] text-cinnabar">十八層地獄全境實錄</h1>
+            <p class="text-2xl text-gold tracking-widest opacity-80">天理昭昭 • 報應不爽</p>
+            <div class="mt-12 p-8 border border-cinnabar/30 bg-cinnabar/5 text-stone-400 leading-relaxed text-lg">
+                「地獄並非某種神話中的懲罰，而是宇宙能量系統的『自動平衡機制』。當你在世間播下極端的負能量種子，你的意識維度將在脫離肉身後，自動與相應頻率的痛苦場域產生共振。這就是地獄的真相。」
+            </div>
+        </div>
+
+        <!-- Level 1 -->
+        <section class="hell-block" data-level="1">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 01 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">拔舌地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">TONGUE-REMOVAL HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：挑撥離間、誹謗害人、油嘴滑舌、謊話連篇。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：地獄鬼卒以鐵鉗夾舌，生生拔下，非一下拔掉，而是拉長慢拽。這是對生前用語言毀滅他人名譽與信任的能量償還。每一句惡語，都在此化為無盡的痛苦回響。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 2 -->
+        <section class="hell-block" data-level="2">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 02 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">剪指地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">FINGER-CUTTING HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：唆使寡婦再嫁、破壞他人婚姻、媒妁作假。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：生生剪斷十指。手指乃心之延伸，剪除生前伸向他人家庭、操縱他人命運的黑手。每一根斷指，都在償還拆散姻緣的惡業。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 3 -->
+        <section class="hell-block" data-level="3">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 03 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">鐵樹地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">IRON TREE HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：離間骨肉、煽動父子不和、兄弟相殘。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：樹上皆是利刃，將人掛於其上，皮肉穿刺。象徵親情被割裂後的尖銳痛苦，分毫不差。斷絕血脈之罪，在此承受萬刃穿心。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 4 -->
+        <section class="hell-block" data-level="4">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 04 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">孽鏡地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">MIRROR OF KARMA HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：陽間瞞天過海、掩蓋罪行、逃避法律裁決。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：孽鏡台前，一生罪惡無所遁形。意識在絕對真理前崩潰，所有的隱瞞都轉化為靈魂的重擔。謊言在此無所遁形，真相以最殘酷的方式顯現。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 5 -->
+        <section class="hell-block" data-level="5">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 05 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">蒸籠地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">STEAMER HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：長舌婦、搬弄是非、毀人清譽、造謠惑眾。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：投入蒸籠，水氣蒸騰。生前噴出的流言蜚語，在此化為灼傷全身的致命蒸汽。每一句惡言，都凝結為炙熱的水滴，蝕骨銷魂。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 6 -->
+        <section class="hell-block" data-level="6">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 06 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">銅柱地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">COPPER PILLAR HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：縱火燒毀房屋、毀滅證據、意圖滅口。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：抱住燒紅的銅柱，肌膚焦爛。生前以火毀滅他人希望與家園，在此以自身肉身承受極致灼燒。毀滅之罪，化為永恆的焚燒。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 7 -->
+        <section class="hell-block" data-level="7">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 07 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">刀山地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">MOUNTAIN OF KNIVES HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：殺生、屠戮無辜、虐待動物、殘忍不仁。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：赤身攀登刀山，每一步皆是血肉分離。生前以暴力剝奪生命，在此以肉身償還萬千刀割。每一道傷口，都是生命的哀鳴。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 8 -->
+        <section class="hell-block" data-level="8">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 08 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">冰山地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">ICE MOUNTAIN HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：謀害親夫/妻、不孝父母、冷血無情。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：裸身困於極寒冰山，血液凝結，意識凍僵。生前對至親之人的冷酷無情，在此化為穿透骨髓的極寒。冷漠之罪，冰封靈魂萬年。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 9 -->
+        <section class="hell-block" data-level="9">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 09 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">油鍋地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">BOILING OIL HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：強盜搶劫、貪污受賄、榨取民脂民膏。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：投入滾燙油鍋，皮肉炸裂。生前以不法手段掠奪他人財富，在此以極致高溫煉化貪婪之心。掠奪之罪，化為油鍋中的煎熬。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 10 -->
+        <section class="hell-block" data-level="10">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 10 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">牛坑地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">OX PIT HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：虐待牲畜、肆意宰殺、無視生命。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被數十頭鐵角野牛踐踏、穿刺。生前對無辜生命的殘忍，在此以萬蹄踏碎肉身償還。虐待之罪，承受百倍踐踏。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 11 -->
+        <section class="hell-block" data-level="11">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 11 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">石壓地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">CRUSHING STONE HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：墮胎、遺棄嬰兒、殘害幼童。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被巨石反覆碾壓，骨骼粉碎。生前剝奪無辜幼小生命，在此以萬鈞重壓償還。對生命的輕賤，化為粉身碎骨的痛楚。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 12 -->
+        <section class="hell-block" data-level="12">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 12 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">舂臼地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">MORTAR HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：浪費糧食、糟蹋食物、暴殄天物。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被放入巨大石臼中反覆舂搗。生前不珍惜上天賜予的糧食，在此以肉身被研磨償還。浪費之罪，化為無止盡的搗碎。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 13 -->
+        <section class="hell-block" data-level="13">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 13 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">血池地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">BLOOD POOL HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：不孝父母、忤逆長輩、辱罵祖宗。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：沉沒於污血池中，窒息掙扎。生前對血脈親人的不敬，在此以污濁血水淹沒。不孝之罪，化為血池中的沉淪。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 14 -->
+        <section class="hell-block" data-level="14">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 14 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">枉死地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">WRONGFUL DEATH HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：自殺、輕生、浪費寶貴人身。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：重複體驗死亡瞬間的恐懼與悔恨。生前輕視生命、選擇自我了斷，在此以無數次死亡體驗醒悟。輕生之罪，承受永恆的死亡輪迴。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 15 -->
+        <section class="hell-block" data-level="15">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 15 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">磔刑地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">DISMEMBERMENT HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：殺人越貨、謀財害命、土匪強盜。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被綁於刑架，受千刀萬剮之刑。生前為財害命，在此以凌遲償還。奪命之罪，承受萬刀分屍之痛。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 16 -->
+        <section class="hell-block" data-level="16">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 16 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">火山地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">VOLCANO HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：損人利己、損公肥私、結黨營私。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被推入岩漿火山，全身燒熔。生前以私慾傷害群體利益，在此以熔岩煉化貪心。營私之罪，化為熔岩中的灰燼。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 17 -->
+        <section class="hell-block" data-level="17">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 17 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">石磨地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">GRINDING MILL HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：欺壓百姓、貪官汙吏、魚肉鄉民。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被放入巨大石磨中反覆碾磨，化為肉醬。生前以權力碾壓百姓，在此以肉身被研磨償還。欺民之罪，承受萬次碾壓。</p>
+        </section>
+
+        <div class="hell-divider"></div>
+
+        <!-- Level 18 -->
+        <section class="hell-block" data-level="18">
+            <div class="hell-header">
+                <span class="hell-number">◆ LEVEL 18 ◆</span>
+                <h2 class="text-3xl text-gold mb-2 tracking-widest">刀鋸地獄</h2>
+                <p class="text-stone-500 text-sm tracking-widest">SAW HELL</p>
+            </div>
+            <p class="text-cinnabar font-bold mb-4 text-lg">針對罪業：販賣人口、逼良為娼、製造毒品、傷天害理之極惡。</p>
+            <p class="text-stone-300 leading-relaxed">能量機制：被綁於刑台，以巨鋸從胯下鋸成兩半。生前以極惡摧毀無數人生，在此承受極致分屍之苦。極惡之罪，永世不得超生。</p>
+        </section>
+
+        <div class="mt-40 text-center">
+            <p class="text-3xl text-gold mb-10 tracking-[0.3em]">看完這些，你還敢心存僥倖嗎？</p>
+            <a href="cases.html" class="btn-premium">查看真實因果案例</a>
+        </div>
+    </main>
+
+    <footer class="py-20 text-center border-t border-gold/20">
+        <p class="text-gold tracking-[0.5em] text-xl">因果真相 • 分毫不差</p>
+        <p class="text-stone-500 mt-4">警告：天理昭昭，善惡有報。此頁面僅為警示，唯有正念前行方能自救。</p>
+    </footer>
+
+    <script>
+        // 滾動進度條
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (scrollTop / scrollHeight) * 100;
+            document.getElementById('scroll-progress').style.width = scrolled + '%';
+            
+            // 根據滾動深度改變背景色（從黑色漸變至深紅）
+            const body = document.getElementById('hell-body');
+            const progress = scrollTop / scrollHeight;
+            
+            if (progress < 0.2) {
+                body.style.backgroundColor = '#020202'; // 純黑
+            } else if (progress < 0.4) {
+                body.style.backgroundColor = '#1a0505'; // 暗紅
+            } else if (progress < 0.6) {
+                body.style.backgroundColor = '#2d0a0a'; // 深紅
+            } else if (progress < 0.8) {
+                body.style.backgroundColor = '#3d0f0f'; // 紅褐
+            } else {
+                body.style.backgroundColor = '#4a0f0f'; // 最紅
+            }
+        });
+    </script>
+</body>
+</html>

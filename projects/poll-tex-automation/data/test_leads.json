@@ -1,0 +1,36 @@
+[
+  {
+    "id": "L001",
+    "customer": "王小姐",
+    "allergy": true,
+    "new_house": false,
+    "smoke_issue": true,
+    "budget_known": false,
+    "windows": [
+      {"type": "sliding", "width": 160, "height": 210, "count": 1},
+      {"type": "sliding", "width": 120, "height": 120, "count": 2}
+    ]
+  },
+  {
+    "id": "L002",
+    "customer": "張先生",
+    "allergy": false,
+    "new_house": true,
+    "smoke_issue": false,
+    "budget_known": true,
+    "windows": [
+      {"type": "sliding", "width": 150, "height": 220, "count": 4}
+    ]
+  },
+  {
+    "id": "L003",
+    "customer": "李先生",
+    "allergy": true,
+    "new_house": true,
+    "smoke_issue": true,
+    "budget_known": true,
+    "windows": [
+      {"type": "door", "width": 80, "height": 210, "count": 1}
+    ]
+  }
+]

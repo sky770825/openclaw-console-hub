@@ -1,0 +1,42 @@
+=== Auto-Executor Logic Investigation ===
+Date: Sun Mar  1 09:19:13 CST 2026
+
+--- Search for 'done' status mapping ---
+No direct 'done' string found in executor-agents.ts
+
+--- Search for Task Completion/Error Handling ---
+491:    try {
+515:    } catch (error) {
+580:    try {
+624:    } catch (error) {
+747:        try { return fs.statSync(f).size > 100; } catch { return false; }
+904:      try {
+940:      try {
+978:      } catch (e) {
+1201:        try { fs.unlinkSync(scriptPath); } catch { /* ignore */ }
+1279:      try {
+1285:      } catch (err) {
+1365:    try {
+1433:    } catch (error) {
+1479:    try {
+
+--- Search for Polling/Dispatch Logic ---
+412:      const timeoutId = setTimeout(() => {
+1090:- EXAMPLE of good output: "Found 49 TS files (17306 lines), 386 functions. Top 3 largest: index.ts (2601L), bot-polling.ts (1699L)... 結論：建議將 index.ts 拆分為..."
+1188:      const timer = setTimeout(() => {
+1384:        const timer = setTimeout(() => {
+
+--- Search for API Route definitions for Dispatch ---
+
+=== Summary of Actions ===
+1. Investigated /Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts for 'done' status logic.
+2. Created /Users/caijunchang/.openclaw/workspace/scripts/fix_task_statuses.sh to manually reset tasks t1772326075591 and t1772325127506.
+3. Recreated missing dispatch script at /Users/caijunchang/.openclaw/workspace/scripts/openclaw-dispatch.sh.
+4. Created /Users/caijunchang/.openclaw/workspace/scripts/rebuild-cron-jobs.sh to restore cron automation.
+5. Logged findings to /Users/caijunchang/.openclaw/workspace/reports/investigation_20260301_091913.txt.
+
+=== Root Cause Analysis (Preliminary) ===
+The false 'done' status likely occurs because the execution wrapper in executor-agents.ts
+marks tasks as done when the execution process exits with 0, even if no work was performed
+or if the logic didn't properly validate the outcome. The dispatch failure is likely
+due to the missing cron scripts preventing the polling mechanism from firing.

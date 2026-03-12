@@ -1,0 +1,4 @@
+IssueID,Severity,Description,PotentialCause
+PERF-001,Medium,Latency spike (4500ms) on large prompts,Context window processing overhead or attention scaling
+PERF-001,Medium,Latency spike (10500ms) on large prompts,Context window processing overhead or attention scaling
+ERR-001,High,Execution Error: CUDA Out of Memory,Memory limit exceeded during inference

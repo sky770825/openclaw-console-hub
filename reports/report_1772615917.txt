@@ -1,0 +1,5 @@
+NEUXA Report for Task 1772615917
+Query: JSON
+Timestamp: Wed Mar  4 17:18:37 CST 2026
+---
+Result: JavaScript Object Notation. A lightweight data-interchange format.

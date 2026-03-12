@@ -1,0 +1,6 @@
+Dispatch Route Source: 
+Status Done Logic: Logic not found
+Permission Logic Found in: /Users/caijunchang/openclaw任務面版設計/server/dist/middlewares/auth.js:            message: `Insufficient permissions (requires ${requiredLevel} access)`
+/Users/caijunchang/openclaw任務面版設計/server/dist/middlewares/auth.js:                message: `Insufficient permissions (requires ${level} access)`
+/Users/caijunchang/openclaw任務面版設計/server/src/middlewares/auth.ts:      message: `Insufficient permissions (requires ${requiredLevel} access)`
+/Users/caijunchang/openclaw任務面版設計/server/src/middlewares/auth.ts:        message: `Insufficient permissions (requires ${level} access)`

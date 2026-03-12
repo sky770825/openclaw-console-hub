@@ -1,0 +1,10 @@
+{
+  "name": "self-healing-deploy",
+  "version": "1.0.0",
+  "description": "自動檢查並修復部署環境目錄",
+  "pre_flight": [
+    "mkdir -p server/src/services",
+    "mkdir -p server/src/routes"
+  ],
+  "permissions": ["fs:write", "fs:mkdir"]
+}

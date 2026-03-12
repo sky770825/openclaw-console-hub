@@ -1,0 +1,132 @@
+{
+  "name": "Daily Wrap-up",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24,
+              "triggerAtHour": 22
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5679/webhook/daily-wrapup",
+        "sendBody": true,
+        "contentType": "application/json",
+        "body": {
+          "event": "daily_wrapup_request",
+          "timestamp": "={{ $now }}",
+          "source": "n8n-scheduler"
+        }
+      },
+      "name": "OpenClaw Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 處理 OpenClaw 回應\nconst response = $input.first().json;\n\n// 格式化報告\nconst report = {\n  date: new Date().toISOString().split('T')[0],\n  summary: response.summary || 'No summary available',\n  tasks_completed: response.tasks || [],\n  security_status: response.security || 'Unknown',\n  alerts: response.alerts || [],\n  generated_at: new Date().toISOString()\n};\n\nreturn [report];"
+      },
+      "name": "Process Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "5819565005",
+        "text": "={{ '🔔 每日 Wrap-up Report\\n\\n📅 Date: ' + $json.date + '\\n\\n📝 Summary:\\n' + $json.summary + '\\n\\n🔒 Security Status: ' + $json.security_status + '\\n\\nGenerated at: ' + $json.generated_at }}",
+        "additionalOptions": {}
+      },
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "fileName": "={{ 'daily-wrapup-' + $json.date + '.json' }}",
+        "data": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "fileName": "={{ 'daily-wrapup-' + $json.date + '.json' }}",
+          "download": false
+        }
+      },
+      "name": "Save Report",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [850, 500]
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "openclaw",
+      "id": "tag-openclaw",
+      "createdAt": "2026-02-15T00:00:00.000Z",
+      "updatedAt": "2026-02-15T00:00:00.000Z"
+    },
+    {
+      "name": "daily",
+      "id": "tag-daily",
+      "createdAt": "2026-02-15T00:00:00.000Z",
+      "updatedAt": "2026-02-15T00:00:00.000Z"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "OpenClaw Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenClaw Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Response": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-status-update",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "id": "webhook-id"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"status\"]}}",
+              "value2": "done"
+            }
+          ]
+        }
+      },
+      "name": "If Status is Done",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "id": "if-id"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=任務完成報報：
+
+任務名稱：{{$json[\"title\"]}}
+描述：{{$json[\"description\"]}}
+執行者：{{$json[\"assignee\"]}}
+完成時間：{{new Date().toLocaleString()}}",
+        "additionalFields": {}
+      },
+      "name": "Telegram Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        650,
+        200
+      ],
+      "id": "telegram-id"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Status is Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Status is Done": {
+      "main": [
+        [
+          {
+            "node": "Telegram Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

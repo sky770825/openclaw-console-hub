@@ -1,0 +1,52 @@
+Products Table Design Report
+===========================
+Status: Implemented and Verified
+Date: Sat Mar  7 11:01:34 CST 2026
+
+Table: products
+Fields:
+- id: INTEGER PRIMARY KEY AUTOINCREMENT
+- name: TEXT NOT NULL
+- description: TEXT (Optional)
+- price: DECIMAL(10, 2) NOT NULL
+- category_id: INTEGER (FK to categories.id)
+- image_url: TEXT (Optional)
+- stock_quantity: INTEGER (Nullable)
+- created_at: TIMESTAMP (Default: CURRENT_TIMESTAMP)
+- updated_at: TIMESTAMP (Default: CURRENT_TIMESTAMP)
+
+Verification:
+- SQLite validation successful.
+- Foreign Key constraint verified against categories table.
+- stock_quantity confirmed as nullable.
+
+Schema Definition:
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    category_id INTEGER,
+    image_url TEXT,
+    stock_quantity INTEGER DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+CREATE TRIGGER update_products_timestamp 
+AFTER UPDATE ON products
+FOR EACH ROW
+BEGIN
+    UPDATE products SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+Column Details:
+0|id|INTEGER|0||1
+1|name|TEXT|1||0
+2|description|TEXT|0||0
+3|price|DECIMAL(10, 2)|1||0
+4|category_id|INTEGER|0||0
+5|image_url|TEXT|0||0
+6|stock_quantity|INTEGER|0|NULL|0
+7|created_at|TIMESTAMP|0|CURRENT_TIMESTAMP|0
+8|updated_at|TIMESTAMP|0|CURRENT_TIMESTAMP|0

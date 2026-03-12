@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="匿名懺悔與祈福互動牆，將愧疚、祝願與反省轉化為具體行動與持續修正的力量。">
+    <meta property="og:title" content="懺悔與祈福牆 | 能量的轉化中心">
+    <meta property="og:description" content="匿名懺悔與祈福互動牆，將愧疚、祝願與反省轉化為具體行動與持續修正的力量。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/wall.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="懺悔與祈福牆 | 能量的轉化中心">
+    <meta name="twitter:description" content="匿名懺悔與祈福互動牆，將愧疚、祝願與反省轉化為具體行動與持續修正的力量。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>懺悔與祈福牆 | 能量的轉化中心</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../causelaw-config.js"></script>
+    <script src="../causelaw-client.js"></script>
+    <script src="../causelaw-ui.js"></script>
+    <script src="../causelaw-auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .wall-container {
+            height: 70vh;
+            background: #050505;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(184, 134, 11, 0.2);
+        }
+        .lantern {
+            position: absolute;
+            bottom: -50px;
+            color: #ffd700;
+            font-size: 2rem;
+            animation: float-up linear forwards;
+            pointer-events: none;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px #ffd700);
+        }
+        .confession-stone {
+            position: absolute;
+            top: -50px;
+            color: #8b0000;
+            font-size: 1.5rem;
+            animation: sink-down linear forwards;
+            pointer-events: none;
+            opacity: 0.6;
+            filter: drop-shadow(0 0 5px #8b0000);
+        }
+        #wall-items-layer { pointer-events: none; z-index: 8; }
+        #wall-items-layer .wall-item { pointer-events: auto; }
+        .wall-item {
+            position: absolute;
+            cursor: pointer;
+            font-size: 1.6rem;
+            transition: transform 0.2s, filter 0.2s;
+            z-index: 5;
+        }
+        .wall-item.confess { font-size: 1.5rem; color: #8b0000; filter: drop-shadow(0 0 6px #8b0000); }
+        .wall-item.bless { font-size: 1.7rem; color: #ffd700; filter: drop-shadow(0 0 8px #ffd700); }
+        .wall-item:hover { transform: scale(1.25); filter: drop-shadow(0 0 12px currentColor); z-index: 10; }
+        .wall-modal {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center;
+            padding: 2rem; backdrop-filter: blur(8px);
+            animation: wall-modal-bg 0.25s ease;
+        }
+        @keyframes wall-modal-bg { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes wall-modal-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .wall-modal-inner {
+            max-width: 520px; width: 100%;
+            animation: wall-modal-in 0.3s ease;
+            background: linear-gradient(180deg, #0f0f0f 0%, #080808 100%);
+            padding: 0;
+            border-radius: 12px;
+            max-height: 85vh; overflow: hidden;
+            display: flex; flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+        }
+        .wall-modal-inner.bless { border: 2px solid rgba(212,175,55,0.5); box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,175,55,0.08), 0 0 0 1px rgba(212,175,55,0.15); }
+        .wall-modal-inner.confess { border: 2px solid rgba(139,0,0,0.5); box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(139,0,0,0.06), 0 0 0 1px rgba(139,0,0,0.2); }
+        .wall-modal-header {
+            padding: 1.5rem 1.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .wall-modal-header .wall-modal-icon { font-size: 2rem; line-height: 1; }
+        .wall-modal-header .wall-modal-type { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.15em; margin: 0; }
+        .wall-modal-inner.bless .wall-modal-header .wall-modal-type { color: #d4af37; }
+        .wall-modal-inner.confess .wall-modal-header .wall-modal-type { color: #b22222; }
+        .wall-modal-meta-wrap {
+            padding: 0.75rem 1.75rem; background: rgba(0,0,0,0.3);
+            font-size: 0.8rem; color: #888; border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .wall-modal-date-wrap { padding: 0.5rem 1.75rem; font-size: 0.75rem; color: #666; }
+        .wall-modal-body {
+            padding: 1.5rem 1.75rem 1.75rem; overflow-y: auto; flex: 1;
+        }
+        .wall-modal-body .wall-modal-text {
+            color: #d4d4d4; line-height: 1.85; font-size: 1rem; margin: 0; white-space: pre-wrap;
+            padding: 1.25rem; background: rgba(0,0,0,0.35); border-radius: 8px;
+            border-left: 3px solid rgba(212,175,55,0.4);
+        }
+        .wall-modal-inner.confess .wall-modal-body .wall-modal-text { border-left-color: rgba(139,0,0,0.5); }
+        .wall-modal-close {
+            margin: 0 1.75rem 1.5rem; padding: 0.75rem 1.5rem;
+            border-radius: 8px; font-size: 0.9rem; letter-spacing: 0.2em;
+            background: transparent; border: 1px solid rgba(212,175,55,0.35); color: #d4af37;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .wall-modal-close:hover { background: rgba(212,175,55,0.12); }
+        .wall-modal-inner.confess .wall-modal-close { border-color: rgba(178,34,34,0.4); color: #b22222; }
+        .wall-modal-inner.confess .wall-modal-close:hover { background: rgba(178,34,34,0.1); }
+        .wall-filter { margin-bottom: 1rem; }
+        .wall-filter button { margin-right: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.9rem; border: 1px solid rgba(212,175,55,0.3); background: transparent; color: #999; cursor: pointer; transition: all 0.2s; }
+        .wall-filter button:hover, .wall-filter button.active { color: #d4af37; border-color: #d4af37; }
+        @keyframes float-up {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-80vh) translateX(var(--drift)); opacity: 0; }
+        }
+        @keyframes sink-down {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(80vh) translateX(var(--drift)); opacity: 0; }
+        }
+        .input-area {
+            background: rgba(10, 10, 10, 0.95);
+            border: 2px solid var(--gold);
+            padding: 3rem;
+            margin-top: -4rem;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 -20px 50px rgba(0,0,0,1);
+        }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="tasks.html" class="hover:text-gold transition">任務中心</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition text-gold">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-5xl mx-auto px-6">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl mb-6 tracking-[0.4em] text-gold">懺悔與祈福牆</h1>
+            <p class="text-xl text-stone-500 tracking-widest italic">「寫下的瞬間，能量便已啟動轉化。」</p>
+            <p class="text-stone-500 text-sm mt-2">點擊牆上的燈或石頭可查看匿名訊息</p>
+        </div>
+
+        <div class="wall-filter text-center">
+            <button type="button" class="active" data-filter="all">全部</button>
+            <button type="button" data-filter="bless">祈福燈</button>
+            <button type="button" data-filter="confess">懺悔石</button>
+        </div>
+        <p id="wall-sync-status" class="text-stone-500 text-xs text-center mb-2">會員未連線，牆面資料目前僅存本機。</p>
+        <p class="text-center mb-2"><a href="tasks.html" class="text-xs text-gold hover:underline">前往會員任務中心（查看今日誦經/懺悔/善行任務）</a></p>
+        <p class="text-stone-500 text-xs text-center mb-2">懺悔石在左下方堆疊、祈福燈在右側堆疊，點擊可看內容</p>
+
+        <div id="visual-wall" class="wall-container">
+            <div id="wall-items-layer" class="absolute inset-0 pointer-events-none"><!-- 可點擊的燈/石由 JS 填入，pointer-events 由子元素覆蓋 --></div>
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p class="text-stone-800 text-6xl font-black opacity-30">因果轉化場</p>
+            </div>
+        </div>
+
+        <div id="wall-modal" class="wall-modal hidden">
+            <div id="wall-modal-inner" class="wall-modal-inner">
+                <div class="wall-modal-header">
+                    <span id="wall-modal-icon" class="wall-modal-icon"></span>
+                    <p id="wall-modal-type" class="wall-modal-type"></p>
+                </div>
+                <div id="wall-modal-meta-wrap" class="wall-modal-meta-wrap"></div>
+                <div id="wall-modal-date-wrap" class="wall-modal-date-wrap"></div>
+                <div class="wall-modal-body">
+                    <p id="wall-modal-text" class="wall-modal-text"></p>
+                </div>
+                <button type="button" onclick="closeWallModal()" class="wall-modal-close">關閉</button>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- 祈福 -->
+                <div class="space-y-4">
+                    <h2 class="text-3xl text-gold font-black">【為人祈福】</h2>
+                    <p class="text-stone-500 text-sm">種下善因，讓福德之光在宇宙間飄揚。</p>
+                    <div>
+                        <label class="block text-gold/90 text-xs mb-1">為誰祈福（選填）</label>
+                        <input type="text" id="bless-target" placeholder="例如：父母、某位親友、眾生" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-gold/90 text-xs mb-1">您的名字（選填，留空為匿名）</label>
+                        <input type="text" id="bless-name" placeholder="署名或留空" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-gold/90 text-xs mb-1">祈福內容 <span class="text-red-400">*</span></label>
+                        <textarea id="bless-text" placeholder="輸入您的願望或對他人的祝福..." class="w-full p-4 bg-black border border-gold/30 text-white focus:border-gold outline-none h-28" required></textarea>
+                    </div>
+                    <button onclick="postItem('bless')" class="w-full py-4 bg-gold text-black font-black tracking-widest hover:bg-goldBright transition-all">點燃祈福燈</button>
+                </div>
+                <!-- 懺悔 -->
+                <div class="space-y-4">
+                    <h2 class="text-3xl text-cinnabar font-black">【匿名懺悔】</h2>
+                    <p class="text-stone-500 text-sm">坦誠過往，將沉重的業力交付於虛空。</p>
+                    <div>
+                        <label class="block text-cinnabar/90 text-xs mb-1">對誰懺悔（選填）</label>
+                        <input type="text" id="confess-target" placeholder="例如：父母、受傷害的人、神明、眾生" class="w-full p-3 bg-black border border-cinnabar/30 text-white focus:border-cinnabar outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-cinnabar/90 text-xs mb-1">您的名字（選填，留空為匿名）</label>
+                        <input type="text" id="confess-name" placeholder="署名或留空" class="w-full p-3 bg-black border border-cinnabar/30 text-white focus:border-cinnabar outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-cinnabar/90 text-xs mb-1">懺悔內容 <span class="text-red-400">*</span></label>
+                        <textarea id="confess-text" placeholder="輸入您想懺悔的事實或心中的愧疚..." class="w-full p-4 bg-black border border-cinnabar/30 text-white focus:border-cinnabar outline-none h-28" required></textarea>
+                    </div>
+                    <button onclick="postItem('confess')" class="w-full py-4 bg-cinnabar text-white font-black tracking-widest hover:bg-red-600 transition-all">沉降業力石</button>
+                </div>
+            </div>
+            <p class="text-stone-500 text-xs mt-6 text-center">填寫後會出現在牆上，點擊燈或石頭可查看該則內容。已登入會員時會同步雲端，未登入則僅存於本機。</p>
+        </div>
+    </main>
+
+    <script>
+        const WALL_KEY = 'causelaw_wall_items';
+        const WALL_DAILY_KEY = 'causelaw_wall_daily_state_v1';
+        const WALL_BONUS_KEY = 'causelaw_wall_bonus_total';
+        const wall = document.getElementById('visual-wall');
+        const wallLayer = document.getElementById('wall-items-layer');
+        let wallFilter = 'all';
+
+        function dbTable(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.tables && db.tables[name]) return db.tables[name];
+            return fallback;
+        }
+
+        function dbRpc(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.rpc && db.rpc[name]) return db.rpc[name];
+            return fallback;
+        }
+
+        function setWallSyncStatus(message, tone) {
+            var el = document.getElementById('wall-sync-status');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'text-xs text-center mb-2 ' + (tone === 'error' ? 'text-red-400' : (tone === 'ok' ? 'text-emerald-400' : 'text-stone-500'));
+        }
+
+        function getTodayStr() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function getWallDailyState() {
+            const today = getTodayStr();
+            try {
+                const raw = localStorage.getItem(WALL_DAILY_KEY);
+                if (!raw) return { date: today, count: 0, texts: [] };
+                const obj = JSON.parse(raw);
+                if (!obj || obj.date !== today) return { date: today, count: 0, texts: [] };
+                if (!Array.isArray(obj.texts)) obj.texts = [];
+                if (typeof obj.count !== 'number') obj.count = 0;
+                return obj;
+            } catch (e) {
+                return { date: today, count: 0, texts: [] };
+            }
+        }
+
+        function saveWallDailyState(state) {
+            try {
+                localStorage.setItem(WALL_DAILY_KEY, JSON.stringify(state));
+            } catch (e) {}
+        }
+
+        function getWallBonusTotal() {
+            try {
+                const v = parseInt(localStorage.getItem(WALL_BONUS_KEY) || '0', 10);
+                return isNaN(v) ? 0 : v;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function addWallBonus(points) {
+            if (!points) return;
+            try {
+                const current = getWallBonusTotal();
+                const next = current + points;
+                localStorage.setItem(WALL_BONUS_KEY, String(next));
+                const curNetRaw = localStorage.getItem('causelaw_merit_net_score');
+                const curNet = parseInt(curNetRaw || '0', 10);
+                const base = isNaN(curNet) ? 0 : curNet;
+                localStorage.setItem('causelaw_merit_net_score', String(base + points));
+            } catch (e) {}
+        }
+
+        function normalizeWallText(text) {
+            return (text || '').replace(/\s+/g, ' ').trim();
+        }
+
+        function validateWallMerit(type, text) {
+            const MAX_PER_DAY = 5;
+            const daily = getWallDailyState();
+            if (daily.count >= MAX_PER_DAY) {
+                alert('今日懺悔與祈福合計已達 ' + MAX_PER_DAY + ' 則，請明日再繼續。');
+                return null;
+            }
+            const normalized = normalizeWallText(text);
+            if (normalized && Array.isArray(daily.texts) && daily.texts.some(function (t) { return t === normalized; })) {
+                alert('每一則懺悔或祈福內容需要與前幾則略有不同，請調整文字再送出。');
+                return null;
+            }
+            const points = type === 'confess' ? 4 : 2;
+            return { points: points, daily: daily, normalized: normalized, max: MAX_PER_DAY };
+        }
+
+        function commitWallMerit(result) {
+            if (!result) return null;
+            result.daily.count += 1;
+            result.daily.texts = result.daily.texts || [];
+            if (result.normalized) result.daily.texts.push(result.normalized);
+            saveWallDailyState(result.daily);
+            addWallBonus(result.points);
+            return { points: result.points, count: result.daily.count, max: result.max };
+        }
+
+        function getItems() {
+            try {
+                return JSON.parse(localStorage.getItem(WALL_KEY) || '[]');
+            } catch (e) { return []; }
+        }
+        function saveItems(items) {
+            localStorage.setItem(WALL_KEY, JSON.stringify(items));
+        }
+
+        async function loadCloudWallItems() {
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                setWallSyncStatus('會員未連線，牆面資料目前僅存本機。', 'info');
+                return;
+            }
+            try {
+                var sessionUser = await window.CauseLawClient.getSessionUser();
+                if (!sessionUser) {
+                    setWallSyncStatus('尚未登入會員，牆面資料目前僅存本機。', 'info');
+                    return;
+                }
+                if (window.CauseLawClient.ensureMemberProfile) {
+                    await window.CauseLawClient.ensureMemberProfile(sessionUser);
+                }
+                var supabase = window.CauseLawClient.getClient();
+                var query = await supabase
+                    .from(dbTable('wallEntries', 'causelaw_yinguo_v1.wall_entries'))
+                    .select('id,entry_type,target,author_name,text_content,is_anonymous,created_at')
+                    .eq('member_id', sessionUser.id)
+                    .order('created_at', { ascending: true });
+                if (query.error) throw query.error;
+                var local = getItems();
+                var existingIds = {};
+                local.forEach(function (x) {
+                    if (x.cloudId) existingIds[x.cloudId] = true;
+                });
+                (query.data || []).forEach(function (row) {
+                    if (existingIds[row.id]) return;
+                    local.push({
+                        id: 'cloud_' + row.id,
+                        cloudId: row.id,
+                        type: row.entry_type,
+                        text: row.text_content,
+                        target: row.target || '',
+                        authorName: row.is_anonymous ? '' : (row.author_name || ''),
+                        createdAt: row.created_at,
+                        source: 'cloud'
+                    });
+                });
+                saveItems(local);
+                setWallSyncStatus('已連線會員雲端牆：' + (sessionUser.email || sessionUser.id), 'ok');
+            } catch (err) {
+                console.error('載入雲端祈福/懺悔資料失敗:', err);
+                setWallSyncStatus('雲端牆載入失敗，已保留本機資料。', 'error');
+            }
+        }
+
+        async function syncWallItemToCloud(item) {
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                throw new Error('會員未連線，無法同步牆面內容。');
+            }
+            var sessionUser = await window.CauseLawClient.getSessionUser();
+            if (!sessionUser) {
+                throw new Error('請先登入會員後再同步祈福或懺悔。');
+            }
+            if (window.CauseLawClient.ensureMemberProfile) {
+                await window.CauseLawClient.ensureMemberProfile(sessionUser);
+            }
+            return window.CauseLawClient.rpcCall(
+                dbRpc('createWallEntry', 'causelaw_yinguo_v1.create_wall_entry'),
+                {
+                    p_entry_type: item.type,
+                    p_target: item.target || null,
+                    p_author_name: item.authorName || null,
+                    p_text_content: item.text,
+                    p_is_anonymous: !item.authorName
+                },
+                'create_wall_entry'
+            );
+        }
+
+        // 懺悔石：左側偏下往上堆疊（避開下方輸入框重疊區）
+        function stackPositionConfess(index) {
+            var perRow = 5;
+            var row = Math.floor(index / perRow);
+            var col = index % perRow;
+            var jitterX = (Math.sin(index * 1.3) * 1.8 + 1.8);
+            var jitterY = (Math.cos(index * 0.7) * 0.9);
+            var top = 78 - row * 5.8 + jitterY;
+            if (top < 16) top = 16 + (row % 2) * 1.2;
+            return {
+                left: (10 + col * 9 + (row % 2) * 4 + jitterX) + '%',
+                top: top + '%'
+            };
+        }
+        // 祈福燈：右側由上往下堆疊（一串燈）
+        function stackPositionBless(index) {
+            var row = Math.floor(index / 3);
+            var col = index % 3;
+            var jitterX = (Math.sin(index * 0.9) * 2);
+            var jitterY = (Math.cos(index * 1.1) * 1.5);
+            return {
+                left: (68 + col * 12 + jitterX) + '%',
+                top: (6 + row * 8 + jitterY) + '%'
+            };
+        }
+
+        function renderWallItems() {
+            var items = getItems();
+            var confess = items.filter(function (i) { return i.type === 'confess'; }).sort(function (a, b) { return (a.createdAt || '').localeCompare(b.createdAt || ''); });
+            var bless = items.filter(function (i) { return i.type === 'bless'; }).sort(function (a, b) { return (a.createdAt || '').localeCompare(b.createdAt || ''); });
+            wallLayer.innerHTML = '';
+
+            function addItem(item, pos, stackIndex) {
+                if (wallFilter !== 'all' && item.type !== wallFilter) return;
+                var el = document.createElement('div');
+                el.className = 'wall-item ' + item.type;
+                el.innerText = item.type === 'bless' ? '🪷' : '🪨';
+                el.title = '點擊查看內容';
+                el.dataset.id = item.id;
+                el.style.left = pos.left;
+                el.style.top = pos.top;
+                // 新的項目放在較上層，避免堆疊時被舊項目擋住點擊
+                el.style.zIndex = String((item.type === 'bless' ? 30 : 20) + stackIndex);
+                el.addEventListener('click', function () { showWallModal(item); });
+                wallLayer.appendChild(el);
+            }
+
+            confess.forEach(function (item, i) { addItem(item, stackPositionConfess(i), i); });
+            bless.forEach(function (item, i) { addItem(item, stackPositionBless(i), i); });
+        }
+
+        function showWallModal(item) {
+            var modal = document.getElementById('wall-modal');
+            var inner = document.getElementById('wall-modal-inner');
+            inner.className = 'wall-modal-inner ' + item.type;
+            document.getElementById('wall-modal-icon').textContent = item.type === 'bless' ? '🪷' : '🪨';
+            document.getElementById('wall-modal-type').textContent = item.type === 'bless' ? '【為人祈福】' : '【匿名懺悔】';
+            var metaParts = [];
+            if (item.target && item.target.trim()) metaParts.push((item.type === 'bless' ? '為誰祈福：' : '對誰懺悔：') + item.target.trim());
+            metaParts.push((item.authorName && item.authorName.trim()) ? '署名：' + item.authorName.trim() : '署名：匿名');
+            document.getElementById('wall-modal-meta-wrap').textContent = metaParts.join('　｜　');
+            document.getElementById('wall-modal-date-wrap').textContent = item.createdAt ? new Date(item.createdAt).toLocaleString('zh-TW', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+            document.getElementById('wall-modal-text').textContent = item.text || '';
+            modal.classList.remove('hidden');
+        }
+        function closeWallModal() {
+            document.getElementById('wall-modal').classList.add('hidden');
+        }
+        document.getElementById('wall-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeWallModal();
+        });
+
+        document.querySelectorAll('.wall-filter button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.wall-filter button').forEach(function (b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                wallFilter = this.dataset.filter;
+                renderWallItems();
+            });
+        });
+
+        async function postItem(type) {
+            var textEl = document.getElementById(type + '-text');
+            var text = (textEl.value || '').trim();
+            if (!text) return;
+
+            var meritDraft = validateWallMerit(type, text);
+            if (!meritDraft) return;
+
+            var target = (document.getElementById(type + '-target').value || '').trim();
+            var authorName = (document.getElementById(type + '-name').value || '').trim();
+
+            var id = 'w' + Date.now();
+            var item = { id: id, type: type, text: text, target: target, authorName: authorName, createdAt: new Date().toISOString(), source: 'local' };
+            var synced = false;
+            if (window.CauseLawClient && window.CauseLawClient.isReady()) {
+                try {
+                    var cloudRow = await syncWallItemToCloud(item);
+                    if (!cloudRow || !cloudRow.id) throw new Error('牆面同步回傳資料格式錯誤。');
+                    item.cloudId = cloudRow.id;
+                    item.createdAt = cloudRow.created_at || item.createdAt;
+                    item.source = 'cloud';
+                    if (cloudRow.is_anonymous) item.authorName = '';
+                    synced = true;
+                } catch (err) {
+                    console.error('雲端同步祈福/懺悔失敗:', err);
+                    alert((err && err.message) || '牆面同步失敗，請稍後再試。');
+                    return;
+                }
+            }
+
+            var items = getItems();
+            items.push(item);
+            saveItems(items);
+            var meritInfo = commitWallMerit(meritDraft);
+
+            // 先播一段動畫再出現常駐
+            const animEl = document.createElement('div');
+            animEl.className = type === 'bless' ? 'lantern' : 'confession-stone';
+            animEl.innerText = type === 'bless' ? '🪷' : '🪨';
+            const startX = Math.random() * 90;
+            const drift = (Math.random() - 0.5) * 100;
+            animEl.style.left = startX + '%';
+            animEl.style.setProperty('--drift', drift + 'px');
+            animEl.style.animationDuration = '4s';
+            wall.appendChild(animEl);
+            setTimeout(function () { animEl.remove(); renderWallItems(); }, 4000);
+
+            textEl.value = '';
+            document.getElementById(type + '-target').value = '';
+            document.getElementById(type + '-name').value = '';
+            if (synced) {
+                setWallSyncStatus('已同步最新' + (type === 'bless' ? '祈福燈' : '懺悔石') + '到會員雲端牆。', 'ok');
+            }
+            var msg = type === 'bless' ? '願望已寄往天聽，可點擊牆上燈火查看' : '業力已交付虛空，可點擊牆上石頭查看';
+            if (meritInfo && meritInfo.points) {
+                msg += '\n本次加分：' + meritInfo.points + ' 點（今日第 ' + meritInfo.count + ' 則，最多 ' + meritInfo.max + ' 則）。';
+            }
+            alert(msg + (synced ? '\n（已同步會員雲端）' : '\n（目前僅本機）'));
+        }
+
+        (async function initWall() {
+            await loadCloudWallItems();
+            renderWallItems();
+        })();
+        window.addEventListener('causelaw:auth-state-changed', function () {
+            loadCloudWallItems()
+                .then(function () {
+                    renderWallItems();
+                })
+                .catch(function (err) {
+                    console.error('會員狀態切換後刷新牆面失敗:', err);
+                });
+        });
+    </script>
+</body>
+</html>

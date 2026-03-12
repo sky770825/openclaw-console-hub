@@ -1,0 +1,14 @@
+{
+  "name": "verify-file",
+  "version": "0.1.0",
+  "description": "Verifies if a file exists, is a regular file, is readable, and is not empty.",
+  "author": "小蔡",
+  "params": [
+    {
+      "name": "path",
+      "type": "string",
+      "description": "The absolute or relative path to the file.",
+      "required": true
+    }
+  ]
+}

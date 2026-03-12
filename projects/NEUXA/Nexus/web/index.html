@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <title>NEUXA - 精算未來的星艦代理人</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0a0a0a; color: #e5e5e5; font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; }
+        .nav { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo span { color: #6366f1; }
+        .login { font-size: 14px; font-weight: 600; color: #10b981; text-decoration: none; }
+        .hero { padding: 40px 20px; text-align: center; }
+        .hero h1 { font-size: 32px; font-weight: 800; line-height: 1.25; margin-bottom: 8px; }
+        .gradient { background: linear-gradient(90deg, #4f46e5, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 15px; color: #9ca3af; margin-bottom: 28px; }
+        .btn-group { display: flex; flex-direction: column; gap: 12px; max-width: 280px; margin: 0 auto; }
+        .btn { display: block; width: 100%; padding: 16px 24px; border-radius: 50px; font-weight: 700; font-size: 15px; text-align: center; text-decoration: none; border: none; }
+        .btn-primary { background: linear-gradient(135deg, #4f46e5, #06b6d4); color: white; box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4); }
+        .btn-secondary { background: transparent; color: #e5e5e5; border: 2px solid #374151; }
+        .stats { background: rgba(17, 24, 39, 0.5); border-top: 1px solid #1f2937; border-bottom: 1px solid #1f2937; padding: 40px 20px; }
+        .stat-item { text-align: center; margin-bottom: 32px; }
+        .stat-item:last-child { margin-bottom: 0; }
+        .stat-number { font-size: 40px; font-weight: 800; margin-bottom: 4px; }
+        .cyan { color: #22d3ee; } .indigo { color: #818cf8; } .emerald { color: #34d399; }
+        .stat-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
+        .section { padding: 48px 20px; }
+        .section h2 { font-size: 24px; font-weight: 700; margin-bottom: 28px; }
+        .feature { border-left: 3px solid; padding-left: 16px; margin-bottom: 24px; }
+        .feature.b1 { border-color: #4f46e5; } .feature.b2 { border-color: #06b6d4; }
+        .feature h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+        .feature p { font-size: 14px; color: #9ca3af; }
+        .code { background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 20px; margin-top: 28px; font-family: monospace; font-size: 13px; }
+        .code .p { color: #818cf8; margin-bottom: 12px; }
+        .code .c { color: #d1d5db; line-height: 1.8; }
+        .cards { border-top: 1px solid #111827; }
+        .cards h2 { text-align: center; font-size: 22px; margin-bottom: 4px; }
+        .cards h2 span { color: #6366f1; }
+        .cards .sub { text-align: center; font-size: 14px; color: #6b7280; margin-bottom: 28px; }
+        .card { background: rgba(31, 41, 55, 0.5); border: 1px solid #1f2937; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+        .card .icon { font-size: 32px; margin-bottom: 12px; }
+        .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .card p { font-size: 14px; color: #9ca3af; }
+        .pricing { text-align: center; }
+        .pbox { background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.3); border-radius: 20px; padding: 32px 20px; }
+        .pbox h2 { font-size: 20px; margin-bottom: 16px; }
+        .pbox .price { font-size: 36px; font-weight: 800; margin-bottom: 4px; }
+        .pbox .price span { font-size: 14px; color: #6b7280; font-weight: 400; }
+        .pbox .quote { font-size: 13px; color: #9ca3af; font-style: italic; margin-bottom: 28px; }
+        .popt { background: rgba(31, 41, 55, 0.8); border: 1px solid #374151; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .popt h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+        .popt .i { color: #818cf8; } .popt .c { color: #22d3ee; }
+        .popt ul { font-size: 13px; color: #9ca3af; text-align: left; margin-bottom: 16px; padding-left: 16px; line-height: 1.8; }
+        .popt .btn2 { display: block; width: 100%; padding: 14px; border-radius: 50px; font-weight: 700; font-size: 15px; text-align: center; text-decoration: none; border: 2px solid rgba(34, 211, 238, 0.5); color: #22d3ee; background: transparent; }
+        footer { padding: 32px 20px; text-align: center; color: #4b5563; font-size: 12px; border-top: 1px solid #111827; }
+    </style>
+</head>
+<body>
+    <nav class="nav"><div class="logo">NEU<span>XA</span> 🚀</div><a href="https://line.me/R/ti/p/@740ihcar" class="login">登入</a></nav>
+    
+    <section class="hero">
+        <h1>別再租用通用的 AI</h1>
+        <h1 class="gradient">擁有你自己的私人大腦</h1>
+        <p>NEUXA: 2026 年最強大的「精算級」AI 代理系統<br>本地運行、隱私守護、成本精算</p>
+        
+        <!-- Smart Install Steps -->
+        <div style="display: flex; justify-content: center; gap: 20px; margin: 32px 0; flex-wrap: wrap;">
+            <div style="background: rgba(31, 41, 55, 0.4); padding: 16px; border-radius: 12px; width: 100px;">
+                <div style="font-size: 20px;">📥</div>
+                <div style="font-size: 11px; margin-top: 4px; color: #9ca3af;">1. 下載</div>
+            </div>
+            <div style="background: rgba(31, 41, 55, 0.4); padding: 16px; border-radius: 12px; width: 100px;">
+                <div style="font-size: 20px;">⚡</div>
+                <div style="font-size: 11px; margin-top: 4px; color: #9ca3af;">2. 一鍵安裝</div>
+            </div>
+            <div style="background: rgba(31, 41, 55, 0.4); padding: 16px; border-radius: 12px; width: 100px;">
+                <div style="font-size: 20px;">🚀</div>
+                <div style="font-size: 11px; margin-top: 4px; color: #9ca3af;">3. 啟動航行</div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="https://line.me/R/ti/p/@740ihcar" class="btn btn-primary">立即購買 NEUXA Lite (NT$ 990)</a>
+            <a href="#install" class="btn btn-secondary">查看安裝教學</a>
+        </div>
+    </section>
+    
+    <section class="stats">
+        <div class="stat-item"><div class="stat-number cyan">92%</div><div class="stat-label">Token 成本下降</div></div>
+        <div class="stat-item"><div class="stat-number indigo">100%</div><div class="stat-label">數據機密守護</div></div>
+        <div class="stat-item"><div class="stat-number emerald">$0</div><div class="stat-label">每日巡檢費用</div></div>
+    </section>
+    
+    <section class="section">
+        <h2>為什麼選擇 NEUXA?</h2>
+        <div class="feature b1"><h3>Nexus (MCP) 萬能插頭</h3><p>即插即用，連結您的 Excel、Salesforce 或本地 ERP，讓 AI 直接在數據上運作。</p></div>
+        <div class="feature b2"><h3>自癒核心 (Nuwa)</h3><p>全球唯一具備修復本能的 Agent。它會監視自己，並在問題發生前自動解決。</p></div>
+        <div class="code"><div class="p">> neuxa --status_check</div><div class="c">[NEUXA] 偵測到 2,224 個數據節點...<br>[NEUXA] 正在執行路由精算...<br>[NEUXA] 節省率預計: 94.2%<br>[NEUXA] 狀態: 巡航中 / 安全等級 S</div></div>
+    </section>
+    
+    <section class="section cards">
+        <h2>NEUXA <span>Solutions</span></h2>
+        <p class="sub">企業級解決方案</p>
+        <div class="card"><div class="icon">🏗️</div><h3>代理搭建工程</h3><p>從 0 到 1 打造具備四層防禦與自癒核心的專屬代理人社區。</p></div>
+        <div class="card"><div class="icon">🤖</div><h3>AI Agent 租借</h3><p>即插即用，按月租用具備特定功能的專業 NEUXA 代理特遣隊。</p></div>
+        <div class="card"><div class="icon">🏘️</div><h3>初級社區代建</h3><p>快速啟動 MVP 社區，配置 DMZ 哨兵與基礎自動化工作流。</p></div>
+        <div class="card"><div class="icon">📋</div><h3>資源施工藍圖</h3><p>提供精算級發包清單與技術架構藍圖，指引團隊精準施作。</p></div>
+        <div class="btn-group"><a href="https://line.me/R/ti/p/@740ihcar" class="btn btn-secondary">連繫 NEUXA 技術顧問</a></div>
+    </section>
+    
+    <!-- FAQ Section -->
+    <section class="section" style="border-top: 1px solid #111827;">
+        <h2 style="font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 32px;">常見問題 FAQ</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: rgba(31, 41, 55, 0.3); border: 1px solid #1f2937; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; font-weight: 700; color: #818cf8; margin-bottom: 8px;">Q: NEUXA Lite 是免費的嗎？</h3>
+                <p style="font-size: 13px; color: #9ca3af;">A: 目前開放早鳥免費領取 Lite 版！它包含核心的 Nexus 連結能力與基礎自癒功能，適合個人與小型工作室體驗。</p>
+            </div>
+
+            <div style="background: rgba(31, 41, 55, 0.3); border: 1px solid #1f2937; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; font-weight: 700; color: #818cf8; margin-bottom: 8px;">Q: 我不會寫程式，也能安裝嗎？</h3>
+                <p style="font-size: 13px; color: #9ca3af;">A: 當然！我們提供「一鍵安裝指令」，您只需要開啟電腦的 Terminal (Mac) 或 PowerShell (Win)，複製貼上指令即可自動完成所有設定。</p>
+            </div>
+
+            <div style="background: rgba(31, 41, 55, 0.3); border: 1px solid #1f2937; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; font-weight: 700; color: #818cf8; margin-bottom: 8px;">Q: 我的數據安全嗎？</h3>
+                <p style="font-size: 13px; color: #9ca3af;">A: 絕對安全。NEUXA 核心設計理念就是「隱私優先」，所有敏感數據與 Agent 邏輯都在您的本地環境運行，不會上傳到雲端。</p>
+            </div>
+
+            <div style="background: rgba(31, 41, 55, 0.3); border: 1px solid #1f2937; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; font-weight: 700; color: #818cf8; margin-bottom: 8px;">Q: 真的能節省 92% 的成本嗎？</h3>
+                <p style="font-size: 13px; color: #9ca3af;">A: 是的。透過我們的路由精算技術與本地 Ollama 模型串接，NEUXA 能減少不必要的 API 呼叫，並將常規任務轉交給本地 AI 處理。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section pricing">
+        <div class="pbox">
+            <h2>NEUXA Lite 早鳥方案</h2>
+            <div class="price">NT$ 990 <span>/ $29.90 USD</span></div>
+            <p class="quote">「別讓雲端訂閱費吃掉你的利潤。全球數據主權，從現在開始。」</p>
+            <div class="popt">
+                <h3 class="i">🇹🇼 台灣市場專屬</h3>
+                <ul><li>支持銀行轉帳 / LINE Pay</li><li>專人即時技術支援</li><li>繁體中文完整手冊</li></ul>
+                <a href="https://line.me/R/ti/p/@740ihcar" class="btn btn-primary">立即轉帳預訂</a>
+            </div>
+            <div class="popt">
+                <h3 class="c">🌎 Global Market</h3>
+                <ul><li>Credit Card / PayPal / Crypto</li><li>Instant Key Delivery</li><li>Global Tax Handled</li></ul>
+                <a href="https://line.me/R/ti/p/@740ihcar" class="btn2">Buy with Lemon Squeezy</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Advanced Installation Section -->
+    <section id="install" class="section" style="background: #111827; border-top: 1px solid #1f2937;">
+        <h2 style="text-align: center;">3 分鐘開啟你的星艦 ⚡</h2>
+        
+        <div style="max-width: 600px; margin: 0 auto;">
+            <p style="text-align: center; font-size: 14px; color: #9ca3af; margin-bottom: 24px;">無需任何程式碼基礎，複製下方指令並貼入您的終端機即可。</p>
+            
+            <div class="code" style="border-color: #4f46e5; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="color: #818cf8; font-size: 12px; font-weight: 600;">NEUXA 一鍵安裝指令 (Mac/Linux)</span>
+                    <span style="font-size: 10px; background: rgba(79, 70, 229, 0.2); padding: 2px 8px; border-radius: 4px; color: #818cf8;">RECOMMENDED</span>
+                </div>
+                <div class="c" style="font-family: 'SF Mono', monospace;">
+                    curl -sL https://get.neuxa.ai | bash
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; text-align: center;">
+                <p style="font-size: 12px; color: #6b7280;">⚠️ 安裝前請確保已取得您的 <a href="#pricing" style="color: #22d3ee;">授權金鑰</a>。</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>© 2026 NEUXA - Actuating the Future. All Rights Reserved.</footer>
+</body>
+</html>

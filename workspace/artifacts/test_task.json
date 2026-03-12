@@ -1,0 +1,7 @@
+{
+  "id": "TASK-123",
+  "title": "[織網行動-9] n8n 深度工作流整合",
+  "description": "建立 n8n 工作流監聽任務 status 變化，並發送 Telegram 摘要",
+  "status": "done",
+  "assignee": "TaskExecutor"
+}

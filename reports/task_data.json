@@ -1,0 +1,37 @@
+[
+    {
+        "id": 1,
+        "task": "Landing Page Structure",
+        "status": "Completed",
+        "owner": "阿秘",
+        "progress": 100
+    },
+    {
+        "id": 2,
+        "task": "Feature Page: Progress Tracking Layout",
+        "status": "In Progress",
+        "owner": "阿秘",
+        "progress": 60
+    },
+    {
+        "id": 3,
+        "task": "Task Management Component",
+        "status": "Pending",
+        "owner": "阿秘",
+        "progress": 0
+    },
+    {
+        "id": 4,
+        "task": "Data Visualization (Charts)",
+        "status": "Pending",
+        "owner": "阿秘",
+        "progress": 0
+    },
+    {
+        "id": 5,
+        "task": "Backend API Integration",
+        "status": "Restricted",
+        "owner": "老蔡",
+        "progress": 10
+    }
+]

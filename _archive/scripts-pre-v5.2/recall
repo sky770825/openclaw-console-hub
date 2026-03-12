@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# 快速記憶召回（使用智能索引）
+# 用法：./scripts/recall "關鍵字"
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 使用新的智能索引系統
+python3 "$SCRIPT_DIR/smart-recall.py" "$@"

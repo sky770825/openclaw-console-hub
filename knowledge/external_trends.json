@@ -1,0 +1,30 @@
+{
+  "name": "takahirom/arbigent",
+  "stars": 522,
+  "description": "AI Agent for testing Android, iOS, and Web apps. Get Started in 5 Minutes. Arbigent's intuitive UI and powerful code interface make it accessible to everyone, while its scenario breakdown feature ensures scalability for even the most complex tasks.",
+  "url": "https://github.com/takahirom/arbigent"
+}
+{
+  "name": "ObservedObserver/async-code",
+  "stars": 511,
+  "description": "Use Claude Code / CodeX CLI to perform multiple tasks in parallel with a Codex-style UI. Your personal codex/cursor-background agent. Claude Code UI.",
+  "url": "https://github.com/ObservedObserver/async-code"
+}
+{
+  "name": "manish-raana/openclaw-mission-control",
+  "stars": 232,
+  "description": "Mission Control is a simple, real-time web UI for monitoring agents and task workflows. Built with Convex and React, it provides a clean dashboard to track task state, agent activity, and live logs — all synchronized instantly without polling or message queues.",
+  "url": "https://github.com/manish-raana/openclaw-mission-control"
+}
+{
+  "name": "mustafakendiguzel/claude-code-ui-agents",
+  "stars": 169,
+  "description": "🎨 A curated collection of Claude AI agent prompts specifically designed for UI/UX design, web development, and frontend tasks. Transform your design workflow with specialized prompts for creating interfaces, components, and user experiences.",
+  "url": "https://github.com/mustafakendiguzel/claude-code-ui-agents"
+}
+{
+  "name": "joewinke/jat",
+  "stars": 155,
+  "description": "  The World's First Agentic IDE. Visual dashboard: live sessions, task management, code editor, terminal. Epic Swarm parallel workflows. Auto-proceed rules. Automation patterns. Beads + Agent Mail + 50 bash tools. Supervise 20+ agents from one UI.",
+  "url": "https://github.com/joewinke/jat"
+}

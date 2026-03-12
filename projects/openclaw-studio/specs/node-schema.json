@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenClaw Studio Node Schema",
+  "type": "object",
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["trigger", "action", "condition"] },
+          "name": { "type": "string" },
+          "params": { "type": "object" }
+        },
+        "required": ["id", "type", "name"]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" }
+        },
+        "required": ["source", "target"]
+      }
+    }
+  },
+  "required": ["nodes", "edges"]
+}

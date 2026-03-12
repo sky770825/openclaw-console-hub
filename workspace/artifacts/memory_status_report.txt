@@ -1,0 +1,6 @@
+Memory Architecture Demo Status
+==============================
+Working Memory Archive: /Users/caijunchang/.openclaw/workspace/sandbox/output/working_memory.txt.archive
+Episodic Memory (Compressed): /Users/caijunchang/.openclaw/workspace/sandbox/output/episodic_memory.json
+Semantic Index: /Users/caijunchang/.openclaw/workspace/sandbox/output/semantic_index.json
+Latest Index Keywords: episodic, memory_architecture, semantic, soul_engineering, threshold

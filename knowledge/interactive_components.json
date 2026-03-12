@@ -1,0 +1,15 @@
+{
+  "project": "OpenClaw",
+  "components": [
+    {
+      "name": "FeatureCard",
+      "props": ["title", "description", "icon", "animationType"],
+      "styling": "Glassmorphism"
+    },
+    {
+      "name": "WorkflowVisualizer",
+      "props": ["nodes", "edges"],
+      "interactivity": "Drag-and-drop simulation"
+    }
+  ]
+}

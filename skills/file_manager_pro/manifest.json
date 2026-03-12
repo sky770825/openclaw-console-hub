@@ -1,0 +1,10 @@
+{
+  "name": "file_manager_pro",
+  "version": "1.0.1",
+  "description": "Hardened file management skill",
+  "permissions": {
+    "filesystem": ["read", "write"],
+    "network": false
+  },
+  "author": "Clawhub Security Team"
+}

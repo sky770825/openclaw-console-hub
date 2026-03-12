@@ -1,0 +1,247 @@
+:root {
+    --primary-pink: #FFC0CB; /* 柔和粉色 */
+    --light-pink: #F8E8EE; /* 極淺粉色 */
+    --white: #FFFFFF;
+    --light-gray: #F9F9F9;
+    --dark-gray: #333333;
+    --text-color: #333333;
+    --font-family: 'Noto Sans TC', sans-serif, 'Microsoft JhengHei';
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--white);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+header {
+    background-color: var(--white);
+    padding: 20px 0;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-pink);
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+}
+
+nav ul li {
+    margin-left: 30px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: var(--dark-gray);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+nav ul li a:hover {
+    color: var(--primary-pink);
+}
+
+.btn-primary {
+    background-color: var(--primary-pink);
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #e0a3af; /* A slightly darker pink */
+}
+
+.btn-secondary {
+    background-color: var(--white);
+    color: var(--primary-pink);
+    border: 1px solid var(--primary-pink);
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-pink);
+    color: var(--white);
+}
+
+.hero {
+    background-color: var(--light-pink);
+    text-align: center;
+    padding: 100px 20px;
+    color: var(--dark-gray);
+    background-image: url('https://via.placeholder.com/1500x500?text=美業沙龍主視覺'); /* Placeholder image */
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7); /* 半透明白色疊加 */
+}
+
+.hero .container {
+    position: relative; /* 確保內容在疊加層之上 */
+    z-index: 1;
+}
+
+.hero h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: var(--primary-pink);
+}
+
+.hero p {
+    font-size: 20px;
+    margin-bottom: 40px;
+}
+
+.features {
+    padding: 80px 0;
+    text-align: center;
+}
+
+.features h2,
+.featured-services h2 {
+    font-size: 36px;
+    margin-bottom: 50px;
+    color: var(--primary-pink);
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.feature-item {
+    background-color: var(--light-gray);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.feature-item h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: var(--dark-gray);
+}
+
+.featured-services {
+    background-color: var(--light-pink);
+    padding: 80px 0;
+    text-align: center;
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.service-card {
+    background-color: var(--white);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    text-align: left;
+}
+
+.service-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.service-card h3 {
+    font-size: 22px;
+    margin: 15px 20px 10px;
+    color: var(--primary-pink);
+}
+
+.service-card p {
+    font-size: 16px;
+    margin: 0 20px 20px;
+    color: var(--dark-gray);
+}
+
+.text-center {
+    text-align: center;
+}
+
+footer {
+    background-color: var(--dark-gray);
+    color: var(--white);
+    padding: 50px 0;
+    font-size: 14px;
+}
+
+footer .container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.footer-info .logo {
+    color: var(--primary-pink);
+    margin-bottom: 15px;
+}
+
+.footer-info p {
+    margin-bottom: 10px;
+}
+
+.social-links a {
+    color: var(--white);
+    text-decoration: none;
+    margin-right: 20px;
+    transition: color 0.3s ease;
+}
+
+.social-links a:hover {
+    color: var(--primary-pink);
+}
+
+.copyright {
+    width: 100%;
+    text-align: center;
+    margin-top: 30px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 20px;
+}

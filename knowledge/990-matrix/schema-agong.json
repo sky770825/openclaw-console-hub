@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "990 Real Estate BMC Matrix",
+  "description": "Data structure for the 990 Real Estate Business Model Canvas Matrix, designed by 阿工.",
+  "type": "object",
+  "properties": {
+    "matrixId": { "type": "string", "description": "Unique identifier for the matrix." },
+    "version": { "type": "integer", "description": "Schema version." },
+    "name": { "type": "string", "description": "Name of the business model." },
+    "customerSegments": {
+      "type": "array",
+      "items": { "type": "object", "properties": { "title": { "type": "string" }, "description": { "type": "string" } }, "required": ["title"] }
+    },
+    "valuePropositions": {
+      "type": "array",
+      "items": { "type": "object", "properties": { "title": { "type": "string" }, "description": { "type": "string" } }, "required": ["title"] }
+    },
+    "channels": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "customerRelationships": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "revenueStreams": {
+      "type": "array",
+      "items": { "type": "object", "properties": { "source": { "type": "string" }, "details": { "type": "string" } }, "required": ["source"] }
+    },
+    "keyActivities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "keyResources": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "keyPartnerships": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "costStructure": {
+      "type": "array",
+      "items": { "type": "object", "properties": { "item": { "type": "string" }, "cost": { "type": "string" } }, "required": ["item"] }
+    }
+  },
+  "required": [
+    "matrixId",
+    "name",
+    "customerSegments",
+    "valuePropositions",
+    "channels",
+    "customerRelationships",
+    "revenueStreams",
+    "keyActivities",
+    "keyResources",
+    "keyPartnerships",
+    "costStructure"
+  ]
+}

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>數位功過格 | 每日能量管理</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .ledger-container { max-width: 800px; margin: 0 auto; background: rgba(20, 20, 20, 0.9); border: 2px solid var(--gold); padding: 4rem; }
+        .checklist-item { display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; border-bottom: 1px solid rgba(212, 175, 55, 0.1); transition: 0.3s; }
+        .checklist-item:hover { background: rgba(212, 175, 55, 0.05); }
+        .check-box { width: 30px; height: 30px; border: 2px solid var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .check-box.checked { background: var(--gold); color: black; }
+        .score-display { font-size: 4rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 20px var(--shadow-gold); }
+        .history-bar { height: 10px; background: #111; border-radius: 5px; overflow: hidden; margin-top: 1rem; }
+        .history-fill { height: 100%; background: linear-gradient(90deg, var(--cinnabar), var(--gold), #00d4ff); width: 0%; transition: 1s; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="faq.html" class="hover:text-gold transition">疑難參悟</a>
+            <a href="quiz.html" class="hover:text-gold transition">覺醒測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 px-6">
+        <div class="ledger-container">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl text-gold mb-4 font-black">每日功過格</h1>
+                <p class="text-stone-500">今日之修持，明日之福緣</p>
+            </div>
+
+            <div class="flex justify-around items-center mb-12 py-8 border-y border-gold/20">
+                <div class="text-center">
+                    <div id="total-score" class="score-display">0</div>
+                    <div class="text-xs text-stone-500 tracking-[0.3em] mt-2">累積能量值</div>
+                </div>
+                <div class="w-1/2">
+                    <div class="text-sm text-stone-400 mb-2 flex justify-between">
+                        <span>場域穩定度</span>
+                        <span id="percent-text">0%</span>
+                    </div>
+                    <div class="history-bar"><div id="history-fill" class="history-fill"></div></div>
+                </div>
+            </div>
+
+            <div id="checklist" class="space-y-2">
+                <!-- 由 JS 生成 -->
+            </div>
+
+            <div class="mt-12 p-6 bg-gold/5 border border-gold/20 text-center">
+                <p id="advice-text" class="text-stone-400 italic">「尚未記錄今日行持。」</p>
+            </div>
+            
+            <button onclick="resetLedger()" class="mt-8 text-stone-700 hover:text-stone-400 text-xs underline block mx-auto">清空數據（重新開始）</button>
+        </div>
+    </main>
+
+    <script>
+        const tasks = [
+            { text: "今日言談誠實，無誇大誹謗", points: 10 },
+            { text: "今日心存善念，無惡意詛咒", points: 10 },
+            { text: "今日手腳乾淨，不取非分之財", points: 15 },
+            { text: "今日推遲私慾，先成就他人", points: 20 },
+            { text: "今日恭敬尊長，愛護弱小", points: 10 },
+            { text: "今日自省過失，並決定改過", points: 15 }
+        ];
+
+        let state = JSON.parse(localStorage.getItem('merit_state')) || {
+            score: 0,
+            checked: Array(tasks.length).fill(false),
+            lastDate: null
+        };
+
+        function init() {
+            const list = document.getElementById('checklist');
+            list.innerHTML = '';
+            tasks.forEach((task, i) => {
+                const item = document.createElement('div');
+                item.className = 'checklist-item';
+                item.innerHTML = `
+                    <span class="text-lg ${state.checked[i] ? 'text-gold' : 'text-stone-400'}">${task.text}</span>
+                    <div class="check-box ${state.checked[i] ? 'checked' : ''}" onclick="toggleTask(${i})">
+                        ${state.checked[i] ? '✓' : ''}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            updateDisplay();
+        }
+
+        function toggleTask(i) {
+            state.checked[i] = !state.checked[i];
+            state.score = state.checked.reduce((acc, curr, idx) => acc + (curr ? tasks[idx].points : 0), 0);
+            localStorage.setItem('merit_state', JSON.stringify(state));
+            init();
+        }
+
+        function updateDisplay() {
+            document.getElementById('total-score').innerText = state.score;
+            const maxPoints = tasks.reduce((a, b) => a + b.points, 0);
+            const percent = Math.round((state.score / maxPoints) * 100);
+            document.getElementById('history-fill').style.width = percent + '%';
+            document.getElementById('percent-text').innerText = percent + '%';
+
+            const advice = document.getElementById('advice-text');
+            if (percent >= 80) advice.innerText = "「今日場域極其清淨，福德正在加速累積。」";
+            else if (percent >= 50) advice.innerText = "「持守正念，勿讓微小私慾破壞能量場。」";
+            else if (percent > 0) advice.innerText = "「警覺！能量流失中，請即刻回歸正道。」";
+            else advice.innerText = "「尚未記錄今日行持。」";
+        }
+
+        function resetLedger() {
+            if(confirm('確定要清空所有修行紀錄嗎？')) {
+                state = { score: 0, checked: Array(tasks.length).fill(false), lastDate: null };
+                localStorage.removeItem('merit_state');
+                init();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

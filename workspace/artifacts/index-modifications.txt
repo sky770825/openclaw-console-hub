@@ -1,0 +1,23 @@
+Modification Suggestions for server/src/index.ts:
+
+The current issue is that app.get('*') acts as a catch-all route for the frontend (SPA routing), 
+but it is placed before or is intercepting your API routes.
+
+Suggested Code Structure:
+
+1. Import the new router:
+   import openclawRunsRouter from './routes/openclaw-runs';
+
+2. Register API routes BEFORE the static/wildcard route:
+   
+   // --- API Routes Section ---
+   app.use('/api/openclaw/tasks', openclawTasksRouter);
+   app.use('/api/openclaw/runs', openclawRunsRouter); // Add this line
+   
+   // --- Static Files / Frontend Wildcard Section ---
+   // Ensure this is AFTER all API route definitions
+   app.get('*', (req, res) => {
+     res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+   });
+
+Rationale: Express matches routes in the order they are defined. Moving API routes above the '*' handler ensures they are processed first.

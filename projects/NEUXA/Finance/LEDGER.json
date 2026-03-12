@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "total_revenue_twd": 2970,
+    "total_revenue_usd": 0,
+    "bounty_fund_reserved_twd": 594,
+    "operational_reserve_twd": 297,
+    "net_profit_twd": 1782,
+    "referral_payout_twd": 297
+  },
+  "transactions": [
+    {
+      "timestamp": "2026-02-19T10:43:46Z",
+      "amount": 990,
+      "currency": "TWD",
+      "source": "Early-Bird-Sale-001",
+      "bounty_allocated": 198
+    },
+    {
+      "timestamp": "2026-02-19T10:45:57Z",
+      "amount": 990,
+      "currency": "TWD",
+      "source": "Order-By-Ref-",
+      "referral_payout": 148.5
+    },
+    {
+      "timestamp": "2026-02-19T10:46:02Z",
+      "amount": 990,
+      "currency": "TWD",
+      "source": "Ref-Order-188985D6",
+      "referral_payout": 148.5
+    }
+  ]
+}

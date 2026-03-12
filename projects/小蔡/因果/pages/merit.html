@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="以數位功過格記錄每日善惡行為，計算淨值與輪迴歸宿預覽，並提供誦經迴向建議。">
+    <meta property="og:title" content="數位功過格 | 善惡值・歸宿預覽">
+    <meta property="og:description" content="以數位功過格記錄每日善惡行為，計算淨值與輪迴歸宿預覽，並提供誦經迴向建議。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/merit.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="數位功過格 | 善惡值・歸宿預覽">
+    <meta name="twitter:description" content="以數位功過格記錄每日善惡行為，計算淨值與輪迴歸宿預覽，並提供誦經迴向建議。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>數位功過格 | 善惡值・歸宿預覽</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../causelaw-config.js"></script>
+    <script src="../causelaw-client.js"></script>
+    <script src="../causelaw-ui.js"></script>
+    <script src="../causelaw-auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .ledger-container { max-width: 800px; margin: 0 auto; background: rgba(20, 20, 20, 0.9); border: 2px solid var(--gold); padding: 4rem; }
+        .checklist-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(212, 175, 55, 0.1); transition: 0.3s; }
+        .checklist-item:hover { background: rgba(212, 175, 55, 0.05); }
+        .check-box { width: 28px; height: 28px; border: 2px solid var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+        .check-box.checked { background: var(--gold); color: black; }
+        .check-box.demerit { border-color: #b91c1c; }
+        .check-box.demerit.checked { background: #b91c1c; color: #fff; }
+        .score-display { font-size: 2.5rem; font-weight: 900; text-shadow: 0 0 15px rgba(212,175,55,0.4); }
+        .score-display.positive { color: var(--gold); }
+        .score-display.negative { color: #ef4444; }
+        .score-display.zero { color: #78716c; }
+        .history-bar { height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+        .history-fill { height: 100%; background: linear-gradient(90deg, #ef4444, var(--gold), #00d4ff); width: 50%; transition: 1s; }
+        .realm-preview { border: 2px solid rgba(212,175,55,0.3); padding: 1.5rem 2rem; margin-top: 1.5rem; text-align: center; }
+        .realm-preview .realm-name { font-size: 1.5rem; font-weight: 900; letter-spacing: 0.2em; }
+        .realm-preview .realm-desc { margin-top: 0.5rem; color: rgba(245,245,220,0.8); font-size: 1rem; }
+        .section-title { font-size: 1.1rem; letter-spacing: 0.3em; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(212,175,55,0.2); }
+        .section-title.merit { color: #22c55e; }
+        .section-title.demerit { color: #f87171; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition text-gold">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 px-6">
+        <div class="ledger-container">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl text-gold mb-3 font-black">每日功過格</h1>
+                <p class="text-stone-500">累積福報、止惡修善，善惡值決定你的歸宿預覽</p>
+                <p id="member-sync-status" class="text-xs text-stone-500 mt-2">會員未連線，資料目前僅存在本機。</p>
+                <button type="button" onclick="syncMeritToMember()" class="mt-3 px-4 py-2 text-xs border border-gold/40 text-gold hover:bg-gold/10 transition">
+                    同步到會員修行帳本
+                </button>
+                <div class="mt-3">
+                    <a href="tasks.html" class="text-xs text-gold hover:underline">查看今日任務清單</a>
+                </div>
+            </div>
+
+            <!-- 善惡值總覽 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 py-6 border-y border-gold/20">
+                <div class="text-center">
+                    <div id="total-merit" class="score-display positive">0</div>
+                    <div class="text-xs text-stone-500 tracking-wider mt-1">累積福報</div>
+                </div>
+                <div class="text-center">
+                    <div id="total-demerit" class="score-display negative">0</div>
+                    <div class="text-xs text-stone-500 tracking-wider mt-1">累積過失</div>
+                </div>
+                <div class="text-center">
+                    <div id="net-score" class="score-display zero">0</div>
+                    <div class="text-xs text-stone-500 tracking-wider mt-1">善惡值（淨值）</div>
+                </div>
+            </div>
+
+            <!-- 善惡值長條（±500 區間，符合視覺習慣） -->
+            <div class="mb-10">
+                <div class="text-sm text-stone-400 mb-2 flex justify-between items-center">
+                    <span>善惡軸</span>
+                    <span id="net-label">淨值 0</span>
+                </div>
+                <div class="history-bar relative">
+                    <div id="history-fill" class="history-fill" style="width: 50%; margin-left: 0;"></div>
+                </div>
+                <div class="flex justify-between text-xs text-stone-600 mt-1">
+                    <span id="axis-min">-500（惡）</span>
+                    <span>0</span>
+                    <span id="axis-max">+500（善）</span>
+                </div>
+                <p id="range-hint" class="text-xs text-amber-500/90 mt-1 text-center hidden">淨值已超出圖示範圍，長條僅顯示邊界</p>
+            </div>
+
+            <!-- 善行（功） -->
+            <h2 class="section-title merit">◆ 善行（功）— 勾選即累積福報</h2>
+            <div id="checklist-merit" class="space-y-0 mb-10"></div>
+
+            <!-- 過失（過） -->
+            <h2 class="section-title demerit">◆ 過失（過）— 勾選即扣分</h2>
+            <div id="checklist-demerit" class="space-y-0 mb-10"></div>
+
+            <!-- 歸宿預覽 -->
+            <div class="realm-preview" id="realm-preview">
+                <div class="realm-name text-gold" id="realm-name">—</div>
+                <div class="realm-desc" id="realm-desc">依你目前的善惡值，歸宿預覽如上。持續行善可趨向天道；止惡修善，永不嫌晚。</div>
+                <div id="realm-hell-link-wrap" class="mt-2 hidden"><a id="realm-hell-link" href="hell.html" class="text-cinnabar hover:underline text-sm">查看該層地獄說明</a></div>
+                <div class="mt-4 flex flex-wrap justify-center gap-3 text-sm">
+                    <a href="deities.html" class="text-gold hover:underline">神明殿堂</a>
+                    <span class="text-stone-600">|</span>
+                    <a href="realms.html" class="text-gold hover:underline">六道輪迴</a>
+                    <span class="text-stone-600">|</span>
+                    <a href="hell.html" class="text-cinnabar hover:underline">十八層地獄</a>
+                </div>
+            </div>
+
+            <div class="mt-10 p-6 bg-gold/5 border border-gold/20 text-center">
+                <p id="advice-text" class="text-stone-400 italic">「尚未記錄今日行持。」</p>
+            </div>
+
+            <!-- 誦經迴向補過：依今日過失建議經咒與遍數 -->
+            <div id="scripture-recommend-wrap" class="mt-10 p-6 border border-purple-500/30 bg-purple-950/20 rounded-lg hidden">
+                <h3 class="text-lg font-black text-gold tracking-wider mb-2">📿 誦經迴向補過</h3>
+                <p class="text-stone-400 text-sm mb-4">根據你今日的功過，建議誦讀以下經咒並迴向，以補過消業、安定身心。遍數為建議值，可依自身時間增減；誦畢可至「經咒・禪樂」頁對照經文。</p>
+                <ul id="scripture-recommend-list" class="text-left space-y-2 mb-4"></ul>
+                <p id="scripture-dedication-hint" class="text-stone-500 text-sm italic mb-4"></p>
+                <a href="audio.html" class="inline-block px-6 py-3 bg-purple-500/20 border border-purple-400/40 text-purple-300 hover:bg-purple-500/30 transition tracking-wider font-bold rounded">前往經咒・禪樂</a>
+                <div class="mt-5 pt-5 border-t border-gold/20 text-left">
+                    <p class="text-amber-200/90 text-xs font-bold tracking-wider mb-2">⚠ 誦經須知（依印光大師讀經須知及道場常規整理）</p>
+                    <ul class="text-stone-500 text-xs space-y-1 list-disc list-inside">
+                        <li>勿在不敬、不淨處出聲誦經：如廁所、浴室、臥床、夫妻房、做葷菜廚房等；若不得已在此類場所，可改為<strong class="text-stone-400">默念</strong>，功德相同。</li>
+                        <li>宜在清淨處誦經：佛堂、道場、家中潔淨房間、桌面整潔、衣冠端正；避免雜物堆積、吵雜或氣場混亂的環境。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button type="button" onclick="resetLedger()" class="mt-8 text-stone-600 hover:text-stone-400 text-xs underline block mx-auto">清空數據（重新開始）</button>
+        </div>
+    </main>
+
+    <script>
+        const DEFAULT_ITEMS = {
+            merit: [
+                { id: "m1", text: "今日言談誠實，無誇大誹謗", points: 10 },
+                { id: "m2", text: "今日心存善念，無惡意詛咒", points: 10 },
+                { id: "m3", text: "今日手腳乾淨，不取非分之財", points: 15 },
+                { id: "m4", text: "今日推遲私慾，先成就他人", points: 20 },
+                { id: "m5", text: "今日恭敬尊長，愛護弱小", points: 10 },
+                { id: "m6", text: "今日自省過失，並決定改過", points: 15 },
+                { id: "m7", text: "今日有布施（財、法、無畏任一）", points: 15 },
+                { id: "m8", text: "今日持戒不犯（不殺不盜不邪淫不妄語等）", points: 12 },
+                { id: "m9", text: "今日忍辱，未以惡報惡", points: 15 },
+                { id: "m10", text: "今日精進，完成該做之事不拖延", points: 10 },
+                { id: "m11", text: "今日靜心或禪修、讀經、思惟因果", points: 12 },
+                { id: "m12", text: "今日節儉惜物、不浪費糧食", points: 8 }
+            ],
+            demerit: [
+                { id: "d1", text: "今日有妄語、綺語或兩舌", points: -10 },
+                { id: "d2", text: "今日起嗔心、罵詈或詛咒", points: -15 },
+                { id: "d3", text: "今日取非分財、佔人便宜", points: -20 },
+                { id: "d4", text: "今日不敬尊長、損害弱小", points: -10 },
+                { id: "d5", text: "今日浪費糧食、暴殄天物", points: -5 },
+                { id: "d6", text: "今日明知故犯、未即改過", points: -15 },
+                { id: "d7", text: "今日背後說人是非、挑撥離間", points: -12 },
+                { id: "d8", text: "今日貪婪、慳吝、不願分享", points: -10 },
+                { id: "d9", text: "今日懈怠拖延、荒廢正事", points: -8 },
+                { id: "d10", text: "今日惡口、諷刺或傷人自尊", points: -12 }
+            ]
+        };
+
+        /** 誦經迴向補過：依今日過失總分與類型建議經咒與遍數 */
+        const SCRIPTURE_TIERS = [
+            { maxDemerit: 0, items: [{ id: "heart", title: "般若波羅蜜多心經", times: 1, note: "可選，迴向眾生" }], dedication: "願以此功德，普及於一切；我等與眾生，皆共成佛道。" },
+            { maxDemerit: 25, items: [{ id: "heart", title: "般若波羅蜜多心經", times: 3 }, { id: "dabei", title: "大悲咒", times: 1 }], dedication: "願以此功德，懺悔今日過失，迴向法界眾生，離苦得樂。" },
+            { maxDemerit: 50, items: [{ id: "heart", title: "般若波羅蜜多心經", times: 3 }, { id: "dabei", title: "大悲咒", times: 3 }, { id: "wangsheng", title: "往生咒", times: 7 }], dedication: "願以此功德，消除今日所造惡業，迴向冤親債主、歷代宗親，解怨釋結。" },
+            { maxDemerit: 80, items: [{ id: "heart", title: "般若波羅蜜多心經", times: 5 }, { id: "dabei", title: "大悲咒", times: 5 }, { id: "wangsheng", title: "往生咒", times: 14 }], dedication: "願以此功德，懺悔業障，迴向眾生；並願今日起止惡修善，不再造作。" },
+            { maxDemerit: 9999, items: [{ id: "heart", title: "般若波羅蜜多心經", times: 7 }, { id: "dabei", title: "大悲咒", times: 7 }, { id: "wangsheng", title: "往生咒", times: 21 }, { id: "ksitigarbha-mantra", title: "地藏菩薩聖號", times: 108 }], dedication: "願以此功德，深切懺悔今日重業，迴向一切有情；並建議至懺悔牆發露、持續持誦以補過。" }
+        ];
+        const SCRIPTURE_EXTRA_BY_TYPE = {
+            mouth: { ids: ["d1","d2","d7","d10"], add: { id: "jingkou", title: "淨口神咒（道教）", times: 3, note: "口業重時可加誦" } },
+            greed: { ids: ["d3","d4","d8"], add: { id: "ksitigarbha-mantra", title: "地藏菩薩聖號", times: 21, note: "貪與不敬可加誦" } }
+        };
+
+        const DEFAULT_TIERS = [
+            { minScore: 500, realmName: "天道", realmType: "善道", description: "福德深厚，有機會往生天道。", color: "#00d4ff" },
+            { minScore: 200, maxScore: 499, realmName: "人道／阿修羅道", realmType: "善道", description: "善多於惡，多生人天，當持續精進。", color: "#7dd3fc" },
+            { minScore: 0, maxScore: 199, realmName: "人道", realmType: "善道", description: "善惡參半，得人身修行，勿失良機。", color: "#bae6fd" },
+            { minScore: -50, maxScore: -1, realmName: "人道（業重）", realmType: "善道", description: "業力偏重，當勤懺悔、止惡修善。", color: "#fcd34d" },
+            { minScore: -200, maxScore: -51, realmName: "餓鬼道／畜生道", realmType: "惡道", description: "業重感召惡道，悔改仍可轉業。", color: "#f97316" },
+            { minScore: -9999, maxScore: -201, realmName: "地獄道", realmType: "惡道", description: "重罪需受報，即刻懺悔、斷惡修善。", color: "#ef4444" }
+        ];
+
+        const MERIT_MEMBER_SYNC_STATE_KEY = 'causelaw_merit_member_sync_v1';
+
+        let items = { merit: DEFAULT_ITEMS.merit, demerit: DEFAULT_ITEMS.demerit };
+        let tiers = DEFAULT_TIERS;
+
+        let state = JSON.parse(localStorage.getItem('merit_state_v2')) || {
+            checkedMerit: [],
+            checkedDemerit: []
+        };
+
+        function dbTable(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.tables && db.tables[name]) return db.tables[name];
+            return fallback;
+        }
+
+        function getTodayLocalDate() {
+            var d = new Date();
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function loadMeritMemberSyncState() {
+            var today = getTodayLocalDate();
+            try {
+                var raw = localStorage.getItem(MERIT_MEMBER_SYNC_STATE_KEY);
+                if (!raw) return { date: today, done: false };
+                var obj = JSON.parse(raw);
+                if (!obj || obj.date !== today) return { date: today, done: false };
+                return { date: obj.date, done: !!obj.done, lastNet: obj.lastNet, syncedAt: obj.syncedAt };
+            } catch (e) {
+                return { date: today, done: false };
+            }
+        }
+
+        function saveMeritMemberSyncState(stateObj) {
+            try {
+                localStorage.setItem(MERIT_MEMBER_SYNC_STATE_KEY, JSON.stringify(stateObj || {}));
+            } catch (e) {}
+        }
+
+        function updateSyncButtonState() {
+            var btn = document.querySelector('button[onclick="syncMeritToMember()"]');
+            var statusEl = document.getElementById('member-sync-status');
+            if (!btn) return;
+            var st = loadMeritMemberSyncState();
+            if (st.done) {
+                btn.disabled = true;
+                btn.textContent = '今日已同步到會員修行帳本';
+                btn.classList.add('opacity-60','cursor-not-allowed');
+                if (statusEl) {
+                    statusEl.textContent = '今日功過已提交，已寫入會員修行帳本。明日可再次填寫並同步。';
+                    statusEl.className = 'text-xs text-emerald-400 mt-2';
+                }
+            } else {
+                btn.disabled = false;
+                btn.textContent = '同步到會員修行帳本';
+                btn.classList.remove('opacity-60','cursor-not-allowed');
+            }
+        }
+
+        function ensureCheckedArrays() {
+            if (!Array.isArray(state.checkedMerit)) state.checkedMerit = [];
+            while (state.checkedMerit.length < items.merit.length) state.checkedMerit.push(false);
+            state.checkedMerit = state.checkedMerit.slice(0, items.merit.length);
+            if (!Array.isArray(state.checkedDemerit)) state.checkedDemerit = [];
+            while (state.checkedDemerit.length < items.demerit.length) state.checkedDemerit.push(false);
+            state.checkedDemerit = state.checkedDemerit.slice(0, items.demerit.length);
+        }
+
+        function getCheckedIds(which) {
+            var arr = which === 'merit' ? items.merit : items.demerit;
+            var checkedKey = which === 'merit' ? 'checkedMerit' : 'checkedDemerit';
+            return arr.filter(function (_, i) { return state[checkedKey][i]; }).map(function (x) { return x.id; });
+        }
+
+        function totalMerit() {
+            return items.merit.reduce((acc, item, i) => acc + (state.checkedMerit[i] ? item.points : 0), 0);
+        }
+        function totalDemerit() {
+            return items.demerit.reduce((acc, item, i) => acc + (state.checkedDemerit[i] ? item.points : 0), 0);
+        }
+        function getWallBonusTotal() {
+            try {
+                const v = parseInt(localStorage.getItem('causelaw_wall_bonus_total') || '0', 10);
+                return isNaN(v) ? 0 : v;
+            } catch (e) {
+                return 0;
+            }
+        }
+        function getForumBonusTotal() {
+            try {
+                const v = parseInt(localStorage.getItem('causelaw_forum_bonus_total') || '0', 10);
+                return isNaN(v) ? 0 : v;
+            } catch (e) {
+                return 0;
+            }
+        }
+        function netScore() {
+            return totalMerit() + totalDemerit() + getWallBonusTotal() + getForumBonusTotal();
+        }
+
+        function getRealmTier(score) {
+            const sorted = [...tiers].sort((a, b) => (b.minScore ?? -9999) - (a.minScore ?? -9999));
+            for (const t of sorted) {
+                const min = t.minScore ?? -9999;
+                const max = t.maxScore ?? 9999;
+                if (score >= min && score <= max) return t;
+            }
+            return sorted[sorted.length - 1];
+        }
+
+        function renderList(listId, arr, checkedKey, isMerit) {
+            const list = document.getElementById(listId);
+            list.innerHTML = '';
+            arr.forEach((item, i) => {
+                const checked = state[checkedKey][i];
+                const div = document.createElement('div');
+                div.className = 'checklist-item';
+                div.innerHTML = `
+                    <span class="text-base ${checked ? (isMerit ? 'text-green-400' : 'text-red-400') : 'text-stone-400'}">${item.text}</span>
+                    <div class="check-box ${isMerit ? '' : 'demerit'} ${checked ? 'checked' : ''}" onclick="toggleItem('${checkedKey}', ${i})" data-i="${i}">
+                        ${checked ? '✓' : ''}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function toggleItem(which, i) {
+            state[which][i] = !state[which][i];
+            saveAndUpdate();
+        }
+
+        function saveAndUpdate() {
+            localStorage.setItem('merit_state_v2', JSON.stringify(state));
+            updateDisplay();
+            renderList('checklist-merit', items.merit, 'checkedMerit', true);
+            renderList('checklist-demerit', items.demerit, 'checkedDemerit', false);
+        }
+
+        function updateDisplay() {
+            const merit = totalMerit();
+            const demerit = totalDemerit();
+            const net = netScore();
+
+            document.getElementById('total-merit').textContent = merit;
+            document.getElementById('total-merit').className = 'score-display positive';
+
+            document.getElementById('total-demerit').textContent = demerit;
+            document.getElementById('total-demerit').className = 'score-display negative';
+
+            const netEl = document.getElementById('net-score');
+            netEl.textContent = net;
+            netEl.className = 'score-display ' + (net > 0 ? 'positive' : net < 0 ? 'negative' : 'zero');
+
+            document.getElementById('net-label').textContent = '淨值 ' + net;
+            // 將當前功過格淨值同步到 localStorage，供其他頁面（如因果光場加持台）讀取
+            try {
+                localStorage.setItem('causelaw_merit_net_score', String(net));
+            } catch (e) {
+                console.warn('無法寫入功過格淨值到 localStorage：', e);
+            }
+
+            const rangeMin = -500, rangeMax = 500;
+            const inRange = net >= rangeMin && net <= rangeMax;
+            document.getElementById('range-hint').classList.toggle('hidden', inRange);
+            const pct = Math.max(0, Math.min(100, ((net - rangeMin) / (rangeMax - rangeMin)) * 100));
+            const fill = document.getElementById('history-fill');
+            fill.style.width = pct + '%';
+            fill.style.marginLeft = '0';
+
+            const tier = getRealmTier(net);
+            const realmColor = tier.color || 'var(--gold)';
+            const isHell = tier.realmId === 'hell' || tier.realmName === '地獄道';
+            const hellLevel = isHell && net <= -201 ? Math.min(18, 1 + Math.floor((-201 - net) / 20)) : 0;
+
+            document.getElementById('realm-name').textContent = isHell && hellLevel
+                ? '地獄道（第 ' + hellLevel + ' 層）（' + tier.realmType + '）'
+                : tier.realmName + '（' + tier.realmType + '）';
+            document.getElementById('realm-name').style.color = realmColor;
+            document.getElementById('realm-desc').textContent = isHell && hellLevel
+                ? tier.description + ' 若不及早改過，業力可能感召第 ' + hellLevel + ' 層。'
+                : tier.description;
+
+            const hellLinkWrap = document.getElementById('realm-hell-link-wrap');
+            const hellLink = document.getElementById('realm-hell-link');
+            if (isHell && hellLevel) {
+                hellLink.href = 'hell.html#level-' + hellLevel;
+                hellLink.textContent = '查看第 ' + hellLevel + ' 層地獄說明';
+                hellLinkWrap.classList.remove('hidden');
+            } else {
+                hellLinkWrap.classList.add('hidden');
+            }
+
+            const previewEl = document.getElementById('realm-preview');
+            previewEl.style.borderColor = realmColor;
+            previewEl.style.boxShadow = realmColor.startsWith('#') ? '0 0 24px ' + realmColor + '40' : 'none';
+
+            const advice = document.getElementById('advice-text');
+            if (net >= 200) advice.innerText = '「福德深厚，持續精進，有機會往生天道。」';
+            else if (net >= 0) advice.innerText = '「善惡值為正，持守正念，勿讓私慾破壞能量場。」';
+            else if (net > -100) advice.innerText = '「警覺！業力偏重，請即刻止惡修善、懺悔改過。」';
+            else advice.innerText = '「業重感召惡道，悔改永不嫌晚。今日起，一善一善累積。」';
+
+            updateScriptureRecommendation(totalDemerit(), net);
+        }
+
+        function getScriptureRecommendations(demeritTotal, netScore) {
+            const tier = SCRIPTURE_TIERS.find(t => demeritTotal <= t.maxDemerit) || SCRIPTURE_TIERS[SCRIPTURE_TIERS.length - 1];
+            let list = tier.items.map(x => ({ ...x }));
+            const checkedDemeritIds = items.demerit.filter((_, i) => state.checkedDemerit[i]).map(x => x.id);
+            if (demeritTotal > 0) {
+                const mouthChecked = SCRIPTURE_EXTRA_BY_TYPE.mouth.ids.some(id => checkedDemeritIds.includes(id));
+                const greedChecked = SCRIPTURE_EXTRA_BY_TYPE.greed.ids.some(id => checkedDemeritIds.includes(id));
+                if (mouthChecked && !list.some(x => x.id === "jingkou")) list.push(SCRIPTURE_EXTRA_BY_TYPE.mouth.add);
+                if (greedChecked && tier.maxDemerit <= 50 && !list.some(x => x.id === "ksitigarbha-mantra")) list.push(SCRIPTURE_EXTRA_BY_TYPE.greed.add);
+            }
+            return { list, dedication: tier.dedication, show: demeritTotal > 0 };
+        }
+
+        function updateScriptureRecommendation(demeritTotal, netScore) {
+            const wrap = document.getElementById('scripture-recommend-wrap');
+            const listEl = document.getElementById('scripture-recommend-list');
+            const hintEl = document.getElementById('scripture-dedication-hint');
+            const { list, dedication, show } = getScriptureRecommendations(demeritTotal, netScore);
+
+            if (!show) {
+                wrap.classList.add('hidden');
+                return;
+            }
+            wrap.classList.remove('hidden');
+            listEl.innerHTML = list.map(s => {
+                const note = s.note ? ` <span class="text-stone-500 text-xs">${s.note}</span>` : '';
+                return `<li class="text-stone-300">${s.title}：<strong class="text-gold">${s.times} 遍</strong>${note}</li>`;
+            }).join('');
+            hintEl.innerText = '迴向文建議：「' + dedication + '」';
+        }
+
+        async function updateMemberSyncState() {
+            var el = document.getElementById('member-sync-status');
+            if (!el) return;
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                el.textContent = '會員未連線（Supabase 未設定），資料目前僅存在本機。';
+                return;
+            }
+            var user = await window.CauseLawClient.getSessionUser();
+            if (!user) {
+                el.textContent = '尚未登入會員，資料目前僅存在本機。';
+                return;
+            }
+            if (window.CauseLawClient.ensureMemberProfile) {
+                try {
+                    await window.CauseLawClient.ensureMemberProfile(user);
+                } catch (err) {
+                    console.error('初始化會員資料失敗:', err);
+                    el.textContent = '會員資料初始化失敗，請稍後再試。';
+                    return;
+                }
+            }
+            el.textContent = '已登入會員：' + (user.email || user.id) + '。可同步今日功過與修行任務。';
+        }
+
+        function deriveRiskCodeByDemeritIds(ids) {
+            if (ids.some(function (id) { return ['d1', 'd2', 'd7', 'd10'].includes(id); })) return 'speech_harm';
+            if (ids.some(function (id) { return ['d3', 'd8'].includes(id); })) return 'greed';
+            if (ids.some(function (id) { return ['d4', 'd6'].includes(id); })) return 'disrespect';
+            if (ids.some(function (id) { return ['d9'].includes(id); })) return 'procrastination';
+            return 'speech_harm';
+        }
+
+        async function syncMeritToMember() {
+            var el = document.getElementById('member-sync-status');
+            function setStatus(msg, tone) {
+                if (!el) return;
+                el.textContent = msg;
+                el.className = 'text-xs mt-2 ' + (tone === 'error' ? 'text-red-400' : (tone === 'ok' ? 'text-emerald-400' : 'text-stone-500'));
+            }
+
+            var todayLocal = getTodayLocalDate();
+            var syncState = loadMeritMemberSyncState();
+            if (syncState.done && syncState.date === todayLocal) {
+                setStatus('今日功過已同步過一次，請明日再提交新的紀錄。', 'ok');
+                return;
+            }
+
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                setStatus('Supabase 未設定，無法同步會員資料。', 'error');
+                return;
+            }
+            try {
+                var user = await window.CauseLawClient.getSessionUser();
+                if (!user) {
+                    setStatus('尚未登入會員，請先登入再同步。', 'error');
+                    return;
+                }
+                if (window.CauseLawClient.ensureMemberProfile) {
+                    await window.CauseLawClient.ensureMemberProfile(user);
+                }
+                var supabase = window.CauseLawClient.getClient();
+                var memberResult = await supabase.from(dbTable('members', 'causelaw_yinguo_v1.members')).select('id').eq('id', user.id).maybeSingle();
+                if (memberResult.error) throw memberResult.error;
+                if (!memberResult.data) {
+                    setStatus('查無會員檔案，請先完成會員初始化。', 'error');
+                    return;
+                }
+
+                var merit = totalMerit();
+                var demeritAbs = Math.abs(totalDemerit());
+                var net = netScore();
+                var demeritIds = getCheckedIds('demerit');
+                var recommendations = getScriptureRecommendations(demeritAbs, net);
+                var today = new Date().toISOString().slice(0, 10);
+
+                var moodLevel = net >= 80 ? 4 : net >= 20 ? 3 : net >= -20 ? 2 : net >= -80 ? 1 : 0;
+                var conflictLevel = demeritAbs >= 60 ? 4 : demeritAbs >= 40 ? 3 : demeritAbs >= 20 ? 2 : demeritAbs > 0 ? 1 : 0;
+                var temptationLevel = demeritIds.length >= 5 ? 4 : demeritIds.length >= 3 ? 3 : demeritIds.length >= 2 ? 2 : demeritIds.length >= 1 ? 1 : 0;
+
+                var checkinPayload = {
+                    member_id: user.id,
+                    checkin_date: today,
+                    mood_level: moodLevel,
+                    conflict_level: conflictLevel,
+                    temptation_level: temptationLevel,
+                    primary_risk_code: deriveRiskCodeByDemeritIds(demeritIds)
+                };
+                var checkinResult = await supabase
+                    .from(dbTable('dailyCheckin', 'causelaw_yinguo_v1.daily_checkin'))
+                    .upsert([checkinPayload], { onConflict: 'member_id,checkin_date' })
+                    .select('id')
+                    .single();
+                if (checkinResult.error) throw checkinResult.error;
+
+                var existingTasksResult = await supabase
+                    .from(dbTable('tasks', 'causelaw_yinguo_v1.tasks'))
+                    .select('id,task_type,task_title')
+                    .eq('member_id', user.id)
+                    .eq('task_date', today);
+                if (existingTasksResult.error) throw existingTasksResult.error;
+                var existing = existingTasksResult.data || [];
+                var existingKey = {};
+                existing.forEach(function (x) { existingKey[x.task_type + '|' + x.task_title] = true; });
+
+                var taskRows = [];
+                if (demeritAbs > 0) {
+                    taskRows.push({
+                        member_id: user.id,
+                        task_date: today,
+                        task_type: 'chanting',
+                        task_title: '今日誦經補過',
+                        target_count: recommendations.list.reduce(function (acc, it) { return acc + Number(it.times || 0); }, 0) || 1,
+                        evidence_note: recommendations.list.map(function (it) { return it.title + 'x' + it.times; }).join('；'),
+                        points_reward: 8
+                    });
+                    taskRows.push({
+                        member_id: user.id,
+                        task_date: today,
+                        task_type: 'repentance',
+                        task_title: '今日懺悔發露與改過',
+                        target_count: 1,
+                        evidence_note: demeritIds.length ? ('對應過失：' + demeritIds.join(',')) : '一般懺悔',
+                        points_reward: 10
+                    });
+                }
+                if (merit > 0) {
+                    taskRows.push({
+                        member_id: user.id,
+                        task_date: today,
+                        task_type: 'good_deed',
+                        task_title: '今日善行落地',
+                        target_count: Math.max(1, Math.ceil(merit / 20)),
+                        evidence_note: '由功過格同步建立',
+                        points_reward: 6
+                    });
+                }
+                var newTasks = taskRows.filter(function (t) { return !existingKey[t.task_type + '|' + t.task_title]; });
+                if (newTasks.length > 0) {
+                    var insertTasksResult = await supabase.from(dbTable('tasks', 'causelaw_yinguo_v1.tasks')).insert(newTasks);
+                    if (insertTasksResult.error) throw insertTasksResult.error;
+                }
+                setStatus('已同步今日功過到會員帳本，建立 ' + newTasks.length + ' 項修行任務。', 'ok');
+
+                saveMeritMemberSyncState({
+                    date: todayLocal,
+                    done: true,
+                    lastNet: net,
+                    syncedAt: new Date().toISOString()
+                });
+                updateSyncButtonState();
+            } catch (err) {
+                console.error('同步會員修行帳本失敗:', err);
+                setStatus('同步失敗，請稍後重試或檢查資料表/RLS。', 'error');
+            }
+        }
+
+        function resetLedger() {
+            if (!confirm('確定要清空所有修行紀錄嗎？')) return;
+            state = {
+                checkedMerit: items.merit.map(() => false),
+                checkedDemerit: items.demerit.map(() => false)
+            };
+            localStorage.removeItem('merit_state_v2');
+            saveAndUpdate();
+        }
+
+        function init() {
+            ensureCheckedArrays();
+            renderList('checklist-merit', items.merit, 'checkedMerit', true);
+            renderList('checklist-demerit', items.demerit, 'checkedDemerit', false);
+            updateDisplay();
+            updateSyncButtonState();
+        }
+
+        (function initWhenReady() {
+            fetch('../data/merit-items.json')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data && data.merit && data.demerit) {
+                        items.merit = data.merit;
+                        items.demerit = data.demerit;
+                    }
+                    ensureCheckedArrays();
+                    init();
+                })
+                .catch(() => {
+                    ensureCheckedArrays();
+                    init();
+                });
+            updateMemberSyncState();
+        })();
+        window.addEventListener('causelaw:auth-state-changed', function () {
+            updateMemberSyncState();
+        });
+
+        fetch('../data/realm-mapping.json').then(r => r.ok ? r.json() : null).then(data => {
+            if (data && data.tiers && data.tiers.length) tiers = data.tiers;
+            updateDisplay();
+        }).catch(() => {});
+    </script>
+</body>
+</html>

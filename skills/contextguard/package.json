@@ -1,0 +1,27 @@
+{
+  "name": "@openclaw/skill-contextguard",
+  "version": "0.1.0",
+  "description": "智能 Context 管理與優化助手",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "install-skill": "bash scripts/install.sh"
+  },
+  "keywords": [
+    "openclaw",
+    "skill",
+    "context",
+    "token",
+    "optimization"
+  ],
+  "author": "ContextGuard Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "@openclaw/core": ">=0.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

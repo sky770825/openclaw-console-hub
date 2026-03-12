@@ -1,0 +1,286 @@
+#!/bin/bash
+# ============================================================================
+# NEUXA Lite 一鍵安裝腳本 (方案 A)
+# 使用方法: curl -fsSL https://neuxa.io/install | bash
+# ============================================================================
+
+set -e
+
+# 顏色定義
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# NEUXA Logo
+echo -e "${BLUE}"
+echo "    ███╗   ██╗███████╗██╗   ██╗██╗  ██╗ █████╗ "
+echo "    ████╗  ██║██╔════╝██║   ██║╚██╗██╔╝██╔══██╗"
+echo "    ██╔██╗ ██║█████╗  ██║   ██║ ╚███╔╝ ███████║"
+echo "    ██║╚██╗██║██╔══╝  ██║   ██║ ██╔██╗ ██╔══██║"
+echo "    ██║ ╚████║███████╗╚██████╔╝██╔╝ ██╗██║  ██║"
+echo "    ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝"
+echo -e "${NC}"
+echo -e "${GREEN}    精算未來的星艦代理人 🚀${NC}"
+echo ""
+
+# 檢測作業系統
+OS="$(uname -s)"
+case "${OS}" in
+    Linux*)     PLATFORM=Linux;;
+    Darwin*)    PLATFORM=Mac;;
+    CYGWIN*)    PLATFORM=Cygwin;;
+    MINGW*)     PLATFORM=MinGw;;
+    MSYS*)      PLATFORM=MSYS;;
+    *)          PLATFORM="UNKNOWN:${OS}"
+esac
+
+if [[ "$PLATFORM" != "Mac" && "$PLATFORM" != "Linux" ]]; then
+    echo -e "${RED}❌ 目前只支援 macOS 和 Linux${NC}"
+    echo "Windows 版本開發中，請先用 WSL 或聯繫我們"
+    exit 1
+fi
+
+echo -e "${BLUE}🔍 檢測到系統: $PLATFORM${NC}"
+
+# 檢查必要工具
+echo -e "${BLUE}📦 檢查依賴...${NC}"
+
+# 檢查 curl
+if ! command -v curl &> /dev/null; then
+    echo -e "${RED}❌ 需要 curl，請先安裝${NC}"
+    exit 1
+fi
+
+# 檢查 git
+if ! command -v git &> /dev/null; then
+    echo -e "${YELLOW}⚠️ 未檢測到 git，建議安裝${NC}"
+fi
+
+# 檢查 Ollama
+OLLAMA_INSTALLED=false
+if command -v ollama &> /dev/null; then
+    OLLAMA_VERSION=$(ollama --version 2>/dev/null | head -1 || echo "未知版本")
+    echo -e "${GREEN}✅ Ollama 已安裝: $OLLAMA_VERSION${NC}"
+    OLLAMA_INSTALLED=true
+else
+    echo -e "${YELLOW}⚠️ 未檢測到 Ollama${NC}"
+    echo "   建議安裝以實現 100% 本地運算（零 API 費用）"
+    echo "   前往: https://ollama.com"
+fi
+
+# 設定安裝路徑
+NEUXA_HOME="${HOME}/.neuxa"
+NEUXA_BIN="${NEUXA_HOME}/bin"
+NEUXA_VAULT="${NEUXA_HOME}/vault"
+NEUXA_MEMORY="${NEUXA_HOME}/memory"
+NEUXA_LOGS="${NEUXA_HOME}/logs"
+
+echo ""
+echo -e "${BLUE}📂 安裝路徑: $NEUXA_HOME${NC}"
+
+# 創建目錄結構
+echo -e "${BLUE}🗂️  建立目錄結構...${NC}"
+mkdir -p "$NEUXA_BIN" "$NEUXA_VAULT" "$NEUXA_MEMORY" "$NEUXA_LOGS"
+
+# 下載核心腳本
+echo -e "${BLUE}⬇️  下載 NEUXA 核心...${NC}"
+
+# 核心啟動腳本
+cat > "$NEUXA_BIN/neuxa" << 'EOF'
+#!/bin/bash
+# NEUXA Lite 啟動器
+
+NEUXA_HOME="${HOME}/.neuxa"
+NEUXA_VERSION="1.0.0"
+
+show_logo() {
+    echo "🚀 NEUXA Lite v$NEUXA_VERSION"
+    echo "   精算未來的星艦代理人"
+    echo ""
+}
+
+show_help() {
+    show_logo
+    echo "使用方法: neuxa [命令]"
+    echo ""
+    echo "命令:"
+    echo "  start       啟動 NEUXA 核心"
+    echo "  status      查看系統狀態"
+    echo "  assist      開啟遠端協防連線 (需授權)"
+    echo "  config      編輯設定檔"
+    echo "  update      更新到最新版本"
+    echo "  uninstall   移除 NEUXA"
+    echo "  help        顯示此說明"
+    echo ""
+    echo "範例:"
+    echo "  neuxa start    # 啟動 NEUXA"
+    echo "  neuxa status   # 查看狀態"
+    echo "  neuxa assist   # 開啟遠端工程師輔助連線"
+}
+
+check_ollama() {
+    if command -v ollama &> /dev/null; then
+        echo "✅ Ollama 運行中"
+        echo "   可用模型:"
+        ollama list 2>/dev/null | tail -n +2 | head -5 | sed 's/^/   - /'
+    else
+        echo "⚠️  Ollama 未安裝"
+        echo "   建議安裝以啟用本地 AI 功能"
+    fi
+}
+
+case "${1:-}" in
+    start)
+        show_logo
+        echo "🔄 正在啟動 NEUXA..."
+        check_ollama
+        echo ""
+        echo "💡 提示: NEUXA Lite 需要配合 OpenClaw 使用"
+        echo "   請確認 OpenClaw 已安裝並運行"
+        ;;
+    status)
+        show_logo
+        echo "📊 系統狀態"
+        echo "------------"
+        check_ollama
+        echo ""
+        echo "📁 目錄狀態:"
+        echo "   NEUXA_HOME: $NEUXA_HOME"
+        ls -la "$NEUXA_HOME" 2>/dev/null | tail -n +4 | awk '{print "   - " $9 " (" $5 " bytes)"}'
+        ;;
+    assist)
+        show_logo
+        echo "🛡️  啟動遠端協防輔助模式..."
+        if ! command -v cloudflared &> /dev/null; then
+            echo "📦 正在安裝必要的連線套件..."
+            if [[ "$PLATFORM" == "Mac" ]]; then
+                brew install cloudflare/cloudflare/cloudflared || true
+            else
+                curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+                sudo dpkg -i cloudflared.deb || true
+            fi
+        fi
+        echo "🔗 正在建立加密隧道..."
+        echo "⚠️  請將下方的 URL 提供給 NEUXA 專員以進行維修："
+        echo ""
+        cloudflared tunnel --url http://localhost:5678
+        ;;
+    config)
+        ${EDITOR:-nano} "$NEUXA_HOME/config.json"
+        ;;
+    update)
+        echo "🔄 檢查更新..."
+        curl -fsSL https://neuxa.io/install | bash
+        ;;
+    uninstall)
+        echo "⚠️  確定要移除 NEUXA? (y/N)"
+        read -r confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            rm -rf "$NEUXA_HOME"
+            # 移除 PATH
+            if [[ "$PLATFORM" == "Mac" ]]; then
+                sed -i '' '/\.neuxa\/bin/d' ~/.zshrc 2>/dev/null || true
+                sed -i '' '/\.neuxa\/bin/d' ~/.bash_profile 2>/dev/null || true
+            else
+                sed -i '/\.neuxa\/bin/d' ~/.bashrc 2>/dev/null || true
+            fi
+            echo "✅ NEUXA 已移除"
+        else
+            echo "取消解除安裝"
+        fi
+        ;;
+    help|--help|-h|"")
+        show_help
+        ;;
+    *)
+        echo "❌ 未知命令: $1"
+        echo "使用 'neuxa help' 查看說明"
+        exit 1
+        ;;
+esac
+EOF
+
+chmod +x "$NEUXA_BIN/neuxa"
+
+# 建立預設設定檔
+echo -e "${BLUE}⚙️  建立設定檔...${NC}"
+cat > "$NEUXA_HOME/config.json" << EOF
+{
+  "version": "1.0.0",
+  "name": "NEUXA Lite",
+  "home": "$NEUXA_HOME",
+  "features": {
+    "local_ai": true,
+    "vault": true,
+    "memory": true,
+    "remote_assist": true
+  },
+  "models": {
+    "default": "ollama/qwen3:4b",
+    "fast": "ollama/qwen3:4b",
+    "smart": "ollama/deepseek-r1:8b"
+  },
+  "installed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+# 加入 PATH
+echo -e "${BLUE}🔧 配置環境變數...${NC}"
+
+SHELL_CONFIG=""
+if [[ "$PLATFORM" == "Mac" ]]; then
+    if [[ -f "$HOME/.zshrc" ]]; then
+        SHELL_CONFIG="$HOME/.zshrc"
+    elif [[ -f "$HOME/.bash_profile" ]]; then
+        SHELL_CONFIG="$HOME/.bash_profile"
+    fi
+else
+    if [[ -f "$HOME/.bashrc" ]]; then
+        SHELL_CONFIG="$HOME/.bashrc"
+    elif [[ -f "$HOME/.zshrc" ]]; then
+        SHELL_CONFIG="$HOME/.zshrc"
+    fi
+fi
+
+if [[ -n "$SHELL_CONFIG" ]]; then
+    if ! grep -q "\.neuxa/bin" "$SHELL_CONFIG" 2>/dev/null; then
+        echo "" >> "$SHELL_CONFIG"
+        echo "# NEUXA Lite" >> "$SHELL_CONFIG"
+        echo 'export PATH="$HOME/.neuxa/bin:$PATH"' >> "$SHELL_CONFIG"
+        echo -e "${GREEN}✅ 已加入 PATH: $SHELL_CONFIG${NC}"
+    else
+        echo -e "${GREEN}✅ PATH 已配置${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  無法自動配置 PATH${NC}"
+    echo "   請手動將以下行加入您的 shell 設定檔:"
+    echo '   export PATH="$HOME/.neuxa/bin:$PATH"'
+fi
+
+# 立即生效 PATH
+export PATH="$NEUXA_BIN:$PATH"
+
+echo ""
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}   ✅ NEUXA Lite 安裝成功！${NC}"
+echo -e "${GREEN}   已整合【遠端協防助理】模式${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo -e "${BLUE}📋 下一步:${NC}"
+echo ""
+echo "   1️⃣  重新載入 shell 設定:"
+echo -e "      ${YELLOW}source ~/.zshrc${NC}  (或 ~/.bashrc)"
+echo ""
+echo "   2️⃣  驗證安裝:"
+echo -e "      ${YELLOW}neuxa help${NC}"
+echo ""
+echo "   3️⃣  需要維修時執行:"
+echo -e "      ${YELLOW}neuxa assist${NC}"
+echo ""
+echo -e "${BLUE}💡 提示:${NC}"
+echo "   NEUXA Lite 是 OpenClaw 的輔助工具包"
+echo "   請確保您已安裝 OpenClaw 以獲得完整體驗"
+echo ""
+echo -e "${GREEN}🚀 開始您的 AI 轉型之旅！${NC}"

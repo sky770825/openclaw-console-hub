@@ -1,0 +1,5 @@
+/Users/caijunchang/openclaw任務面版設計/.openclaw-patrol-status.json
+/Users/caijunchang/openclaw任務面版設計/auto-executor-state.json
+/Users/caijunchang/openclaw任務面版設計/tsconfig.node.json
+/Users/caijunchang/openclaw任務面版設計/beauty-industry-website/package.json
+/Users/caijunchang/openclaw任務面版設計/beauty-industry-website/tsconfig.json

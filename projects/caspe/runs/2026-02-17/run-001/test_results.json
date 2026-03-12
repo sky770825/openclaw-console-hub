@@ -1,0 +1,14 @@
+[
+  {
+    "policy_id": "P-001",
+    "type": "DataFlow Violation",
+    "message": "Sensitive data 'user-email' flowing from data-service to external-log-aggregator over unencrypted http",
+    "suggestion": "Enforce HTTPS/TLS for the connection between data-service and external-log-aggregator"
+  },
+  {
+    "policy_id": "P-002",
+    "type": "AccessControl Violation",
+    "message": "Unauthorized call: service 'data-service' is calling 'external-log-aggregator', which is not in the allowed list: []",
+    "suggestion": "Restrict network access or update policy to allow data-service -> external-log-aggregator"
+  }
+]

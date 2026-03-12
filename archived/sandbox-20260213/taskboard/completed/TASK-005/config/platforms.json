@@ -1,0 +1,30 @@
+{
+  "facebook": {
+    "enabled": false,
+    "api_version": "v18.0",
+    "access_token": "",
+    "page_id": "",
+    "rate_limit": {
+      "posts_per_hour": 10,
+      "products_per_day": 50
+    }
+  },
+  "instagram": {
+    "enabled": false,
+    "access_token": "",
+    "account_id": "",
+    "rate_limit": {
+      "posts_per_day": 25
+    }
+  },
+  "shopee": {
+    "enabled": false,
+    "shop_id": "",
+    "partner_id": "",
+    "shop_key": "",
+    "api_host": "https://partner.shopeemobile.com",
+    "rate_limit": {
+      "products_per_day": 1000
+    }
+  }
+}

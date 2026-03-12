@@ -1,0 +1,4 @@
+名稱,價格,描述,圖片,標籤,分類,容量,成分
+招牌奶茶,55元,"店家秘製配方，濃郁香醇，搭配Q彈珍珠",https://example.com/bev1.jpg;https://example.com/bev2.jpg,奶茶;飲料;必點;台灣,奶茶,M/L,鮮奶、紅茶、珍珠
+芒果冰沙,65元,"新鮮芒果榨製，冰涼爽口，夏日必飲",https://example.com/bev3.jpg;https://example.com/bev4.jpg,冰沙;芒果;冰品;消暑,冰沙,L,新鮮芒果、冰塊
+蜜香紅茶,50元,"高級蜜香烏龍茶，微甜順口，健康飲品",https://example.com/bev5.jpg,紅茶;烏龍茶;健康;蜜香,茶飲,M/L,紅茶、蜂蜜

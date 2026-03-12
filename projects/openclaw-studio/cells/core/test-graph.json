@@ -1,0 +1,25 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "type": "trigger",
+      "name": "On Schedule"
+    },
+    {
+      "id": "2",
+      "type": "action",
+      "name": "Search News",
+      "params": { "query": "AI News today" }
+    },
+    {
+      "id": "3",
+      "type": "action",
+      "name": "Notify Telegram",
+      "params": { "target": "me", "message": "Here is the news..." }
+    }
+  ],
+  "edges": [
+    { "source": "1", "target": "2" },
+    { "source": "2", "target": "3" }
+  ]
+}

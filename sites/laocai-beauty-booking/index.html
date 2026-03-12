@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vénus Beauty - 您的頂級美學沙龍</title>
+    <meta name="description" content="Vénus Beauty 提供專業的美睫、美甲與臉部護理服務。立即線上預約，體驗無與倫比的寵愛時刻。">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            /* 色彩 — 美業粉色系 */
+            --primary: #ec4899;
+            --primary-light: #f472b6;
+            --primary-dark: #db2777;
+            --accent: #f59e0b;
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            /* 背景/文字 */
+            --bg: #ffffff; --bg-secondary: #fff1f5; --text: var(--gray-900); --text-secondary: var(--gray-500);
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            /* 陰影（5 級） */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.2; color: var(--text); }
+        p { margin-bottom: var(--space-4); color: var(--text-secondary); }
+        a { color: var(--primary); text-decoration: none; transition: all var(--duration) var(--ease); }
+        a:hover { color: var(--primary-dark); }
+        img { max-width: 100%; height: auto; display: block; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
+        section { padding: var(--space-20) 0; }
+
+        /* 動畫 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-on-scroll { opacity: 0; }
+        .is-visible { animation: fadeInUp 0.8s var(--ease) forwards; }
+
+        /* 按鈕 */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-align: center;
+            font-size: var(--text-base);
+            transition: all var(--duration) var(--ease);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+        .btn-lg {
+            padding: var(--space-4) var(--space-8);
+            font-size: var(--text-lg);
+        }
+
+        /* 卡片 */
+        .card {
+            background-color: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: all var(--duration) var(--ease);
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+
+        /* 頁首 */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: var(--space-4) 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--duration) var(--ease);
+        }
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: var(--text-xl); font-weight: 700; color: var(--primary); }
+        .main-nav ul { display: flex; list-style: none; gap: var(--space-8); }
+        .main-nav a { color: var(--gray-700); font-weight: 500; }
+        .main-nav a:hover, .main-nav a.active { color: var(--primary); }
+        .mobile-nav-toggle { display: none; }
+
+        /* Hero 區塊 */
+        #hero {
+            min-height: 70vh;
+            padding-top: 120px;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #fff1f5 0%, #ffe4e6 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .hero-content h1 {
+            font-size: var(--text-5xl);
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            color: var(--gray-800);
+        }
+        .hero-content p {
+            font-size: var(--text-xl);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+        }
+        .carousel-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+        }
+        .carousel-slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 1s var(--ease);
+        }
+        .carousel-slide.active { opacity: 0.15; }
+        .carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 服務介紹 */
+        #services { background-color: var(--bg-secondary); }
+        .section-header { text-align: center; margin-bottom: var(--space-12); }
+        .section-header h2 { font-size: var(--text-4xl); margin-bottom: var(--space-2); }
+        .section-header p { font-size: var(--text-lg); max-width: 600px; margin: 0 auto; }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-8);
+        }
+        .service-card { text-align: center; }
+        .service-card .card-image { aspect-ratio: 1 / 1; }
+        .service-card .card-image img { width: 100%; height: 100%; object-fit: cover; }
+        .service-card .card-content { padding: var(--space-6); }
+        .service-card h3 { font-size: var(--text-xl); margin-bottom: var(--space-2); }
+        .service-card .service-info {
+            display: flex;
+            justify-content: space-around;
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            margin: var(--space-4) 0;
+        }
+        .service-card .btn { margin-top: var(--space-4); width: 100%; }
+
+        /* 評價區 */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-8);
+        }
+        .testimonial-card {
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-8);
+        }
+        .testimonial-card .quote {
+            flex-grow: 1;
+            font-size: var(--text-base);
+            color: var(--gray-600);
+            margin-bottom: var(--space-6);
+            position: relative;
+            padding-left: var(--space-6);
+        }
+        .testimonial-card .quote::before {
+            content: '\f10d';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: -10px;
+            top: -10px;
+            font-size: var(--text-2xl);
+            color: var(--primary-light);
+            opacity: 0.3;
+        }
+        .testimonial-author { display: flex; align-items: center; gap: var(--space-4); }
+        .testimonial-author img {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+        }
+        .author-info h4 { font-size: var(--text-base); margin: 0; }
+        .star-rating { color: var(--accent); }
+
+        /* 關於我們 */
+        #about { background-color: var(--bg-secondary); }
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-12);
+            align-items: center;
+        }
+        .about-image { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
+        .about-text h2 { font-size: var(--text-4xl); margin-bottom: var(--space-6); }
+
+        /* CTA */
+        #cta {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            text-align: center;
+            padding: var(--space-16) 0;
+        }
+        #cta h2 { font-size: var(--text-4xl); margin-bottom: var(--space-4); color: white; }
+        #cta p { font-size: var(--text-lg); color: rgba(255,255,255,0.9); margin-bottom: var(--space-8); }
+        #cta .btn { background-color: white; color: var(--primary); }
+        #cta .btn:hover { background-color: var(--gray-100); }
+
+        /* 頁尾 */
+        .main-footer {
+            background-color: var(--gray-800);
+            color: var(--gray-300);
+            padding: var(--space-12) 0;
+        }
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-8);
+        }
+        .footer-col h4 { color: white; margin-bottom: var(--space-4); }
+        .footer-col ul { list-style: none; }
+        .footer-col li { margin-bottom: var(--space-2); }
+        .footer-col a { color: var(--gray-300); }
+        .footer-col a:hover { color: white; }
+        .social-links a { font-size: var(--text-xl); margin-right: var(--space-4); }
+        .footer-bottom {
+            text-align: center;
+            margin-top: var(--space-8);
+            padding-top: var(--space-6);
+            border-top: 1px solid var(--gray-700);
+            font-size: var(--text-sm);
+            color: var(--gray-400);
+        }
+
+        /* 預約 Modal */
+        .booking-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .booking-modal.is-open { opacity: 1; visibility: visible; }
+        .booking-modal-content {
+            background: var(--bg);
+            border-radius: var(--radius-lg);
+            padding: var(--space-8);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .booking-modal.is-open .booking-modal-content { transform: scale(1); }
+        .booking-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); }
+        .booking-modal-header h3 { font-size: var(--text-2xl); }
+        .close-modal { background: none; border: none; font-size: var(--text-2xl); cursor: pointer; color: var(--gray-400); }
+        .close-modal:hover { color: var(--gray-800); }
+        
+        .booking-step { display: none; }
+        .booking-step.active { display: block; animation: fadeInUp 0.5s var(--ease); }
+        
+        .form-group { margin-bottom: var(--space-4); }
+        .form-group label { display: block; font-weight: 500; margin-bottom: var(--space-2); }
+        .form-control {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: var(--text-base);
+            transition: all var(--duration) var(--ease);
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+        }
+
+        .service-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--space-4);
+        }
+        .service-option {
+            border: 1px solid var(--gray-200);
+            padding: var(--space-4);
+            border-radius: var(--radius);
+            cursor: pointer;
+            text-align: center;
+        }
+        .service-option:hover { border-color: var(--primary-light); }
+        .service-option.selected { border-color: var(--primary); background-color: var(--bg-secondary); box-shadow: 0 0 0 2px var(--primary); }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: var(--space-3);
+        }
+        .time-slot {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+        }
+        .time-slot.selected { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .time-slot:not(.disabled):hover { background-color: var(--bg-secondary); }
+        .time-slot.disabled { background-color: var(--gray-100); color: var(--gray-400); cursor: not-allowed; }
+
+        .booking-nav { display: flex; justify-content: space-between; margin-top: var(--space-8); }
+        
+        .confirmation-details {
+            background-color: var(--bg-secondary);
+            padding: var(--space-6);
+            border-radius: var(--radius-md);
+        }
+        .confirmation-details p { margin-bottom: var(--space-3); color: var(--gray-700); }
+        .confirmation-details p strong { color: var(--text); }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 3000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast.error { background-color: var(--error); }
+
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .main-nav { display: none; }
+            .mobile-nav-toggle { display: block; font-size: var(--text-2xl); background: none; border: none; cursor: pointer; }
+            .main-header .btn { display: none; }
+            #hero { min-height: 60vh; }
+            .hero-content h1 { font-size: var(--text-4xl); }
+            .hero-content p { font-size: var(--text-lg); }
+            section { padding: var(--space-16) 0; }
+            .section-header h2 { font-size: var(--text-3xl); }
+            .about-content { grid-template-columns: 1fr; }
+            .about-image { margin-bottom: var(--space-8); }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo">Vénus Beauty</a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#hero" class="active">首頁</a></li>
+                    <li><a href="#services">服務項目</a></li>
+                    <li><a href="#testimonials">客戶見證</a></li>
+                    <li><a href="#about">關於我們</a></li>
+                </ul>
+            </nav>
+            <button class="btn btn-primary open-booking-modal">立即預約</button>
+            <button class="mobile-nav-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+
+    <main>
+        <!-- 首頁 Hero Section -->
+        <section id="hero">
+            <div class="carousel-wrapper">
+                <div class="carousel-slide active"><img src="https://images.unsplash.com/photo-1599387737838-66a35643a624?q=80&w=2070&auto=format&fit=crop" alt="美甲沙龍環境"></div>
+                <div class="carousel-slide"><img src="https://images.unsplash.com/photo-1604514322439-3837482f7643?q=80&w=1974&auto=format&fit=crop" alt="美睫嫁接過程"></div>
+                <div class="carousel-slide"><img src="https://images.unsplash.com/photo-1600965954312-22a253164a78?q=80&w=2070&auto=format&fit=crop" alt="臉部護理"></div>
+            </div>
+            <div class="container hero-content animate-on-scroll">
+                <h1>綻放妳的專屬之美</h1>
+                <p>在 Vénus Beauty，我們相信每一位女性都值得擁有最精緻的呵護。讓我們用專業與藝術，喚醒您內在的維納斯。</p>
+                <a href="#services" class="btn btn-primary btn-lg">探索我們的服務</a>
+            </div>
+        </section>
+
+        <!-- 服務項目 Section -->
+        <section id="services">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2>精緻服務項目</h2>
+                    <p>我們提供從美睫、美甲到臉部護理的全方位服務，使用頂級產品，由資深美學師為您量身打造。</p>
+                </div>
+                <div class="services-grid">
+                    <div class="card service-card animate-on-scroll" style="animation-delay: 0.1s;">
+                        <div class="card-image">
+                            <img src="https://images.unsplash.com/photo-1632345031435-8727f669d533?q=80&w=1932&auto=format&fit=crop" alt="日式嫁接美睫">
+                        </div>
+                        <div class="card-content">
+                            <h3>日式嫁接美睫</h3>
+                            <p>採用日本進口絲絨毛，輕盈無感，打造自然濃密的迷人電眼。</p>
+                            <div class="service-info">
+                                <span><i class="far fa-clock"></i> 90-120 分鐘</span>
+                                <span><i class="fas fa-tag"></i> NT$1,800 起</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal" data-service="日式嫁接美睫">立即預約</button>
+                        </div>
+                    </div>
+                    <div class="card service-card animate-on-scroll" style="animation-delay: 0.2s;">
+                        <div class="card-image">
+                            <img src="https://images.unsplash.com/photo-1604948886398-c30314a51920?q=80&w=1974&auto=format&fit=crop" alt="經典手部凝膠">
+                        </div>
+                        <div class="card-content">
+                            <h3>經典手部凝膠</h3>
+                            <p>多款流行色系可選，搭配細緻保養，讓您的指尖閃耀動人光彩。</p>
+                            <div class="service-info">
+                                <span><i class="far fa-clock"></i> 75 分鐘</span>
+                                <span><i class="fas fa-tag"></i> NT$1,200 起</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal" data-service="經典手部凝膠">立即預約</button>
+                        </div>
+                    </div>
+                    <div class="card service-card animate-on-scroll" style="animation-delay: 0.3s;">
+                        <div class="card-image">
+                            <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop" alt="深層保濕護理">
+                        </div>
+                        <div class="card-content">
+                            <h3>深層保濕護理</h3>
+                            <p>針對缺水肌膚設計，導入高效保濕精華，重現肌膚水潤透亮。</p>
+                            <div class="service-info">
+                                <span><i class="far fa-clock"></i> 60 分鐘</span>
+                                <span><i class="fas fa-tag"></i> NT$2,500 起</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal" data-service="深層保濕護理">立即預約</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 客戶評價 Section -->
+        <section id="testimonials">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2>真實客戶見證</h2>
+                    <p>聽聽她們怎麼說。您的滿意是我們前進的最大動力。</p>
+                </div>
+                <div class="testimonials-grid">
+                    <div class="card testimonial-card animate-on-scroll" style="animation-delay: 0.1s;">
+                        <p class="quote">這是我做過最自然、最舒服的美睫！美睫師非常細心，過程完全沒有不適感，效果超滿意，朋友們都說很好看！</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/100?u=a" alt="客戶照片">
+                            <div class="author-info">
+                                <h4>陳小姐 (Emily)</h4>
+                                <div class="star-rating">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card testimonial-card animate-on-scroll" style="animation-delay: 0.2s;">
+                        <p class="quote">第一次來 Vénus Beauty 做凝膠美甲，環境很美很放鬆，美甲師的技術和審美都超棒，給的建議也很專業，成品完全是我想要的樣子！</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/100?u=b" alt="客戶照片">
+                            <div class="author-info">
+                                <h4>林小姐 (Jessica)</h4>
+                                <div class="star-rating">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card testimonial-card animate-on-scroll" style="animation-delay: 0.3s;">
+                        <p class="quote">做完臉部護理，皮膚真的變得很透亮，而且效果持續了很久。美容師的手法很舒服，差點睡著。絕對會再來！</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/100?u=c" alt="客戶照片">
+                            <div class="author-info">
+                                <h4>王小姐 (Sophia)</h4>
+                                <div class="star-rating">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 關於我們 Section -->
+        <section id="about">
+            <div class="container">
+                <div class="about-content">
+                    <div class="about-image animate-on-scroll">
+                        <img src="https://images.unsplash.com/photo-1556760544-74068565f05c?q=80&w=1974&auto=format&fit=crop" alt="Vénus Beauty 團隊">
+                    </div>
+                    <div class="about-text animate-on-scroll" style="animation-delay: 0.2s;">
+                        <h2>關於 Vénus Beauty</h2>
+                        <p>Vénus Beauty 誕生於一個簡單的信念：美麗，是寵愛自己的最佳方式。我們不僅僅提供美學服務，更致力於創造一個讓您能完全放鬆、找回自信的私密空間。</p>
+                        <p>我們的團隊由一群充滿熱情且經驗豐富的美學師組成，堅持使用國際認證的頂級產品，並不斷精進技術，只為給您最安全、最滿意的服務體驗。在 Vénus Beauty，您不只是顧客，更是我們用心呵護的朋友。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section id="cta">
+            <div class="container animate-on-scroll">
+                <h2>準備好迎接更美的自己了嗎？</h2>
+                <p>立即預約您的專屬美麗時光，讓我們為您打造無懈可擊的完美細節。</p>
+                <button class="btn btn-lg open-booking-modal">立即線上預約</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <h4>Vénus Beauty</h4>
+                    <p>致力於提供頂級美學服務，喚醒每位女性的內在之美。</p>
+                </div>
+                <div class="footer-col">
+                    <h4>聯絡我們</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 台北市信義區忠孝東路五段1號</li>
+                        <li><i class="fas fa-phone"></i> (02) 1234-5678</li>
+                        <li><i class="fas fa-envelope"></i> service@venusbeauty.com.tw</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>營業時間</h4>
+                    <ul>
+                        <li>週一至週五: 11:00 - 21:00</li>
+                        <li>週六至週日: 10:00 - 20:00</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>關注我們</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-line"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Vénus Beauty. All Rights Reserved. Designed by Lovable.dev</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 線上預約系統 Modal -->
+    <div class="booking-modal" id="bookingModal">
+        <div class="booking-modal-content">
+            <div class="booking-modal-header">
+                <h3>線上預約</h3>
+                <button class="close-modal" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="bookingForm">
+                <!-- Step 1: 選擇服務 -->
+                <div class="booking-step active" id="step1">
+                    <h4>第一步：選擇您想要的服務</h4>
+                    <div class="form-group">
+                        <div class="service-selection-grid" id="serviceSelection">
+                            <div class="service-option" data-service="日式嫁接美睫">日式嫁接美睫</div>
+                            <div class="service-option" data-service="經典手部凝膠">經典手部凝膠</div>
+                            <div class="service-option" data-service="深層保濕護理">深層保濕護理</div>
+                            <div class="service-option" data-service="足部深層保養">足部深層保養</div>
+                        </div>
+                        <input type="hidden" name="service" id="selectedService" required>
+                    </div>
+                    <div class="booking-nav">
+                        <span></span>
+                        <button type="button" class="btn btn-primary" id="goToStep2">下一步</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: 選擇日期與時間 -->
+                <div class="booking-step" id="step2">
+                    <h4>第二步：選擇日期與時間</h4>
+                    <div class="form-group">
+                        <label for="bookingDate">選擇日期</label>
+                        <input type="date" id="bookingDate" name="date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>選擇時段</label>
+                        <div class="time-slots" id="timeSlots">
+                            <!-- JS 會動態生成時段 -->
+                        </div>
+                        <input type="hidden" name="time" id="selectedTime" required>
+                    </div>
+                    <div class="booking-nav">
+                        <button type="button" class="btn" id="backToStep1">上一步</button>
+                        <button type="button" class="btn btn-primary" id="goToStep3">下一步</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: 填寫客戶資訊 -->
+                <div class="booking-step" id="step3">
+                    <h4>第三步：填寫您的聯絡資訊</h4>
+                    <div class="form-group">
+                        <label for="customerName">您的姓名</label>
+                        <input type="text" id="customerName" name="name" class="form-control" placeholder="例如：王小美" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">聯絡電話</label>
+                        <input type="tel" id="customerPhone" name="phone" class="form-control" placeholder="例如：0912345678" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerEmail">電子郵件</label>
+                        <input type="email" id="customerEmail" name="email" class="form-control" placeholder="例如：example@mail.com">
+                    </div>
+                    <div class="booking-nav">
+                        <button type="button" class="btn" id="backToStep2">上一步</button>
+                        <button type="button" class="btn btn-primary" id="goToStep4">確認預約</button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: 預約確認 -->
+                <div class="booking-step" id="step4">
+                    <h4>預約確認</h4>
+                    <p>請確認您的預約資訊，確認無誤後即可送出。</p>
+                    <div class="confirmation-details">
+                        <p><strong>服務項目：</strong> <span id="confirmService"></span></p>
+                        <p><strong>預約日期：</strong> <span id="confirmDate"></span></p>
+                        <p><strong>預約時間：</strong> <span id="confirmTime"></span></p>
+                        <p><strong>姓名：</strong> <span id="confirmName"></span></p>
+                        <p><strong>電話：</strong> <span id="confirmPhone"></span></p>
+                    </div>
+                    <div class="booking-nav">
+                        <button type="button" class="btn" id="backToStep3">返回修改</button>
+                        <button type="submit" class="btn btn-primary">送出預約</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toast 通知 -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // 輪播圖
+        const slides = document.querySelectorAll('.carousel-slide');
+        let currentSlide = 0;
+        if (slides.length > 0) {
+            setInterval(() => {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }, 5000);
+        }
+
+        // 滾動動畫
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // 預約 Modal 邏輯
+        const bookingModal = document.getElementById('bookingModal');
+        const openModalBtns = document.querySelectorAll('.open-booking-modal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const bookingForm = document.getElementById('bookingForm');
+        const steps = document.querySelectorAll('.booking-step');
+        let currentStep = 0;
+
+        const showStep = (stepIndex) => {
+            steps.forEach((step, index) => {
+                step.classList.toggle('active', index === stepIndex);
+            });
+        };
+
+        const resetForm = () => {
+            bookingForm.reset();
+            document.querySelectorAll('.service-option.selected, .time-slot.selected').forEach(el => el.classList.remove('selected'));
+            currentStep = 0;
+            showStep(currentStep);
+        };
+
+        openModalBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                resetForm();
+                bookingModal.classList.add('is-open');
+                const service = e.target.dataset.service;
+                if (service) {
+                    const serviceOption = document.querySelector(`.service-option[data-service="${service}"]`);
+                    if(serviceOption) {
+                        serviceOption.click();
+                    }
+                }
+            });
+        });
+
+        closeModalBtn.addEventListener('click', () => bookingModal.classList.remove('is-open'));
+        bookingModal.addEventListener('click', (e) => {
+            if (e.target === bookingModal) {
+                bookingModal.classList.remove('is-open');
+            }
+        });
+
+        // 步驟導航
+        document.getElementById('goToStep2').addEventListener('click', () => {
+            if (document.getElementById('selectedService').value) {
+                currentStep = 1;
+                showStep(currentStep);
+            } else {
+                showToast('請先選擇一個服務項目', 'error');
+            }
+        });
+        document.getElementById('backToStep1').addEventListener('click', () => { currentStep = 0; showStep(currentStep); });
+        
+        document.getElementById('goToStep3').addEventListener('click', () => {
+            if (document.getElementById('bookingDate').value && document.getElementById('selectedTime').value) {
+                currentStep = 2;
+                showStep(currentStep);
+            } else {
+                showToast('請選擇日期與時間', 'error');
+            }
+        });
+        document.getElementById('backToStep2').addEventListener('click', () => { currentStep = 1; showStep(currentStep); });
+        
+        document.getElementById('goToStep4').addEventListener('click', () => {
+            if (bookingForm.checkValidity()) {
+                // 更新確認資訊
+                document.getElementById('confirmService').textContent = document.getElementById('selectedService').value;
+                document.getElementById('confirmDate').textContent = document.getElementById('bookingDate').value;
+                document.getElementById('confirmTime').textContent = document.getElementById('selectedTime').value;
+                document.getElementById('confirmName').textContent = document.getElementById('customerName').value;
+                document.getElementById('confirmPhone').textContent = document.getElementById('customerPhone').value;
+                currentStep = 3;
+                showStep(currentStep);
+            } else {
+                 showToast('請填寫所有必填欄位', 'error');
+            }
+        });
+        document.getElementById('backToStep3').addEventListener('click', () => { currentStep = 2; showStep(currentStep); });
+
+        // 服務選擇
+        const serviceSelection = document.getElementById('serviceSelection');
+        const selectedServiceInput = document.getElementById('selectedService');
+        serviceSelection.addEventListener('click', (e) => {
+            if (e.target.classList.contains('service-option')) {
+                document.querySelectorAll('.service-option').forEach(opt => opt.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedServiceInput.value = e.target.dataset.service;
+            }
+        });
+
+        // 日期與時間選擇
+        const dateInput = document.getElementById('bookingDate');
+        const timeSlotsContainer = document.getElementById('timeSlots');
+        const selectedTimeInput = document.getElementById('selectedTime');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+
+        dateInput.addEventListener('change', () => {
+            generateTimeSlots();
+        });
+
+        function generateTimeSlots() {
+            timeSlotsContainer.innerHTML = '';
+            selectedTimeInput.value = '';
+            const availableTimes = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+            availableTimes.forEach(time => {
+                const slot = document.createElement('div');
+                slot.classList.add('time-slot');
+                slot.textContent = time;
+                // 模擬已預約時段
+                if (Math.random() > 0.7) {
+                    slot.classList.add('disabled');
+                }
+                timeSlotsContainer.appendChild(slot);
+            });
+        }
+
+        timeSlotsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('time-slot') && !e.target.classList.contains('disabled')) {
+                document.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedTimeInput.value = e.target.textContent;
+            }
+        });
+
+        // 表單提交
+        bookingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(bookingForm);
+            const appointment = Object.fromEntries(formData.entries());
+
+            // 模擬儲存到 localStorage
+            try {
+                const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+                appointments.push(appointment);
+                localStorage.setItem('appointments', JSON.stringify(appointments));
+                
+                showToast('預約成功！我們期待您的光臨。');
+                setTimeout(() => {
+                    bookingModal.classList.remove('is-open');
+                }, 2000);
+
+            } catch (error) {
+                console.error('儲存預約失敗:', error);
+                showToast('預約失敗，請稍後再試。', 'error');
+            }
+        });
+
+        // Toast 通知
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+    });
+    </script>
+</body>
+</html>

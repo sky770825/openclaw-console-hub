@@ -1,0 +1,29 @@
+{
+  "id": "efb0ae59-8e98-48c6-89fa-630bb77327c1",
+  "session_id": "test-session",
+  "timestamp": "2026-02-17T01:10:05.454395",
+  "task": "Markdown 測試",
+  "thinking": {
+    "understanding": "...",
+    "category": "中",
+    "sop_ref": "SOP-15",
+    "environmental_check": "🟢 正常",
+    "options": [
+      {
+        "id": "1",
+        "description": "D",
+        "reason": "R",
+        "risk": "K"
+      }
+    ],
+    "selected_option": "1",
+    "rationale": "Rat"
+  },
+  "intervention": {
+    "required": true,
+    "status": "pending",
+    "user_input": null,
+    "intervened_at": null
+  },
+  "history": []
+}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷霧森林的試煉 - 網頁版</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>迷霧森林的試煉</h1>
+        <div id="game-log"></div>
+        
+        <div class="character-status" id="player-status">
+            <h2>勇者</h2>
+            <p>HP: <span id="player-hp"></span>/<span id="player-max-hp"></span></p>
+            <p>ATK: <span id="player-atk"></span> | DEF: <span id="player-def"></span></p>
+            <p>藥水: <span id="player-potions"></span></p>
+        </div>
+
+        <div class="character-status" id="monster-status">
+            <h2>哥布林</h2>
+            <p>HP: <span id="monster-hp"></span>/<span id="monster-max-hp"></span></p>
+            <p>ATK: <span id="monster-atk"></span> | DEF: <span id="monster-def"></span></p>
+        </div>
+
+        <div class="controls">
+            <button id="attack-btn">普通攻擊</button>
+            <button id="skill-btn">強力斬擊</button>
+            <button id="potion-btn">使用藥水</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

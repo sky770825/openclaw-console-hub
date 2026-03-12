@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NEUXA Multi-Agent Collaboration Protocol v1",
+  "type": "object",
+  "required": ["agent_id", "timestamp", "type", "priority", "payload"],
+  "properties": {
+    "agent_id": { "type": "string", "description": "發送訊息的代理名稱" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "type": {
+      "type": "string",
+      "enum": ["PROGRESS", "BLOCKED", "COLLAB_REQ", "SUCCESS", "HEARTBEAT"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "string" },
+        "status_code": { "type": "integer" },
+        "message": { "type": "string" },
+        "blocking_issue": { "type": "string" },
+        "required_agent": { "type": "string" },
+        "data": { "type": "object" }
+      },
+      "required": ["task_id", "message"]
+    }
+  }
+}

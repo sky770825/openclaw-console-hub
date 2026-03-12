@@ -1,0 +1,208 @@
+{
+  "research_date": "2026-02-15",
+  "categories": {
+    "code_analysis": [
+      {
+        "name": "GitHub Copilot",
+        "type": "商業",
+        "pricing": {
+          "free": "$0 (2,000 completions/月)",
+          "pro": "$10/月或$100/年",
+          "pro_plus": "$39/月或$390/年",
+          "business": "$19/用戶/月",
+          "enterprise": "$39/用戶/月"
+        },
+        "features": ["AI代碼自動完成", "Copilot Chat", "Agent模式", "代碼審查", "多IDE支援", "Claude/GPT模型整合"]
+      },
+      {
+        "name": "SonarQube",
+        "type": "開源+商業",
+        "pricing": {
+          "community": "免費 (開源)",
+          "developer": "$150/年/開發者",
+          "enterprise": "客製報價"
+        },
+        "features": ["代碼質量分析", "安全漏洞檢測", "技術債務追蹤", "CI/CD整合", "多語言支援", "Quality Gates"]
+      },
+      {
+        "name": "Semgrep",
+        "type": "開源+商業",
+        "pricing": {
+          "community": "免費 (開源)",
+          "team": "$40/開發者/月",
+          "enterprise": "客製報價"
+        },
+        "features": ["靜態分析", "自定義規則", "AI生成代碼檢測", "快速掃描", "IDE整合"]
+      },
+      {
+        "name": "CodeWeTrust C2M",
+        "type": "商業",
+        "pricing": {
+          "c2m": "客製報價",
+          "copilot": "2025年推出"
+        },
+        "features": ["AI源代碼審計", "M&A盡職調查", "技術債務分析", "安全合規檢查", "風險評估"]
+      },
+      {
+        "name": "CodeQL",
+        "type": "開源",
+        "pricing": {
+          "all": "免費 (GitHub整合)"
+        },
+        "features": ["語義代碼分析", "安全漏洞檢測", "GitHub Actions整合", "自定義查詢", "SAST引擎"]
+      }
+    ],
+    "security_scanning": [
+      {
+        "name": "Snyk",
+        "type": "商業",
+        "pricing": {
+          "free": "免費 (小團隊/開源)",
+          "team": "依掃描次數/代碼行數計費",
+          "enterprise": "客製報價"
+        },
+        "features": ["依賴漏洞掃描", "SAST", "容器安全", "IaC安全", "AI生成代碼檢測", "自動修復建議"]
+      },
+      {
+        "name": "Hashlock AI Audit Tool",
+        "type": "商業",
+        "pricing": {
+          "all": "客製報價"
+        },
+        "features": ["智能合約審計", "區塊鏈安全", "漏洞識別", "概念驗證", "修復建議", "安全報告生成"]
+      },
+      {
+        "name": "OWASP ZAP",
+        "type": "開源",
+        "pricing": {
+          "all": "免費"
+        },
+        "features": ["Web應用掃描", "自動漏洞檢測", "滲透測試", "API安全測試", "主動/被動掃描"]
+      },
+      {
+        "name": "Petri (Anthropic)",
+        "type": "開源",
+        "pricing": {
+          "all": "免費"
+        },
+        "features": ["AI安全研究", "自動化行為測試", "多輪對話測試", "模型風險評估", "111種測試場景"]
+      },
+      {
+        "name": "Nuclei",
+        "type": "開源",
+        "pricing": {
+          "all": "免費"
+        },
+        "features": ["漏洞掃描", "自定義模板", "快速資產發現", "自動化安全測試"]
+      }
+    ],
+    "compliance_check": [
+      {
+        "name": "Vanta",
+        "type": "商業",
+        "pricing": {
+          "starter": "~$10K/年起",
+          "growth": "$20K-$50K/年",
+          "add_ons": "每個框架額外收費"
+        },
+        "features": ["SOC 2自動化", "ISO 27001", "HIPAA", "GDPR", "自動證據收集", "整合100+工具", "AI輔助問卷"]
+      },
+      {
+        "name": "Drata",
+        "type": "商業",
+        "pricing": {
+          "base": "~$7.5K-$40K/年",
+          "per_framework": "$1.5K-$7.5K/框架"
+        },
+        "features": ["持續合規監控", "SOC 2/ISO 27001/HIPAA", "自動控制測試", "證據自動化", "審計準備", "整合200+工具"]
+      },
+      {
+        "name": "Secureframe",
+        "type": "商業",
+        "pricing": {
+          "fundamentals": "客製報價",
+          "complete": "客製報價"
+        },
+        "features": ["合規自動化平台", "SOC 2/ISO 27001/PCI DSS", "風險管理", "供應商管理", "AI輔助合規"]
+      },
+      {
+        "name": "AuditBoard",
+        "type": "商業",
+        "pricing": {
+          "all": "客製報價 (企業級)"
+        },
+        "features": ["審計管理平台", "風險評估", "控制測試", "問題追蹤", "報告自動化", "SOX合規"]
+      },
+      {
+        "name": "Algorithm Audit",
+        "type": "開源",
+        "pricing": {
+          "all": "免費"
+        },
+        "features": ["AI法案實施工具", "AI系統識別", "風險分類", "歐盟AI法案合規", "標準化支援"]
+      }
+    ],
+    "documentation_generation": [
+      {
+        "name": "DataSnipper",
+        "type": "商業",
+        "pricing": {
+          "all": "客製報價 (企業級)"
+        },
+        "features": ["AI文件處理", "DocuMine文件分析", "自動匹配與交叉引用", "Excel原生整合", "批量文件處理", "效率提升70%"],
+        "note": "50萬+用戶，125國使用，四大會計師事務所採用"
+      },
+      {
+        "name": "V7 Go",
+        "type": "商業",
+        "pricing": {
+          "all": "客製報價"
+        },
+        "features": ["Agentic AI文件智能", "Index Knowledge技術", "Chain of Thought推理", "多模態文件分析", "自主審計代理", "2024年推出"]
+      },
+      {
+        "name": "Mintlify",
+        "type": "商業",
+        "pricing": {
+          "free": "免費 (公開文檔)",
+          "startup": "$0-150/月",
+          "growth": "$300/月起",
+          "enterprise": "客製報價"
+        },
+        "features": ["AI文檔生成", "自動API文檔", "預覽部署", "AI搜尋", "自定義域名", "分析儀表板"]
+      },
+      {
+        "name": "ReadMe",
+        "type": "商業",
+        "pricing": {
+          "free": "免費",
+          "startup": "$99/專案/月",
+          "business": "$399/專案/月",
+          "enterprise": "客製報價"
+        },
+        "features": ["API文檔平台", "AI輔助編輯", "互動式API瀏覽器", "變更日誌", "社區論壇"]
+      },
+      {
+        "name": "Swimm",
+        "type": "商業",
+        "pricing": {
+          "free": "免費 (個人)",
+          "team": "$378/用戶/年",
+          "enterprise": "客製報價"
+        },
+        "features": ["代碼文檔AI生成", "自動同步文檔", "IDE整合", "PR文檔檢查", "代碼庫知識管理"]
+      }
+    ]
+  },
+  "summary": {
+    "total_tools": 20,
+    "open_source": 8,
+    "commercial": 12,
+    "by_category": {
+      "code_analysis": 5,
+      "security_scanning": 5,
+      "compliance_check": 5,
+      "documentation_generation": 5
+    }
+  }
+}

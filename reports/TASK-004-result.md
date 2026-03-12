@@ -1,0 +1,147 @@
+# TASK-004 研究結果：業務專用 Skills 開發需求調查
+
+**執行時間**: 2026-02-13 08:18 AM  
+**執行者**: Autopilot Agent  
+**狀態**: ✅ 已完成
+
+---
+
+## 一、biz_realestate業常用系統調查
+
+### 1.1 政府/官方系統
+| 系統名稱 | 功能 | API 可行性 |
+|---------|------|-----------|
+| 內政部biz_realestate資訊平台 | 實價登錄查詢、地籍謄本 | ❌ 無公開 API，需爬蟲 |
+| 全國地政電傳資訊系統 | 地籍謄本申請 | ❌ 封閉系統 |
+| 建物測量成果資訊系統 | 建物平面圖查詢 | ❌ 無 API |
+
+### 1.2 商用平台
+| 平台 | 功能 | 自動化可能 |
+|-----|------|-----------|
+| **platform_platform_platform_591 房屋交易** | 房源刊登、客戶管理 | ⚠️ 無官方 API，需 Playwright 爬蟲 |
+| **信義房屋** | 內部系統 | ❌ 封閉 |
+| **永慶房屋** | i智慧經紀人系統 | ❌ 封閉 |
+| **樂屋網** | 房源平台 | ⚠️ 可能爬蟲 |
+
+### 1.3 可整合建議
+- **優先級 P1**: platform_platform_platform_591 房屋自動化（透過 playwright-scraper-skill）
+- **優先級 P2**: 實價登錄資料定期抓取與分析
+
+---
+
+## 二、餐飲業常用系統調查
+
+### 2.1 POS 系統
+| 系統 | 廠商 | API/Open 程度 |
+|-----|------|---------------|
+| **iCHEF** | 資廚 | ✅ 有 API（付費）|
+| **POS 管理大師** | 眾陽 | ⚠️ 部分開放 |
+| **藍牙 POS** | 多廠商 | ❌ 多封閉 |
+| **Square** | Square | ✅ 完整 API |
+| **微碧智慧店面** | 台灣廠商 | ⚠️ 需詢問 |
+
+### 2.2 外送平台
+| 平台 | API/整合 |
+|-----|---------|
+| **Uber Eats** | ✅ 有商家 API |
+| **foodpanda** | ✅ 有夥伴 API |
+| **Deliveroo** | ⚠️ 有限 |
+
+### 2.3 可整合建議
+- **優先級 P1**: iCHEF API 整合（庫存、報表自動化）
+- **優先級 P1**: Uber Eats / foodpanda 訂單自動匯入
+- **優先級 P2**: 庫存與進貨自動化提醒
+
+---
+
+## 三、建材/防霾biz_window_screen業常用系統
+
+### 3.1 CRM/客戶管理
+| 系統 | 特點 | API |
+|-----|------|-----|
+| **HubSpot** | 國際知名 CRM | ✅ 完整 API |
+| **Salesforce** | 企業級 CRM | ✅ 完整 API |
+| **Zoho CRM** | 中小企業友善 | ✅ 完整 API |
+| **客戶高手** | 台灣本地 | ⚠️ 需確認 |
+| **iShelly** | 台灣雲端 CRM | ⚠️ 部分 API |
+
+### 3.2 報價/專案管理
+| 系統 | 功能 | API |
+|-----|------|-----|
+| **雲端發票** | 電子發票 | ✅ 有 API |
+| **Quotation 報價單** | 報價管理 | ❌ 多封閉 |
+| **Trello** | 專案追蹤 | ✅ 完整 API |
+| **Notion** | 全能管理 | ✅ 完整 API |
+
+### 3.3 可整合建議
+- **優先級 P1**: 客戶詢價自動記錄到 CRM（HubSpot/Zoho）
+- **優先級 P2**: 報價單自動生成與追蹤
+- **優先級 P2**: 安裝排程自動化提醒
+
+---
+
+## 四、優先開發建議清單
+
+### 🔴 P1 - 立即開發（高價值、可行）
+
+| Skill 名稱 | 業務 | 用途 | 技術方案 |
+|-----------|-----|------|---------|
+| `skill-platform_platform_platform_591-scraper` | biz_realestate | 自動抓取 platform_platform_platform_591 房源資訊 | Playwright + Tavily |
+| `skill-ichef-api` | biz_drinks | 銷售數據自動分析 | iCHEF API |
+| `skill-crm-automation` | 普特斯 | 客戶詢價自動記錄 | HubSpot/Zoho API |
+| `skill-uber-eats-sync` | biz_drinks | 外送訂單自動匯入 | UE API |
+
+### 🟡 P2 - 短期規劃（中等價值）
+
+| Skill 名稱 | 業務 | 用途 |
+|-----------|-----|------|
+| `skill-realprice-monitor` | biz_realestate | 實價登錄變化監控 |
+| `skill-inventory-alert` | biz_drinks | 庫存低水位提醒 |
+| `skill-quotation-generator` | 普特斯 | 自動生成報價單 |
+
+### 🟢 P3 - 長期考慮
+
+- 社群媒體自動發文（FB/IG 房源/產品曝光）
+- AI 客戶對話輔助
+- 自動化行銷郵件
+
+---
+
+## 五、技術實現建議
+
+### 5.1 已具備基礎
+- ✅ Tavily 搜尋 skill
+- ✅ Playwright 爬蟲 skill
+- ✅ Screen Vision 自動化 skill
+- ✅ GitHub skill（版本控制）
+
+### 5.2 需新增技能
+1. **iCHEF API Skill**: 需申請 API Key
+2. **HubSpot CRM Skill**: 使用官方 API
+3. **platform_platform_platform_591 爬蟲 Skill**: 基於現有 playwright-skill 擴展
+4. **外送平台整合 Skill**: Uber Eats / foodpanda API
+
+### 5.3 開發順序建議
+```
+Week 1-2: skill-platform_platform_platform_591-scraper（biz_realestate最急迫）
+Week 3-4: skill-crm-automation（普特斯客戶管理）
+Week 5-6: skill-ichef-api（biz_drinks數據分析）
+Week 7+: 外送平台與進階功能
+```
+
+---
+
+## 六、結論
+
+**立即行動項**:
+1. 🏠 biz_realestate：開發 platform_platform_platform_591 爬蟲 skill，自動追蹤新房源
+2. 🧋 biz_drinks：申請 iCHEF API，建立銷售報表自動化
+3. 🪟 普特斯：選定 CRM（建議 HubSpot 免費版），開發詢價自動記錄
+
+**預期效益**:
+- 每日節省 1-2 小時重複性工作
+- 客戶回應速度提升 50%
+- 數據驅動決策，減少人為疏漏
+
+---
+*報告產出時間: 2026-02-13 08:18 AM*

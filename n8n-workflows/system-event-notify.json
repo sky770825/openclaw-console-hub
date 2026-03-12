@@ -1,0 +1,89 @@
+{
+  "name": "系統事件即時通知 (Telegram)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "system-event-notify",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook 接收器",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "system-event-notify"
+    },
+    {
+      "parameters": {
+        "chatId": "5819565005",
+        "text": "🤖 *系統事件通知*\n\n📋 *任務*: {{ $json.taskName }}\n📊 *狀態*: {{ $json.status }}\n📝 *摘要*: {{ $json.summary }}\n\n👤 *執行者*: {{ $json.assignee || '系統' }}\n⏰ *時間*: {{ $now.format('YYYY-MM-DD HH:mm') }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-send",
+      "name": "發送 Telegram 通知",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "caij-n8n-bot",
+          "name": "@caij_n8n_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "respond",
+      "name": "回應成功",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "jsonData": "{\"success\": true, \"message\": \"通知已發送\"}"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "system",
+      "name": "系統"
+    },
+    {
+      "id": "notification",
+      "name": "通知"
+    }
+  ],
+  "connections": {
+    "Webhook 接收器": {
+      "main": [
+        [
+          {
+            "node": "發送 Telegram 通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "發送 Telegram 通知": {
+      "main": [
+        [
+          {
+            "node": "回應成功",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

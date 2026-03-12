@@ -1,0 +1,61 @@
+name: Browser Auth Admin Smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CAUSELAW_SUPABASE_URL: ${{ secrets.CAUSELAW_SUPABASE_URL }}
+      CAUSELAW_SUPABASE_ANON_KEY: ${{ secrets.CAUSELAW_SUPABASE_ANON_KEY }}
+      CAUSELAW_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CAUSELAW_SUPABASE_SERVICE_ROLE_KEY }}
+      CAUSELAW_DB_SCHEMA: causelaw_yinguo_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Secrets
+        run: |
+          test -n "$CAUSELAW_SUPABASE_URL"
+          test -n "$CAUSELAW_SUPABASE_ANON_KEY"
+          test -n "$CAUSELAW_SUPABASE_SERVICE_ROLE_KEY"
+
+      - name: Write Public Config
+        run: |
+          cat > causelaw-config.js <<EOF
+          (function () {
+              'use strict';
+              window.CAUSELAW_SUPABASE_URL = '${CAUSELAW_SUPABASE_URL}';
+              window.CAUSELAW_SUPABASE_ANON_KEY = '${CAUSELAW_SUPABASE_ANON_KEY}';
+              window.CAUSELAW_DB_SCHEMA = '${CAUSELAW_DB_SCHEMA}';
+          })();
+          EOF
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.58.2
+          npx playwright install --with-deps chromium
+
+      - name: Run Browser Auth/Admin Smoke
+        run: npx playwright test e2e/auth-admin-browser-smoke.spec.mjs --project=chromium
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-auth-admin-smoke-report
+          path: |
+            playwright-report
+            test-results

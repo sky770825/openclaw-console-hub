@@ -1,0 +1,37 @@
+{
+  "name": "Clawhub 技能發布",
+  "createdAt": "2026-03-02T15:06:29.827Z",
+  "totalWeeks": 3,
+  "currentWeek": 1,
+  "milestones": [
+    {
+      "name": "技能架構定義",
+      "week": 1,
+      "done": false
+    },
+    {
+      "name": "首批 5 個核心技能開發",
+      "week": 2,
+      "done": false
+    },
+    {
+      "name": "安全性與合規性審查",
+      "week": 3,
+      "done": false
+    }
+  ],
+  "weeklyGoals": {
+    "W1": {
+      "goal": "",
+      "tasks": []
+    },
+    "W2": {
+      "goal": "",
+      "tasks": []
+    },
+    "W3": {
+      "goal": "",
+      "tasks": []
+    }
+  }
+}

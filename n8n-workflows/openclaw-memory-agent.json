@@ -1,0 +1,287 @@
+{
+  "name": "OpenClaw 記憶串接 Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "openclaw-memory",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "chat-trigger-1",
+      "name": "OpenClaw Webhook",
+      "type": "n8n-nodes-base.chatTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "openclaw-memory"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "你是小蔡的記憶助手。你的任務是：\n1. 理解用戶輸入的內容\n2. 從長期記憶中檢索相關資訊\n3. 結合記憶生成回應\n4. 將重要資訊儲存到長期記憶\n\n記憶檢索工具 'RAG_MEMORY' 可以幫你找到相關的歷史對話和知識。"
+        }
+      },
+      "id": "ai-agent-1",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {}
+      },
+      "id": "openai-chat-model-1",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        450,
+        500
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "window-buffer-memory-1",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        650,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "RAG_MEMORY",
+        "toolDescription": "檢索長期記憶庫中的相關資訊，包含歷史對話和重要知識",
+        "qdrantCollection": "ltm",
+        "topK": 5,
+        "options": {}
+      },
+      "id": "vector-store-retriever-1",
+      "name": "Vector Store Retriever",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        650,
+        700
+      ],
+      "credentials": {
+        "qdrantApi": {
+          "id": "YOUR_QDRANT_CREDENTIAL_ID",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "embeddings-openai-1",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        850,
+        700
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": "ltm",
+        "options": {}
+      },
+      "id": "vector-store-insert-1",
+      "name": "Store to Vector Memory",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "credentials": {
+        "qdrantApi": {
+          "id": "YOUR_QDRANT_CREDENTIAL_ID",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsMode": "expression",
+        "jsCode": "const conversation = $input.all()[0].json;\nconst userMessage = conversation.userMessage || conversation.body?.message || JSON.stringify(conversation);\nconst aiResponse = conversation.aiResponse || '回應內容';\n\n// 組合要儲存的記憶內容\nconst memoryContent = `用戶: ${userMessage}\nAI: ${aiResponse}\n時間: ${new Date().toISOString()}`;\n\nreturn [{\n  json: {\n    pageContent: memoryContent,\n    metadata: {\n      timestamp: new Date().toISOString(),\n      sessionId: conversation.sessionId || 'default',\n      type: 'conversation'\n    }\n  }\n}];"
+      },
+      "id": "code-prepare-memory-1",
+      "name": "Prepare Memory Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "respond-to-webhook-1",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "embeddings-openai-2",
+      "name": "OpenAI Embeddings Insert",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1050,
+        500
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenClaw Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Memory Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_languageModel": [
+        [
+          {
+            "node": "OpenAI Chat Model",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_memory": [
+        [
+          {
+            "node": "Window Buffer Memory",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_tool": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_embedding": [
+        [
+          {
+            "node": "OpenAI Embeddings",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Memory Data": {
+      "main": [
+        [
+          {
+            "node": "Store to Vector Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store to Vector Memory": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_embedding": [
+        [
+          {
+            "node": "OpenAI Embeddings Insert",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "1",
+      "name": "OpenClaw"
+    },
+    {
+      "id": "2",
+      "name": "Memory"
+    }
+  ]
+}

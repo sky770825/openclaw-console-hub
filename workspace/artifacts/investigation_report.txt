@@ -1,0 +1,30 @@
+Investigation Report - Task ID Truncation Issue
+Generated at: Sat Feb 28 16:16:00 CST 2026
+------------------------------------------
+Searching for telegram-stop-poll.ts and directory structure...
+telegram-stop-poll.ts not found. Broadening search for system prompt logic...
+------------------------------------------
+Searching for task list formatting logic...
+------------------------------------------
+Searching for specific string truncation patterns (slice/substring)...
+------------------------------------------
+Searching for ID prefix 't177' to find hardcoded examples or formatters...
+./task-1772266560137.sh:38:# Since the ID 't17722661938' (12 chars) became 't1772266' (8 chars), look for slice(0, 8) or similar
+./task-1772266560137.sh:48:echo "Searching for ID prefix 't177' to find hardcoded examples or formatters..." >> "$REPORT"
+./task-1772266560137.sh:49:grep -rn "t177" . --exclude-dir=node_modules >> "$REPORT" || true
+./output/investigation_report.txt:11:Searching for ID prefix 't177' to find hardcoded examples or formatters...
+------------------------------------------
+Checking for prompt template files...
+------------------------------------------
+Files found in current directory (top level):
+AGENTS.md
+BLUEPRINT.md
+BOOTSTRAP.md
+MEMORY.md
+output/
+PROJECT_990_MASTER_PLAN.md
+sandbox/
+screenshot_analysis.sh*
+server_simulation.log
+SOUL.md
+task-1772266560137.sh*

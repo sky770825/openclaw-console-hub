@@ -1,0 +1,29 @@
+{
+  "id": "01531e84-332e-4526-9428-e602a62899b0",
+  "session_id": "test-session",
+  "timestamp": "2026-02-17T01:10:05.453975",
+  "task": "單元測試任務",
+  "thinking": {
+    "understanding": "測試決策樹存儲",
+    "category": "簡單",
+    "sop_ref": "SOP-15",
+    "environmental_check": "🟢 正常",
+    "options": [
+      {
+        "id": "Test",
+        "description": "測試方案",
+        "reason": "無",
+        "risk": "無"
+      }
+    ],
+    "selected_option": "Test",
+    "rationale": "這是測試"
+  },
+  "intervention": {
+    "required": true,
+    "status": "pending",
+    "user_input": null,
+    "intervened_at": null
+  },
+  "history": []
+}

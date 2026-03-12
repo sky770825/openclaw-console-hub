@@ -1,0 +1,53 @@
+{
+  "businesses": [
+    {
+      "id": "real_estate",
+      "name": "住商不動產",
+      "display_name": "住商不動產",
+      "description": "房地產買賣及租賃",
+      "logo": "🏠",
+      "platforms": ["facebook", "instagram", "shopee"],
+      "features": {
+        "marketplace": true,
+        "shopping": true,
+        "catalog": true
+      },
+      "templates": {
+        "real_estate": "real_estate.json"
+      }
+    },
+    {
+      "id": "beverage",
+      "name": "飲料店",
+      "display_name": "飲料店",
+      "description": "飲品銷售",
+      "logo": "🥤",
+      "platforms": ["facebook", "instagram", "shopee"],
+      "features": {
+        "marketplace": true,
+        "shopping": true,
+        "catalog": true
+      },
+      "templates": {
+        "beverage": "beverage.json"
+      }
+    },
+    {
+      "id": "window_screen",
+      "name": "普特斯防霾紗窗",
+      "display_name": "普特斯防霾紗窗",
+      "description": "防霾紗窗產品與服務",
+      "logo": "🪟",
+      "platforms": ["facebook", "instagram", "shopee"],
+      "features": {
+        "marketplace": true,
+        "shopping": true,
+        "catalog": true,
+        "service_booking": true
+      },
+      "templates": {
+        "window_screen": "window_screen.json"
+      }
+    }
+  ]
+}

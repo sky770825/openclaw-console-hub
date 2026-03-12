@@ -1,0 +1,48 @@
+{
+  "name": "OpenClaw Studio 產品化",
+  "createdAt": "2026-03-02T14:56:56.100Z",
+  "totalWeeks": 4,
+  "currentWeek": 1,
+  "milestones": [
+    {
+      "name": "核心整合與邏輯升級",
+      "week": 1,
+      "done": false
+    },
+    {
+      "name": "組件庫與動態模板",
+      "week": 2,
+      "done": false
+    },
+    {
+      "name": "實時預覽與除錯",
+      "week": 3,
+      "done": false
+    },
+    {
+      "name": "正式併入中控台",
+      "week": 4,
+      "done": false
+    }
+  ],
+  "weeklyGoals": {
+    "W1": {
+      "goal": "完成 Server 3011 路由對接與引擎邏輯增強",
+      "tasks": [
+        "t1772463361155"
+      ]
+    },
+    "W2": {
+      "goal": "",
+      "tasks": []
+    },
+    "W3": {
+      "goal": "",
+      "tasks": []
+    },
+    "W4": {
+      "goal": "",
+      "tasks": []
+    }
+  }
+}

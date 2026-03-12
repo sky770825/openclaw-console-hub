@@ -1,0 +1,13 @@
+Processes: 536 total, 4 running, 532 sleeping, 3625 threads 
+2026/03/06 22:58:51
+Load Avg: 6.29, 5.62, 4.65 
+CPU usage: 38.93% user, 13.11% sys, 47.95% idle 
+SharedLibs: 591M resident, 122M data, 90M linkedit.
+MemRegions: 571449 total, 7019M resident, 262M private, 1272M shared.
+PhysMem: 23G used (3116M wired, 5277M compressor), 74M unused.
+VM: 259T vsize, 5268M framework vsize, 105951726(0) swapins, 452849658(0) swapouts.
+Networks: packets: 62711831/31G in, 86390117/78G out.
+Disks: 146631241/4931G read, 142897511/7343G written.
+
+PID    COMMAND %CPU TIME     #TH #WQ #PORTS MEM PURG CMPRS PGRP  PPID  STATE    BOOSTS %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD SYSMACH CSW    PAGEINS IDLEW POWER INSTRS CYCLES JETPRI USER        #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+99768  node    0.0  00:05.29 12  1   51     29M 0B   24M   99673 99681 sleeping *0[1]  0.00000 0.00000    501 85235  148 215     164     220010 861     146212 712     28459 0.0   0      0      180    caijunchang N/A    N/A   N/A   N/A   N/A   N/A  

@@ -1,0 +1,36 @@
+{
+  "skill_id": "skill-arch-design-1771258908329",
+  "name": "系統架構模組化設計",
+  "description": "設計多層級（如三層記憶體）的系統架構，並定義各層職責與互動流程",
+  "procedure": {
+    "steps": [
+      {
+        "action": "define_layers",
+        "params": {
+          "layers": [
+            "hot",
+            "cold",
+            "anchor"
+          ]
+        }
+      },
+      {
+        "action": "map_responsibilities",
+        "params": {
+          "layer_mapping": "dict"
+        }
+      },
+      {
+        "action": "establish_flow",
+        "params": {
+          "trigger": "event",
+          "target": "layer"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source_task": "anchor-memory-evolution-v3.md",
+    "extracted_at": "2026-02-16T16:21:48.329Z"
+  }
+}

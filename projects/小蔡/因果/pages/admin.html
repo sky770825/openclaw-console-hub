@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="管理投稿審核與內容狀態的內部後台頁面。">
+    <meta name="robots" content="noindex, nofollow">
+    <meta property="og:title" content="後台管理 | 因果真相">
+    <meta property="og:description" content="管理投稿審核與內容狀態的內部後台頁面。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/admin.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="後台管理 | 因果真相">
+    <meta name="twitter:description" content="管理投稿審核與內容狀態的內部後台頁面。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>後台管理 | 因果真相</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../causelaw-config.js"></script>
+    <script src="../causelaw-client.js"></script>
+    <script src="../causelaw-ui.js"></script>
+    <script src="../causelaw-auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .admin-gate { max-width: 400px; margin: 10rem auto; padding: 2rem; border: 1px solid rgba(212,175,55,0.3); background: rgba(0,0,0,0.6); }
+        .submission-card { border: 1px solid rgba(212,175,55,0.2); padding: 1.5rem; margin-bottom: 1.5rem; background: rgba(10,10,10,0.8); }
+        .submission-card.rejected { opacity: 0.6; border-color: rgba(255,80,80,0.3); }
+        .submission-card.approved { border-color: rgba(0,200,100,0.3); }
+        .btn-approve { background: rgba(0,200,100,0.2); border: 1px solid #0c8; color: #0c8; padding: 0.5rem 1rem; cursor: pointer; }
+        .btn-reject { background: rgba(200,80,80,0.2); border: 1px solid #c44; color: #c44; padding: 0.5rem 1rem; cursor: pointer; margin-left: 0.5rem; }
+        .btn-approve:hover, .btn-reject:hover { opacity: 0.9; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif min-h-screen">
+    <nav class="fixed top-0 left-0 w-full z-50 px-6 py-4 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-6 backdrop-blur-md">
+        <div class="space-x-4 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">首頁</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="admin.html" class="hover:text-gold transition text-gold">後台</a>
+        </div>
+        <div class="text-xl font-black text-gold tracking-widest border-l border-gold/30 pl-4"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+    <div id="admin-gate" class="admin-gate" style="padding-top: 4rem;">
+        <h1 class="text-2xl text-gold mb-6 tracking-widest">後台登入</h1>
+        <p class="text-stone-500 text-sm mb-4">僅支援帳號 + 密碼登入，且僅 moderator / admin / superadmin 可進入。</p>
+        <input type="text" id="admin-account" class="w-full p-3 bg-black border border-gold/30 text-white mb-3 outline-none focus:border-gold" placeholder="管理員帳號">
+        <input type="password" id="admin-password" class="w-full p-3 bg-black border border-gold/30 text-white mb-3 outline-none focus:border-gold" placeholder="管理員密碼">
+        <button type="button" onclick="signInAdminPassword()" class="w-full py-3 bg-gold text-black font-bold hover:bg-amber-200 transition mb-2">登入後台</button>
+        <button type="button" onclick="verifyAdminAccess()" class="w-full py-3 border border-gold/40 text-gold hover:bg-gold/10 transition">我已完成登入，重新檢查權限</button>
+        <p id="admin-gate-msg" class="text-stone-600 text-xs mt-4 text-center">僅供站方管理使用</p>
+    </div>
+
+    <div id="admin-panel" class="hidden max-w-4xl mx-auto px-6 pt-24 pb-16">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl text-gold tracking-widest">投稿審核後台</h1>
+            <div class="flex items-center gap-4">
+                <span id="admin-identity" class="text-stone-500 text-xs"></span>
+                <a href="forum.html" class="text-stone-500 hover:text-gold text-sm">前往討論區</a>
+                <button type="button" onclick="logout()" class="text-stone-500 hover:text-red-400 text-sm">登出</button>
+            </div>
+        </div>
+
+        <p class="text-stone-500 mb-6">審核通過的投稿會顯示於討論區。拒絕後不會顯示。</p>
+
+        <div id="submissions-list">
+            <!-- 待審核列表由 JS 填入 -->
+        </div>
+
+        <div id="empty-state" class="hidden text-center py-20 text-stone-500">
+            <p id="empty-state-text">目前沒有待審核的投稿。</p>
+            <a href="../index.html#submit" class="text-gold hover:underline mt-2 inline-block">首頁投稿區</a>
+        </div>
+    </div>
+
+    <script>
+        const ALLOWED_ADMIN_ROLES = ['moderator', 'admin', 'superadmin'];
+        const pendingMap = {};
+        let adminSession = { user: null, role: null };
+
+        function dbTable(name, fallback) {
+            var db = window.CauseLawClient && window.CauseLawClient.DB;
+            if (db && db.tables && db.tables[name]) return db.tables[name];
+            return fallback;
+        }
+
+        function resetPendingMap() {
+            Object.keys(pendingMap).forEach(function (k) {
+                delete pendingMap[k];
+            });
+        }
+
+        function setGateMessage(message, tone) {
+            var el = document.getElementById('admin-gate-msg');
+            if (!el) return;
+            el.textContent = message || '';
+            el.className = 'text-xs mt-4 text-center ' + (tone === 'error' ? 'text-red-400' : (tone === 'ok' ? 'text-emerald-400' : 'text-stone-600'));
+        }
+
+        function showAdminPanel() {
+            document.getElementById('admin-gate').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+        }
+
+        function hideAdminPanel() {
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('admin-gate').classList.remove('hidden');
+        }
+
+        function updateAdminIdentity() {
+            var identity = document.getElementById('admin-identity');
+            if (!identity) return;
+            if (!adminSession.user || !adminSession.role) {
+                identity.textContent = '';
+                return;
+            }
+            var account = adminSession.user.email || adminSession.user.id;
+            if (adminSession.user.email && window.CauseLawClient && typeof window.CauseLawClient.emailToAccount === 'function') {
+                account = window.CauseLawClient.emailToAccount(adminSession.user.email) || adminSession.user.email;
+            }
+            identity.textContent = account + ' · ' + adminSession.role;
+        }
+
+        async function signInAdminPassword() {
+            var accountInput = document.getElementById('admin-account');
+            var passwordInput = document.getElementById('admin-password');
+            var account = accountInput ? accountInput.value.trim() : '';
+            var password = passwordInput ? passwordInput.value : '';
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                setGateMessage('Supabase 尚未設定，請先填入 causelaw-config.js 的 URL 與 Anon Key。', 'error');
+                return;
+            }
+            if (!account) {
+                setGateMessage('請輸入管理員帳號。', 'error');
+                if (accountInput) accountInput.focus();
+                return;
+            }
+            if (account.indexOf('@') === -1 && window.CauseLawClient && typeof window.CauseLawClient.validateAccountName === 'function') {
+                var accountErr = window.CauseLawClient.validateAccountName(account);
+                if (accountErr) {
+                    setGateMessage(accountErr, 'error');
+                    if (accountInput) accountInput.focus();
+                    return;
+                }
+            }
+            if (!password || password.length < 6) {
+                setGateMessage('請輸入有效密碼（至少 6 碼）。', 'error');
+                if (passwordInput) passwordInput.focus();
+                return;
+            }
+            try {
+                await window.CauseLawClient.signInWithAccount(account, password);
+                setGateMessage('登入成功，正在驗證管理權限...', 'ok');
+                await verifyAdminAccess();
+            } catch (err) {
+                console.error('管理員帳密登入失敗:', err);
+                var msg = err && err.message ? err.message : '';
+                if (msg.indexOf('Invalid login credentials') !== -1) {
+                    setGateMessage('帳號或密碼錯誤。', 'error');
+                    return;
+                }
+                if (msg.indexOf('Email not confirmed') !== -1) {
+                    setGateMessage('此帳號尚未啟用。', 'error');
+                    return;
+                }
+                setGateMessage('登入失敗，請稍後再試。', 'error');
+            }
+        }
+
+        async function fetchCurrentMember(userId) {
+            var supabase = window.CauseLawClient.getClient();
+            var result = await supabase
+                .from(dbTable('members', 'causelaw_yinguo_v1.members'))
+                .select('id,email,role,status')
+                .eq('id', userId)
+                .maybeSingle();
+            if (result.error) throw result.error;
+            return result.data || null;
+        }
+
+        async function verifyAdminAccess() {
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                hideAdminPanel();
+                setGateMessage('Supabase 尚未設定，無法登入管理後台。', 'error');
+                return;
+            }
+            try {
+                var sessionUser = await window.CauseLawClient.getSessionUser();
+                if (!sessionUser) {
+                    hideAdminPanel();
+                    adminSession = { user: null, role: null };
+                    updateAdminIdentity();
+                    setGateMessage('尚未登入，請先輸入帳號與密碼。', 'error');
+                    return;
+                }
+                var member = await fetchCurrentMember(sessionUser.id);
+                if (!member && typeof window.CauseLawClient.ensureMemberProfile === 'function') {
+                    try {
+                        await window.CauseLawClient.ensureMemberProfile(sessionUser);
+                        member = await fetchCurrentMember(sessionUser.id);
+                    } catch (profileErr) {
+                        console.error('建立會員資料失敗:', profileErr);
+                    }
+                }
+                if (!member) {
+                    hideAdminPanel();
+                    adminSession = { user: null, role: null };
+                    updateAdminIdentity();
+                    setGateMessage('查無會員資料，請先建立會員紀錄。', 'error');
+                    return;
+                }
+                if (!ALLOWED_ADMIN_ROLES.includes(member.role)) {
+                    hideAdminPanel();
+                    adminSession = { user: null, role: null };
+                    updateAdminIdentity();
+                    setGateMessage('權限不足：目前角色為 ' + member.role + '。', 'error');
+                    return;
+                }
+                if (member.status && member.status !== 'active') {
+                    hideAdminPanel();
+                    adminSession = { user: null, role: null };
+                    updateAdminIdentity();
+                    setGateMessage('帳號狀態為 ' + member.status + '，無法登入後台。', 'error');
+                    return;
+                }
+                adminSession = { user: sessionUser, role: member.role };
+                updateAdminIdentity();
+                setGateMessage('已驗證管理權限。', 'ok');
+                showAdminPanel();
+                loadSubmissions();
+            } catch (err) {
+                console.error('驗證管理權限失敗:', err);
+                hideAdminPanel();
+                adminSession = { user: null, role: null };
+                updateAdminIdentity();
+                var errMsg = (err && err.message ? String(err.message) : '').trim();
+                if (errMsg && errMsg.length > 120) errMsg = errMsg.slice(0, 120) + '...';
+                setGateMessage(errMsg ? ('驗證失敗：' + errMsg) : '驗證失敗，請稍後再試。', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                if (window.CauseLawClient && window.CauseLawClient.isReady()) {
+                    await window.CauseLawClient.signOut();
+                }
+            } catch (err) {
+                console.error('登出失敗:', err);
+            } finally {
+                adminSession = { user: null, role: null };
+                updateAdminIdentity();
+                hideAdminPanel();
+                var accountInput = document.getElementById('admin-account');
+                if (accountInput) accountInput.value = '';
+                var passwordInput = document.getElementById('admin-password');
+                if (passwordInput) passwordInput.value = '';
+                setGateMessage('已登出。', 'ok');
+            }
+        }
+
+        async function loadSubmissions() {
+            let pending = [];
+            try {
+                if (!window.CauseLawClient || !window.CauseLawClient.isReady()) {
+                    throw new Error('Supabase client not ready');
+                }
+                const supabase = window.CauseLawClient.getClient();
+                const query = await supabase
+                    .from(dbTable('posts', 'causelaw_yinguo_v1.posts'))
+                    .select('id,display_name,title,content,category,status,created_at')
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: true });
+                if (query.error) throw query.error;
+                pending = (query.data || []).map(function (row) {
+                    return {
+                        id: row.id,
+                        display_name: row.display_name,
+                        title: row.title,
+                        content: row.content,
+                        category: row.category,
+                        status: row.status,
+                        created_at: row.created_at,
+                        source: 'supabase'
+                    };
+                });
+            } catch (err) {
+                console.error('Supabase 載入待審核失敗:', err);
+                const container = document.getElementById('submissions-list');
+                const emptyState = document.getElementById('empty-state');
+                const emptyText = document.getElementById('empty-state-text');
+                if (container) container.innerHTML = '';
+                if (emptyText) emptyText.textContent = '載入失敗，請檢查 Supabase 權限與 RLS 設定。';
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
+            const container = document.getElementById('submissions-list');
+            const emptyState = document.getElementById('empty-state');
+            const emptyText = document.getElementById('empty-state-text');
+
+            if (pending.length === 0) {
+                container.innerHTML = '';
+                if (emptyText) emptyText.textContent = '目前沒有待審核的投稿。';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+            resetPendingMap();
+            pending.forEach(function (item) {
+                pendingMap[item.id] = item;
+            });
+            container.innerHTML = pending.map(function (s) {
+                var excerpt = s.content || '';
+                if (excerpt.length > 300) excerpt = excerpt.substring(0, 300) + '...';
+                return (
+                    '<div class="submission-card" data-id="' + escapeHtml(s.id) + '">' +
+                        '<div class="flex justify-between items-start mb-2">' +
+                            '<span class="text-gold text-sm">' + escapeHtml((s.category || '其他') + ' · ' + (s.display_name || '匿名')) + '</span>' +
+                            '<span class="text-stone-600 text-xs">' + escapeHtml(formatDate(s.created_at)) + '</span>' +
+                        '</div>' +
+                        '<h3 class="text-xl text-white mb-2">' + escapeHtml(s.title) + '</h3>' +
+                        '<p class="text-stone-400 text-sm leading-relaxed whitespace-pre-line mb-4">' + escapeHtml(excerpt) + '</p>' +
+                        '<label class="block text-xs text-stone-500 mb-2">審核理由（必填）</label>' +
+                        '<textarea rows="2" data-reason-for="' + escapeHtml(s.id) + '" class="w-full p-2 mb-3 bg-black border border-gold/20 text-stone-200 text-xs outline-none focus:border-gold" placeholder="例如：內容完整、具可驗證性；或：內容不足、疑似虛構"></textarea>' +
+                        '<div>' +
+                            '<button type="button" class="btn-approve" data-action="approve" data-id="' + escapeHtml(s.id) + '" data-source="' + escapeHtml(s.source || 'local') + '">通過</button>' +
+                            '<button type="button" class="btn-reject" data-action="reject" data-id="' + escapeHtml(s.id) + '" data-source="' + escapeHtml(s.source || 'local') + '">拒絕</button>' +
+                        '</div>' +
+                    '</div>'
+                );
+            }).join('');
+        }
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            return d.toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' });
+        }
+
+        function getRequiredReason(id) {
+            var input = document.querySelector('textarea[data-reason-for="' + id + '"]');
+            var reason = input ? input.value.trim() : '';
+            if (!reason) {
+                alert('請先填寫審核理由。');
+                if (input) input.focus();
+                return null;
+            }
+            return reason;
+        }
+
+        async function writeModerationAuditLog(payload) {
+            if (!window.CauseLawClient || !window.CauseLawClient.isReady()) return;
+            try {
+                var supabase = window.CauseLawClient.getClient();
+                var sessionUser = await window.CauseLawClient.getSessionUser();
+                var insertPayload = {
+                    target_type: payload.target_type || 'post',
+                    target_id: payload.target_id,
+                    action: payload.action,
+                    actor_id: sessionUser ? sessionUser.id : null,
+                    reason: payload.reason || '',
+                    before_state: payload.before_state || {},
+                    after_state: payload.after_state || {}
+                };
+                var result = await supabase.from(dbTable('moderationAuditLog', 'causelaw_yinguo_v1.moderation_audit_log')).insert([insertPayload]);
+                if (result.error) {
+                    console.error('寫入審核稽核記錄失敗:', result.error);
+                }
+            } catch (err) {
+                console.error('寫入審核稽核記錄失敗:', err);
+            }
+        }
+
+        async function approve(id, source) {
+            var reason = getRequiredReason(id);
+            if (!reason) return;
+            if (source === 'supabase' && window.CauseLawClient && window.CauseLawClient.isReady()) {
+                try {
+                    const supabase = window.CauseLawClient.getClient();
+                    const beforeState = pendingMap[id] || null;
+                    const result = await supabase
+                        .from(dbTable('posts', 'causelaw_yinguo_v1.posts'))
+                        .update({ status: 'approved', moderation_reason: reason })
+                        .eq('id', id);
+                    if (result.error) throw result.error;
+                    await writeModerationAuditLog({
+                        target_type: 'post',
+                        target_id: id,
+                        action: 'approve',
+                        reason: reason,
+                        before_state: beforeState || {},
+                        after_state: {
+                            id: id,
+                            status: 'approved',
+                            moderation_reason: reason
+                        }
+                    });
+                    loadSubmissions();
+                    return;
+                } catch (err) {
+                    console.error('Supabase 審核通過失敗:', err);
+                    alert('雲端審核失敗，已保留原狀態。');
+                    return;
+                }
+            }
+            alert('目前後台僅支援 Supabase 雲端審核。');
+        }
+
+        async function reject(id, source) {
+            var reason = getRequiredReason(id);
+            if (!reason) return;
+            if (source === 'supabase' && window.CauseLawClient && window.CauseLawClient.isReady()) {
+                try {
+                    const supabase = window.CauseLawClient.getClient();
+                    const beforeState = pendingMap[id] || null;
+                    const result = await supabase
+                        .from(dbTable('posts', 'causelaw_yinguo_v1.posts'))
+                        .update({ status: 'rejected', moderation_reason: reason })
+                        .eq('id', id);
+                    if (result.error) throw result.error;
+                    await writeModerationAuditLog({
+                        target_type: 'post',
+                        target_id: id,
+                        action: 'reject',
+                        reason: reason,
+                        before_state: beforeState || {},
+                        after_state: {
+                            id: id,
+                            status: 'rejected',
+                            moderation_reason: reason
+                        }
+                    });
+                    loadSubmissions();
+                    return;
+                } catch (err) {
+                    console.error('Supabase 拒絕投稿失敗:', err);
+                    alert('雲端拒絕失敗，已保留原狀態。');
+                    return;
+                }
+            }
+            alert('目前後台僅支援 Supabase 雲端審核。');
+        }
+
+        var submissionsList = document.getElementById('submissions-list');
+        if (submissionsList) {
+            submissionsList.addEventListener('click', function (event) {
+                var btn = event.target.closest('button[data-action][data-id]');
+                if (!btn) return;
+                var id = btn.getAttribute('data-id') || '';
+                var source = btn.getAttribute('data-source') || 'local';
+                if (btn.getAttribute('data-action') === 'approve') {
+                    approve(id, source);
+                    return;
+                }
+                reject(id, source);
+            });
+        }
+
+        verifyAdminAccess();
+        window.addEventListener('causelaw:auth-state-changed', function () {
+            verifyAdminAccess();
+        });
+    </script>
+</body>
+</html>

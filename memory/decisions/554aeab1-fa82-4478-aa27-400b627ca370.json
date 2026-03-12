@@ -1,0 +1,29 @@
+{
+  "id": "554aeab1-fa82-4478-aa27-400b627ca370",
+  "session_id": "test-session",
+  "timestamp": "2026-02-17T01:10:05.455132",
+  "task": "修正測試",
+  "thinking": {
+    "understanding": "...",
+    "category": "中",
+    "sop_ref": "SOP-15",
+    "environmental_check": "🟢 正常",
+    "options": [
+      {
+        "id": "1",
+        "description": "D",
+        "reason": "R",
+        "risk": "K"
+      }
+    ],
+    "selected_option": "1",
+    "rationale": "Rat"
+  },
+  "intervention": {
+    "required": true,
+    "status": "corrected",
+    "user_input": "Use Option C instead",
+    "intervened_at": "2026-02-17T01:10:05.455366"
+  },
+  "history": []
+}

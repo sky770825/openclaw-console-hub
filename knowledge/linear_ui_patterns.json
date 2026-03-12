@@ -1,0 +1,22 @@
+{
+  "theme": "High Fidelity / Dark Mode",
+  "animation_presets": {
+    "linear_spring": {
+      "type": "spring",
+      "stiffness": 150,
+      "damping": 25,
+      "mass": 0.5
+    },
+    "fade_in_up": {
+      "initial": { "opacity": 0, "y": 20 },
+      "animate": { "opacity": 1, "y": 0 },
+      "transition": { "duration": 0.5, "ease": "easeOut" }
+    }
+  },
+  "visual_effects": [
+    "Border Beam",
+    "Background Grid (SVG)",
+    "Masked Text Shimmer",
+    "Ray Tracing Hover Effect"
+  ]
+}

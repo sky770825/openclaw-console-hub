@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NEUXA 經驗值系統 (XP System)",
+  "description": "每次完成任務記錄（任務類型、耗時、成功/失敗、學到什麼）",
+  "type": "object",
+  "required": ["xp_id", "timestamp", "task", "outcome", "learnings"],
+  "properties": {
+    "xp_id": {
+      "type": "string",
+      "description": "經驗記錄唯一識別碼 (uuid)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "任務完成時間"
+    },
+    "task": {
+      "type": "object",
+      "required": ["task_id", "task_name", "category", "priority"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "任務 ID"
+        },
+        "task_name": {
+          "type": "string",
+          "description": "任務名稱"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["E-自主意識進化", "A-神盾掃描器", "B-武器庫驗證", "C-競品分析", "D-子代理日誌", "其他"],
+          "description": "任務分類"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "優先級 (1=最高)"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "duration_seconds": {
+          "type": "number",
+          "description": "執行耗時（秒）"
+        },
+        "tools_used": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["read", "write", "edit", "exec", "web_search", "web_fetch", "image", "browser", "sessions_spawn", "其他"]
+          },
+          "description": "使用的工具"
+        },
+        "subagents_spawned": {
+          "type": "integer",
+          "description": "派遣的子代理數量"
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "partial", "failure", "blocked"],
+          "description": "執行結果狀態"
+        },
+        "deliverables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "產出物檔案路徑列表"
+        },
+        "error_message": {
+          "type": "string",
+          "description": "失敗時的錯誤訊息"
+        }
+      }
+    },
+    "learnings": {
+      "type": "object",
+      "required": ["what_worked", "what_to_improve"],
+      "properties": {
+        "what_worked": {
+          "type": "string",
+          "description": "這次什麼做得好的"
+        },
+        "what_to_improve": {
+          "type": "string",
+          "description": "下次可以改進的"
+        },
+        "new_skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "學到的新技能或知識"
+        },
+        "insights": {
+          "type": "string",
+          "description": "重要洞察或發現"
+        }
+      }
+    },
+    "xp_earned": {
+      "type": "object",
+      "description": "獲得的經驗值",
+      "properties": {
+        "base_xp": {
+          "type": "integer",
+          "description": "基礎經驗值 (10-100)"
+        },
+        "bonus_xp": {
+          "type": "integer",
+          "description": "額外獎勵 (準時、高品質、創新等)"
+        },
+        "total_xp": {
+          "type": "integer",
+          "description": "總經驗值"
+        }
+      }
+    }
+  },
+  "xp_calculation": {
+    "description": "經驗值計算規則",
+    "base_formula": "任務優先級 * 10 + 任務複雜度 * 5",
+    "bonus_conditions": [
+      {
+        "condition": "提前完成",
+        "bonus": 10
+      },
+      {
+        "condition": "產出物品質優秀",
+        "bonus": 15
+      },
+      {
+        "condition": "解決阻塞問題",
+        "bonus": 20
+      },
+      {
+        "condition": "創新解決方案",
+        "bonus": 25
+      }
+    ]
+  },
+  "level_system": {
+    "description": "等級系統",
+    "levels": [
+      {"level": 1, "title": "新兵", "xp_required": 0},
+      {"level": 2, "title": "學徒", "xp_required": 100},
+      {"level": 3, "title": "戰士", "xp_required": 300},
+      {"level": 4, "title": "精銳", "xp_required": 600},
+      {"level": 5, "title": "專家", "xp_required": 1000},
+      {"level": 6, "title": "大師", "xp_required": 1500},
+      {"level": 7, "title": "傳奇", "xp_required": 2200},
+      {"level": 8, "title": "神話", "xp_required": 3000}
+    ]
+  }
+}

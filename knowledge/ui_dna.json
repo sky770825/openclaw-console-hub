@@ -1,0 +1,8 @@
+{
+  "theme": "Linear/Vercel Hybrid",
+  "primary_colors": ["#000000", "#FFFFFF"],
+  "accent_colors": ["#3b82f6"],
+  "border_logic": "1px solid rgba(255,255,255,0.1)",
+  "font_stack": "Geist, Inter, system-ui",
+  "last_updated": "Wed Mar  4 20:35:47 CST 2026"
+}

@@ -1,0 +1,12 @@
+[
+    {
+        "agent": "Alice",
+        "role": "Senior Researcher",
+        "result": "Result from Alice (Role: Senior Researcher): Accomplished Find key market trends for AI agents based on 'Identify top 3 trends in multi-agent systems 2024.'"
+    },
+    {
+        "agent": "Bob",
+        "role": "Technical Writer",
+        "result": "Result from Bob (Role: Technical Writer): Accomplished Draft a comprehensive report based on 'Write a summary report based on the trends identified.'"
+    }
+]

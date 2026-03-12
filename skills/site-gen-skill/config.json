@@ -1,0 +1,9 @@
+{
+  "template_path": "/Users/caijunchang/Desktop/程式專案資料夾/junyang666-客製房屋網站",
+  "placeholders": [
+    "{{SITE_TITLE}}",
+    "{{META_DESCRIPTION}}",
+    "{{SUPABASE_URL}}",
+    "{{SUPABASE_ANON_KEY}}"
+  ]
+}

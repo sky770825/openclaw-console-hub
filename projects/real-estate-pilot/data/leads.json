@@ -1,0 +1,32 @@
+[
+    {
+        "id": "L001",
+        "name": "張先生",
+        "budget": 20000000,
+        "location_preference": "台北市大安區",
+        "property_type": "大樓",
+        "min_size": 20,
+        "contact": "0912345678",
+        "notes": "希望近捷運站，抗跌性高"
+    },
+    {
+        "id": "L002",
+        "name": "林小姐",
+        "budget": 15000000,
+        "location_preference": "新北市板橋區",
+        "property_type": "公寓",
+        "min_size": 25,
+        "contact": "0923456789",
+        "notes": "首購族，生活機能要好"
+    },
+    {
+        "id": "L003",
+        "name": "王先生",
+        "budget": 50000000,
+        "location_preference": "台北市信義區",
+        "property_type": "豪宅",
+        "min_size": 50,
+        "contact": "0934567890",
+        "notes": "投資用途，需有景觀"
+    }
+]

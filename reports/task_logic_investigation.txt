@@ -1,0 +1,27 @@
+/Users/caijunchang/openclaw任務面版設計/server/dist/telegram-stop-poll.js:            body: JSON.stringify({ status: 'done', progress: 100 }),
+/Users/caijunchang/openclaw任務面版設計/server/dist/telegram/bot-polling.js:            body: JSON.stringify({ status: 'done', progress: 100 }),
+/Users/caijunchang/openclaw任務面版設計/server/dist/routes/auto-executor.js:            await upsertOpenClawTask({ id: task.id, status: 'done', progress: 100 });
+/Users/caijunchang/openclaw任務面版設計/server/dist/routes/auto-executor.js:    await upsertOpenClawTask({ id: taskId, status: 'done' });
+/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:        body: JSON.stringify({ status: 'done', progress: 100 }),
+/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:      await upsertOpenClawTask({ id: task.id, status: 'done', progress: 100 });
+/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:  await upsertOpenClawTask({ id: taskId, status: 'done' });
+/Users/caijunchang/openclaw任務面版設計/backups/pre-restore-20260214-120322/git-diff.patch:-        status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/pre-restore-20260214-120322/git-diff.patch:-    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/pre-restore-20260214-120322/git-diff.patch:+  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },
+/Users/caijunchang/openclaw任務面版設計/backups/20260213-172205/working-tree.diff:-    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/20260213-172205/working-tree.diff:+  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },
+/Users/caijunchang/openclaw任務面版設計/backups/auto/20260213-172954/working-tree.diff:-    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/auto/20260213-172954/working-tree.diff:+  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },
+/Users/caijunchang/openclaw任務面版設計/backups/auto/20260213-172939/working-tree.diff:-    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/auto/20260213-172939/working-tree.diff:+  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },
+/Users/caijunchang/openclaw任務面版設計/backups/auto/20260213-173158/working-tree.diff:-    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/auto/20260213-173158/working-tree.diff:+  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },
+/Users/caijunchang/openclaw任務面版設計/backups/snapshot-20260214-120224/git-diff.patch:-        status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/snapshot-20260214-120224/git-diff.patch:-    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/backups/snapshot-20260214-120224/git-diff.patch:+  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },
+/Users/caijunchang/openclaw任務面版設計/src/data/seedTasks.ts:    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/src/data/seedTasks.ts:    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/src/data/seedTasks.ts:    status: 'done',
+/Users/caijunchang/openclaw任務面版設計/src/pages/EngineDeck.tsx:    { id: 'T001', label: '需求分析', deps: [], status: 'done' },
+/Users/caijunchang/openclaw任務面版設計/src/pages/EngineDeck.tsx:    { id: 'T002', label: '架構設計', deps: ['T001'], status: 'done' },
+/Users/caijunchang/openclaw任務面版設計/src/pages/TaskBoard.tsx:  { status: 'done', label: '完成', color: 'bg-success/10', definition: '完成且可複用（技術資產）' },

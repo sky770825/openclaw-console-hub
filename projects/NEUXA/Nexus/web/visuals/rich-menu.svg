@@ -1,0 +1,79 @@
+<svg width="1200" height="810" viewBox="0 0 1200 810" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#000814;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#001529;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000d1a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="810" fill="url(#bgGrad)" />
+  
+  <!-- Starship Grid Pattern -->
+  <g opacity="0.1">
+    <line x1="0" y1="100" x2="1200" y2="100" stroke="#00d4ff" stroke-width="1" />
+    <line x1="0" y1="200" x2="1200" y2="200" stroke="#00d4ff" stroke-width="1" />
+    <line x1="0" y1="300" x2="1200" y2="300" stroke="#00d4ff" stroke-width="1" />
+    <line x1="0" y1="500" x2="1200" y2="500" stroke="#00d4ff" stroke-width="1" />
+    <line x1="0" y1="600" x2="1200" y2="600" stroke="#00d4ff" stroke-width="1" />
+    <line x1="0" y1="700" x2="1200" y2="700" stroke="#00d4ff" stroke-width="1" />
+    <line x1="200" y1="0" x2="200" y2="810" stroke="#00d4ff" stroke-width="1" />
+    <line x1="400" y1="0" x2="400" y2="810" stroke="#00d4ff" stroke-width="1" />
+    <line x1="800" y1="0" x2="800" y2="810" stroke="#00d4ff" stroke-width="1" />
+    <line x1="1000" y1="0" x2="1000" y2="810" stroke="#00d4ff" stroke-width="1" />
+  </g>
+
+  <!-- Divider Lines -->
+  <line x1="600" y1="40" x2="600" y2="770" stroke="#00d4ff" stroke-width="2" opacity="0.4" />
+  <line x1="40" y1="405" x2="1160" y2="405" stroke="#00d4ff" stroke-width="2" opacity="0.4" />
+
+  <!-- Frame Accents -->
+  <path d="M 50 50 L 150 50 M 50 50 L 50 150" fill="none" stroke="#00d4ff" stroke-width="4" filter="url(#glow)" />
+  <path d="M 1150 50 L 1050 50 M 1150 50 L 1150 150" fill="none" stroke="#00d4ff" stroke-width="4" filter="url(#glow)" />
+  <path d="M 50 760 L 150 760 M 50 760 L 50 660" fill="none" stroke="#00d4ff" stroke-width="4" filter="url(#glow)" />
+  <path d="M 1150 760 L 1050 760 M 1150 760 L 1150 660" fill="none" stroke="#00d4ff" stroke-width="4" filter="url(#glow)" />
+
+  <!-- Cell 1: 一鍵安裝 (Rocket) -->
+  <g transform="translate(300, 202.5)">
+    <!-- Rocket -->
+    <path d="M 0 -70 C 10 -70 20 -40 20 0 L 25 40 L 10 35 L 0 50 L -10 35 L -25 40 L -20 0 C -20 -40 -10 -70 0 -70 Z" fill="#00d4ff" filter="url(#glow)" />
+    <path d="M -10 50 L -20 70 L -5 60 Z M 10 50 L 20 70 L 5 60 Z" fill="#ff4d4d" filter="url(#glow)" /> <!-- Flame effect -->
+    <text x="0" y="110" font-family="'PingFang TC', 'Microsoft JhengHei', sans-serif" font-size="52" fill="white" text-anchor="middle" font-weight="bold" filter="url(#textGlow)">一鍵安裝</text>
+  </g>
+
+  <!-- Cell 2: 數位協防 (Shield) -->
+  <g transform="translate(900, 202.5)">
+    <!-- Shield -->
+    <path d="M 0 -60 C 40 -60 50 -40 50 0 C 50 50 0 80 0 80 C 0 80 -50 50 -50 0 C -50 -40 -40 -60 0 -60" fill="#00d4ff" filter="url(#glow)" />
+    <path d="M -20 0 L -5 15 L 25 -15" fill="none" stroke="#000814" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="0" y="110" font-family="'PingFang TC', 'Microsoft JhengHei', sans-serif" font-size="52" fill="white" text-anchor="middle" font-weight="bold" filter="url(#textGlow)">數位協防</text>
+  </g>
+
+  <!-- Cell 3: 下載中心 (Folder) -->
+  <g transform="translate(300, 607.5)">
+    <!-- Folder -->
+    <path d="M -60 -40 L -20 -40 L -10 -55 L 50 -55 C 55 -55 60 -50 60 -45 L 60 45 C 60 50 55 55 50 55 L -50 55 C -55 55 -60 50 -60 45 Z" fill="#00d4ff" filter="url(#glow)" />
+    <rect x="-30" y="-10" width="60" height="8" rx="2" fill="#000814" opacity="0.5" />
+    <rect x="-30" y="10" width="40" height="8" rx="2" fill="#000814" opacity="0.5" />
+    <text x="0" y="110" font-family="'PingFang TC', 'Microsoft JhengHei', sans-serif" font-size="52" fill="white" text-anchor="middle" font-weight="bold" filter="url(#textGlow)">下載中心</text>
+  </g>
+
+  <!-- Cell 4: 專家諮詢 (Headphones) -->
+  <g transform="translate(900, 607.5)">
+    <!-- Headphones -->
+    <path d="M -55 10 A 55 55 0 0 1 55 10" fill="none" stroke="#00d4ff" stroke-width="14" stroke-linecap="round" filter="url(#glow)" />
+    <rect x="-65" y="10" width="25" height="40" rx="10" fill="#00d4ff" filter="url(#glow)" />
+    <rect x="40" y="10" width="25" height="40" rx="10" fill="#00d4ff" filter="url(#glow)" />
+    <path d="M 40 40 Q 20 60 -10 50" fill="none" stroke="#00d4ff" stroke-width="6" stroke-linecap="round" filter="url(#glow)" /> <!-- Mic -->
+    <text x="0" y="110" font-family="'PingFang TC', 'Microsoft JhengHei', sans-serif" font-size="52" fill="white" text-anchor="middle" font-weight="bold" filter="url(#textGlow)">專家諮詢</text>
+  </g>
+</svg>

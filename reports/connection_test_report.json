@@ -1,0 +1,1 @@
+{"status": "failed", "timestamp": "Thu Mar  5 11:15:00 CST 2026", "response": "{"ok":false,"message":"Missing API key","hint":"Provide x-api-key header or Authorization: Bearer <key>"}"}

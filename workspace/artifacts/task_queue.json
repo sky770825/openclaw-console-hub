@@ -1,0 +1,7 @@
+[
+  {"id": "T001", "name": "Summarize News", "difficulty": 2, "estimated_tokens": 500},
+  {"id": "T002", "name": "Refactor Legacy C++", "difficulty": 9, "estimated_tokens": 2000},
+  {"id": "T003", "name": "Extract JSON from Receipt", "difficulty": 4, "estimated_tokens": 300},
+  {"id": "T004", "name": "Design Microservice Architecture", "difficulty": 8, "estimated_tokens": 1500},
+  {"id": "T005", "name": "Translate Greeting", "difficulty": 1, "estimated_tokens": 50}
+]

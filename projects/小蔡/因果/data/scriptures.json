@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "updated": "2026-02-28",
+  "description": "佛教・道教經咒分類與校對依據。經文以流通本／大正藏／道教早晚課為權威來源，供經咒・禪樂頁使用。",
+  "buddhist": [
+    { "id": "dabei", "title": "大悲咒", "fullTitle": "千手千眼觀世音菩薩廣大圓滿無礙大悲心陀羅尼", "source": "伽梵達摩譯《大悲心陀羅尼經》大正藏 T20n1060，84句依不空分句流通本", "category": "咒" },
+    { "id": "heart", "title": "般若波羅蜜多心經", "fullTitle": "般若波羅蜜多心經", "source": "唐・玄奘譯，大正藏 T08n251", "category": "經" },
+    { "id": "ksitigarbha-mantra", "title": "地藏菩薩聖號", "fullTitle": "南無大願地藏王菩薩", "source": "慣用稱念，與華藏淨宗學會一致", "category": "聖號" },
+    { "id": "amitabha-mantra", "title": "阿彌陀佛聖號", "fullTitle": "南無阿彌陀佛", "source": "淨土宗標準聖號", "category": "聖號" },
+    { "id": "wangsheng", "title": "往生咒", "fullTitle": "拔一切業障根本得生淨土陀羅尼", "source": "劉宋・求那跋陀羅譯，大正藏 T12n368", "category": "咒" },
+    { "id": "ksitigarbha-sutra", "title": "地藏菩薩本願經", "fullTitle": "地藏菩薩本願經", "source": "唐・實叉難陀譯，大正藏 T13n412；長篇建議寺廟請購或共修", "category": "經" },
+    { "id": "lianghuang", "title": "梁皇寶懺", "fullTitle": "慈悲道場懺法", "source": "南朝梁武帝製，十卷；建議至寺廟共修或請購正版", "category": "懺" }
+  ],
+  "taoist": [
+    { "id": "golden-light", "title": "金光神咒", "fullTitle": "金光神咒", "source": "道教通行本，早晚課常用", "category": "咒" },
+    { "id": "jingxin", "title": "淨心神咒", "fullTitle": "淨心神咒", "source": "道教八大神咒之一，早晚課首咒", "category": "咒" },
+    { "id": "jingkou", "title": "淨口神咒", "fullTitle": "淨口神咒", "source": "道教八大神咒之一", "category": "咒" },
+    { "id": "jingshen", "title": "淨身神咒", "fullTitle": "淨身神咒", "source": "道教八大神咒之一", "category": "咒" },
+    { "id": "antudi", "title": "安土地神咒", "fullTitle": "安土地神咒", "source": "道教早晚課，召請土地護法", "category": "咒" },
+    { "id": "xuanyun", "title": "開經玄蘊咒", "fullTitle": "太上玄蘊咒", "source": "道教開經咒，常見於早晚課", "category": "咒" }
+  ]
+}

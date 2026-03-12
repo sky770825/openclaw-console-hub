@@ -1,0 +1,23 @@
+[
+    {
+        "area": "台北市大安區",
+        "avg_price_per_ping": 1100000,
+        "trend": "穩定成長",
+        "liquidity": "高",
+        "description": "明星學區，捷運路網密佈，需求強勁。"
+    },
+    {
+        "area": "新北市板橋區",
+        "avg_price_per_ping": 650000,
+        "trend": "微幅上升",
+        "liquidity": "高",
+        "description": "新北核心，板橋車站三鐵共構，生活機能完善。"
+    },
+    {
+        "area": "台北市信義區",
+        "avg_price_per_ping": 1300000,
+        "trend": "持平",
+        "liquidity": "中",
+        "description": "頂級商業區，豪宅林立，總價門檻高。"
+    }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "1",
+    "product": "alpha-boost",
+    "revenue": "1500"
+  },
+  {
+    "id": "2",
+    "product": "beta-core",
+    "revenue": "2200"
+  },
+  {
+    "id": "3",
+    "product": "gamma-drive",
+    "revenue": "950"
+  }
+]

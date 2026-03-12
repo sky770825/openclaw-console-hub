@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>因果漣漪模擬器 | 牽一髮而動全身</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        #sim-canvas {
+            width: 100%;
+            height: 60vh;
+            background: radial-gradient(circle, #050505 0%, #000 100%);
+            cursor: crosshair;
+            border: 1px solid rgba(184, 134, 11, 0.2);
+        }
+        .control-panel {
+            background: rgba(15, 15, 15, 0.9);
+            border: 1px solid var(--gold);
+            padding: 2rem;
+            margin-top: -2rem;
+            position: relative;
+            z-index: 10;
+        }
+        .mode-btn {
+            padding: 1rem 2rem;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+        .mode-btn.active {
+            background: var(--gold);
+            color: black;
+        }
+        .mode-btn[data-mode="good"]:hover { border-color: #00d4ff; color: #00d4ff; }
+        .mode-btn[data-mode="good"].active { background: #00d4ff; color: black; border-color: #00d4ff; }
+        .mode-btn[data-mode="evil"]:hover { border-color: #ff2200; color: #ff2200; }
+        .mode-btn[data-mode="evil"].active { background: #ff2200; color: black; border-color: #ff2200; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="realms.html" class="hover:text-gold transition">六道輪迴</a>
+            <a href="quiz.html" class="hover:text-gold transition">覺醒測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-6xl mx-auto px-6">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl mb-6 tracking-[0.4em] text-gold">因果漣漪模擬器</h1>
+            <p class="text-xl text-stone-500 tracking-widest">點擊空間，觀測能量的連鎖反應</p>
+        </div>
+
+        <canvas id="sim-canvas"></canvas>
+
+        <div class="control-panel flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="flex gap-4">
+                <button class="mode-btn active" data-mode="good">投射善念 (青藍)</button>
+                <button class="mode-btn" data-mode="evil">投射惡念 (深紅)</button>
+            </div>
+            <div id="sim-info" class="text-stone-400 italic">
+                「善意如光，擴散並療癒空間；惡意如火，吞噬並產生回彈。」
+            </div>
+            <button onclick="clearCanvas()" class="text-stone-600 hover:text-stone-400 underline text-sm">重置場域</button>
+        </div>
+
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div class="p-8 border border-stone-800 bg-stone-900/30">
+                <h3 class="text-2xl text-gold mb-4">為什麼要做這個實驗？</h3>
+                <p class="text-stone-400 leading-relaxed">
+                    在宇宙的底層邏輯中，沒有任何一個念頭是孤立的。你的每一次點擊（選擇），都會在場域中留下不可抹滅的波動。善的波動會互相加持，惡的波動會造成能量阻塞。
+                </p>
+            </div>
+            <div class="p-8 border border-stone-800 bg-stone-900/30">
+                <h3 class="text-2xl text-gold mb-4">能量守恆定律</h3>
+                <p class="text-stone-400 leading-relaxed">
+                    當場域中的波動消失時，能量並未不見，而是轉化成了你靈魂的「頻率背景」。這就是為什麼長期的善行會讓人散發平和，而長期的惡念會讓人顯得焦躁。
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('sim-canvas');
+        const ctx = canvas.getContext('2d');
+        let ripples = [];
+        let currentMode = 'good';
+
+        // 設置畫布大小
+        function resize() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 切換模式
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                document.getElementById('sim-info').innerText = currentMode === 'good' ? 
+                    "「善意如光，擴散並療癒空間；惡意如火，吞噬並產生回彈。」" : 
+                    "「警告：負能量正在累積，這將導致空間頻率的劇烈震盪。」";
+            };
+        });
+
+        class Ripple {
+            constructor(x, y, mode) {
+                this.x = x;
+                this.y = y;
+                this.r = 0;
+                this.maxR = Math.max(canvas.width, canvas.height) * 0.8;
+                this.opacity = 1;
+                this.mode = mode;
+                this.speed = mode === 'good' ? 2 : 4;
+                this.color = mode === 'good' ? '0, 212, 255' : '255, 34, 0';
+            }
+
+            update() {
+                this.r += this.speed;
+                this.opacity -= 0.005;
+                return this.opacity > 0;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(${this.color}, ${this.opacity})`;
+                ctx.lineWidth = this.mode === 'good' ? 2 : 5;
+                ctx.stroke();
+
+                if (this.mode === 'evil') {
+                    // 惡念產生混亂粒子
+                    for(let i=0; i<3; i++) {
+                        ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+                        ctx.fillRect(this.x + (Math.random()-0.5)*this.r*2, this.y + (Math.random()-0.5)*this.r*2, 2, 2);
+                    }
+                }
+            }
+        }
+
+        canvas.onclick = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            ripples.push(new Ripple(e.clientX - rect.left, e.clientY - rect.top, currentMode));
+        };
+
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ripples = ripples.filter(r => {
+                r.draw();
+                return r.update();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function clearCanvas() {
+            ripples = [];
+        }
+
+        animate();
+    </script>
+</body>
+</html>

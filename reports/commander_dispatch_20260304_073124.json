@@ -1,0 +1,17 @@
+[
+  {
+    "msg_id": "6a3e1f71-97ca-40b6-a440-a9c136093d0e",
+    "decision": "UPDATE_DASHBOARD",
+    "target": "DeepMiner-A"
+  },
+  {
+    "msg_id": "a1785d6d-b0d5-48f0-b6be-5b454851bd93",
+    "decision": "IMMEDIATE_INTERVENTION: Dispatching support to Security-Bot-3",
+    "target": "Security-Bot-3"
+  },
+  {
+    "msg_id": "996e0303-8c91-45d2-890c-0bdef189d98f",
+    "decision": "COORDINATION: Connecting Logistics-Unit with relevant sub-agents",
+    "target": "Logistics-Unit"
+  }
+]

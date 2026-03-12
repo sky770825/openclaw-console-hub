@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>懺悔與祈福牆 | 能量的轉化中心</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .wall-container {
+            height: 70vh;
+            background: #050505;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(184, 134, 11, 0.2);
+        }
+        .lantern {
+            position: absolute;
+            bottom: -50px;
+            color: #ffd700;
+            font-size: 2rem;
+            animation: float-up linear forwards;
+            pointer-events: none;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px #ffd700);
+        }
+        .confession-stone {
+            position: absolute;
+            top: -50px;
+            color: #8b0000;
+            font-size: 1.5rem;
+            animation: sink-down linear forwards;
+            pointer-events: none;
+            opacity: 0.6;
+            filter: drop-shadow(0 0 5px #8b0000);
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-80vh) translateX(var(--drift)); opacity: 0; }
+        }
+        @keyframes sink-down {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(80vh) translateX(var(--drift)); opacity: 0; }
+        }
+        .input-area {
+            background: rgba(10, 10, 10, 0.95);
+            border: 2px solid var(--gold);
+            padding: 3rem;
+            margin-top: -5rem;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 -20px 50px rgba(0,0,0,1);
+        }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="hell.html" class="hover:text-gold transition">十八地獄</a>
+            <a href="simulator.html" class="hover:text-gold transition">漣漪模擬</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-5xl mx-auto px-6">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl mb-6 tracking-[0.4em] text-gold">懺悔與祈福牆</h1>
+            <p class="text-xl text-stone-500 tracking-widest italic">「寫下的瞬間，能量便已啟動轉化。」</p>
+        </div>
+
+        <div id="visual-wall" class="wall-container">
+            <!-- 燈火與沉石會在這裡生成 -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p class="text-stone-800 text-6xl font-black opacity-30">因果轉化場</p>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- 祈福 -->
+                <div class="space-y-6">
+                    <h2 class="text-3xl text-gold font-black">【為人祈福】</h2>
+                    <p class="text-stone-500 text-sm">種下善因，讓福德之光在宇宙間飄揚。</p>
+                    <textarea id="bless-text" placeholder="輸入您的願望或對他人的祝福..." class="w-full p-4 bg-black border border-gold/30 text-white focus:border-gold outline-none h-32"></textarea>
+                    <button onclick="postItem('bless')" class="w-full py-4 bg-gold text-black font-black tracking-widest hover:bg-goldBright transition-all">點燃祈福燈</button>
+                </div>
+                <!-- 懺悔 -->
+                <div class="space-y-6">
+                    <h2 class="text-3xl text-cinnabar font-black">【匿名懺悔】</h2>
+                    <p class="text-stone-500 text-sm">坦誠過往，將沉重的業力交付於虛空。</p>
+                    <textarea id="confess-text" placeholder="輸入您想懺悔的事實或心中的愧疚..." class="w-full p-4 bg-black border border-cinnabar/30 text-white focus:border-cinnabar outline-none h-32"></textarea>
+                    <button onclick="postItem('confess')" class="w-full py-4 bg-cinnabar text-white font-black tracking-widest hover:bg-red-600 transition-all">沉降業力石</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const wall = document.getElementById('visual-wall');
+
+        function postItem(type) {
+            const input = document.getElementById(type + '-text');
+            if (!input.value.trim()) return;
+
+            const el = document.createElement('div');
+            el.className = type === 'bless' ? 'lantern' : 'confession-stone';
+            el.innerText = type === 'bless' ? '🪷' : '🪨';
+            
+            // 隨機位置與飄移
+            const startX = Math.random() * 90;
+            const drift = (Math.random() - 0.5) * 100;
+            const duration = 5 + Math.random() * 10;
+
+            el.style.left = startX + '%';
+            el.style.setProperty('--drift', drift + 'px');
+            el.style.animationDuration = duration + 's';
+
+            wall.appendChild(el);
+
+            // 清空輸入並提示
+            input.value = '';
+            const msg = type === 'bless' ? '願望已寄往天聽' : '業力已交付虛空';
+            alert(msg);
+
+            // 自動移除元素
+            setTimeout(() => el.remove(), duration * 1000);
+        }
+
+        // 隨機背景生成
+        setInterval(() => {
+            if (Math.random() > 0.7) {
+                const type = Math.random() > 0.5 ? 'bless' : 'confess';
+                const el = document.createElement('div');
+                el.className = type === 'bless' ? 'lantern' : 'confession-stone';
+                el.innerText = type === 'bless' ? '🪷' : '🪨';
+                el.style.left = Math.random() * 90 + '%';
+                el.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+                el.style.animationDuration = (8 + Math.random() * 10) + 's';
+                el.style.opacity = '0.3';
+                wall.appendChild(el);
+                setTimeout(() => el.remove(), 18000);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

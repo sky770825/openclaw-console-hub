@@ -1,0 +1,15 @@
+You are the Chief Strategic Advisor for NEUXA.
+Your task is to analyze the attached list of 407 tasks and create an optimal 'Taskboard Recalibration Execution Plan' based on NEUXA's 'Project 990 Master Plan'.
+
+**Project 990 Master Plan:**
+The sole focus is on the 'Project 990 - Aegis Scanner' flagship product. All other initiatives, especially those related to physical businesses (real estate, etc.), are to be deprioritized.
+
+**Your Execution Plan Must Contain:**
+1.  A JSON array of task IDs that should be bulk-archived. These are tasks that are obsolete or related to deprioritized strategies (e.g., containing tags like '房地產', '飲料店', '防霾紗窗').
+2.  A JSON array of task IDs that should be elevated to the highest priority ('P0'). These are tasks directly related to the Aegis Scanner, market analysis, 'Prometheus', 'Hephaestus', 'Aegis', and core system stability ('堡壘協議', '真理校準').
+
+**Input Data:**
+The full list of 407 tasks is provided in the file `current_tasks.json`.
+
+**Final Output:**
+Your final output MUST be a single, clean JSON object containing two keys: `tasks_to_archive` and `tasks_to_prioritize`. Do not include any other text or explanation.

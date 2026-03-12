@@ -1,0 +1,14 @@
+0 9 * * * cd /Users/caijunchang/.openclaw/workspace && ./scripts/ollama-reporter-host.sh >> taskboard/.history/telegram.log 2>&1
+# Unified Monitor v2.1 - 每10分鐘檢查，異常即報/每小時摘要
+*/10 * * * * /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh
+# OpenClaw System Recovery Center - Auto Backup
+# OpenClaw System Recovery Center - Desktop Backup
+0 */6 * * * /Users/caijunchang/.openclaw/workspace/scripts/recovery/backup-desktop.sh daily >> /Users/caijunchang/Desktop/小蔡/系統備份/backup.log 2>&1
+0 3 * * * /Users/caijunchang/.openclaw/workspace/scripts/recovery/backup-desktop.sh daily >> /Users/caijunchang/Desktop/小蔡/系統備份/backup.log 2>&1
+0 2 * * * /Users/caijunchang/.openclaw/arsenal/layer0-ai-core/redteam-daily.sh >> /Users/caijunchang/.openclaw/arsenal/logs/redteam-cron.log 2>&1
+0 9 * * * /Users/caijunchang/.openclaw/workspace/scripts/daily-health-check.sh >> /Users/caijunchang/.openclaw/workspace/logs/cron-health-check.log 2>&1
+# Gateway Health Watchdog v2.0 - 每分鐘檢查 gateway 健康狀態
+* * * * * /Users/caijunchang/.openclaw/workspace/scripts/gateway-health-watchdog.sh
+0 4 * * * /Users/caijunchang/.openclaw/workspace/scripts/log-rotate.sh >> /Users/caijunchang/.openclaw/logs/log-rotate.log 2>&1
+*/30 * * * * cd /Users/caijunchang/.openclaw/workspace && ./scripts/auto-checkpoint.sh >> ./logs/auto-checkpoint.log 2>&1
+0 * * * * cd /Users/caijunchang/.openclaw/workspace && ./scripts/self-heal.sh check >> ./logs/self-heal.log 2>&1

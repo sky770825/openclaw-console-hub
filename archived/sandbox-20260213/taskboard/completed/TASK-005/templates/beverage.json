@@ -1,0 +1,23 @@
+{
+  "template_name": "飲料店產品",
+  "category": "beverage",
+  "fields": {
+    "title": {
+      "label": "產品名稱",
+      "placeholder": "系列名稱 - 產品名",
+      "example": "鮮果系列 - 百香雙響"
+    },
+    "description": {
+      "label": "產品描述",
+      "template": "【產品名稱】{product_name}\n\n【產品特色】\n{features}\n\n【成分說明】\n{ingredients}\n\n【容量與價格】\n- 中杯 (M)：{price_m} 元 / {volume_m} ml\n- 大杯 (L)：{price_l} 元 / {volume_l} ml\n\n【甜度選擇】\n{sugar_options}\n\n【冰度選擇】\n{ice_options}\n\n【適合人群】\n{target_audience}\n\n【注意事項】\n{notices}"
+    },
+    "required_images": [
+      "產品正面照",
+      "產品側面照",
+      "實際飲品照",
+      "成分/原料",
+      "包裝細節"
+    ],
+    "platforms": ["instagram", "facebook", "蝦皮"]
+  }
+}

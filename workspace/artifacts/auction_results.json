@@ -1,0 +1,161 @@
+[
+  {
+    "task_id": "T001",
+    "task_name": "Summarize News",
+    "difficulty": 2,
+    "winner": "llama-3-8b",
+    "estimated_cost": 5e-05,
+    "all_bids": [
+      {
+        "model": "llama-3-8b",
+        "estimated_cost": 5e-05,
+        "efficiency_score": 1000000.0,
+        "capability": 50
+      },
+      {
+        "model": "gpt-4o-mini",
+        "estimated_cost": 7.5e-05,
+        "efficiency_score": 933333.3333333334,
+        "capability": 70
+      },
+      {
+        "model": "claude-3-haiku",
+        "estimated_cost": 0.000125,
+        "efficiency_score": 480000.0,
+        "capability": 60
+      },
+      {
+        "model": "claude-3-5-sonnet",
+        "estimated_cost": 0.0045,
+        "efficiency_score": 20444.444444444445,
+        "capability": 92
+      },
+      {
+        "model": "gpt-4o",
+        "estimated_cost": 0.0075,
+        "efficiency_score": 12666.666666666668,
+        "capability": 95
+      }
+    ]
+  },
+  {
+    "task_id": "T002",
+    "task_name": "Refactor Legacy C++",
+    "difficulty": 9,
+    "winner": "claude-3-5-sonnet",
+    "estimated_cost": 0.018,
+    "all_bids": [
+      {
+        "model": "claude-3-5-sonnet",
+        "estimated_cost": 0.018,
+        "efficiency_score": 5111.111111111111,
+        "capability": 92
+      },
+      {
+        "model": "gpt-4o",
+        "estimated_cost": 0.03,
+        "efficiency_score": 3166.666666666667,
+        "capability": 95
+      }
+    ]
+  },
+  {
+    "task_id": "T003",
+    "task_name": "Extract JSON from Receipt",
+    "difficulty": 4,
+    "winner": "llama-3-8b",
+    "estimated_cost": 3e-05,
+    "all_bids": [
+      {
+        "model": "llama-3-8b",
+        "estimated_cost": 3e-05,
+        "efficiency_score": 1666666.6666666665,
+        "capability": 50
+      },
+      {
+        "model": "gpt-4o-mini",
+        "estimated_cost": 4.4999999999999996e-05,
+        "efficiency_score": 1555555.5555555557,
+        "capability": 70
+      },
+      {
+        "model": "claude-3-haiku",
+        "estimated_cost": 7.5e-05,
+        "efficiency_score": 800000.0000000001,
+        "capability": 60
+      },
+      {
+        "model": "claude-3-5-sonnet",
+        "estimated_cost": 0.0026999999999999997,
+        "efficiency_score": 34074.07407407408,
+        "capability": 92
+      },
+      {
+        "model": "gpt-4o",
+        "estimated_cost": 0.0045,
+        "efficiency_score": 21111.111111111113,
+        "capability": 95
+      }
+    ]
+  },
+  {
+    "task_id": "T004",
+    "task_name": "Design Microservice Architecture",
+    "difficulty": 8,
+    "winner": "claude-3-5-sonnet",
+    "estimated_cost": 0.013499999999999998,
+    "all_bids": [
+      {
+        "model": "claude-3-5-sonnet",
+        "estimated_cost": 0.013499999999999998,
+        "efficiency_score": 6814.814814814816,
+        "capability": 92
+      },
+      {
+        "model": "gpt-4o",
+        "estimated_cost": 0.0225,
+        "efficiency_score": 4222.222222222223,
+        "capability": 95
+      }
+    ]
+  },
+  {
+    "task_id": "T005",
+    "task_name": "Translate Greeting",
+    "difficulty": 1,
+    "winner": "llama-3-8b",
+    "estimated_cost": 5e-06,
+    "all_bids": [
+      {
+        "model": "llama-3-8b",
+        "estimated_cost": 5e-06,
+        "efficiency_score": 10000000.0,
+        "capability": 50
+      },
+      {
+        "model": "gpt-4o-mini",
+        "estimated_cost": 7.499999999999999e-06,
+        "efficiency_score": 9333333.333333334,
+        "capability": 70
+      },
+      {
+        "model": "claude-3-haiku",
+        "estimated_cost": 1.25e-05,
+        "efficiency_score": 4800000.0,
+        "capability": 60
+      },
+      {
+        "model": "claude-3-5-sonnet",
+        "estimated_cost": 0.00045,
+        "efficiency_score": 204444.44444444444,
+        "capability": 92
+      },
+      {
+        "model": "gpt-4o",
+        "estimated_cost": 0.00075,
+        "efficiency_score": 126666.66666666666,
+        "capability": 95
+      }
+    ]
+  }
+]

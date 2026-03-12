@@ -1,0 +1,104 @@
+#!/bin/sh
+# pre-commit hook — CR-9 保護檔案攔截 + lint
+# 安裝方式：cp git-hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+WORKSPACE="$HOME/.openclaw/workspace"
+UNLOCK_FILE="$WORKSPACE/.cr9-unlock"
+
+# ============================================================
+# CR-9: 保護檔案檢查
+# ============================================================
+
+# 被保護的檔案/目錄 pattern
+PROTECTED_PATTERNS="
+AGENTS.md
+sop-知識庫/
+xiaocai-指令集/
+scripts/self-heal.sh
+scripts/auto-checkpoint.sh
+.env
+"
+
+# 取得本次 commit 要改的檔案
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRD)
+[ -z "$STAGED_FILES" ] && exit 0
+
+# 檢查是否有保護檔案被修改
+PROTECTED_HIT=""
+for pattern in $PROTECTED_PATTERNS; do
+  # 跳過空行
+  [ -z "$pattern" ] && continue
+
+  matched=$(echo "$STAGED_FILES" | grep "^${pattern}" || true)
+  if [ -n "$matched" ]; then
+    PROTECTED_HIT="${PROTECTED_HIT}${matched}
+"
+  fi
+done
+
+# 如果有保護檔案被改
+if [ -n "$PROTECTED_HIT" ]; then
+
+  # 檢查是否有授權碼
+  if [ -f "$UNLOCK_FILE" ]; then
+    # 驗證授權碼格式：openclaw-unlock-YYYYMMDD
+    EXPECTED="openclaw-unlock-$(date '+%Y%m%d')"
+    ACTUAL=$(cat "$UNLOCK_FILE" 2>/dev/null | tr -d '[:space:]')
+
+    if [ "$ACTUAL" = "$EXPECTED" ]; then
+      echo "🔓 CR-9: 授權碼正確，放行修改"
+      # 用完即刪（一次性授權）
+      rm -f "$UNLOCK_FILE"
+    else
+      echo ""
+      echo "🔒 CR-9 保護檔案攔截"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "授權碼不正確！"
+      echo "預期：$EXPECTED"
+      echo "實際：$ACTUAL"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      rm -f "$UNLOCK_FILE"
+      exit 1
+    fi
+  else
+    # 沒有授權碼 → 攔截
+    echo ""
+    echo "🔒 CR-9 保護檔案攔截"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "以下保護檔案被修改："
+    echo "$PROTECTED_HIT" | grep -v '^$' | while read f; do
+      echo "  🔒 $f"
+    done
+    echo ""
+    echo "這些檔案只有 L2 Claude Code + 老蔡能改。"
+    echo ""
+    echo "解鎖方式："
+    echo "  1. 請老蔡授權（Telegram 會收到通知）"
+    echo "  2. 或手動解鎖："
+    echo "     echo 'openclaw-unlock-$(date '+%Y%m%d')' > $UNLOCK_FILE"
+    echo "  3. 然後重新 git commit"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # 嘗試發 Telegram 通知（如果有 webhook）
+    curl -s -X POST http://localhost:5678/webhook/cr9-unlock-request \
+      -H "Content-Type: application/json" \
+      -d "{\"files\": \"$(echo $PROTECTED_HIT | tr '\n' ', ')\", \"timestamp\": \"$(date '+%Y-%m-%d %H:%M:%S')\"}" \
+      2>/dev/null || true
+
+    exit 1
+  fi
+fi
+
+# ============================================================
+# 原有：Lint and format
+# ============================================================
+LINT_FILES=$(echo "$STAGED_FILES" | sed 's| |\\ |g')
+[ -n "$LINT_FILES" ] && {
+  echo "$LINT_FILES" | xargs pnpm exec oxlint --fix 2>/dev/null || true
+  echo "$LINT_FILES" | xargs pnpm exec oxfmt --write 2>/dev/null || true
+  echo "$LINT_FILES" | xargs git add 2>/dev/null || true
+}
+
+exit 0

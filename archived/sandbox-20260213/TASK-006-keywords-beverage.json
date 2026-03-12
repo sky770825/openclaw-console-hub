@@ -1,0 +1,45 @@
+{
+  "business_name": "飲料店",
+  "industry": "餐飲零售/手搖飲",
+  "last_updated": "2026-02-13",
+  "keywords": {
+    "primary": [
+      "手搖飲",
+      "珍珠奶茶",
+      "飲料店"
+    ],
+    "competitors": [
+      "50嵐",
+      "清心福全",
+      "CoCo都可",
+      "迷客夏",
+      "大苑子"
+    ],
+    "trends": [
+      "鮮奶茶",
+      "水果茶",
+      "無糖飲料",
+      "奶蓋"
+    ],
+    "market_signals": [
+      "飲料店加盟",
+      "開飲料店",
+      "手搖飲成本"
+    ]
+  },
+  "alert_thresholds": {
+    "search_volume_spike": 35,
+    "negative_sentiment": 35,
+    "new_competitor_product": true
+  },
+  "data_sources": [
+    "Google Trends",
+    "PTT Drink 板",
+    "Dcard 美食版",
+    "Instagram 標籤"
+  ],
+  "update_frequency": {
+    "daily": "8:00",
+    "weekly": "Monday 10:00"
+  }
+}

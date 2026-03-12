@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="在因果光場加持台中，為自己或他人放上照片，觀想善念漣漪如何在場域中擴散與轉化。">
+    <meta property="og:title" content="因果光場加持台 | 牽一髮而動全身">
+    <meta property="og:description" content="在因果光場加持台中，為自己或他人放上照片，觀想善念漣漪如何在場域中擴散與轉化。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/simulator.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="因果光場加持台 | 牽一髮而動全身">
+    <meta name="twitter:description" content="在因果光場加持台中，為自己或他人放上照片，觀想善念漣漪如何在場域中擴散與轉化。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>因果光場加持台 | 牽一髮而動全身</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../causelaw-config.js" defer></script>
+    <script src="../causelaw-client.js" defer></script>
+    <script src="../causelaw-ui.js" defer></script>
+    <script src="../causelaw-auth.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* 場域：畫布 + 中央照片一體 */
+        .sim-field {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            min-height: 360px;
+            border: 1px solid rgba(184, 134, 11, 0.25);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #sim-canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #050505 0%, #000 100%);
+            display: block;
+        }
+        .sim-field-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            cursor: crosshair;
+        }
+        .sim-photo-in-field {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width:  clamp(180px, 28vw, 280px);
+            max-height: 75%;
+            aspect-ratio: 3/4;
+            z-index: 2;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(212,175,55,0.4);
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+        }
+        .control-panel {
+            background: rgba(15, 15, 15, 0.9);
+            border: 1px solid var(--gold);
+            padding: 2rem;
+            margin-top: -2rem;
+            position: relative;
+            z-index: 10;
+        }
+        .mode-btn {
+            padding: 1rem 2rem;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+        .mode-btn.active {
+            background: var(--gold);
+            color: black;
+        }
+        .mode-btn[data-level="1"]:hover { border-color: #67e8f9; color: #67e8f9; }
+        .mode-btn[data-level="1"].active { background: #22d3ee; color: #0f172a; border-color: #22d3ee; }
+        .mode-btn[data-level="2"]:hover { border-color: #00d4ff; color: #00d4ff; }
+        .mode-btn[data-level="2"].active { background: #00d4ff; color: #0f172a; border-color: #00d4ff; }
+        .mode-btn[data-level="3"]:hover { border-color: #fbbf24; color: #fcd34d; }
+        .mode-btn[data-level="3"].active { background: var(--gold); color: #0f172a; border-color: #d4af37; box-shadow: 0 0 24px rgba(212, 175, 55, 0.5); }
+        /* 對方照片 + 直接疊加身體投射層（在場域內時無外邊距） */
+        .sim-photo-wrap {
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            overflow: hidden; position: relative;
+        }
+        .sim-photo-wrap:not(.has-photo) { background: rgba(0,0,0,0.35); }
+        .sim-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sim-photo-placeholder {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #666; font-size: 0.9rem; padding: 1rem; text-align: center;
+            cursor: crosshair;
+        }
+        .sim-photo-placeholder.hidden { display: none; }
+        .sim-photo-input { margin-top: 0.5rem; font-size: 0.8rem; color: #d4af37; }
+        .sim-photo-input input { width: 100%; max-width: 240px; padding: 0.35rem; background: #111; border: 1px solid rgba(212,175,55,0.3); color: #fff; border-radius: 4px; }
+        /* 身體投射層：疊在照片上，同一區域點擊即投射在該人身上 */
+        .sim-body-overlay {
+            position: absolute; inset: 0; pointer-events: none; z-index: 2;
+        }
+        .sim-photo-wrap.has-photo .sim-body-overlay { pointer-events: auto; }
+        /* 有照片時照片改由 canvas 繪製，此區只留身體疊層，背景透明才看得到漣漪打在照片上 */
+        .sim-photo-wrap.has-photo { background: transparent; }
+        .sim-photo-wrap.has-photo .sim-photo-img { visibility: hidden; position: absolute; }
+        .sim-body-overlay svg { width: 100%; height: 100%; display: block; }
+        .sim-body-part {
+            cursor: pointer; transition: fill 0.35s, filter 0.35s;
+            fill: transparent; stroke: rgba(212,175,55,0.25); stroke-width: 1;
+        }
+        .sim-body-part:hover { fill: rgba(212,175,55,0.15); }
+        .sim-body-part.improved { fill: rgba(212,175,55,0.45); filter: drop-shadow(0 0 20px rgba(212,175,55,0.5)); }
+        .sim-body-part.improved:hover { fill: rgba(212,175,55,0.55); filter: drop-shadow(0 0 24px rgba(212,175,55,0.6)); }
+        .sim-status-list { margin-top: 0.75rem; padding: 0.75rem; background: rgba(0,0,0,0.4); border-radius: 8px; font-size: 0.85rem; color: #888; }
+        .sim-status-list span { display: block; margin-bottom: 0.25rem; }
+        .sim-status-list span.done { color: rgba(212,175,55,0.95); }
+        /* 能量道具面板與圖示 */
+        .sim-items-panel {
+            margin-top: 1.5rem;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 0.5rem;
+            padding: 1rem 1.25rem;
+            font-size: 0.85rem;
+        }
+        .sim-items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .sim-items-header strong { color: var(--gold); letter-spacing: 0.15em; font-size: 0.8rem; }
+        #sim-merit-available { color: #a7f3d0; }
+        .sim-items-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .sim-item {
+            flex: 1 1 160px;
+            min-width: 0;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(212,175,55,0.25);
+            padding: 0.5rem 0.75rem;
+            background: rgba(10,10,10,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .sim-item-main {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .sim-item-icon {
+            font-size: 1.1rem;
+        }
+        .sim-item-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        .sim-item-text span:first-child {
+            color: var(--gold);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+        }
+        .sim-item-text span:last-child {
+            color: #9ca3af;
+            font-size: 0.75rem;
+        }
+        .sim-item button {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(212,175,55,0.5);
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .sim-item button[disabled] {
+            opacity: 0.4;
+            cursor: default;
+            border-color: rgba(148,163,184,0.5);
+            color: #9ca3af;
+        }
+        .sim-item-cost {
+            font-size: 0.75rem;
+            color: #fde68a;
+        }
+        .sim-active-badges {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            transform: translate(0.75rem, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            z-index: 3;
+        }
+        .sim-active-badge {
+            padding: 0.1rem 0.35rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(212,175,55,0.5);
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .sim-active-badge span:first-child { font-size: 0.9rem; }
+        .sim-negative-badges {
+            position: absolute;
+            top: 50%;
+            right: 100%;
+            transform: translate(-0.75rem, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            z-index: 3;
+        }
+        .sim-negative-badge {
+            padding: 0.1rem 0.35rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            background: rgba(15,23,42,0.9);
+            border: 1px solid rgba(248,113,113,0.7);
+            color: #fecaca;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .sim-negative-badge span:first-child { font-size: 0.9rem; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition text-gold">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-6xl mx-auto px-6">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl mb-6 tracking-[0.4em] text-gold">因果光場加持台</h1>
+            <p class="text-xl text-stone-500 tracking-widest">場域內放自己或對方的照片，點此人身體投射能量；點場域其他處產生漣漪</p>
+        </div>
+
+        <!-- 放置照片：在場域中央顯示 -->
+        <div class="mb-4 flex flex-wrap items-center justify-center gap-4 text-sm">
+            <span class="text-stone-500">場域中央放置對方照片：</span>
+            <input type="text" id="sim-photo-url" placeholder="圖片網址" class="w-48 md:w-64 px-2 py-1.5 bg-black/80 border border-gold/30 rounded text-stone-200">
+            <button type="button" id="sim-photo-load" class="px-3 py-1.5 border border-gold/50 text-gold rounded hover:bg-gold/10">載入網址</button>
+            <label class="px-3 py-1.5 border border-gold/50 text-gold rounded hover:bg-gold/10 cursor-pointer">上傳照片<input type="file" id="sim-photo-file" accept="image/*" class="hidden"></label>
+        </div>
+
+        <!-- 場域：畫布 + 中央照片一體 -->
+        <div class="sim-field" id="sim-field">
+            <canvas id="sim-canvas"></canvas>
+            <div class="sim-field-overlay" id="sim-field-overlay" aria-label="點擊產生漣漪"></div>
+            <div class="sim-photo-in-field" id="sim-photo-in-field">
+                <div class="sim-photo-wrap" id="sim-photo-wrap">
+                    <img id="sim-photo-img" src="" alt="對方照片" class="hidden">
+                    <div class="sim-photo-placeholder" id="sim-photo-placeholder">
+                        <span class="text-stone-500 text-sm">放置對方照片</span>
+                        <span class="text-xs text-stone-600 mt-1 block">上傳或輸入網址後，此人會出現在場域中央</span>
+                        <span class="text-xs text-stone-600">點此人身體部位→投射能量；點場域其他處→漣漪</span>
+                    </div>
+                    <div class="sim-body-overlay" aria-hidden="true">
+                        <svg viewBox="0 0 200 360" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse id="body-head" class="sim-body-part" data-part="head" data-name="頭部" cx="100" cy="42" rx="32" ry="38" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <rect id="body-neck" class="sim-body-part" data-part="neck" data-name="頸部" x="88" y="78" width="24" height="22" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <path id="body-chest" class="sim-body-part" data-part="chest" data-name="胸部" d="M70 98 L130 98 L128 168 L72 168 Z" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <path id="body-belly" class="sim-body-part" data-part="belly" data-name="腹部" d="M74 168 L126 168 L122 248 L78 248 Z" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <path id="body-arm-l" class="sim-body-part" data-part="armL" data-name="左臂" d="M70 108 L52 108 L40 180 L58 180 Z" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <path id="body-arm-r" class="sim-body-part" data-part="armR" data-name="右臂" d="M130 108 L148 108 L160 180 L142 180 Z" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <path id="body-leg-l" class="sim-body-part" data-part="legL" data-name="左腿" d="M78 248 L78 340 L98 340 L98 248 Z" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                            <path id="body-leg-r" class="sim-body-part" data-part="legR" data-name="右腿" d="M102 248 L102 340 L122 340 L122 248 Z" stroke="rgba(212,175,55,0.35)" stroke-width="1.2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center text-stone-500 text-sm mt-3 mb-2">點照片上身體部位→該處金光；點場域其他處→善念漣漪（可選祝福／療癒／大願）</p>
+        <div class="sim-status-list max-w-md mx-auto" id="sim-status-list">
+            <span data-part="head">頭部：未投射</span>
+            <span data-part="neck">頸部：未投射</span>
+            <span data-part="chest">胸部：未投射</span>
+            <span data-part="belly">腹部：未投射</span>
+            <span data-part="armL">左臂：未投射</span>
+            <span data-part="armR">右臂：未投射</span>
+            <span data-part="legL">左腿：未投射</span>
+            <span data-part="legR">右腿：未投射</span>
+        </div>
+        <p class="text-center mt-2"><button type="button" id="sim-reset-body" class="text-stone-500 hover:text-gold text-sm underline">重置身體狀況</button></p>
+
+        <div class="control-panel flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="flex gap-3 flex-wrap justify-center">
+                <button class="mode-btn" data-level="1" title="一念祝福，輕柔擴散">祝福</button>
+                <button class="mode-btn active" data-level="2" title="善意如光，療癒空間">療癒</button>
+                <button class="mode-btn" data-level="3" title="大願普渡，願力無量">大願</button>
+            </div>
+            <div id="sim-info" class="text-stone-400 italic text-center md:text-left">
+                「善意如光，擴散並療癒空間。」
+            </div>
+            <button onclick="clearCanvas()" class="text-stone-600 hover:text-stone-400 underline text-sm">重置場域</button>
+        </div>
+
+        <div class="sim-items-panel">
+            <div class="sim-items-header">
+                <strong>能量道具（使用功過格淨值）</strong>
+                <span class="text-xs text-stone-400">從 <a href="merit.html" class="text-gold hover:underline">功過格</a> 累積分數，於 <a href="shop.html" class="text-gold hover:underline">加持商城</a> 兌換限時加持後在此生效。</span>
+                <span class="text-xs">可用淨值：<span id="sim-merit-available">--</span></span>
+            </div>
+            <div id="sim-items-list" class="sim-items-list"></div>
+        </div>
+
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div class="p-8 border border-stone-800 bg-stone-900/30">
+                <h3 class="text-2xl text-gold mb-4">為什麼要做這個實驗？</h3>
+                <p class="text-stone-400 leading-relaxed">
+                    在宇宙的底層邏輯中，沒有任何一個念頭是孤立的。你的每一次點擊（選擇），都會在場域中留下不可抹滅的波動。可選擇「祝福」「療癒」「大願」三種善念語意，一念不同，漣漪的意涵與強度皆異。
+                </p>
+            </div>
+            <div class="p-8 border border-stone-800 bg-stone-900/30">
+                <h3 class="text-2xl text-gold mb-4">能量守恆定律</h3>
+                <p class="text-stone-400 leading-relaxed">
+                    當場域中的波動消失時，能量並未不見，而是轉化成了你靈魂的「頻率背景」。這就是為什麼長期的善行會讓人散發平和。
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('sim-canvas');
+        const ctx = canvas.getContext('2d');
+        let ripples = [];
+        let currentLevel = 2;
+
+        // 對方照片：輸入網址後顯示
+        (function() {
+            const img = document.getElementById('sim-photo-img');
+            const placeholder = document.getElementById('sim-photo-placeholder');
+            const urlInput = document.getElementById('sim-photo-url');
+            function showPhoto() {
+                img.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                document.getElementById('sim-photo-wrap').classList.add('has-photo');
+            }
+            function loadPhoto() {
+                const url = (urlInput.value || '').trim();
+                if (!url) return;
+                img.onload = showPhoto;
+                img.onerror = function() { img.classList.add('hidden'); placeholder.classList.remove('hidden'); document.getElementById('sim-photo-wrap').classList.remove('has-photo'); alert('無法載入圖片，請檢查網址'); };
+                img.src = url;
+            }
+            urlInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') loadPhoto(); });
+            document.getElementById('sim-photo-load').addEventListener('click', loadPhoto);
+            document.getElementById('sim-photo-file').addEventListener('change', function(e) {
+                var f = e.target.files && e.target.files[0];
+                if (!f) return;
+                var reader = new FileReader();
+                reader.onload = function() { img.src = reader.result; showPhoto(); };
+                reader.readAsDataURL(f);
+                e.target.value = '';
+            });
+        })();
+
+        // 身體部位：點擊後該部位改善（金光）
+        (function() {
+            const parts = document.querySelectorAll('.sim-body-part');
+            const statusList = document.getElementById('sim-status-list');
+            const names = { head: '頭部', neck: '頸部', chest: '胸部', belly: '腹部', armL: '左臂', armR: '右臂', legL: '左腿', legR: '右腿' };
+            parts.forEach(function(el) {
+                el.addEventListener('click', function() {
+                    const part = this.dataset.part;
+                    const name = this.dataset.name || names[part];
+                    this.classList.add('improved');
+                    const statusEl = statusList.querySelector('[data-part="' + part + '"]');
+                    if (statusEl) {
+                        statusEl.textContent = name + '：已改善';
+                        statusEl.classList.add('done');
+                    }
+                });
+            });
+            document.getElementById('sim-reset-body').addEventListener('click', function() {
+                parts.forEach(function(el) { el.classList.remove('improved'); });
+                statusList.querySelectorAll('span').forEach(function(span) {
+                    const part = span.dataset.part;
+                    span.textContent = (names[part] || part) + '：未投射';
+                    span.classList.remove('done');
+                });
+            });
+        })();
+
+        // 能量道具：與加持商城共用分數與生效中加持（功過格淨值）
+        (function() {
+            const STORAGE_KEY_SPENT = 'causelaw_merit_spent';
+            const STORAGE_KEY_BUFFS = 'causelaw_active_buffs';
+            const INVENTORY_KEY = 'causelaw_item_inventory_v1';
+            const itemsDef = [
+                {
+                    id: 'lotus-ring',
+                    name: '護持蓮花',
+                    icon: '🪷',
+                    cost: 40,
+                    durationMs: 24 * 60 * 60 * 1000,
+                    desc: '聚焦【感情與家庭】的柔和守護，願彼此心念柔軟、少爭執。'
+                },
+                {
+                    id: 'heart-bell',
+                    name: '淨心法鈴',
+                    icon: '🔔',
+                    cost: 25,
+                    durationMs: 24 * 60 * 60 * 1000,
+                    desc: '聚焦【工作與事業】的清明判斷，願溝通順暢、決策少偏差。'
+                },
+                {
+                    id: 'golden-mandala',
+                    name: '金色曼陀羅',
+                    icon: '✨',
+                    cost: 60,
+                    durationMs: 24 * 60 * 60 * 1000,
+                    desc: '聚焦【財富與資源】的正向流動，願以正財、善念改善金錢結構。'
+                },
+                { id: 'blessing-cloud', name: '祥雲護持', icon: '☁️', cost: 35, durationMs: 24 * 60 * 60 * 1000, desc: '聚焦【人際與貴人】的祥和氛圍，願相處多理解、少誤會。' },
+                { id: 'lotus-seed', name: '蓮子心燈', icon: '🪷', cost: 20, durationMs: 24 * 60 * 60 * 1000, desc: '聚焦【身心健康】的一點心燈，願身體安穩、情緒平和。' }
+            ];
+
+            function now() { return Date.now(); }
+            function getNetFromMerit() {
+                const raw = localStorage.getItem('causelaw_merit_net_score');
+                const n = parseInt(raw || '0', 10);
+                return isNaN(n) ? 0 : n;
+            }
+            function getSpent() {
+                const raw = localStorage.getItem(STORAGE_KEY_SPENT);
+                const n = parseInt(raw || '0', 10);
+                return isNaN(n) ? 0 : n;
+            }
+            function setSpent(v) {
+                localStorage.setItem(STORAGE_KEY_SPENT, String(v));
+            }
+            function loadBuffs() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY_BUFFS);
+                    const arr = raw ? JSON.parse(raw) : [];
+                    const valid = Array.isArray(arr) ? arr.filter(b => b && b.id && b.expiresAt && b.expiresAt > now()) : [];
+                    localStorage.setItem(STORAGE_KEY_BUFFS, JSON.stringify(valid));
+                    const map = {};
+                    valid.forEach(b => { map[b.id] = b; });
+                    window.SimActiveBuffs = map;
+                    renderActiveBadges(valid);
+                    return valid;
+                } catch (e) {
+                    window.SimActiveBuffs = {};
+                    renderActiveBadges([]);
+                    return [];
+                }
+            }
+            function saveBuffs(list) {
+                localStorage.setItem(STORAGE_KEY_BUFFS, JSON.stringify(list));
+                const map = {};
+                list.forEach(b => { map[b.id] = b; });
+                window.SimActiveBuffs = map;
+                renderActiveBadges(list);
+            }
+
+            function loadInventory() {
+                try {
+                    const raw = localStorage.getItem(INVENTORY_KEY);
+                    const obj = raw ? JSON.parse(raw) : {};
+                    return obj && typeof obj === 'object' ? obj : {};
+                } catch (e) {
+                    return {};
+                }
+            }
+            function saveInventory(inv) {
+                try {
+                    localStorage.setItem(INVENTORY_KEY, JSON.stringify(inv));
+                } catch (e) {}
+            }
+
+            function renderActiveBadges(list) {
+                const host = document.getElementById('sim-photo-in-field');
+                if (!host) return;
+                let wrap = host.querySelector('.sim-active-badges');
+                if (!wrap) {
+                    wrap = document.createElement('div');
+                    wrap.className = 'sim-active-badges';
+                    host.appendChild(wrap);
+                }
+                wrap.innerHTML = '';
+                const nowTs = now();
+                list.forEach(b => {
+                    const def = itemsDef.find(d => d.id === b.id);
+                    if (!def) return;
+                    const badge = document.createElement('div');
+                    badge.className = 'sim-active-badge';
+                    const remainSec = Math.max(0, Math.floor((b.expiresAt - nowTs) / 1000));
+                    const remainTxt = remainSec >= 60 ? Math.ceil(remainSec / 60) + ' 分' : remainSec + ' 秒';
+                    badge.innerHTML = `<span>${def.icon}</span><span>${def.name}</span><span class="text-xs text-stone-400">${remainTxt}</span>`;
+                    wrap.appendChild(badge);
+                });
+                if (!list.length) wrap.innerHTML = '';
+            }
+
+            function renderNegativeBadges(net) {
+                const host = document.getElementById('sim-photo-in-field');
+                if (!host) return;
+                let wrap = host.querySelector('.sim-negative-badges');
+                if (!wrap) {
+                    wrap = document.createElement('div');
+                    wrap.className = 'sim-negative-badges';
+                    host.appendChild(wrap);
+                }
+                wrap.innerHTML = '';
+                if (typeof net !== 'number' || net >= 0) return;
+                let level = 1;
+                if (net <= -50 && net > -150) level = 2;
+                else if (net <= -150) level = 3;
+                const icons = ['🌫️','⚠️','⛓️'];
+                const labels = ['輕微陰影','業力壓力','重業纏身'];
+                for (let i = 0; i < level; i++) {
+                    const badge = document.createElement('div');
+                    badge.className = 'sim-negative-badge';
+                    badge.innerHTML = `<span>${icons[i]}</span><span>${labels[i]}</span>`;
+                    wrap.appendChild(badge);
+                }
+            }
+
+            function renderStore() {
+                const container = document.getElementById('sim-items-list');
+                const availableEl = document.getElementById('sim-merit-available');
+                if (!container || !availableEl) return;
+                const net = getNetFromMerit();
+                const spent = getSpent();
+                const available = Math.max(0, net - spent);
+                availableEl.textContent = available;
+
+                const activeList = loadBuffs();
+                const activeMap = {};
+                activeList.forEach(b => { activeMap[b.id] = b; });
+                const inventory = loadInventory();
+
+                renderNegativeBadges(net);
+
+                container.innerHTML = '';
+                itemsDef.forEach(def => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'sim-item';
+                    const active = !!activeMap[def.id];
+                    const count = inventory[def.id] || 0;
+                    const label = count > 0 ? (active ? '延長 1 天' : '啟用 1 天') : '無庫存';
+                    const disabled = count <= 0;
+                    const hours = Math.round(def.durationMs / 3600000);
+                    itemEl.innerHTML = `
+                        <div class="sim-item-main">
+                            <span class="sim-item-icon">${def.icon}</span>
+                            <div class="sim-item-text">
+                                <span>${def.name}</span>
+                                <span>${def.desc}</span>
+                            </div>
+                        </div>
+                        <div class="text-right flex flex-col items-end gap-1">
+                            <span class="sim-item-cost">庫存：${count} 份 ／ 每啟用約 ${hours} 小時</span>
+                            <button type="button" data-id="${def.id}" ${disabled ? 'disabled' : ''}>${label}</button>
+                        </div>
+                    `;
+                    const btn = itemEl.querySelector('button');
+                    if (!disabled) {
+                        btn.addEventListener('click', function() {
+                            const inv = loadInventory();
+                            const current = inv[def.id] || 0;
+                            if (current <= 0) {
+                                alert('此道具庫存為 0，請先到加持商城兌換。');
+                                renderStore();
+                                return;
+                            }
+                            const buffs = loadBuffs();
+                            const nowTs = now();
+                            let existing = null;
+                            for (let i = 0; i < buffs.length; i++) {
+                                if (buffs[i].id === def.id) { existing = buffs[i]; break; }
+                            }
+                            if (existing) {
+                                existing.expiresAt = (existing.expiresAt || nowTs) + def.durationMs;
+                            } else {
+                                buffs.push({ id: def.id, activatedAt: nowTs, expiresAt: nowTs + def.durationMs });
+                            }
+                            saveBuffs(buffs);
+                            inv[def.id] = current - 1;
+                            saveInventory(inv);
+                            renderStore();
+                        });
+                    }
+                    container.appendChild(itemEl);
+                });
+            }
+
+            // 初始化 store 與定期刷新剩餘時間
+            renderStore();
+            setInterval(function() {
+                const buffs = loadBuffs();
+                if (buffs.length) renderStore();
+            }, 15000);
+        })();
+
+        // 設置畫布大小（與場域一致）
+        function resize() {
+            const field = document.getElementById('sim-field');
+            const w = field.offsetWidth;
+            const h = field.offsetHeight;
+            canvas.width = w;
+            canvas.height = h;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 切換善念語意：祝福 / 療癒 / 大願
+        const levelMessages = {
+            1: '「一念祝福，輕柔擴散 — 為他人祈願、安穩心意。」',
+            2: '「善意如光，擴散並療癒空間 — 慈悲所至，能量轉化。」',
+            3: '「大願普渡，願力無量 — 普照眾生，因果不昧。」'
+        };
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentLevel = parseInt(btn.dataset.level, 10) || 2;
+                document.getElementById('sim-info').innerText = levelMessages[currentLevel] || levelMessages[2];
+            };
+        });
+
+        class Ripple {
+            constructor(x, y, level) {
+                this.x = x;
+                this.y = y;
+                this.r = 0;
+                this.maxR = Math.max(canvas.width, canvas.height) * 0.8;
+                this.opacity = 1;
+                this.level = level || 2;
+                const sp = { 1: 1.2, 2: 2.2, 3: 3.5 };
+                this.speed = sp[this.level] || 2;
+                const col = { 1: '103, 232, 249', 2: '0, 212, 255', 3: '212, 175, 55' };
+                this.color = col[this.level] || '0, 212, 255';
+            }
+
+            update() {
+                this.r += this.speed;
+                this.opacity -= this.level === 3 ? 0.003 : 0.005;
+                return this.opacity > 0;
+            }
+
+            draw() {
+                const lw = { 1: 1.5, 2: 2.5, 3: 4 };
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(${this.color}, ${this.opacity})`;
+                ctx.lineWidth = lw[this.level] || 2;
+                if (this.level === 3) {
+                    ctx.shadowColor = 'rgba(212, 175, 55, 0.7)';
+                    ctx.shadowBlur = 18;
+                }
+                ctx.stroke();
+                if (this.level === 3) { ctx.shadowBlur = 0; }
+            }
+        }
+
+        function addRippleAtEvent(e) {
+            const rect = canvas.getBoundingClientRect();
+            ripples.push(new Ripple(e.clientX - rect.left, e.clientY - rect.top, currentLevel));
+        }
+        // 點擊場域空白處 → 漣漪
+        document.getElementById('sim-field-overlay').addEventListener('click', addRippleAtEvent);
+        // 點擊中央「放置對方照片」區內 → 光點也可點到這裡面，產生漣漪
+        document.getElementById('sim-photo-placeholder').addEventListener('click', function(e) {
+            e.stopPropagation();
+            addRippleAtEvent(e);
+        });
+
+        function animate() {
+            const field = document.getElementById('sim-field');
+            const fieldRect = field.getBoundingClientRect();
+            const photoImg = document.getElementById('sim-photo-img');
+            const photoBox = document.getElementById('sim-photo-in-field');
+
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 照片畫在 canvas 上，漣漪再畫在上面，光線才會彈到照片上
+            if (photoImg && photoImg.src && photoImg.complete && photoImg.naturalWidth && photoBox) {
+                const photoRect = photoBox.getBoundingClientRect();
+                const scaleX = canvas.width / fieldRect.width;
+                const scaleY = canvas.height / fieldRect.height;
+                const x = (photoRect.left - fieldRect.left) * scaleX;
+                const y = (photoRect.top - fieldRect.top) * scaleY;
+                const w = photoRect.width * scaleX;
+                const h = photoRect.height * scaleY;
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x, y, w, h);
+                ctx.clip();
+                ctx.drawImage(photoImg, x, y, w, h);
+                ctx.restore();
+            }
+
+            ripples = ripples.filter(r => {
+                r.draw();
+                return r.update();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function clearCanvas() {
+            ripples = [];
+        }
+
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "system-alert",
+  "version": "1.0.0",
+  "description": "A simple system alert plugin for OpenClaw",
+  "main": "index.ts",
+  "openclaw": {
+    "id": "system-alert",
+    "kind": "tool",
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "alertPrefix": { "type": "string", "default": "[ALERT]" }
+      }
+    }
+  }
+}

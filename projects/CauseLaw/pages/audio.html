@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>能量音場 | 佛音禪樂淨化心靈</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .audio-card {
+            background: rgba(15, 15, 15, 0.9);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 2.5rem;
+            transition: all 0.4s;
+            cursor: pointer;
+        }
+        .audio-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .audio-card.playing {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
+        .play-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        .playing .play-icon {
+            animation: pulse-icon 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        .audio-title { color: var(--gold); font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem; }
+        .audio-desc { color: rgba(245, 245, 220, 0.6); font-size: 0.9rem; }
+        .audio-duration { color: var(--cinnabar); font-size: 0.8rem; margin-top: 1rem; }
+        .player-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            border-top: 1px solid var(--gold);
+            padding: 1.5rem 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+        .player-bar.active { transform: translateY(0); }
+        .player-controls { display: flex; align-items: center; gap: 2rem; }
+        .control-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .control-btn:hover { background: var(--gold); color: black; }
+        .progress-container { flex: 1; margin: 0 3rem; }
+        .progress-bar { width: 100%; height: 4px; background: rgba(212, 175, 55, 0.2); cursor: pointer; }
+        .progress-fill { height: 100%; background: var(--gold); width: 0%; }
+        .now-playing { color: var(--gold); font-weight: bold; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif pb-32">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔祈福</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-20 max-w-6xl mx-auto px-6">
+        <div class="text-center mb-20">
+            <h1 class="text-6xl mb-10 tracking-[0.6em] text-gold">能量音場</h1>
+            <p class="text-2xl text-stone-500 tracking-widest">以音聲入道 • 以佛音淨心</p>
+        </div>
+
+        <div class="mb-20">
+            <h2 class="text-3xl text-gold mb-10 border-b border-gold/20 pb-4">核心修持</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="audio-card" onclick="playYouTubeEmbed('HKHSX2jG8K8', '金光神咒')">
+                    <div class="play-icon">☀️</div>
+                    <h3 class="audio-title">金光神咒</h3>
+                    <p class="audio-desc">天地玄宗，萬炁本根。廣修億劫，證吾神通。護身辟邪，淨化磁場。</p>
+                    <p class="audio-duration text-yellow-500">⚠️ 尋找可嵌入版本</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('http://www.namoamitabha.net/namo_mp3/amitabha/chant_ksitigarbha.mp3', '地藏菩薩聖號')">
+                    <div class="play-icon">📿</div>
+                    <h3 class="audio-title">地藏菩薩聖號</h3>
+                    <p class="audio-desc">南無大願地藏王菩薩。持誦聖號，超度亡靈，消業積福。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('http://www.namoamitabha.net/namo_mp3/avalokitesvara/greatcompassionpraise.mp3', '大悲咒')">
+                    <div class="play-icon">🙏</div>
+                    <h3 class="audio-title">大悲咒</h3>
+                    <p class="audio-desc">千手千眼觀世音菩薩廣大圓滿無礙大悲心陀羅尼。消災解厄，慈悲普渡。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                </div>
+                <div class="audio-card" onclick="showInfo('梁皇寶懺為十卷長篇懺法，完整誦持約需多日。建議至寺廟參加共修或請購正版 CD。')">
+                    <div class="play-icon">🪷</div>
+                    <h3 class="audio-title">梁皇寶懺</h3>
+                    <p class="audio-desc">慈悲道場懺法，懺悔業障，洗滌心靈。南朝梁武帝為超度郗后所製。</p>
+                    <p class="audio-duration text-yellow-500">📀 請至寺廟請法</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-20">
+            <h2 class="text-3xl text-gold mb-10 border-b border-gold/20 pb-4">輔助靜心</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="audio-card" onclick="playAudio('zen-bell', '梵唄鐘磬')">
+                    <div class="play-icon">🔔</div>
+                    <h3 class="audio-title">梵唄鐘磬</h3>
+                    <p class="audio-desc">傳統寺院法器音聲，木魚引磬，安定心神。</p>
+                    <p class="audio-duration">⏱ 待上傳</p>
+                </div>
+                <div class="audio-card" onclick="playAudio('guqin', '古琴心韻')">
+                    <div class="play-icon">🎵</div>
+                    <h3 class="audio-title">古琴心韻</h3>
+                    <p class="audio-desc">道家古琴雅樂，中正平和，修身養性。</p>
+                    <p class="audio-duration">⏱ 待上傳</p>
+                </div>
+                <div class="audio-card" onclick="playAudio('singing-bowl', '喜馬拉雅缽音')">
+                    <div class="play-icon">🥣</div>
+                    <h3 class="audio-title">喜馬拉雅缽音</h3>
+                    <p class="audio-desc">深層共振，清理負面能量，回歸內在寧靜。</p>
+                    <p class="audio-duration">⏱ 待上傳</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 border border-gold/20 bg-gold/5 mt-20">
+            <h3 class="text-2xl text-gold mb-6">📜 音源說明</h3>
+            <div class="space-y-4 text-stone-400">
+                <p>🟢 <span class="text-green-400">可直接播放</span>：大悲咒、地藏菩薩聖號 — 來自華藏淨宗學會（已授權公開）</p>
+                <p>🟡 <span class="text-yellow-400">尋找版本中</span>：金光神咒 — 道教音樂資源待補</p>
+                <p>📀 <span class="text-gold">建議請購</span>：梁皇寶懺、地藏菩薩本願經 — 為長篇經懺，建議至寺廟共修或請購正版 CD</p>
+                <p class="text-stone-500 text-sm mt-4">備註：佛經音檔來自 <a href="http://www.namoamitabha.net" class="text-gold hover:underline" target="_blank">南無阿彌陀佛網</a>（華藏淨宗學會），如侵權請告知下架。</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="player-bar" class="player-bar">
+        <div class="now-playing" id="now-playing">尚未播放</div>
+        <div class="progress-container">
+            <div class="progress-bar" onclick="seekAudio(event)">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        <div class="player-controls">
+            <button class="control-btn" onclick="togglePlay()">▶</button>
+            <button class="control-btn" onclick="stopAudio()">⏹</button>
+        </div>
+    </div>
+
+    <!-- YouTube 播放器容器 -->
+    <div id="youtube-player-container" style="display:none; position:fixed; bottom:100px; right:20px; width:320px; height:180px; z-index:99; border:2px solid var(--gold); background:black;">
+        <div id="youtube-player"></div>
+        <button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>
+    </div>
+
+    <audio id="audio-player" ontimeupdate="updateProgress()" onended="audioEnded()"></audio>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        // 音頻檔案路徑（本地音檔與外部連結）
+        const audioSources = {
+            'golden-light': '../audio/golden-light-mantra.mp3',
+            'ksitigarbha': 'http://www.namoamitabha.net/namo_mp3/amitabha/chant_ksitigarbha.mp3',
+            'great-compassion': 'http://www.namoamitabha.net/namo_mp3/avalokitesvara/greatcompassionpraise.mp3',
+            'liang-huang': '../audio/liang-huang-bao-chan.mp3',
+            'zen-bell': '../audio/zen-bell.mp3',
+            'guqin': '../audio/guqin-music.mp3',
+            'singing-bowl': '../audio/singing-bowl.mp3'
+        };
+
+        let currentId = null, isPlaying = false, youtubePlayer = null, currentMode = 'local';
+        const audio = document.getElementById('audio-player');
+        const playerBar = document.getElementById('player-bar');
+        const nowPlaying = document.getElementById('now-playing');
+
+        // YouTube IFrame API 回呼
+        function onYouTubeIframeAPIReady() {
+            youtubePlayer = new YT.Player('youtube-player', {
+                height: '180',
+                width: '320',
+                videoId: 'HKHSX2jG8K8',
+                playerVars: {
+                    autoplay: 0,
+                    controls: 1,
+                    rel: 0,
+                    modestbranding: 1,
+                    playsinline: 1,
+                    enablejsapi: 1,
+                    origin: window.location.origin
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            console.log('YouTube Player Ready');
+        }
+
+        function onPlayerError(event) {
+            console.error('YouTube Player Error:', event.data);
+            let errorMsg = '播放錯誤';
+            switch(event.data) {
+                case 2: errorMsg = '無效的影片ID'; break;
+                case 5: errorMsg = 'HTML5播放器錯誤'; break;
+                case 100: errorMsg = '影片已被移除'; break;
+                case 101: 
+                case 150: errorMsg = '影片禁止嵌入播放'; break;
+                case 153: errorMsg = '影片版權限制，無法嵌入'; break;
+            }
+            alert('❌ ' + errorMsg + '\n\n建議：請使用「下載音檔後上傳」方案，或提供其他YouTube連結');
+            closeYouTube();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                isPlaying = false;
+                updatePlayButton();
+                document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            }
+        }
+
+        function playYouTubeEmbed(videoId, title) {
+            currentMode = 'youtube';
+            stopLocalAudio();
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            
+            const container = document.getElementById('youtube-player-container');
+            container.style.display = 'block';
+            
+            // 使用純 iframe 嵌入
+            container.innerHTML = `
+                <iframe width="320" height="180" 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
+                    title="${title}" frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+                <button onclick="closeYouTubeEmbed()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>
+            `;
+            
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title + ' (YouTube)';
+            isPlaying = true;
+            updatePlayButton();
+        }
+
+        function closeYouTubeEmbed() {
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div>';
+            container.style.display = 'none';
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            isPlaying = false;
+            updatePlayButton();
+            playerBar.classList.remove('active');
+        }
+
+        // 播放外部音檔（直接 URL）
+        function playExternalAudio(url, title) {
+            currentMode = 'local';
+            // 關閉 YouTube 播放器
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+            container.style.display = 'none';
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            
+            audio.src = url;
+            audio.play();
+            isPlaying = true;
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title;
+            updatePlayButton();
+        }
+
+        // 顯示資訊提示
+        function showInfo(message) {
+            alert('📿 ' + message);
+        }
+
+        function playYouTube(videoId, title) {
+            currentMode = 'youtube';
+            stopLocalAudio();
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            
+            document.getElementById('youtube-player-container').style.display = 'block';
+            
+            if (youtubePlayer && youtubePlayer.loadVideoById) {
+                youtubePlayer.loadVideoById(videoId);
+                youtubePlayer.playVideo();
+            }
+            
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title + ' (YouTube)';
+            isPlaying = true;
+            updatePlayButton();
+        }
+
+        function closeYouTube() {
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+            container.style.display = 'none';
+            if (youtubePlayer && youtubePlayer.stopVideo) {
+                youtubePlayer.stopVideo();
+            }
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            isPlaying = false;
+            updatePlayButton();
+        }
+
+        function stopLocalAudio() {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+
+        function playAudio(id, title) {
+            currentMode = 'local';
+            // 關閉 YouTube 播放器
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+            container.style.display = 'none';
+            if (youtubePlayer && youtubePlayer.stopVideo) {
+                youtubePlayer.stopVideo();
+            }
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            currentId = id;
+            audio.src = audioSources[id];
+            audio.play();
+            isPlaying = true;
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title;
+            updatePlayButton();
+        }
+
+        function togglePlay() {
+            if (currentMode === 'youtube') {
+                // iframe 嵌入模式下無法直接控制播放/暫停
+                // 提示用戶直接在影片上操作
+                alert('ℹ️ YouTube 嵌入模式下，請直接點擊影片上的播放/暫停按鈕控制');
+                return;
+            }
+            if (!currentId) return;
+            if (isPlaying) { audio.pause(); isPlaying = false; }
+            else { audio.play(); isPlaying = true; }
+            updatePlayButton();
+        }
+
+        function updatePlayButton() {
+            document.querySelector('.control-btn').innerText = isPlaying ? '⏸' : '▶';
+        }
+
+        function stopAudio() {
+            const container = document.getElementById('youtube-player-container');
+            if (currentMode === 'youtube') {
+                // 重置 YouTube 容器
+                container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+                container.style.display = 'none';
+                if (youtubePlayer && youtubePlayer.stopVideo) {
+                    youtubePlayer.stopVideo();
+                }
+            }
+            audio.pause();
+            audio.currentTime = 0;
+            isPlaying = false;
+            playerBar.classList.remove('active');
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            currentId = null;
+            updatePlayButton();
+        }
+
+        function updateProgress() {
+            const pct = (audio.currentTime / audio.duration) * 100 || 0;
+            document.getElementById('progress-fill').style.width = pct + '%';
+        }
+
+        function seekAudio(e) {
+            if (!currentId) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = pct * audio.duration;
+        }
+
+        function audioEnded() {
+            isPlaying = false;
+            updatePlayButton();
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+        }
+    </script>
+</body>
+</html>

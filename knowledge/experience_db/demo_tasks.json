@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "experiences": {
+    "bbc18ab3f4eee0634040af09036b56350fe712846f7c1c6a9422f12b221f908e": {
+      "task": "clean_temp_files",
+      "solution": "echo 'Cleaning /tmp... Done'; sleep 1",
+      "updated_at": "2026-03-02T05:24:04Z",
+      "hits": 1
+    }
+  }
+}

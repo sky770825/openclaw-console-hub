@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="天、人、阿修羅、畜生、餓鬼、地獄六道特徵與成因，掌握業力頻率與生命走向。">
+    <meta property="og:title" content="六道輪迴 | 因果真相">
+    <meta property="og:description" content="天、人、阿修羅、畜生、餓鬼、地獄六道特徵與成因，掌握業力頻率與生命走向。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/realms.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="六道輪迴 | 因果真相">
+    <meta name="twitter:description" content="天、人、阿修羅、畜生、餓鬼、地獄六道特徵與成因，掌握業力頻率與生命走向。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>六道輪迴 | 因果真相</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../causelaw-config.js" defer></script>
+    <script src="../causelaw-client.js" defer></script>
+    <script src="../causelaw-ui.js" defer></script>
+    <script src="../causelaw-auth.js" defer></script>
+    <script src="../particles.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .realm-card {
+            padding: 0; text-align: center;
+            border: 1px solid rgba(123,47,190,0.2);
+            background: rgba(15,10,26,0.8);
+            transition: all 0.4s; position: relative;
+            min-height: 400px; display: flex; flex-direction: column; justify-content: flex-start;
+            overflow: hidden;
+        }
+        .realm-card .realm-name { padding: 0 1.5rem; }
+        .realm-card .realm-type,
+        .realm-card .realm-cause,
+        .realm-card .realm-desc { padding: 0 1.5rem; }
+        .realm-card .realm-desc { padding-bottom: 2rem; }
+        .realm-card:hover { transform: translateY(-10px); border-color: var(--gold); box-shadow: 0 10px 50px rgba(0,0,0,0.8); }
+        .realm-card img { width: 100%; height: 220px; object-fit: cover; object-position: center; display: block; }
+        .realm-icon { font-size: 4rem; margin-bottom: 1.5rem; }
+        .realm-name { font-size: 2rem; font-weight: 900; color: var(--gold); margin-bottom: 0.5rem; }
+        .realm-type { font-size: 0.9rem; letter-spacing: 0.3em; margin-bottom: 1.5rem; font-weight: bold; }
+        .realm-type.good { color: #00d4ff; }
+        .realm-type.evil { color: #ff2200; }
+        .realm-cause { color: rgba(245,245,220,0.7); font-size: 1.1rem; line-height: 2; margin-bottom: 1rem; }
+        .realm-desc { color: rgba(245,245,220,0.5); font-size: 0.9rem; font-style: italic; }
+
+        .realm-action {
+            margin-top: auto;
+            padding: 0 1.5rem 2rem;
+        }
+        .realm-action button {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid rgba(184, 134, 11, 0.35);
+            background: rgba(184, 134, 11, 0.12);
+            color: var(--gold);
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            transition: 0.3s;
+        }
+        .realm-action button:hover {
+            background: rgba(184, 134, 11, 0.22);
+            border-color: rgba(184, 134, 11, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .realm-modal-panel {
+            background: rgba(10, 10, 10, 0.96);
+            border: 1px solid rgba(184, 134, 11, 0.35);
+            box-shadow: 0 0 90px rgba(0,0,0,0.9);
+        }
+        .realm-chip {
+            display: inline-block;
+            padding: 0.25rem 0.8rem;
+            border: 1px solid rgba(184, 134, 11, 0.35);
+            color: rgba(245,245,220,0.75);
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+        }
+        .realm-section-title {
+            color: var(--gold);
+            font-weight: 900;
+            letter-spacing: 0.25em;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        .realm-bullets li { color: rgba(245,245,220,0.75); line-height: 2; }
+        .realm-links a {
+            display: inline-block;
+            border: 1px solid rgba(184, 134, 11, 0.35);
+            padding: 0.5rem 0.9rem;
+            color: var(--gold);
+            letter-spacing: 0.15em;
+            font-weight: 900;
+            transition: 0.25s;
+            margin: 0.25rem 0.35rem 0 0;
+        }
+        .realm-links a:hover { background: rgba(184, 134, 11, 0.18); }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition text-gold">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-6xl mx-auto px-6">
+        <!-- 輪迴頁主視覺 -->
+        <section class="relative w-full -mx-6 mb-24 max-h-[420px] overflow-hidden rounded-lg">
+            <img src="../images/realms/hero.jpg" alt="六道輪迴概念：天道、人道、地獄分層意境" class="w-full h-auto object-cover object-center" width="1920" height="800">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center pb-12">
+                <div class="text-center">
+                    <h1 class="text-5xl md:text-6xl mb-3 tracking-[0.6em] text-gold drop-shadow-lg">六道輪迴</h1>
+                    <p class="text-xl md:text-2xl text-stone-300 tracking-widest">意識頻率的歸宿 • 能量轉化的路徑</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="text-center mb-20">
+            <h2 class="text-2xl md:text-3xl mb-4 text-stone-400 tracking-wider">六道概覽</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- 天道 -->
+            <div class="realm-card">
+                <img src="../images/realms/realm-deva.jpg" alt="天道：光明莊嚴、極致福報">
+                <div class="realm-name mt-4">天道</div>
+                <div class="realm-type good">三善道之首</div>
+                <div class="realm-cause">因：廣修十善、大公無私、清淨心。</div>
+                <div class="realm-desc">享極致福報，壽命綿長，環境莊嚴。</div>
+                <div class="realm-action">
+                    <button type="button" onclick="openRealm('deva')">瀏覽內容 →</button>
+                </div>
+            </div>
+
+            <!-- 阿修羅道 -->
+            <div class="realm-card">
+                <img src="../images/realms/realm-asura.jpg" alt="阿修羅道：好鬥爭勝、天福無德">
+                <div class="realm-name mt-4">阿修羅道</div>
+                <div class="realm-type good">三善道之一</div>
+                <div class="realm-cause">因：修福但嗔心重、好鬥、嫉妒心強。</div>
+                <div class="realm-desc">有天人之福而無天人之德，常處爭鬥。</div>
+                <div class="realm-action">
+                    <button type="button" onclick="openRealm('asura')">瀏覽內容 →</button>
+                </div>
+            </div>
+
+            <!-- 人道 -->
+            <div class="realm-card">
+                <img src="../images/realms/realm-human.jpg" alt="人道：苦樂參半、修行轉業">
+                <div class="realm-name mt-4">人道</div>
+                <div class="realm-type good">三善道之一</div>
+                <div class="realm-cause">因：五戒十善、善惡兼具、意識覺醒。</div>
+                <div class="realm-desc">苦樂參半，是修行與轉化業力的核心維度。</div>
+                <div class="realm-action">
+                    <button type="button" onclick="openRealm('human')">瀏覽內容 →</button>
+                </div>
+            </div>
+
+            <!-- 畜生道 -->
+            <div class="realm-card">
+                <img src="../images/realms/realm-animal.jpg" alt="畜生道：弱肉強食、無明勞役">
+                <div class="realm-name mt-4">畜生道</div>
+                <div class="realm-type evil">三惡道之一</div>
+                <div class="realm-cause">因：愚痴、執著、無視因果、純受本能驅使。</div>
+                <div class="realm-desc">受勞役、弱肉強食、無明籠罩之苦。</div>
+                <div class="realm-action">
+                    <button type="button" onclick="openRealm('animal')">瀏覽內容 →</button>
+                </div>
+            </div>
+
+            <!-- 餓鬼道 -->
+            <div class="realm-card">
+                <img src="../images/realms/realm-preta.jpg" alt="餓鬼道：長受飢渴、欲望不滿">
+                <div class="realm-name mt-4">餓鬼道</div>
+                <div class="realm-type evil">三惡道之一</div>
+                <div class="realm-cause">因：極度慳貪、自私自利、剝削他人。</div>
+                <div class="realm-desc">長受飢渴，欲望永不滿足的意識囚牢。</div>
+                <div class="realm-action">
+                    <button type="button" onclick="openRealm('preta')">瀏覽內容 →</button>
+                </div>
+            </div>
+
+            <!-- 地獄道 -->
+            <div class="realm-card">
+                <img src="../images/realms/realm-hell.jpg" alt="地獄道：極苦清算、時間無盡">
+                <div class="realm-name mt-4">地獄道</div>
+                <div class="realm-type evil">三惡道之底</div>
+                <div class="realm-cause">因：極惡重罪、五逆十惡、毀滅正法。</div>
+                <div class="realm-desc">受極大痛苦，時間感被無限拉長的能量清算區。</div>
+                <div class="realm-action">
+                    <button type="button" onclick="openRealm('hell')">瀏覽內容 →</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-16 p-8 border border-gold/30 bg-gold/5 rounded-lg text-center">
+            <p class="text-lg text-stone-300 mb-4">你的善惡值決定你的歸宿。</p>
+            <a href="merit.html" class="inline-block px-8 py-3 bg-gold/20 border border-gold text-gold hover:bg-gold hover:text-black transition tracking-wider font-bold">前往功過格・查看歸宿預覽</a>
+        </div>
+
+        <div class="mt-40 text-center">
+            <p class="text-2xl text-stone-400 mb-10 leading-relaxed">
+                「輪迴並非轉世的謎語，而是意識頻率的自然篩選。<br>
+                你當下的每一個起心動念，都在決定下一個頻率的刻度。」
+            </p>
+            <a href="quiz.html" class="btn-premium">進行覺醒測驗</a>
+        </div>
+    </main>
+
+    <!-- 六道內容瀏覽 Modal（不佔版面，點擊按鈕才展開） -->
+    <div id="realm-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-black/90 p-6" onclick="closeRealm()">
+        <div class="realm-modal-panel w-full max-w-4xl rounded-lg p-8 md:p-10 relative" onclick="event.stopPropagation()">
+            <button type="button" class="absolute top-4 right-4 text-stone-500 hover:text-gold transition text-3xl leading-none" onclick="closeRealm()">×</button>
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+                <div>
+                    <div id="realm-modal-chip" class="realm-chip mb-3"></div>
+                    <h3 id="realm-modal-title" class="text-4xl text-gold font-black tracking-[0.3em] mb-2"></h3>
+                    <p id="realm-modal-sub" class="text-stone-400 italic tracking-widest"></p>
+                </div>
+                <div class="realm-links text-right" id="realm-modal-links"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <div class="realm-section-title">你會看到</div>
+                    <ul id="realm-modal-traits" class="realm-bullets list-disc pl-5 space-y-1"></ul>
+                </div>
+                <div>
+                    <div class="realm-section-title">常見業因</div>
+                    <ul id="realm-modal-causes" class="realm-bullets list-disc pl-5 space-y-1"></ul>
+                </div>
+                <div>
+                    <div class="realm-section-title">核心苦樂</div>
+                    <ul id="realm-modal-axes" class="realm-bullets list-disc pl-5 space-y-1"></ul>
+                </div>
+                <div>
+                    <div class="realm-section-title">如何轉出</div>
+                    <ul id="realm-modal-practices" class="realm-bullets list-disc pl-5 space-y-1"></ul>
+                </div>
+            </div>
+            <div class="mt-10 p-5 border border-gold/20 bg-gold/5 rounded">
+                <p id="realm-modal-warning" class="text-stone-300 leading-relaxed"></p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-20 text-center border-t border-gold/20">
+        <p class="text-gold tracking-[0.5em] text-xl">因果真相 • 宇宙鐵律</p>
+    </footer>
+
+    <script>
+        const REALM_DETAILS = {
+            deva: {
+                chip: "三善道之首",
+                title: "天道",
+                sub: "福報極盛，仍在無常中回落。",
+                traits: [
+                    "環境莊嚴、資源充足、受用極盛",
+                    "容易沉迷享樂與自我感，忽略無常",
+                    "福盡則墮：福報耗盡時，落差感極大"
+                ],
+                causes: [
+                    "十善業累積（布施、護生、守戒）",
+                    "清淨心與利他行為，少我少私",
+                    "長期不造惡，能量場明亮穩定"
+                ],
+                axes: [
+                    "樂多苦少，但「樂」會麻痺警覺",
+                    "最大風險是：忘了修、只剩享受",
+                    "福報像存款：花得越快，耗得越快"
+                ],
+                practices: [
+                    "把福報轉成德：持戒、謙卑、護念",
+                    "定期回到人間痛點：行善、服務眾生",
+                    "用功過格做日常校準，避免福中造業"
+                ],
+                warning: "天道不是終點，而是「福報期」。若只享不修，福盡之後的回落會更精準、更痛。",
+                links: [
+                    { text: "功過格", href: "merit.html" },
+                    { text: "生活導航", href: "guide.html" }
+                ]
+            },
+            asura: {
+                chip: "三善道之一",
+                title: "阿修羅道",
+                sub: "有福無德，爭勝不止。",
+                traits: [
+                    "能力強、資源不缺，但內心常不安",
+                    "敏感、好勝、遇事容易比較與對抗",
+                    "看似風光，實則被「輸贏」綁架"
+                ],
+                causes: [
+                    "修福但嗔心重：功德伴隨怒氣與驕慢",
+                    "嫉妒、好鬥、爭名奪利的習性",
+                    "善行夾帶控制慾：想贏、想證明"
+                ],
+                axes: [
+                    "外在不缺，內在常燃燒",
+                    "最大的苦是：永遠不滿、永遠要贏",
+                    "把世界當戰場，心就沒有休息"
+                ],
+                practices: [
+                    "先修口業與嗔心：少爭辯、多止語",
+                    "把「贏」改成「成就他人」",
+                    "起比較心時，立刻做一件無人知的小善"
+                ],
+                warning: "阿修羅的痛點不是貧乏，而是「不服」。不服一次，業力就加深一次。",
+                links: [
+                    { text: "功過格", href: "merit.html" },
+                    { text: "疑難參悟", href: "faq.html" }
+                ]
+            },
+            human: {
+                chip: "三善道之一",
+                title: "人道",
+                sub: "苦樂參半，最適合修與轉。",
+                traits: [
+                    "同時看得到快樂與痛苦，最容易覺醒",
+                    "有選擇、有反省能力，也有誘惑與退轉",
+                    "一念可上升，也可下墜：槓桿最大"
+                ],
+                causes: [
+                    "五戒十善為底，善惡交織",
+                    "前世願力與今生抉擇共同作用",
+                    "能知因果、願意改變的人，易得人身"
+                ],
+                axes: [
+                    "苦讓你醒，樂讓你忘",
+                    "人道最可貴的是：能選擇「下一步」",
+                    "每天起心動念，都在寫下一次方向"
+                ],
+                practices: [
+                    "把生活變成修行：戒、定、慧落地",
+                    "每日功過格：用數據逼自己誠實",
+                    "遇事先停三秒：覺察輸入再輸出"
+                ],
+                warning: "人道的機會窗口很短：一旦麻痺，就會把最珍貴的「可修」時間浪費掉。",
+                links: [
+                    { text: "功過格", href: "merit.html" },
+                    { text: "生活導航", href: "guide.html" },
+                    { text: "覺醒測驗", href: "quiz.html" }
+                ]
+            },
+            animal: {
+                chip: "三惡道之一",
+                title: "畜生道",
+                sub: "無明覆蓋，被本能牽著走。",
+                traits: [
+                    "以生存與本能為主，缺乏反省空間",
+                    "被驅使、被役使、被恐懼支配",
+                    "弱肉強食，長期處於受制狀態"
+                ],
+                causes: [
+                    "愚痴與固執：明知因果仍硬要做",
+                    "把生命當消耗品，把弱小當成本",
+                    "沉迷慾望與習氣，長期放棄覺察"
+                ],
+                axes: [
+                    "苦在「不能選」：只能被動承受",
+                    "痛在「被控制」：恐懼與飢餓循環",
+                    "無明越深，越看不到出路"
+                ],
+                practices: [
+                    "人道先修覺察與慈悲：減少暴戾傾向",
+                    "護生、惜福、少殘忍，降低殘酷習氣",
+                    "不把弱小當工具：先改習慣再談修行"
+                ],
+                warning: "畜生道是「覺察熄火」的結果。你每一次放棄自省，都在把自己推向更低的自主權。",
+                links: [
+                    { text: "功過格", href: "merit.html" },
+                    { text: "疑難參悟", href: "faq.html" }
+                ]
+            },
+            preta: {
+                chip: "三惡道之一",
+                title: "餓鬼道",
+                sub: "慳貪成牢，永遠不夠。",
+                traits: [
+                    "內在匱乏感：越拿越空、越求越渴",
+                    "對金錢、情感、權力都難滿足",
+                    "容易佔有、控制、焦慮、猜疑"
+                ],
+                causes: [
+                    "慳貪吝嗇：只進不出，見不得人好",
+                    "剝削他人、投機占便宜、缺乏布施",
+                    "把欲望當方向盤，被餓感駕駛"
+                ],
+                axes: [
+                    "苦在「永遠想要」：得到也不快樂",
+                    "樂變成短暫刺激，馬上又餓",
+                    "匱乏感會扭曲道德，合理化惡行"
+                ],
+                practices: [
+                    "反慳貪：固定比例布施/分享（小也算）",
+                    "練習感恩與知足，讓心先有「足」",
+                    "用功過格把貪念記錄下來，別讓它隱形"
+                ],
+                warning: "餓鬼道不是沒得到，而是「得到了也不滿足」。修的第一步是：把『夠了』找回來。",
+                links: [
+                    { text: "功過格", href: "merit.html" },
+                    { text: "生活導航", href: "guide.html" }
+                ]
+            },
+            hell: {
+                chip: "三惡道之底",
+                title: "地獄道",
+                sub: "極苦清算，業力結算區。",
+                traits: [
+                    "痛苦被放大、時間感被拉長",
+                    "不再有辯解空間：只有結果與回收",
+                    "一切逃避都失效：只能面對自己造的因"
+                ],
+                causes: [
+                    "極惡重罪、五逆十惡、長期害人",
+                    "教人作惡、破壞他人慧命與生路",
+                    "無慚無愧：明知是惡仍反覆造作"
+                ],
+                axes: [
+                    "苦到極致，但其本質是「校正」",
+                    "痛是訊號：讓你明白因果的精準回傳",
+                    "只要因還在，果就會到：不早改就必到"
+                ],
+                practices: [
+                    "立刻止惡：先停手、再懺悔、再補償",
+                    "修口業、戒殺、戒欺，先拔最重惡因",
+                    "把懺悔變行動：道歉、改過、持續行善"
+                ],
+                warning: "地獄不是恐嚇，是結算。你現在做的每一件事，都在決定你未來要支付的代價。",
+                links: [
+                    { text: "十八地獄", href: "hell.html" },
+                    { text: "功過格", href: "merit.html" },
+                    { text: "懺悔", href: "wall.html" }
+                ]
+            }
+        };
+
+        function setList(id, items) {
+            const el = document.getElementById(id);
+            el.innerHTML = (items || []).map(x => `<li>${x}</li>`).join('');
+        }
+
+        function openRealm(key) {
+            const data = REALM_DETAILS[key];
+            if (!data) return;
+
+            document.getElementById('realm-modal-chip').innerText = data.chip || '';
+            document.getElementById('realm-modal-title').innerText = data.title || '';
+            document.getElementById('realm-modal-sub').innerText = data.sub || '';
+            document.getElementById('realm-modal-warning').innerText = data.warning || '';
+
+            setList('realm-modal-traits', data.traits);
+            setList('realm-modal-causes', data.causes);
+            setList('realm-modal-axes', data.axes);
+            setList('realm-modal-practices', data.practices);
+
+            const linksEl = document.getElementById('realm-modal-links');
+            linksEl.innerHTML = (data.links || []).map(l => `<a href=\"${l.href}\">${l.text}</a>`).join('');
+
+            const modal = document.getElementById('realm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeRealm() {
+            const modal = document.getElementById('realm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeRealm();
+        });
+    </script>
+</body>
+</html>

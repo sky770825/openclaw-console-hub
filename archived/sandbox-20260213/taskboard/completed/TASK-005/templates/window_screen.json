@@ -1,0 +1,24 @@
+{
+  "template_name": "普特斯防霾紗窗",
+  "category": "window_screen",
+  "fields": {
+    "title": {
+      "label": "產品標題",
+      "placeholder": "品牌 - 型號 - 主要特色",
+      "example": "普特斯 Pro系列 - 奈米防霾紗窗 - 高效過濾PM2.5"
+    },
+    "description": {
+      "label": "產品描述",
+      "template": "【產品名稱】{product_name}\n【型號】{model}\n\n【產品規格】\n- 材質：{material}\n- 網目：{mesh_size}\n- 厚度：{thickness} mm\n- 重量：{weight} g/m²\n\n【防霾效能】\n- PM2.5 過濾效率：{pm25_rate}%\n- PM10 過濾效率：{pm10_rate}%\n- 透風率：{airflow_rate}%\n- 透光率：{light_transmission}%\n\n【適用窗型】\n{window_types}\n\n【尺寸規格】\n- 標準尺寸：{standard_size}\n- 可訂製尺寸：{custom_size_range}\n- 價格計算方式：{pricing_method}\n\n【安裝方式】\n{installation}\n\n【保固資訊】\n- 產品保固：{warranty}\n- 保固範圍：{warranty_scope}\n\n【認證標章】\n{certifications}"
+    },
+    "required_images": [
+      "產品整體照",
+      "網目細節",
+      "材質特寫",
+      "安裝範例",
+      "認證標章",
+      "包裝方式"
+    ],
+    "platforms": ["facebook", "蝦皮", "PChome", "momo"]
+  }
+}

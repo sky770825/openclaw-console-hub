@@ -1,0 +1,26 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+# OpenClaw 每日報告 (修復版)
+0 9 * * * cd /Users/caijunchang/.openclaw/workspace && ./scripts/daily-report-engine.sh >> taskboard/.history/telegram.log 2>&1
+
+# Unified Monitor v2.1 - 每10分鐘檢查
+*/10 * * * * /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh
+
+# 桌面備份 (每6小時)
+0 */6 * * * /Users/caijunchang/.openclaw/workspace/scripts/recovery/backup-desktop.sh daily >> /Users/caijunchang/Desktop/小蔡/系統備份/backup.log 2>&1
+
+# 夜間備份 (凌晨3點)
+0 3 * * * /Users/caijunchang/.openclaw/workspace/scripts/recovery/backup-desktop.sh daily >> /Users/caijunchang/Desktop/小蔡/系統備份/backup.log 2>&1
+
+# 紅隊每日掃描 (凌晨2點)
+0 2 * * * /Users/caijunchang/.openclaw/arsenal/layer0-ai-core/redteam-daily.sh >> /Users/caijunchang/.openclaw/arsenal/logs/redteam-cron.log 2>&1
+
+# 每日健康檢查
+0 9 * * * /Users/caijunchang/.openclaw/workspace/scripts/daily-health-check.sh >> /Users/caijunchang/.openclaw/workspace/logs/cron-health-check.log 2>&1
+
+# Gateway 健康監控 (每分鐘)
+* * * * * /Users/caijunchang/.openclaw/workspace/scripts/gateway-health-watchdog.sh
+
+# Docker/n8n 自動恢復 (每5分鐘檢查)
+*/5 * * * * /Users/caijunchang/.openclaw/workspace/scripts/docker-n8n-recovery.sh >> /Users/caijunchang/.openclaw/logs/docker-n8n-cron.log 2>&1

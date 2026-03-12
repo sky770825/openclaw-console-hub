@@ -1,0 +1,55 @@
+{
+  "business": "住商不動產",
+  "category": "房地產仲介",
+  "description": "台灣大型不動產仲介連鎖品牌，主要經營房屋買賣與租賃",
+  "keywords": {
+    "brand": {
+      "primary": ["住商不動產", "住商", "住商房屋"],
+      "secondary": ["住商房仲", "住商網", "住商995"],
+      "related": ["住商經紀人", "住商加盟", "住商評價"]
+    },
+    "industry": {
+      "general": ["房仲", "房屋仲介", "不動產", "房地產", "房屋買賣", "房屋租賃"],
+      "trending": ["房價", "房市", "打房", "房貸利率", "房地合一稅", "賣房", "買房"],
+      "location": ["台北房仲", "新北房仲", "台中房仲", "高雄房仲", "桃園房仲"]
+    },
+    "competitors": {
+      "direct": [
+        {"name": "永慶房屋", "keywords": ["永慶", "永慶房屋", "永慶房仲"]},
+        {"name": "信義房屋", "keywords": ["信義", "信義房屋", "信義房仲"]},
+        {"name": "台灣房屋", "keywords": ["台灣房屋", "台屋", "台灣房仲"]},
+        {"name": "中信房屋", "keywords": ["中信房屋", "中信房仲"]},
+        {"name": "東森房屋", "keywords": ["東森房屋", "東森房仲"]}
+      ],
+      "platform": [
+        {"name": "591房屋交易", "keywords": ["591", "591租屋", "591房屋"]},
+        {"name": "樂屋網", "keywords": ["樂屋", "樂屋網"]},
+        {"name": "好房網", "keywords": ["好房網", "好房"]},
+        {"name": "信義全球資產", "keywords": ["信義全球資產", "信義商仲"]}
+      ]
+    }
+  },
+  "data_sources": {
+    "google_trends": {
+      "enabled": true,
+      "keywords": ["住商不動產", "房仲", "房屋買賣", "永慶房屋", "信義房屋"],
+      "geo": "TW",
+      "time_range": "today 3-m"
+    },
+    "news": {
+      "enabled": true,
+      "sources": ["yahoo新聞", "中時", "聯合新聞網", "自由時報", "工商時報"],
+      "keywords": ["房市", "房價", "房仲", "不動產"]
+    },
+    "social": {
+      "enabled": true,
+      "ptt_boards": ["home-sale", "ToS", "Gossiping"],
+      "keywords": ["住商", "房仲", "房屋買賣", "賣房", "買房"]
+    }
+  },
+  "alert_thresholds": {
+    "search_volume_change": 0.3,
+    "negative_sentiment_ratio": 0.4,
+    "competitor_mention_spike": 0.5
+  }
+}

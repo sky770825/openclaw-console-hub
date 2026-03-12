@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "updated": "2026-02-28",
+  "description": "善惡值（淨值）區間對應歸宿預覽，供功過格頁顯示。",
+  "tiers": [
+    { "minScore": 500, "realmId": "deva", "realmName": "天道", "realmType": "善道", "description": "福德深厚，有機會往生天道。", "color": "#00d4ff" },
+    { "minScore": 200, "maxScore": 499, "realmId": "human", "realmName": "人道／阿修羅道", "realmType": "善道", "description": "善多於惡，多生人天，當持續精進。", "color": "#7dd3fc" },
+    { "minScore": 0, "maxScore": 199, "realmId": "human_mid", "realmName": "人道", "realmType": "善道", "description": "善惡參半，得人身修行，勿失良機。", "color": "#bae6fd" },
+    { "minScore": -50, "maxScore": -1, "realmId": "human_low", "realmName": "人道（業重）", "realmType": "善道", "description": "業力偏重，當勤懺悔、止惡修善。", "color": "#fcd34d" },
+    { "minScore": -200, "maxScore": -51, "realmId": "preta_animal", "realmName": "餓鬼道／畜生道", "realmType": "惡道", "description": "業重感召惡道，悔改仍可轉業。", "color": "#f97316" },
+    { "minScore": -9999, "maxScore": -201, "realmId": "hell", "realmName": "地獄道", "realmType": "惡道", "description": "重罪需受報，即刻懺悔、斷惡修善。", "color": "#ef4444" }
+  ]
+}

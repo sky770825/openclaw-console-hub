@@ -1,0 +1,42 @@
+{
+  "businesses": [
+    {
+      "name": "住商不動產",
+      "category": "real_estate",
+      "keywords": ["台北買房", "台中房地產", "高雄房屋", "房仲推薦", "置產", "首購族", "房地產投資"],
+      "competitors": ["信義房屋", "永慶房屋", "台灣房屋", "中信房屋", "遠東房屋"],
+      "platforms": ["591", "樂屋網", "好房網", "信義房屋", "永慶房屋"]
+    },
+    {
+      "name": "飲料店",
+      "category": "beverage",
+      "keywords": ["手搖飲", "珍珠奶茶", "手作茶飲", "鮮果茶", "台灣茶", "飲料加盟", "創業加盟"],
+      "competitors": ["清心福全", "CoCo都可", "50嵐", "迷客夏", "大苑子", "麻古茶坊", "五桐號"],
+      "platforms": ["Foodpanda", "UberEats", "LINE熱點", "愛食記"]
+    },
+    {
+      "name": "普特斯防霾紗窗",
+      "category": "window_screen",
+      "keywords": ["防霾紗窗", "防塵紗窗", "紗窗推薦", "空氣清淨", "PM2.5防護", "換紗窗", "高透氣紗窗"],
+      "competitors": ["3M防霾紗窗", "普特斯", "紗窗工廠", "隱形紗窗"],
+      "platforms": ["蝦皮", "PChome", "momo購物網", "Mobile01", "PTT"]
+    }
+  ],
+  "trend_sources": [
+    {"name": "Google Trends", "enabled": true, "url": "https://trends.google.com"},
+    {"name": "蝦皮熱搜", "enabled": true, "url": "https://shopee.tw"},
+    {"name": "PTT八卦版", "enabled": true, "url": "https://www.ptt.cc/bbs/Gossiping"},
+    {"name": "Dcard", "enabled": true, "url": "https://www.dcard.tw"},
+    {"name": "Mobile01", "enabled": true, "url": "https://www.mobile01.com"}
+  ],
+  "alert_thresholds": {
+    "mention_spike": 50,
+    "competitor_activity": 10,
+    "sentiment_drop": -0.3
+  },
+  "schedule": {
+    "daily_report": "08:00",
+    "weekly_report": "Monday 09:00",
+    "check_interval_hours": 6
+  }
+}

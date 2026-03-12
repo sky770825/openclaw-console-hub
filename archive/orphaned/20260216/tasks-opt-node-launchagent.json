@@ -1,0 +1,13 @@
+{
+  "name": "Install OpenClaw Node service LaunchAgent",
+  "problem": "openclaw status shows 'Node service LaunchAgent not installed'; requires manual start after reboot.",
+  "expectedOutput": "LaunchAgent installed, loaded, and running automatically. Status confirms.",
+  "acceptanceCriteria": [
+    "openclaw status: Node service LaunchAgent installed · loaded · running",
+    "Service auto-starts after reboot simulation"
+  ],
+  "riskLevel": "low",
+  "rollbackPlan": "launchctl unload plist; rm plist file; manual node start.",
+  "assignedAgent": "main",
+  "source": "internal-optimization"
+}

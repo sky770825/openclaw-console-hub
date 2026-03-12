@@ -1,0 +1,65 @@
+{
+  "business": "飲料店（待確認品牌）",
+  "category": "餐飲零售/手搖飲料",
+  "description": "手搖飲料店業務，需確認具體品牌名稱以精準監控",
+  "keywords": {
+    "brand": {
+      "primary": ["飲料店"],
+      "secondary": [],
+      "related": []
+    },
+    "industry": {
+      "general": ["手搖飲", "手搖飲料", "飲料店", "飲料", "手搖杯", "珍奶", "珍珠奶茶"],
+      "trending": ["新品", "季節限定", "聯名", "打卡", "排隊", "必喝", "推薦"],
+      "product": ["奶茶", "紅茶", "綠茶", "烏龍茶", "果茶", "鮮奶茶", "奶蓋", "氣泡飲"],
+      "ingredient": ["珍珠", "椰果", "布丁", "仙草", "芋圓", "寒天", "爆爆珠"]
+    },
+    "competitors": {
+      "leading": [
+        {"name": "50嵐", "keywords": ["50嵐", "五十嵐", "KOI"]},
+        {"name": "CoCo都可", "keywords": ["CoCo", "都可", "CoCo都可"]},
+        {"name": "清心福全", "keywords": ["清心", "清心福全"]},
+        {"name": "大苑子", "keywords": ["大苑子", "DA YUNG'S"]},
+        {"name": "迷客夏", "keywords": ["迷客夏", "milkshop"]},
+        {"name": "一芳", "keywords": ["一芳", "一芳水果茶"]},
+        {"name": "珍煮丹", "keywords": ["珍煮丹", "truedan"]},
+        {"name": "老虎堂", "keywords": ["老虎堂", "Tiger Sugar"]},
+        {"name": "五桐號", "keywords": ["五桐號", "WooTEA"]},
+        {"name": "麻古茶坊", "keywords": ["麻古", "麻古茶坊", "macu"]},
+        {"name": "COMEBUY", "keywords": ["COMEBUY", "comebuy"]},
+        {"name": "茶湯會", "keywords": ["茶湯會", "tp tea"]}
+      ],
+      "emerging": [
+        {"name": "吃茶三千", "keywords": ["吃茶三千", "chi cha san chen"]},
+        {"name": "先喝道", "keywords": ["先喝道", "TEA TOP"]},
+        {"name": "奈雪的茶", "keywords": ["奈雪", "奈雪的茶", " Nayuki"]},
+        {"name": "喜茶", "keywords": ["喜茶", "HeyTea"]}
+      ]
+    }
+  },
+  "data_sources": {
+    "google_trends": {
+      "enabled": true,
+      "keywords": ["手搖飲", "珍珠奶茶", "手搖飲料", "50嵐", "迷客夏"],
+      "geo": "TW",
+      "time_range": "today 3-m"
+    },
+    "news": {
+      "enabled": true,
+      "sources": ["yahoo新聞", "中時", "聯合新聞網", "自由時報", "食力"],
+      "keywords": ["手搖飲", "飲料店", "手搖飲料", "珍奶"]
+    },
+    "social": {
+      "enabled": true,
+      "ptt_boards": ["Gossiping", "Food", "Drink"],
+      "keywords": ["手搖飲", "飲料", "珍奶", "推薦", "必喝"],
+      "instagram_tags": ["#手搖飲", "#珍珠奶茶", "#飲料控", "#手搖杯", "#珍奶"]
+    }
+  },
+  "alert_thresholds": {
+    "search_volume_change": 0.35,
+    "negative_sentiment_ratio": 0.35,
+    "competitor_mention_spike": 0.4
+  },
+  "note": "待老蔡確認飲料店品牌名稱後，需要更新 primary 關鍵字和競品對照"
+}

@@ -1,0 +1,15 @@
+{
+  "project": "OpenClaw-Beauty",
+  "performance_targets": {
+    "FCP": "< 1.8s",
+    "LCP": "< 2.5s",
+    "TBT": "< 200ms",
+    "CLS": "< 0.1"
+  },
+  "recommended_stack": {
+    "framework": "Nuxt.js 3",
+    "ui": "Tailwind CSS",
+    "tracking": ["GTM", "GA4", "Facebook Pixel"],
+    "infrastructure": "Vercel or Edge Functions"
+  }
+}

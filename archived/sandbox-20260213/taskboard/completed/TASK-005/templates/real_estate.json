@@ -1,0 +1,26 @@
+{
+  "template_name": "住商不動產房源",
+  "category": "real_estate",
+  "fields": {
+    "title": {
+      "label": "房源標題",
+      "placeholder": "【區域】物件類型 - 特色描述",
+      "example": "【信義區】高級電梯大樓 - 景觀三房車位"
+    },
+    "description": {
+      "label": "房源描述",
+      "template": "【基本資料】\n- 地址：{address}\n- 類型：{type}\n- 格局：{rooms}\n- 坪數：{area} 坪\n- 樓層：{floor}\n- 屋齡：{age} 年\n- 朝向：{facing}\n\n【價格資訊】\n- 總價：{price} 萬\n- 單價：{unit_price} 萬/坪\n- 管理費：{management_fee} 元/月\n\n【特色說明】\n{features}\n\n【周邊環境】\n{surroundings}\n\n【聯絡方式】\n聯絡人：{contact_name}\n電話：{contact_phone}\nLINE：{contact_line}"
+    },
+    "required_images": [
+      "客廳全景",
+      "主臥室",
+      "次臥/書房",
+      "廚房",
+      "衛浴",
+      "陽台景觀",
+      "大樓外觀",
+      "公共設施"
+    ],
+    "platforms": ["facebook", "591", "樂屋網"]
+  }
+}

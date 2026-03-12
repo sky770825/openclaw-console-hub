@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>因果真相 | 旗艦門戶 — 宇宙鐵律，分毫不差</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="particles.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="nav-premium flex justify-end items-center gap-12">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400">
+            <a href="pages/deities.html" class="hover:text-gold transition">諸神</a>
+            <a href="pages/hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="pages/realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="pages/merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="pages/faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="pages/guide.html" class="hover:text-gold transition">導航</a>
+            <a href="pages/simulator.html" class="hover:text-gold transition">模擬</a>
+            <a href="pages/wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="pages/audio.html" class="hover:text-gold transition text-purple-400">佛音</a>
+            <a href="pages/quiz.html" class="hover:text-gold transition">測驗</a>
+            <a href="pages/monitor.html" class="hover:text-gold transition text-green-500">監測</a>
+        </div>
+        <div class="text-3xl font-black text-gold tracking-widest border-l-2 border-gold/30 pl-8">因果真相</div>
+    </nav>
+
+    <div id="topBtn" class="back-to-top" onclick="window.scrollTo(0,0)">↑</div>
+
+    <!-- 能量音場 -->
+    <div class="audio-player">
+        <div class="audio-visualizer">
+            <div class="visual-bar" style="animation-delay: 0.1s"></div>
+            <div class="visual-bar" style="animation-delay: 0.3s"></div>
+            <div class="visual-bar" style="animation-delay: 0.2s"></div>
+        </div>
+        <button id="music-toggle" class="text-[10px] text-gold tracking-widest font-black" onclick="toggleMusic()">AMBIENT: ON</button>
+        <audio id="bg-music" loop>
+            <source src="https://assets.mixkit.co/music/preview/mixkit-ethereal-zen-meditation-142.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- 晨鐘一悟 Widget -->
+    <div class="fixed bottom-10 left-10 z-50 max-w-xs bg-black/80 border border-gold/30 p-6 backdrop-blur-md shadow-2xl fade-in">
+        <h4 class="text-gold font-black text-sm tracking-widest mb-3 border-b border-gold/20 pb-2">📜 晨鐘一悟</h4>
+        <p id="daily-quote" class="text-stone-300 text-sm italic leading-relaxed">「能量守恆，因果必達。當下的每一個起心動念，都在編寫未來的代碼。」</p>
+        <div class="flex justify-between items-center mt-4">
+            <button onclick="generateShareCard()" class="text-[10px] text-gold hover:text-goldBright underline tracking-tighter">分享悟境圖</button>
+            <p class="text-[10px] text-stone-600 text-right">— 宇宙系統執行處</p>
+        </div>
+    </div>
+
+    <!-- 分享卡片 Modal -->
+    <div id="share-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 p-6">
+        <div class="bg-[#0a0a0a] border-2 border-gold p-12 max-w-sm w-full text-center relative shadow-[0_0_100px_rgba(212,175,55,0.2)]">
+            <div class="absolute top-4 right-4 text-stone-600 cursor-pointer text-2xl" onclick="closeShare()">×</div>
+            <div id="card-content" class="space-y-8">
+                <div class="text-gold font-black text-xl tracking-[0.5em] mb-12">因果真相</div>
+                <p id="share-quote-text" class="text-stone-200 text-lg leading-loose italic"></p>
+                <div class="pt-8 border-t border-gold/20">
+                    <p class="text-xs text-stone-500 tracking-widest">震威天下 • 天地鐵律</p>
+                    <p class="text-[10px] text-stone-700 mt-2">causelaw.io</p>
+                </div>
+            </div>
+            <p class="text-goldBright text-xs mt-10 animate-pulse">長按或截圖保存 • 警示世人</p>
+        </div>
+    </div>
+
+    <script>
+        const quotes = [
+            "「諸惡莫作，眾善奉行；自淨其意，是諸佛教。」 —《法句經》",
+            "「一切有為法，如夢幻泡影，如露亦如電，應作如是觀。」 —《金剛經》",
+            "「心若改變，你的態度跟著改變；態度改變，你的習慣跟著改變。」",
+            "「種樹者必養其根，種德者必養其心。」 —《傳習錄》",
+            "「善行無轍跡，善言無瑕讁；善數不用籌策，善閉無關楗而不可開。」 —《道德經》",
+            "「能量守恆，因果必達。當下的每一個起心動念，都在編寫未來的代碼。」",
+            "「天地不判斷，只執行。你的輸出，取決於你的輸入。」",
+            "「善意如光，不僅照亮他人，更修復了你自己的場域。」",
+            "「暫時的得失是幻象，長期的業力平衡是絕對真相。」",
+            "「勿以惡小而為之，分毫偏差皆有代價。」",
+            "「所有的相遇，都是能量共振的結果。」",
+            "「最高級的智慧，是敬畏規律。」",
+            "「欲知前世因，今生受者是；欲知來世果，今生作者是。」",
+            "「一念善心起，天堂已誕生；一念惡心起，地獄已現前。」"
+        ];
+        const selectedQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        document.getElementById('daily-quote').innerText = selectedQuote;
+        
+        // Set hero daily insight quote
+        const heroQuotes = [
+            "諸惡莫作，眾善奉行；自淨其意，是諸佛教。",
+            "一切有為法，如夢幻泡影，如露亦如電。",
+            "種樹者必養其根，種德者必養其心。",
+            "善行無轍跡，善言無瑕讁。",
+            "欲知前世因，今生受者是。",
+            "一念善心起，天堂已誕生。",
+            "天地不判斷，只執行。",
+            "善意如光，不僅照亮他人，更修復了你自己的場域。",
+            "暫時的得失是幻象，長期的業力平衡是絕對真相。",
+            "最高級的智慧，是敬畏規律。"
+        ];
+        const heroQuote = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
+        document.getElementById('hero-quote-text').innerText = "「" + heroQuote + "」";
+
+        function generateShareCard() {
+            document.getElementById('share-quote-text').innerText = selectedQuote;
+            document.getElementById('share-modal').classList.remove('hidden');
+        }
+
+        function closeShare() {
+            document.getElementById('share-modal').classList.add('hidden');
+        }
+
+        const bgMusic = document.getElementById('bg-music');
+        const musicToggle = document.getElementById('music-toggle');
+        let isMusicPlaying = false;
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicToggle.innerText = "AMBIENT: OFF";
+                musicToggle.classList.add('opacity-50');
+            } else {
+                bgMusic.play().catch(e => console.log("Audio needs user interaction first"));
+                musicToggle.innerText = "AMBIENT: ON";
+                musicToggle.classList.remove('opacity-50');
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+        
+        window.onscroll = function() {
+            const btn = document.getElementById("topBtn");
+            if (document.body.scrollTop > 500 || document.documentElement.scrollTop > 500) {
+                btn.classList.add("visible");
+            } else {
+                btn.classList.remove("visible");
+            }
+        };
+    </script>
+
+    <!-- HERO GATEWAY -->
+    <section class="h-screen flex flex-col items-center justify-center text-center px-4 bg-fixed bg-center bg-cover" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=3500');">
+        <h1 class="text-[7rem] font-black text-[#d4af37] mb-6 tracking-[0.35em]">因果真相</h1>
+        <p class="text-3xl text-[#d4af37] tracking-[0.6em] mb-8 opacity-90">分毫不差　絕無倖免</p>
+        
+        <!-- Daily Insight -->
+        <div id="hero-daily-insight" class="max-w-3xl mx-auto mb-16 px-8 py-6 border-y border-[#d4af37]/30 backdrop-blur-sm">
+            <p id="hero-quote-text" class="text-stone-300 text-xl font-serif italic leading-relaxed tracking-wide"></p>
+            <div class="mt-4 flex items-center justify-center gap-3">
+                <span class="w-8 h-px bg-[#d4af37]/50"></span>
+                <span class="text-[#d4af37]/60 text-xs tracking-[0.3em]">每日一悟</span>
+                <span class="w-8 h-px bg-[#d4af37]/50"></span>
+            </div>
+        </div>
+        
+        <!-- 主要分頁入口 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6 max-w-7xl w-full px-6">
+            <a href="pages/deities.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">神明殿堂</h3>
+                <p class="text-stone-500 text-sm tracking-wide">諸神威靈</p>
+            </a>
+            <a href="pages/hell.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">十八地獄</h3>
+                <p class="text-stone-500 text-sm tracking-wide">業力結算</p>
+            </a>
+            <a href="pages/realms.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">六道輪迴</h3>
+                <p class="text-stone-500 text-sm tracking-wide">頻率歸宿</p>
+            </a>
+            <a href="pages/cases.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">因果案例</h3>
+                <p class="text-stone-500 text-sm tracking-wide">真實見證</p>
+            </a>
+            <a href="pages/merit.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">功過格</h3>
+                <p class="text-stone-500 text-sm tracking-wide">每日修持</p>
+            </a>
+            <a href="pages/guide.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">生活導航</h3>
+                <p class="text-stone-500 text-sm tracking-wide">行動指南</p>
+            </a>
+            <a href="pages/faq.html" class="btn-premium group">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em]">疑難參悟</h3>
+                <p class="text-stone-500 text-sm tracking-wide">破除迷思</p>
+            </a>
+            <a href="pages/audio.html" class="btn-premium group border-purple-900/30">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em] text-purple-400">佛音禪樂</h3>
+                <p class="text-stone-500 text-sm tracking-wide">以音淨心</p>
+            </a>
+            <a href="pages/monitor.html" class="btn-premium group border-green-900/50">
+                <h3 class="text-xl font-bold mb-3 tracking-[0.2em] text-green-500">宇宙監測</h3>
+                <p class="text-stone-500 text-sm tracking-wide">實時數據</p>
+            </a>
+        </div>
+    </section>
+
+    <!-- LINE 官方帳號 -->
+    <section id="line-cta" class="py-24 bg-[#0a0a0a] border-t border-gold/20">
+        <div class="max-w-4xl mx-auto text-center px-6">
+            <div class="p-12 border-2 border-[#06c755]/30 bg-[#06c755]/5 relative overflow-hidden">
+                <h2 class="text-4xl font-black text-[#06c755] mb-6 tracking-[0.3em]">加入 LINE 官方帳號</h2>
+                <p class="text-xl text-stone-400 mb-8 tracking-wide">每日一悟推播 / 因果測驗互動 / 精選故事推送</p>
+                <div class="flex justify-center gap-4 mb-10 flex-wrap">
+                    <span class="px-5 py-2 bg-[#06c755]/10 border border-[#06c755]/30 text-[#06c755] text-sm">📜 每日晨鐘一悟</span>
+                    <span class="px-5 py-2 bg-[#06c755]/10 border border-[#06c755]/30 text-[#06c755] text-sm">☯️ 參悟測驗</span>
+                    <span class="px-5 py-2 bg-[#06c755]/10 border border-[#06c755]/30 text-[#06c755] text-sm">📖 精選案例推送</span>
+                </div>
+                <a href="https://line.me/R/ti/p/@740ihcar" class="inline-block px-10 py-4 bg-[#06c755] text-white text-xl font-bold hover:shadow-[0_0_30px_#06c755] transition-all tracking-wider">
+                    立即加入　洞察真相
+                </a>
+                <p class="mt-4 text-stone-600 font-mono text-sm">官方 ID: @740ihcar</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 因果投稿 -->
+    <section id="submit" class="py-24 bg-black border-t border-gold/20">
+        <div class="max-w-3xl mx-auto px-6">
+            <h2 class="text-4xl font-black text-gold text-center mb-12 tracking-[0.3em]">因果案例投稿</h2>
+            <div class="p-10 border border-gold/20 bg-stone-900/20">
+                <p class="text-lg text-stone-400 text-center mb-10 leading-relaxed">您身邊是否有令人警醒的因果故事？<br>歡迎分享，經審核後將收錄於「真實案例」中，警示世人。</p>
+                <form onsubmit="handleSubmit(event)" class="space-y-6">
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">您的稱呼</label>
+                        <input type="text" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">故事標題</label>
+                        <input type="text" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gold mb-2 text-sm tracking-wider">故事內容（分毫不差，詳實紀錄）</label>
+                        <textarea rows="6" class="w-full p-3 bg-black border border-gold/30 text-white focus:border-gold outline-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-5 bg-gold text-black text-lg font-black tracking-[0.2em] hover:bg-goldBright transition-all">
+                        提交真相　警示世人
+                    </button>
+                    <p class="text-xs text-stone-600 text-center">註：本系統對所有投稿進行嚴格實證審核，不採信虛妄之詞。</p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-16 text-center border-t-4 border-[#d4af37] bg-black">
+        <p class="text-xl text-[#d4af37] font-bold mb-2 tracking-[0.2em]">因果真相　震威天下</p>
+        <p class="text-stone-600 text-sm tracking-wide">天地鐵律，分毫不差；因果必達，無所遁形。</p>
+    </footer>
+
+    <script>
+        function handleSubmit(e) {
+            e.preventDefault();
+            alert('感謝您的投稿！\n\n因果審核系統已啟動。\n我們將在3-5個工作天內針對內容進行事實校對。\n若獲選，將以官方管道通知您。\n\n願您的分享，能成為他人迷途中的警鐘。\n\n— 因果真相 執行處');
+            e.target.reset();
+        }
+    </script>
+    <!-- ═══════════════════ FOOTER ═══════════════════ -->
+    <footer class="bg-black py-20 px-6 border-t border-gold/10">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
+            <div class="space-y-6 max-w-sm">
+                <div class="text-3xl font-black text-gold tracking-widest">因果真相</div>
+                <p class="text-stone-500 text-sm leading-relaxed">
+                    本網站旨在透過科技美學與傳統智慧的結合，向世人傳遞宇宙能量守恆與因果不虛的鐵律。
+                </p>
+                <a href="pages/whitepaper.html" class="inline-block border border-gold/30 px-6 py-2 text-xs text-gold hover:bg-gold hover:text-black transition">技術與增長白皮書</a>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-12">
+                <div class="space-y-4">
+                    <h4 class="text-white font-bold text-xs tracking-widest uppercase">快速導航</h4>
+                    <div class="flex flex-col gap-2 text-stone-500 text-xs">
+                        <a href="pages/deities.html" class="hover:text-gold">諸神殿堂</a>
+                        <a href="pages/hell.html" class="hover:text-gold">十八地獄</a>
+                        <a href="pages/realms.html" class="hover:text-gold">六道輪迴</a>
+                        <a href="pages/monitor.html" class="hover:text-gold">監測系統</a>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-white font-bold text-xs tracking-widest uppercase">修行工具</h4>
+                    <div class="flex flex-col gap-2 text-stone-500 text-xs">
+                        <a href="pages/merit.html" class="hover:text-gold">每日功過格</a>
+                        <a href="pages/wall.html" class="hover:text-gold">懺悔祈福牆</a>
+                        <a href="pages/quiz.html" class="hover:text-gold">覺醒測驗</a>
+                        <a href="pages/simulator.html" class="hover:text-gold">漣漪模擬器</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 text-center">
+            <p class="text-[10px] text-stone-700 tracking-[0.4em] uppercase mb-4">
+                Powered by NEUXA • Law of Karma • 2026 Universe Operating System
+            </p>
+            <div class="text-[10px] text-stone-800 space-x-4">
+                <span>免責聲明：本站內容為哲學與宗教研究性質，不構成法律建議。</span>
+                <span>隱私政策：本站功過格數據存於本地瀏覽器，系統不收集個人隱私。</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- NEUXA Smart Assistant Floating Button -->
+    <button id="neuxa-assistant" class="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-[#d4af37]/40 shadow-[0_0_30px_rgba(212,175,55,0.3),0_0_60px_rgba(212,175,55,0.1)] hover:shadow-[0_0_40px_rgba(212,175,55,0.5),0_0_80px_rgba(212,175,55,0.2)] transition-all duration-500 group" onclick="toggleNeuxaAssistant()">
+        <div class="absolute inset-0 rounded-full bg-[#d4af37]/10 animate-pulse"></div>
+        <div class="absolute inset-2 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <svg class="w-8 h-8 mx-auto text-[#d4af37] relative z-10 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+        </svg>
+        <div class="absolute -top-1 -right-1 w-4 h-4 bg-[#d4af37] rounded-full flex items-center justify-center">
+            <div class="w-2 h-2 bg-[#020202] rounded-full animate-pulse"></div>
+        </div>
+    </button>
+    
+    <!-- NEUXA Assistant Modal -->
+    <div id="neuxa-modal" class="fixed bottom-28 right-8 z-50 w-80 bg-[#0a0a0a] border border-[#d4af37]/30 rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.8)] transform translate-y-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="p-4 border-b border-[#d4af37]/20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#d4af37]/30 to-[#d4af37]/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-[#d4af37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-[#d4af37] font-bold text-sm tracking-wider">NEUXA</h4>
+                    <p class="text-stone-500 text-[10px]">Smart Assistant</p>
+                </div>
+            </div>
+            <button onclick="toggleNeuxaAssistant()" class="text-stone-500 hover:text-[#d4af37] transition">×</button>
+        </div>
+        <div class="p-4 space-y-3">
+            <p class="text-stone-400 text-sm leading-relaxed">我是 NEUXA，您的智慧修行助手。</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.location.href='pages/guide.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">生活導航</button>
+                <button onclick="window.location.href='pages/quiz.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">覺醒測驗</button>
+                <button onclick="window.location.href='pages/merit.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">功過格</button>
+                <button onclick="window.location.href='pages/faq.html'" class="p-2 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded text-[#d4af37] text-xs hover:bg-[#d4af37]/20 transition">疑難參悟</button>
+            </div>
+            <div class="pt-2 border-t border-[#d4af37]/10">
+                <p class="text-stone-600 text-[10px] text-center">Powered by NEUXA Intelligence</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let neuxaOpen = false;
+        function toggleNeuxaAssistant() {
+            const modal = document.getElementById('neuxa-modal');
+            neuxaOpen = !neuxaOpen;
+            if (neuxaOpen) {
+                modal.classList.remove('translate-y-4', 'opacity-0', 'pointer-events-none');
+            } else {
+                modal.classList.add('translate-y-4', 'opacity-0', 'pointer-events-none');
+            }
+        }
+    </script>
+</body>
+</html>

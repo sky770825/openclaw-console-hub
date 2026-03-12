@@ -1,0 +1,81 @@
+{
+  "name": "OpenClaw to Notion Timeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openclaw-to-notion",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        200
+      ],
+      "webhookId": "openclaw-to-notion"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": "={{$node[\"Webhook Trigger\"].json[\"databaseId\"]}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Name",
+              "title": "={{$node[\"Webhook Trigger\"].json[\"title\"]}}"
+            },
+            {
+              "key": "Date",
+              "date": "={{$node[\"Webhook Trigger\"].json[\"date\"]}}"
+            },
+            {
+              "key": "Type",
+              "select": "={{$node[\"Webhook Trigger\"].json[\"type\"]}}"
+            },
+            {
+              "key": "Summary",
+              "richText": [
+                {
+                  "text": {
+                    "content": "={{$node[\"Webhook Trigger\"].json[\"summary\"]}}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "id": "notion-node",
+      "name": "Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        400,
+        200
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "YOUR_NOTION_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

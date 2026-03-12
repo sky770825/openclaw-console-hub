@@ -1,0 +1,37 @@
+{
+  "business_name": "普特斯防霾紗窗",
+  "industry": "建材/空氣品質設備",
+  "last_updated": "2026-02-13",
+  "keywords": {
+    "primary": [
+      {"keyword": "防霾紗窗", "type": "product", "priority": "high"},
+      {"keyword": "普特斯", "type": "brand", "priority": "high"},
+      {"keyword": "Puratex", "type": "brand", "priority": "high"}
+    ],
+    "competitors": [
+      {"keyword": "3M防霾紗窗", "type": "competitor", "priority": "high"},
+      {"keyword": "藍鯨防霾紗窗", "type": "competitor", "priority": "high"},
+      {"keyword": "淨靜防霾紗窗", "type": "competitor", "priority": "high"}
+    ],
+    "market_triggers": [
+      {"keyword": "空氣汙染", "type": "trigger", "priority": "high"},
+      {"keyword": "空汙", "type": "trigger", "priority": "high"},
+      {"keyword": "PM2.5", "type": "trigger", "priority": "high"},
+      {"keyword": "紫爆", "type": "trigger", "priority": "high"},
+      {"keyword": "霧霾", "type": "trigger", "priority": "high"}
+    ]
+  },
+  "seasonal_patterns": {
+    "peak_months": [11, 12, 1, 2, 3, 4],
+    "peak_reason": "冬季東北季風帶來境外汙染"
+  },
+  "alert_thresholds": {
+    "aqi_spike": 150,
+    "search_volume_spike": 50
+  },
+  "data_sources": [
+    "Google Trends",
+    "環保署空品監測網",
+    "PTT 居家裝潢板"
+  ]
+}

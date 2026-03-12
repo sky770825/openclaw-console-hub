@@ -1,0 +1,1330 @@
+[
+  {
+    "category": "decisions",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-business-model.md",
+    "title": "【小蔡執行-BUSINESS_MODEL】商業模式盤點報告 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "decisions",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-business-model-analysis.md",
+    "title": "商業模式盤點：轉換漏斗與可變現任務 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "decisions",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/opus-strategy-2026-02-13.md",
+    "title": "2026 技術產品策略統整報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "decisions",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-13-auto-escalation-rules.md",
+    "title": "2026-02-13 自動升級規則 ",
+    "date": "2026-02-13"
+  }  {
+    "category": "learnings",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/ollama-study-advanced-coding.md",
+    "title": "TypeScript 設計模式與靜態分析學習筆記 ",
+    "date": "N/A"
+  },
+  {
+    "category": "learnings",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/ollama-monitoring-sop.md",
+    "title": "Ollama Agent 監控系統 - 執行手冊 ",
+    "date": "N/A"
+  },
+  {
+    "category": "learnings",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/agent-monitoring-sop.md",
+    "title": "Agent 指揮監控流程 SOP ",
+    "date": "N/A"
+  },
+  {
+    "category": "learnings",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/agent-monitoring-sop-v2.md",
+    "title": "Agent 指揮監控完整 SOP ",
+    "date": "N/A"
+  },
+  {
+    "category": "learnings",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-13-market-scan.md",
+    "title": "TASK-015 市場情報掃描報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "learnings",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/research-market-2026-02-12.md",
+    "title": "AI Agent Skills 市場快報 ",
+    "date": "2026-02-12"
+  }  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-tasks.json",
+    "title": "[ ",
+    "date": "N/A"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/task-003.md",
+    "title": "Task 結果: task-003 ",
+    "date": "N/A"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/task-002.md",
+    "title": "Task 結果: task-002 ",
+    "date": "N/A"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/task-001.md",
+    "title": "Task 結果: task-001 ",
+    "date": "N/A"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14.md",
+    "title": "2026-02-14 記憶 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909599307.md",
+    "title": "[Kimi] Autopilot 循環邏輯完善 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909598967.md",
+    "title": "[Kimi] 備份腳本增強 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909598622.md",
+    "title": "[Kimi] 環境變數統一管理 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909598279.md",
+    "title": "[Ollama] 日誌輪轉與清理 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909597936.md",
+    "title": "[Kimi] 錯誤自動恢復機制 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909597598.md",
+    "title": "[OR-Free] Ollama 模型效能基準 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909597250.md",
+    "title": "[Ollama] 子代理並發測試 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909596842.md",
+    "title": "[Kimi] 任務板效能優化 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909596492.md",
+    "title": "[Kimi] Context 壓縮腳本優化 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909596144.md",
+    "title": "[Ollama] 記憶系統 v3 壓力測試 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909595789.md",
+    "title": "[Ollama] Cron Job 效能審查 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909595301.md",
+    "title": "[Kimi] 每日預算追蹤自動化 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909594957.md",
+    "title": "[Ollama] 統一監控腳本測試 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909594618.md",
+    "title": "[Kimi] 一鍵部署腳本 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909594281.md",
+    "title": "[CoDEX] Docker 映像建立 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909593735.md",
+    "title": "[Kimi] 授權條款制定 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909593390.md",
+    "title": "[Kimi] 更新日誌規範 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909593052.md",
+    "title": "ClawFlow FAQ — 常見問題解答 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909592699.md",
+    "title": "ClawFlow 進階使用手冊 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909592338.md",
+    "title": "ClawFlow Getting Started — 5 分鐘快速上手 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909591972.md",
+    "title": "API 文件自動生成方案 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909591620.md",
+    "title": "Skill 安裝腳本標準化規範 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909591147.md",
+    "title": "LemonSqueezy 上架評估 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909590800.md",
+    "title": "ClawHub 免費版 Skill 上架策略 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909590389.md",
+    "title": "[Kimi] ClawFlow GitHub Repo 建立 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909590026.md",
+    "title": "[Kimi] npm 套件發布準備 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909589659.md",
+    "title": "GitHub Automation Skill 上架 Gumroad - 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909589323.md",
+    "title": "[Kimi] Gumroad 帳號註冊與設定 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909588978.md",
+    "title": "[Kimi] 合作夥伴推廣計畫 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909588608.md",
+    "title": "ClawFlow 3-5 分鐘產品演示腳本 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909588267.md",
+    "title": "[Kimi] 技術部落格建立 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909587927.md",
+    "title": "[OR-Free] Email 行銷序列設計 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909587410.md",
+    "title": "客戶見證/案例研究模板 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909587070.md",
+    "title": "產品 Landing Page 文案 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909586705.md",
+    "title": "[OR-Free] SEO 關鍵字研究 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909586375.md",
+    "title": "[OR-Free] GitHub README 優化 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909586034.md",
+    "title": "Telegram 銷售頻道建立指南 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909585696.md",
+    "title": "Discord 社群建立計畫 - 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909585339.md",
+    "title": "Twitter/X 宣傳推文 10 則 - ClawFlow ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909584997.md",
+    "title": "ProductHunt 上架文案 - ClawFlow ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909584654.md",
+    "title": "HackerNews Show HN 發文 - ClawFlow ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909584251.md",
+    "title": "Reddit r/LocalLLaMA 發文 - ClawFlow Ollama 整合 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909583868.md",
+    "title": "Reddit r/selfhosted 發文 - ClawFlow ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909583523.md",
+    "title": "為什麼開發者需要 AI Agent？ ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909583121.md",
+    "title": "5 分鐘建立你的 AI 助手 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909582750.md",
+    "title": "本地 AI vs 雲端 AI：完整對比分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909582403.md",
+    "title": "🤖 AI Agent 入門指南 — 從零開始理解 AI 代理 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909582035.md",
+    "title": "🚀 如何用 OpenClaw 自動化你的工作 — 完整實戰指南 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909581688.md",
+    "title": "[OR-Free] 免費增值轉換率基準研究 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909581174.md",
+    "title": "[OR-Free] AI Agent 安全性需求研究 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909580831.md",
+    "title": "開發者付費意願調查方法 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909580458.md",
+    "title": "🛍️ Skill 商店生態研究 — 各平台 Plugin/Skill 商店模式分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909580074.md",
+    "title": "台灣 AI 自動化市場調研報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909579724.md",
+    "title": "ProductHunt AI 工具趨勢分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909579365.md",
+    "title": "🔥 HackerNews AI Agent 討論蒐集 — 近期熱門話題與社群動向 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909579024.md",
+    "title": "Reddit r/LocalLLaMA 社群熱點分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909578658.md",
+    "title": "開源 AI Agent 專案 GitHub 趨勢報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909578309.md",
+    "title": "📊 AI Agent 市場規模 2025-2030 — TAM/SAM 數據與預測 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909577967.md",
+    "title": "AI Agent 開發框架定價研究 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909577455.md",
+    "title": "企業用戶畫像調研報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909577118.md",
+    "title": "創業團隊用戶畫像報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909576771.md",
+    "title": "👨‍💻 開發者用戶畫像調研報告 — AI Agent 需求與痛點分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909576397.md",
+    "title": "Zapier/Make 傳統自動化對比分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909576033.md",
+    "title": "n8n 深度競品分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909575685.md",
+    "title": "Dify 深度競品分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909575344.md",
+    "title": "🤖 AutoGen 深度競品分析 — Microsoft 企業級 Agent 框架 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909574979.md",
+    "title": "CrewAI 深度競品分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909574634.md",
+    "title": "LangChain 深度競品分析 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909574296.md",
+    "title": "語音轉文字 Skill 技術規格書 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909573837.md",
+    "title": "圖片生成 Skill 整合技術規格書 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909573496.md",
+    "title": "🤖 Ollama 本地模型管理 Skill — 技術規格書 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909573121.md",
+    "title": "🕷️ Web Scraper 增強 Skill — 技術規格書 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909572778.md",
+    "title": "自動文件生成 Skill 技術規格書 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909572368.md",
+    "title": "Database Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909571984.md",
+    "title": "Webhook Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909571583.md",
+    "title": "Discord Bot Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909571242.md",
+    "title": "Google Sheets Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909570699.md",
+    "title": "ClawFlow Web 控制台設計規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909570353.md",
+    "title": "ClawFlow CLI 工具技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909569988.md",
+    "title": "GitHub Skill Release 自動化技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909569643.md",
+    "title": "GitHub Skill PR 審查助手技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909569297.md",
+    "title": "GitHub Skill Issue 自動分類技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909568887.md",
+    "title": "ClawFlow 事件總線技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909568524.md",
+    "title": "ClawFlow 配置管理技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909568146.md",
+    "title": "ClawFlow 插件熱更新技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909567801.md",
+    "title": "ClawFlow 日誌追蹤系統技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909567374.md",
+    "title": "ClawFlow 錯誤處理與重試技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909567027.md",
+    "title": "ClawFlow 任務調度器核心技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909566680.md",
+    "title": "API Monitor Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909566225.md",
+    "title": "CSV 處理 Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909565767.md",
+    "title": "Email 自動分類 Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909565424.md",
+    "title": "Email 範本系統 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909565052.md",
+    "title": "Email Skill 基礎開發 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909564688.md",
+    "title": "Slack 訊息自動化 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909564244.md",
+    "title": "Slack Skill 基礎架構 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909563871.md",
+    "title": "Notion 頁面管理 Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770909563467.md",
+    "title": "Notion 資料庫操作 Skill 技術規格 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/t1770739565792.md",
+    "title": "視覺化工作流編輯器 - 功能規格文件 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-13.md",
+    "title": "2026-02-13 記憶存檔 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/task-estimation-calibration-2026-02-12.md",
+    "title": "任務預估時間校準研究報告 ",
+    "date": "2026-02-12"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/action-plan-2026-02-12.md",
+    "title": "下一步行動計畫 ",
+    "date": "2026-02-12"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-12.md",
+    "title": "2026-02-12 記憶日誌 ",
+    "date": "2026-02-12"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/task-queue-2026-02-11.md",
+    "title": "任務序列 - 2026-02-11 ",
+    "date": "2026-02-11"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-11.md",
+    "title": "2026-02-11 記憶備份 ",
+    "date": "2026-02-11"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-10.md",
+    "title": "2026-02-10 - OpenClaw 任務板自動執行系統 ",
+    "date": "2026-02-10"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-10-tasks.md",
+    "title": "2026-02-10 - 任務執行準則 ",
+    "date": "2026-02-10"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-09.md",
+    "title": "## 火幣網 HTX 邀請資訊 (2026-02-09) ",
+    "date": "2026-02-09"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-08.md",
+    "title": "2026-02-08 每日筆記 ",
+    "date": "2026-02-08"
+  },
+  {
+    "category": "tasks",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-07.md",
+    "title": "2026-02-07 - 出生日 ",
+    "date": "2026-02-07"
+  }  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/execution-log.md",
+    "title": "Autopilot Execution Log - 2026-02-13 00:39 ",
+    "date": "N/A"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/current-task.json",
+    "title": "{\"taskId\":\"t1771003673047\",\"name\":\"【效能】優化 QMD 搜尋索引構建速å ",
+    "date": "N/A"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/AUTOPILOT-FINAL-REPORT.md",
+    "title": "Autopilot 自動循環執行總結 ",
+    "date": "N/A"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/optimization-scan-final-2026-02-14.md",
+    "title": "【內部優化掃描】最終報告 — 2026-02-14 01:50 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/optimization-scan-2026-02-14.md",
+    "title": "【內部優化掃描】2026-02-14 01:49 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/optimization-scan-2026-02-14-2.md",
+    "title": "【內部優化掃描】2026-02-14 01:52 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-optimization-scan.md",
+    "title": "內部優化掃描報告 (2026-02-14 02:49) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-internal-optimization-scan.md",
+    "title": "內部優化掃描 — 2026-02-14 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/summaries/2026-02-13-summary.md",
+    "title": "Daily Summary - 2026-02-13 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/status-2026-02-13.md",
+    "title": "Autopilot 狀態報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/AUTOPILOT-REPORT-2026-02-13.md",
+    "title": "Autopilot 循環執行報告 — 2026-02-13 00:35-00:43 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-13-summary.md",
+    "title": "Daily Summary - 2026-02-13 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-13-cron-fix.md",
+    "title": "2026-02-13 關鍵變更記錄 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-13-context-eval.md",
+    "title": "【完成】Context 精簡化架構設計評估 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "results",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/notion-skill-spec-2026-02-12.md",
+    "title": "Notion Skill 基礎架構開發規格 ",
+    "date": "2026-02-12"
+  }  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-18.md",
+    "title": "S-18 DevOps 基礎設施 - 技術規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-17.md",
+    "title": "S-17 跨業務儀表板 - 技術規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-16.md",
+    "title": "S-16 社群媒體 Skills - 技術規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-15.md",
+    "title": "S-15 Agent 構建器 MVP 開發 - 規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-14.md",
+    "title": "S-14 Agent 構建器架構設計 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-13.md",
+    "title": "S-13 付款與訂閱系統整合 - 技術規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-12.md",
+    "title": "S-12 InsightPulse Web Dashboard - 技術規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-11.md",
+    "title": "S-11 InsightPulse Landing Page - 設計規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-10.md",
+    "title": "S-10 InsightPulse MVP 報告引擎 - 技術規格 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/S-04-本地自動化引擎MVP-規格書.md",
+    "title": "S-04: 本地自動化引擎 MVP - 技術規格書 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/roadmap/roadmap-2026.md",
+    "title": "InsightPulse 產品 Roadmap ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/pricing/pricing-details.md",
+    "title": "InsightPulse 定價詳細規劃 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/docs/product-blueprint.md",
+    "title": "市場洞察 SaaS 產品規劃書 ",
+    "date": "N/A"
+  },
+  {
+    "category": "specs",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/autopilot-results/docs/launch-checklist.md",
+    "title": "InsightPulse 上線前檢查清單 ",
+    "date": "N/A"
+  }  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/MEMORY-SYSTEM-v2.md",
+    "title": "記憶系統 v2 快速參考 ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/INDEX-README.md",
+    "title": "記憶庫索引系統 v2 ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/index_state.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/heartbeat-state.json",
+    "title": "{\"lastMoltbookCheck\": 1770635460} ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/daily-budget.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/context-summaries/summary_20260213_211359.md",
+    "title": "Context 摘要 - 2026-02-13 21:13:59 ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/context-summaries/summary_20260213_211338.md",
+    "title": "Context 摘要 - 2026-02-13 21:13:38 ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/context-summaries/index.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "system",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/context-summaries/2026-02-14-context-summary.md",
+    "title": "Context 摘要 - 2026-02-14 凌晨會話 ",
+    "date": "2026-02-14"
+  }  {
+    "category": "anchors",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/anchors/anthropic-model-rescue.md",
+    "title": "🆘 自救錨點：OpenClaw Anthropic 模型設定 ",
+    "date": "N/A"
+  },
+  {
+    "category": "anchors",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/anchors/anchor-memory-system-v2.md",
+    "title": "Anchor: memory-system-v2 ",
+    "date": "N/A"
+  },
+  {
+    "category": "anchors",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/anchors/anchor-memory-evolution-v3.md",
+    "title": "記憶系統進化 v3.0 錨點檔案 ",
+    "date": "N/A"
+  }  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_163351.md",
+    "title": "Context Checkpoint 20260213_163351 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_162221.md",
+    "title": "Context Checkpoint 20260213_162221 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_160352.md",
+    "title": "Context Checkpoint 20260213_160352 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_153353.md",
+    "title": "Context Checkpoint 20260213_153353 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_150352.md",
+    "title": "Context Checkpoint 20260213_150352 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_071437.md",
+    "title": "Context Checkpoint 20260213_071437 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_064850.md",
+    "title": "Context Checkpoint 20260213_064850 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_004258.md",
+    "title": "Context Checkpoint 20260213_004258 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260213_003318.md",
+    "title": "Context Checkpoint 20260213_003318 ",
+    "date": "N/A"
+  },
+  {
+    "category": "checkpoints",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/checkpoints/checkpoint_20260212_211417.md",
+    "title": "Context Checkpoint 20260212_211417 ",
+    "date": "N/A"
+  }  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_124447.md",
+    "title": "情報摘要報告 - 2026-02-14 12:44 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_112645.md",
+    "title": "情報摘要報告 - 2026-02-14 11:26 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_102514.md",
+    "title": "情報摘要報告 - 2026-02-14 10:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_092516.md",
+    "title": "情報摘要報告 - 2026-02-14 09:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_082516.md",
+    "title": "情報摘要報告 - 2026-02-14 08:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_062517.md",
+    "title": "情報摘要報告 - 2026-02-14 06:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_032518.md",
+    "title": "情報摘要報告 - 2026-02-14 03:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_022510.md",
+    "title": "情報摘要報告 - 2026-02-14 02:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260214_012510.md",
+    "title": "情報摘要報告 - 2026-02-14 01:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/summary_20260213_212509.md",
+    "title": "情報摘要報告 - 2026-02-13 21:25 ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_124447.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_112645.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_102514.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_092516.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_082516.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_062517.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_032518.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_022510.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260214_012510.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/intelligence/github_20260213_212509.json",
+    "title": "{ ",
+    "date": "N/A"
+  },
+  {
+    "category": "intelligence",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/conversation-intelligence.md",
+    "title": "對話輪數智能判斷系統 ",
+    "date": "N/A"
+  }  {
+    "category": "archive",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/archived/S-07.md",
+    "title": "S-07 飲料店庫存預警 Bot - 技術規格書 ",
+    "date": "N/A"
+  },
+  {
+    "category": "archive",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/archived/execution-report-20260213-0847.md",
+    "title": "Autopilot 執行報告 - 2026-02-13 08:47 ",
+    "date": "N/A"
+  },
+  {
+    "category": "archive",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/archived/EXECUTION-REPORT-2026-02-13.md",
+    "title": "✅ Autopilot 自主循環執行報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "archive",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/archived/AUTOPILOT-SESSION-2026-02-13.md",
+    "title": "🤖 Autopilot 自動循環執行報告 ",
+    "date": "2026-02-13"
+  },
+  {
+    "category": "archive",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/archived/AUTOPILOT-LOOP-2026-02-13-0103.md",
+    "title": "Autopilot 循環執行報告 ",
+    "date": "2026-02-13"
+  }  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/task-context-tools-completed.md",
+    "title": "Context 自動管理工具 - 任務完成報告 ",
+    "date": "N/A"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/subagent-notify-fix.md",
+    "title": "Subagent 任務通知機制 ",
+    "date": "N/A"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/qmd.md",
+    "title": "Quick Memory Search (qmd) ",
+    "date": "N/A"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/latest.md",
+    "title": "Handoff (for /new) ",
+    "date": "N/A"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/handoff-2026-02-14_19-52.md",
+    "title": "Handoff (for /new) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/handoff-2026-02-14_19-49.md",
+    "title": "Handoff (for /new) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/handoff-2026-02-14_19-40.md",
+    "title": "Handoff (for /new) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/handoff-2026-02-14_19-39.md",
+    "title": "Handoff (for /new) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/handoff-2026-02-14_19-38.md",
+    "title": "Handoff (for /new) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/handoff/handoff-2026-02-14_19-37.md",
+    "title": "Handoff (for /new) ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/HANDOFF-2026-02-14-SESSION-BOUNDARY.md",
+    "title": "對話交班 - 2026-02-14 Session Boundary ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/governance-weekly-2026-02-14.md",
+    "title": "治理週報 - 2026-02-14 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/FINAL-HANDOFF-2026-02-14-SESSION-END.md",
+    "title": "最終交班 - 2026-02-14 SESSION END ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-p0-collection-complete.md",
+    "title": "P0 Collection 完成摘要 - 2026-02-14 02:51 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-openclaw-recovery.md",
+    "title": "OpenClaw 修復摘要 | 2026-02-14 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-funnel-diagnosis.md",
+    "title": "【小蔡執行-FUNNEL_DIAGNOSIS】營運漏斗診斷報告 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-cost-optimization.md",
+    "title": "【小蔡執行-COST_OPTIMIZATION】成本優化盤點 - 高 Token 任務降本æ ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-core-stability.md",
+    "title": "2026-02-14 補充核心記憶（穩定性 + 省 Token） ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-core-cautions.md",
+    "title": "2026-02-14 補充注意事項（避免踩雷） ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-codex-io-loop.md",
+    "title": "Subagent I/O 閉環模式（正式版 v2.1） ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-codex-cursor-io-loop.md",
+    "title": "Codex + Cursor I/O 閉環模式完整指南 ",
+    "date": "2026-02-14"
+  },
+  {
+    "category": "other",
+    "file": "/Users/caijunchang/.openclaw/workspace/memory/2026-02-14-checkpoint.md",
+    "title": "2026-02-14 記憶點 ",
+    "date": "2026-02-14"
+  }
+]

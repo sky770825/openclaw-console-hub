@@ -1,0 +1,70 @@
+# Task Status Bug Fix Report
+Generated on: Mon Mar  2 15:35:43 CST 2026
+
+## Summary
+The system incorrectly uses 'in_progress' instead of the legal 'running' state in the server code. 
+This report identifies the affected files and provides the corrected content in the sandbox.
+
+## Findings
+### File: openclawMapper.ts
+```
+13:// openclaw status: queued | in_progress | done
+17:  in_progress: 'running',
+24:  running: 'in_progress',
+25:  review: 'in_progress',
+```
+
+### File: telegram/bot-polling.ts
+```
+741:        body: JSON.stringify({ status: 'in_progress', assignee: 'xiaoji' }),
+```
+
+### File: index.ts
+```
+1393:      status: t.status === 'running' ? 'in_progress' : t.status === 'done' ? 'done' : 'queued',
+2623:      const { data: tasks } = await supabase.from('openclaw_tasks').select('id').eq('status','in_progress');
+3112:        `  排隊 ${tasksByStatus['queued'] || 0} · 進行中 ${tasksByStatus['in_progress'] || 0} · 完成 ${tasksByStatus['done'] || 0}`,
+3452:    const activeTasks = ocTasks.filter((t) => t.status === 'in_progress').length;
+3608:        .filter((r: { status?: string }) => r.status === 'running' || r.status === 'in_progress')
+3619:      if ((st === 'running' || st === 'in_progress') && !activeRunTaskIds.has(tId)) {
+3622:        details.push({ taskId: tId, from: st, to: 'queued', reason: 'orphaned in_progress, reset for retry' });
+4050:  // ─── 啟動時 reconcile：把上次重啟留下的孤立 in_progress 改回 queued ───
+4055:        const orphans = (ocTasks ?? []).filter((t) => t.status === 'in_progress');
+4057:          log.warn(`[StartupReconcile] 發現 ${orphans.length} 筆孤立 in_progress 任務，改回 queued`);
+```
+
+### File: routes/openclaw-tasks.ts.bak
+```
+33:  in_progress: 'running', // 執行中
+82:        status: t.status === 'done' ? 'done' : t.status === 'running' ? 'in_progress' : 'queued',
+```
+
+### File: routes/auto-executor.ts
+```
+580:        // 注意：不在這裡 delete，等到 upsertOpenClawTask('in_progress') 完成後再 delete
+610:    await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
+611:    // 確保 Supabase 已設為 in_progress 後，才從批准 set 移除（避免競爭條件）
+```
+
+### File: routes/auto-executor.ts.bak
+```
+578:        // 注意：不在這裡 delete，等到 upsertOpenClawTask('in_progress') 完成後再 delete
+608:    await upsertOpenClawTask({ id: task.id, status: 'in_progress' });
+609:    // 確保 Supabase 已設為 in_progress 後，才從批准 set 移除（避免競爭條件）
+```
+
+### File: routes/openclaw-tasks.ts
+```
+33:  in_progress: 'running', // 執行中
+83:        status: t.status === 'done' ? 'done' : t.status === 'running' ? 'in_progress' : 'queued',
+```
+
+## Resolution
+Fixed versions of the files listed above have been generated in:
+`/Users/caijunchang/.openclaw/workspace/sandbox/output/fixed_task_status`
+
+An application script has been created at:
+`/Users/caijunchang/.openclaw/workspace/scripts/apply_status_fix.sh`
+
+**Note:** Due to security restrictions, the original source files were not modified. 
+Please review the changes in the output directory and apply them using the provided script if they are correct.

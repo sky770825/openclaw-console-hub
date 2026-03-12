@@ -1,0 +1,7 @@
+[
+  {"role": "user", "content": "你好"},
+  {"role": "assistant", "content": "Thinking... 我是小蔡。"},
+  {"role": "user", "content": "幫我寫個腳本"},
+  {"role": "assistant", "content": "Thinking... 正在生成腳本..."},
+  {"role": "assistant", "content": "腳本已完成。"}
+]

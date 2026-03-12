@@ -1,0 +1,37 @@
+{
+  "business": "飲料店",
+  "type": "beverage",
+  "category": "",
+  "name": "",
+  "description": "",
+  "price": "",
+  "size_options": "",
+  "ingredients": "",
+  "images": [],
+  "tags": [],
+  "platform_settings": {
+    "facebook": {
+      "marketplace_listing": true,
+      "page_post": true,
+      "catalog": true
+    },
+    "instagram": {
+      "shopping_post": true,
+      "carousel": true
+    },
+    "shopee": {
+      "listing": true,
+      "variant": true
+    }
+  },
+  "metadata": {
+    "beverage_type": "drink",
+    "temperature": "cold",
+    "sugar_level": "normal",
+    "ice_level": "normal",
+    "available_sizes": [],
+    "promotional_info": "",
+    "availability": "in_stock",
+    "store_location": ""
+  }
+}

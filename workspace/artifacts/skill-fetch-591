@@ -1,0 +1,3 @@
+#!/bin/bash
+# Wrapper for fetch_591.py
+python3 "/Users/caijunchang/.openclaw/workspace/sandbox/output/fetch_591.py" "$@"

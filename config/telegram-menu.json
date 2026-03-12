@@ -1,0 +1,187 @@
+{
+  "version": "2.0",
+  "description": "小蔡 Telegram 圖文選單設定 v2.0 (2026-02-16)",
+  "menu": {
+    "type": "inline_keyboard",
+    "rows": [
+      {
+        "row": 1,
+        "buttons": [
+          {
+            "text": "📊 系統狀態",
+            "callback_data": "cmd:status",
+            "description": "查看系統各服務運行狀態"
+          },
+          {
+            "text": "🧠 召回記憶",
+            "callback_data": "cmd:recall",
+            "description": "搜尋並召回相關記憶"
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "buttons": [
+          {
+            "text": "🧹 系統清理",
+            "callback_data": "cmd:clean",
+            "description": "清理快取、logs、workspace 垃圾"
+          },
+          {
+            "text": "🤖 呼叫 Claude",
+            "callback_data": "cmd:codex",
+            "description": "派工給 Claude Code (L2) 處理程式任務"
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "buttons": [
+          {
+            "text": "✨ 呼叫 Cursor",
+            "callback_data": "cmd:cursor",
+            "description": "派工給 Cursor (L4) 處理前端/UI"
+          },
+          {
+            "text": "🔄 重啟對話",
+            "callback_data": "cmd:new",
+            "description": "開新對話，重置 context"
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "label": "🔀 模型切換",
+        "buttons": [
+          {
+            "text": "⚡ Flash",
+            "callback_data": "m:flash",
+            "description": "Gemini 2.5 Flash（主指揮）"
+          },
+          {
+            "text": "🧠 Pro",
+            "callback_data": "m:pro",
+            "description": "Gemini 2.5 Pro"
+          },
+          {
+            "text": "🐣 Kimi",
+            "callback_data": "m:kimi",
+            "description": "Kimi K2.5（備援指揮）"
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "buttons": [
+          {
+            "text": "🦊 Grok",
+            "callback_data": "m:grok",
+            "description": "Grok 4.1 Fast"
+          },
+          {
+            "text": "🏠 Local",
+            "callback_data": "m:local",
+            "description": "Ollama Qwen3"
+          },
+          {
+            "text": "🔙 自動",
+            "callback_data": "m:auto",
+            "description": "自動 Fallback"
+          }
+        ]
+      }
+    ]
+  },
+  "bot_commands": [
+    { "command": "status", "description": "📊 系統狀態" },
+    { "command": "recall", "description": "🧠 召回記憶" },
+    { "command": "clean", "description": "🧹 系統清理" },
+    { "command": "codex", "description": "🤖 呼叫 Claude" },
+    { "command": "cursor", "description": "✨ 呼叫 Cursor" },
+    { "command": "new", "description": "🔄 重啟對話" }
+  ],
+  "commands": {
+    "status": {
+      "name": "系統狀態",
+      "shortcut": "/status",
+      "description": "查看 Gateway、Taskboard、各服務運行狀態",
+      "actions": [
+        "檢查 gateway 進程",
+        "檢查 taskboard 進程",
+        "檢查 ollama-monitor",
+        "檢查 memory-record-server",
+        "檢查 telegram-forwarder",
+        "回報當前使用的模型和 fallback 狀態"
+      ]
+    },
+    "recall": {
+      "name": "召回記憶",
+      "shortcut": "/recall",
+      "description": "搜尋並召回相關記憶",
+      "actions": [
+        "接收關鍵字",
+        "搜尋 memory/ 目錄",
+        "搜尋 git notes",
+        "搜尋 triple-memory",
+        "彙整回傳相關記憶"
+      ]
+    },
+    "clean": {
+      "name": "系統清理",
+      "shortcut": "/clean",
+      "description": "清理快取、logs、workspace 垃圾",
+      "sop": "SOP-5",
+      "steps": [
+        "檢查根目錄非白名單檔案 → 移到 archive",
+        "檢查未授權 autoexecutor / daemon / .pid",
+        "清理過期 logs",
+        "跑 ./scripts/self-heal.sh check",
+        "回報清理結果"
+      ]
+    },
+    "codex": {
+      "name": "呼叫 Claude",
+      "shortcut": "/codex",
+      "description": "派工給 Claude Code (L2) 處理後端/系統/程式任務",
+      "actions": [
+        "接收任務描述",
+        "建立 taskboard 任務（agent.type: codex）",
+        "派工給 Claude Code",
+        "等待回報結果"
+      ]
+    },
+    "cursor": {
+      "name": "呼叫 Cursor",
+      "shortcut": "/cursor",
+      "description": "派工給 Cursor (L4) 處理前端/UI/重構任務",
+      "actions": [
+        "接收任務描述",
+        "建立 taskboard 任務（agent.type: cursor）",
+        "派工給 Cursor Agent",
+        "等待回報結果"
+      ]
+    },
+    "new": {
+      "name": "重啟對話",
+      "shortcut": "/new",
+      "description": "開新對話，重置 context",
+      "actions": [
+        "讀取 AGENTS.md（重點看 SOP 和模型路由規則 v2.3）",
+        "跑 ./scripts/self-heal.sh check 確認系統狀態",
+        "回報檢查結果",
+        "等待指示"
+      ]
+    }
+  },
+  "quick_replies": {
+    "description": "快速文字指令（不需要選單）",
+    "triggers": {
+      "status": ["狀態", "status", "/status"],
+      "recall": ["記憶", "recall", "/recall", "想起"],
+      "clean": ["清理", "clean", "/clean", "清一下"],
+      "codex": ["/codex", "用 claude", "叫 claude"],
+      "cursor": ["/cursor", "用 cursor", "叫 cursor"],
+      "new": ["/new", "新對話", "重啟"]
+    }
+  }
+}

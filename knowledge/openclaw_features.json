@@ -1,0 +1,13 @@
+{
+  "project": "OpenClaw",
+  "component": "FeaturesPage",
+  "design_language": "Modern Dark Glassmorphism",
+  "key_selling_points": [
+    "Autonomous Agents",
+    "Security Sandbox",
+    "Visual Dashboard",
+    "MCP Integration",
+    "Privacy-First RAG"
+  ],
+  "dependencies": ["lucide-react", "framer-motion", "tailwindcss"]
+}

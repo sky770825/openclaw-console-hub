@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "name": "neuxa-nexus-landing",
+  "rewrites": [
+    { "source": "/install", "destination": "/install" },
+    { "source": "/files/(.*)", "destination": "/files/$1" },
+    { "source": "/(.*)", "destination": "/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/install",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}

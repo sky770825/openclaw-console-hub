@@ -1,0 +1,100 @@
+/**
+ * OpenClaw 後端 API
+ * 實作 docs/API-INTEGRATION.md 規格，供中控台接上後「立即執行」打此服務
+ * OpenClaw v4 板：/api/openclaw/* 寫入 Supabase
+ */
+import './preload-dotenv.js';
+import { createLogger } from './logger.js';
+import { startTelegramStopPoll } from './telegram-stop-poll.js';
+import path from 'path';
+import fs from 'fs';
+import { spawn, execSync } from 'child_process';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { tasks, runs, alerts, memReviews } from './store.js';
+import { runSeed } from './seed.js';
+import type { Task, Run, Alert } from './types.js';
+import {
+  fetchOpenClawTasks,
+  fetchOpenClawTaskById,
+  upsertOpenClawTask,
+  fetchOpenClawReviews,
+  upsertOpenClawReview,
+  fetchOpenClawAutomations,
+  upsertOpenClawAutomation,
+  fetchOpenClawEvolutionLog,
+  fetchOpenClawRuns,
+  fetchOpenClawRunById,
+  insertOpenClawRun,
+  updateOpenClawRun,
+  fetchOpenClawAuditLogs,
+} from './openclawSupabase.js';
+import { hasSupabase, supabase } from './supabase.js';
+import {
+  openClawTaskToTask,
+  taskToOpenClawTask,
+  openClawReviewToAlert,
+  evolutionLogToRun,
+  evolutionLogToLogEntry,
+  openClawRunToRun,
+} from './openclawMapper.js';
+import { validateBody, validateParams, validateQuery } from './middlewares/validate.js';
+import { authMiddleware } from './middlewares/auth.js';
+import {
+  createTaskSchema,
+  updateTaskSchema,
+  runTaskSchema,
+  updateAlertSchema,
+  idParamSchema,
+  taskFilterQuerySchema,
+} from './validation/schemas.js';
+import tasksRouter from './routes/tasks.js';
+import projectsRouter from './routes/projects.js';
+import memoryRouter from './routes/memory.js';
+import openclawTasksRouter from './routes/openclaw-tasks.js';
+import openclawReviewsRouter from './routes/openclaw-reviews.js';
+import openclawDataRouter from './routes/openclaw-data.js';
+import insightsRouter from './routes/insights.js';
+import federationRouter from './routes/federation.js';
+import {
+  federationBlockerMiddleware,
+  loadBlocklistFromSupabase,
+} from './middlewares/federationBlocker.js';
+// === 新增：postMessage 防火牆中介層 (P1 任務) ===
+import { postMessageFirewall } from './middlewares/firewall.js';
+import autoExecutorRouter, {
+  autoExecutorState,
+  activeTaskIds,
+  startAutoExecutor,
+  stopAutoExecutor,
+  loadAutoExecutorDiskState,
+  saveAutoExecutorDiskState,
+  startDispatchDigestTimer,
+} from './routes/auto-executor.js';
+// === 新增：房源文案 API 路由 (P3 任務) ===
+import propertyApiRouter from './routes/property-api.js';
+import { proxyRouter } from './routes/proxy.js';
+import {
+  hasN8n,
+  listWorkflows,
+  triggerWebhook,
+  healthCheck as n8nHealthCheck,
+} from './n8nClient.js';
+
+// === 新增：Agent 選擇器和執行器 ===
+import {
+  AgentSelector,
+  AgentExecutor,
+  agentSelector,
+  agentExecutor,
+  type AgentExecutionResult,
+} from './executor-agents.js';
+import { getPromptGuardStats, getPromptGuardRules } from './promptGuard.js';
+
+// === 新增：工作流程引擎 ===
+import {
+  WorkflowEngine,
+  BatchWorkflowExecutor,
+  createWorkflowEngine,

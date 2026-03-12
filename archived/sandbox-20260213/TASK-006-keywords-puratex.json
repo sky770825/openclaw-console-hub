@@ -1,0 +1,53 @@
+{
+  "business_name": "普特斯防霾紗窗",
+  "industry": "建材/空氣品質設備",
+  "last_updated": "2026-02-13",
+  "keywords": {
+    "primary": [
+      "防霾紗窗",
+      "普特斯",
+      "Puratex"
+    ],
+    "competitors": [
+      "3M防霾紗窗",
+      "藍鯨防霾紗窗",
+      "淨靜防霾紗窗",
+      "康逸防霾"
+    ],
+    "triggers": [
+      "空氣汙染",
+      "空汙",
+      "PM2.5",
+      "紫爆",
+      "霧霾",
+      "沙塵暴"
+    ],
+    "related_products": [
+      "空氣清淨機",
+      "全熱交換器",
+      "新風系統"
+    ]
+  },
+  "seasonal_patterns": {
+    "peak_months": [11, 12, 1, 2, 3, 4],
+    "peak_reason": "冬季東北季風帶來境外汙染",
+    "secondary_peak": [3, 4],
+    "secondary_reason": "春季沙塵暴"
+  },
+  "alert_thresholds": {
+    "aqi_spike": 150,
+    "search_volume_spike": 50,
+    "pm25_exceed": 35,
+    "competitor_promotion": true
+  },
+  "data_sources": [
+    "Google Trends",
+    "行政院環保署空品監測網",
+    "PTT 居家裝潢板",
+    "Mobile01 生活版"
+  ],
+  "update_frequency": {
+    "daily": "8:00",
+    "weekly": "Monday 10:00"
+  }
+}

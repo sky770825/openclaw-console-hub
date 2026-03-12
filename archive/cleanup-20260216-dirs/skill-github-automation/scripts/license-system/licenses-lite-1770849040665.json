@@ -1,0 +1,26 @@
+[
+  {
+    "key": "SF-LT-MLILSOPL-09337914-2F74BAB4",
+    "tier": "lite",
+    "createdAt": "2026-02-11T22:30:40.665Z",
+    "status": "active",
+    "activations": 0,
+    "maxActivations": 1
+  },
+  {
+    "key": "SF-LT-MLILSOPM-4A4BA190-DAB9F582",
+    "tier": "lite",
+    "createdAt": "2026-02-11T22:30:40.666Z",
+    "status": "active",
+    "activations": 0,
+    "maxActivations": 1
+  },
+  {
+    "key": "SF-LT-MLILSOPM-B1B5B1C5-C8ECC7AB",
+    "tier": "lite",
+    "createdAt": "2026-02-11T22:30:40.666Z",
+    "status": "active",
+    "activations": 0,
+    "maxActivations": 1
+  }
+]

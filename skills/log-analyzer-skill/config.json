@@ -1,0 +1,68 @@
+{
+  "parsers": {
+    "syslog": {
+      "timestampPattern": "^(\\w{3}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2})",
+      "severityPattern": "(emerg|alert|crit|err|warning|notice|info|debug)",
+      "severityMap": {
+        "emerg": "critical",
+        "alert": "critical",
+        "crit": "critical",
+        "err": "error",
+        "warning": "warn",
+        "notice": "info",
+        "info": "info",
+        "debug": "debug"
+      },
+      "hostnamePattern": "\\w{3}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+(\\S+)",
+      "servicePattern": "\\w{3}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+\\S+\\s+([^\\[:]+)"
+    },
+    "json": {
+      "timestampField": "timestamp",
+      "levelField": "level",
+      "messageField": "message",
+      "serviceField": "service",
+      "severityMap": {
+        "fatal": "critical",
+        "error": "error",
+        "warn": "warn",
+        "warning": "warn",
+        "info": "info",
+        "debug": "debug",
+        "trace": "debug"
+      }
+    },
+    "plain": {
+      "timestampPattern": "\\[(\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2})\\]",
+      "severityPattern": "\\[(ERROR|WARN|INFO|DEBUG|CRITICAL|FATAL)\\]",
+      "severityMap": {
+        "FATAL": "critical",
+        "CRITICAL": "critical",
+        "ERROR": "error",
+        "WARN": "warn",
+        "INFO": "info",
+        "DEBUG": "debug"
+      }
+    }
+  },
+  "alerts": {
+    "errorThreshold": 10,
+    "errorRateThreshold": 0.05,
+    "responseTimeThreshold": 1000,
+    "patterns": {
+      "security": "Failed password|Invalid user|Authentication failure|Permission denied",
+      "performance": "slow query|timeout|latency|memory exceeded",
+      "error": "Exception|Error|Failed|Fatal|Crash"
+    }
+  },
+  "report": {
+    "maxErrorsToShow": 20,
+    "maxWarningsToShow": 20,
+    "timeBucketMinutes": 5,
+    "includeStackTraces": true
+  },
+  "output": {
+    "colors": true,
+    "timezone": "local",
+    "dateFormat": "YYYY-MM-DD HH:mm:ss"
+  }
+}

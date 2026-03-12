@@ -1,0 +1,166 @@
+/* NEUXA 旗艦微雕視覺模組 v4.0 - 人間因果典藏 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap');
+
+:root {
+    --void: #050505; 
+    --gold: #b8860b; 
+    --goldBright: #ffd700; 
+    --cinnabar: #8b0000; 
+    --paper: #e8e2d0;
+    --shadow-gold: rgba(184, 134, 11, 0.4);
+}
+
+body {
+    background-color: var(--void);
+    color: var(--paper);
+    font-family: 'Noto Serif TC', serif !important;
+    font-size: 1.1rem !important;
+    line-height: 1.8 !important;
+    letter-spacing: 0.05em;
+    overflow-x: hidden;
+}
+
+/* 標題：石碑刻印感 */
+h1, h2, h3 {
+    font-weight: 900 !important;
+    color: var(--gold) !important;
+    letter-spacing: 0.3em !important;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.8), 0 0 25px var(--shadow-gold);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+}
+
+/* HERO Section Adjustments */
+h1.text-8xl {
+    font-size: 7rem !important;
+    letter-spacing: 0.3em !important;
+}
+
+p.text-2xl {
+    font-size: 1.5rem !important;
+    letter-spacing: 0.5em !important;
+}
+
+/* 導航欄微調 */
+.nav-premium {
+    padding: 1rem 2rem;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(184, 134, 11, 0.15);
+}
+
+/* 旗艦按鈕設計：光流與材質 */
+.btn-premium {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem !important;
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    border: 1px solid rgba(184, 134, 11, 0.25);
+    background: rgba(10, 10, 10, 0.9);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    cursor: pointer;
+    min-height: 160px;
+}
+
+.btn-premium::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-premium:hover {
+    color: #fff;
+    border-color: var(--goldBright);
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+    transform: translateY(-3px);
+}
+
+.btn-premium:hover::before {
+    left: 100%;
+}
+
+.btn-premium:active {
+    transform: scale(0.95);
+}
+
+/* 影像容器：穩定意境 */
+.visual-frame-premium {
+    width: 100%;
+    height: 400px;
+    margin: 4rem 0;
+    border: 1px solid rgba(184, 134, 11, 0.2);
+    background-color: #000;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,1);
+}
+
+.visual-frame-premium img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: sepia(0.2) contrast(1.1) brightness(0.7);
+    transition: 1.5s ease;
+}
+
+.visual-frame-premium:hover img {
+    filter: sepia(0) contrast(1.2) brightness(1);
+    transform: scale(1.08);
+}
+
+/* 返回頂端按鈕優化 */
+.back-to-top {
+    position: fixed; bottom: 40px; right: 40px;
+    width: 60px; height: 60px;
+    background: rgba(139, 0, 0, 0.1);
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex; items-center; justify-content: center;
+    color: var(--gold); font-size: 1.5rem;
+    z-index: 1000; cursor: pointer;
+    transition: 0.4s;
+}
+
+/* 音頻組件 */
+.audio-player {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(0,0,0,0.7);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+}
+.audio-visualizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 15px;
+}
+.visual-bar {
+    width: 2px;
+    background: var(--gold);
+    animation: bar-dance 1s infinite ease-in-out;
+}
+@keyframes bar-dance {
+    0%, 100% { height: 5px; }
+    50% { height: 15px; }
+}

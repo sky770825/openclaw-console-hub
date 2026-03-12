@@ -1,0 +1,71 @@
+[
+  {
+    "lead_id": "L001",
+    "customer": "王小姐",
+    "priority": "Medium",
+    "score": 50,
+    "reasons": [
+      "過敏族群 (High Priority)",
+      "菸味困擾"
+    ],
+    "estimated_total": 27945,
+    "details": [
+      {
+        "type": "橫拉窗",
+        "size": "160x210",
+        "cai": 37,
+        "count": 1,
+        "subtotal": 14985
+      },
+      {
+        "type": "橫拉窗",
+        "size": "120x120",
+        "cai": 16,
+        "count": 2,
+        "subtotal": 12960
+      }
+    ]
+  },
+  {
+    "lead_id": "L002",
+    "customer": "張先生",
+    "priority": "Medium",
+    "score": 50,
+    "reasons": [
+      "新屋裝修需求",
+      "已有預算認知"
+    ],
+    "estimated_total": 58320,
+    "details": [
+      {
+        "type": "橫拉窗",
+        "size": "150x220",
+        "cai": 36,
+        "count": 4,
+        "subtotal": 58320
+      }
+    ]
+  },
+  {
+    "lead_id": "L003",
+    "customer": "李先生",
+    "priority": "High",
+    "score": 100,
+    "reasons": [
+      "過敏族群 (High Priority)",
+      "新屋裝修需求",
+      "菸味困擾",
+      "已有預算認知"
+    ],
+    "estimated_total": 9195,
+    "details": [
+      {
+        "type": "三合一門",
+        "size": "80x210",
+        "cai": 19,
+        "count": 1,
+        "subtotal": 9195
+      }
+    ]
+  }
+]

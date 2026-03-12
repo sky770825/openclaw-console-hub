@@ -1,0 +1,6 @@
+# Zeek 通知設定
+@load frameworks/notice/extend-email/hostnames
+
+redef Notice::emailed_types += {
+    HTTP::MalwareHashRegistryMatch,
+};

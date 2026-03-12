@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>六道輪迴 | 因果真相</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../particles.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .realm-card {
+            padding: 3rem; text-align: center;
+            border: 1px solid rgba(123,47,190,0.2);
+            background: rgba(15,10,26,0.8);
+            transition: all 0.4s; position: relative;
+            min-height: 400px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .realm-card:hover { transform: translateY(-10px); border-color: var(--gold); box-shadow: 0 10px 50px rgba(0,0,0,0.8); }
+        .realm-icon { font-size: 4rem; margin-bottom: 1.5rem; }
+        .realm-name { font-size: 2rem; font-weight: 900; color: var(--gold); margin-bottom: 0.5rem; }
+        .realm-type { font-size: 0.9rem; letter-spacing: 0.3em; margin-bottom: 1.5rem; font-weight: bold; }
+        .realm-type.good { color: #00d4ff; }
+        .realm-type.evil { color: #ff2200; }
+        .realm-cause { color: rgba(245,245,220,0.7); font-size: 1.1rem; line-height: 2; margin-bottom: 1rem; }
+        .realm-desc { color: rgba(245,245,220,0.5); font-size: 0.9rem; font-style: italic; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-10 text-sm tracking-[0.3em] font-bold text-stone-400">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明殿堂</a>
+            <a href="hell.html" class="hover:text-gold transition">十八地獄</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">因果真相</a></div>
+    </nav>
+
+    <main class="pt-40 pb-32 max-w-6xl mx-auto px-6">
+        <div class="text-center mb-40">
+            <h1 class="text-6xl mb-10 tracking-[0.6em] text-gold">六道輪迴</h1>
+            <p class="text-2xl text-stone-500 tracking-widest">意識頻率的歸宿 • 能量轉化的路徑</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- 天道 -->
+            <div class="realm-card">
+                <div class="realm-icon">✨</div>
+                <div class="realm-name">天道</div>
+                <div class="realm-type good">三善道之首</div>
+                <div class="realm-cause">因：廣修十善、大公無私、清淨心。</div>
+                <div class="realm-desc">享極致福報，壽命綿長，環境莊嚴。</div>
+            </div>
+
+            <!-- 阿修羅道 -->
+            <div class="realm-card">
+                <div class="realm-icon">⚔️</div>
+                <div class="realm-name">阿修羅道</div>
+                <div class="realm-type good">三善道之一</div>
+                <div class="realm-cause">因：修福但嗔心重、好鬥、嫉妒心強。</div>
+                <div class="realm-desc">有天人之福而無天人之德，常處爭鬥。</div>
+            </div>
+
+            <!-- 人道 -->
+            <div class="realm-card">
+                <div class="realm-icon">🧘</div>
+                <div class="realm-name">人道</div>
+                <div class="realm-type good">三善道之一</div>
+                <div class="realm-cause">因：五戒十善、善惡兼具、意識覺醒。</div>
+                <div class="realm-desc">苦樂參半，是修行與轉化業力的核心維度。</div>
+            </div>
+
+            <!-- 畜生道 -->
+            <div class="realm-card">
+                <div class="realm-icon">🐾</div>
+                <div class="realm-name">畜生道</div>
+                <div class="realm-type evil">三惡道之一</div>
+                <div class="realm-cause">因：愚痴、執著、無視因果、純受本能驅使。</div>
+                <div class="realm-desc">受勞役、弱肉強食、無明籠罩之苦。</div>
+            </div>
+
+            <!-- 餓鬼道 -->
+            <div class="realm-card">
+                <div class="realm-icon">🕯️</div>
+                <div class="realm-name">餓鬼道</div>
+                <div class="realm-type evil">三惡道之一</div>
+                <div class="realm-cause">因：極度慳貪、自私自利、剝削他人。</div>
+                <div class="realm-desc">長受飢渴，欲望永不滿足的意識囚牢。</div>
+            </div>
+
+            <!-- 地獄道 -->
+            <div class="realm-card">
+                <div class="realm-icon">🔥</div>
+                <div class="realm-name">地獄道</div>
+                <div class="realm-type evil">三惡道之底</div>
+                <div class="realm-cause">因：極惡重罪、五逆十惡、毀滅正法。</div>
+                <div class="realm-desc">受極大痛苦，時間感被無限拉長的能量清算區。</div>
+            </div>
+        </div>
+
+        <div class="mt-40 text-center">
+            <p class="text-2xl text-stone-400 mb-10 leading-relaxed">
+                「輪迴並非轉世的謎語，而是意識頻率的自然篩選。<br>
+                你當下的每一個起心動念，都在決定下一個頻率的刻度。」
+            </p>
+            <a href="quiz.html" class="btn-premium">進行覺醒測驗</a>
+        </div>
+    </main>
+
+    <footer class="py-20 text-center border-t border-gold/20">
+        <p class="text-gold tracking-[0.5em] text-xl">因果真相 • 宇宙鐵律</p>
+    </footer>
+</body>
+</html>

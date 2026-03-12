@@ -1,0 +1,28 @@
+# 市場需求監控系統依賴
+
+# 數據收集
+requests>=2.28.0
+beautifulsoup4>=4.11.0
+pytrends>=4.7.0
+
+# 數據處理
+pandas>=1.5.0
+numpy>=1.23.0
+
+# 分詞/NLP
+jieba>=0.42.0
+
+# 視覺化
+matplotlib>=3.6.0
+plotly>=5.0.0
+
+# 排程
+schedule>=1.1.0
+APScheduler>=3.10.0
+
+# 日誌
+python-logging-loki>=0.3.0
+
+# 其他工具
+python-dotenv>=0.20.0
+pyyaml>=6.0

@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "project": "openclaw-task-board",
+  "modules": {
+    "user": {
+      "tableName": "users",
+      "fields": {
+        "id": "uuid",
+        "email": "string(255)",
+        "password_hash": "string(255)",
+        "display_name": "string(100)",
+        "role": "enum('ADMIN', 'USER')",
+        "created_at": "timestamp"
+      }
+    },
+    "product": {
+      "tableName": "products",
+      "fields": {
+        "id": "uuid",
+        "sku": "string(50)",
+        "name": "string(255)",
+        "base_price": "decimal(10,2)",
+        "stock_quantity": "integer",
+        "status": "enum('DRAFT', 'PUBLISHED', 'ARCHIVED')"
+      }
+    },
+    "cms": {
+      "tableName": "contents",
+      "fields": {
+        "id": "uuid",
+        "slug": "string(255)",
+        "title": "string(255)",
+        "content": "text",
+        "author_id": "uuid",
+        "status": "enum('DRAFT', 'PUBLISHED')"
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "roles": [
+    {
+      "id": "researcher",
+      "role": "Information Analyst",
+      "backstory": "Specializes in deep-dive data gathering and synthesis.",
+      "allow_delegation": false
+    },
+    {
+      "id": "coder",
+      "role": "Lead Developer",
+      "backstory": "Expert in writing clean, performant Python and JavaScript code.",
+      "allow_delegation": true
+    },
+    {
+      "id": "manager",
+      "role": "Crew Coordinator",
+      "backstory": "Oversees project progress and ensures quality control.",
+      "allow_delegation": true
+    }
+  ]
+}

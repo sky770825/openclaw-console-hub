@@ -1,0 +1,13 @@
+{
+  "status": "completed",
+  "files_created": [
+    "deputy.ts",
+    "index_integration.ts"
+  ],
+  "endpoints_implemented": [
+    "GET /api/openclaw/deputy/status",
+    "POST /api/openclaw/deputy/toggle",
+    "POST /api/openclaw/deputy/level"
+  ],
+  "notes": "Files were generated in the output directory as per hard restrictions preventing direct modification of src/ directories."
+}

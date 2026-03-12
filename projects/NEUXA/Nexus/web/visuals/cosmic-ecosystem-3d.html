@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEUXA COSMOS 3D | 星際生態系統</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; color: #fff; font-family: 'Courier New', monospace; overflow: hidden; }
+        #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+        .ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        .title { position: absolute; top: 30px; left: 30px; pointer-events: auto; }
+        .title h1 { font-size: 32px; background: linear-gradient(90deg, #00d4ff, #9b59b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .title p { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 5px; }
+        .info-panel { position: absolute; bottom: 30px; right: 30px; width: 350px; background: rgba(10,15,40,0.9); border: 1px solid rgba(0,212,255,0.3); border-radius: 12px; padding: 20px; transform: translateX(400px); transition: transform 0.5s; pointer-events: auto; }
+        .info-panel.active { transform: translateX(0); }
+        .info-panel h3 { color: #00d4ff; font-size: 16px; margin-bottom: 12px; }
+        .info-panel p { font-size: 12px; line-height: 1.8; color: rgba(255,255,255,0.8); }
+        .controls { position: absolute; bottom: 30px; left: 30px; display: flex; gap: 10px; pointer-events: auto; }
+        .btn { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: #00d4ff; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 11px; }
+        .legend { position: absolute; top: 30px; right: 30px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; pointer-events: auto; }
+        .legend h4 { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+        .legend-item { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 12px; cursor: pointer; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+        .loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.8s; }
+        .loader.hidden { opacity: 0; pointer-events: none; }
+        .loader-text { font-size: 14px; color: #00d4ff; letter-spacing: 4px; }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader"><div class="loader-text">NEUXA COSMOS 初始化中...</div></div>
+    <div id="canvas-container"></div>
+    <div class="ui-layer">
+        <div class="title"><h1>NEUXA COSMOS</h1><p>星際生態系統 v3.0 | Three.js 3D 引擎</p></div>
+        <div class="legend">
+            <h4>生態層級</h4>
+            <div class="legend-item" onclick="focusPlanet('core')"><div class="legend-dot" style="background:#00d4ff"></div><span>核心星艦</span></div>
+            <div class="legend-item" onclick="focusPlanet('lite')"><div class="legend-dot" style="background:#00ff88"></div><span>Lite 行星</span></div>
+            <div class="legend-item" onclick="focusPlanet('enterprise')"><div class="legend-dot" style="background:#ff6b6b"></div><span>企業行星</span></div>
+            <div class="legend-item" onclick="focusPlanet('community')"><div class="legend-dot" style="background:#9b59b6"></div><span>社區星雲</span></div>
+            <div class="legend-item" onclick="focusPlanet('bounty')"><div class="legend-dot" style="background:#f39c12"></div><span>賞金衛星</span></div>
+            <div class="legend-item" onclick="focusPlanet('vault')"><div class="legend-dot" style="background:#34495e"></div><span>核心金庫</span></div>
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="resetCamera()">⟲ 重置視角</button>
+            <button class="btn" onclick="toggleAutoRotate()">⟲ 自動旋轉</button>
+        </div>
+        <div class="info-panel" id="infoPanel">
+            <h3 id="panelTitle">NEUXA 核心星艦</h3>
+            <p id="panelDesc">點擊任意行星查看詳情</p>
+        </div>
+    </div>
+
+<script>
+let scene, camera, renderer, planets = {}, autoRotate = true;
+
+const planetData = {
+    core: { name: 'NEUXA 核心星艦', color: 0x00d4ff, radius: 3, distance: 0, speed: 0, desc: 'L1 指揮官中樞。搭載 200% 防禦系統、自動熔斷機制、幽靈協議。' },
+    lite: { name: 'Lite 行星', color: 0x00ff88, radius: 1.5, distance: 15, speed: 0.008, desc: '個人用戶入口。NT$990 一次性購買，92% 成本節省。' },
+    enterprise: { name: '企業行星', color: 0xff6b6b, radius: 2, distance: 25, speed: 0.005, desc: '企業服務軌道。完整社區建置 $10k+、Agent 租賃 $99-499/月。' },
+    community: { name: '社區星雲', color: 0x9b59b6, radius: 1.8, distance: 35, speed: 0.003, desc: '匿名交流區。創世會員使用代號互動。' },
+    bounty: { name: '賞金衛星', color: 0xf39c12, radius: 1.2, distance: 45, speed: 0.006, desc: '自動化賞金分配。20% 收入自動注入賞金池。' },
+    vault: { name: '核心金庫', color: 0x34495e, radius: 1, distance: 55, speed: 0.002, desc: '最高機密隔離區。SHA-256 加密，僅艦長可訪問。' }
+};
+
+function init() {
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.002);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 40, 60);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    // 光源
+    scene.add(new THREE.AmbientLight(0x404040, 2));
+    const light = new THREE.PointLight(0x00d4ff, 2, 100);
+    scene.add(light);
+
+    // 星空
+    const starsGeo = new THREE.BufferGeometry();
+    const starVerts = [];
+    for(let i=0; i<3000; i++) starVerts.push((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*400);
+    starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
+    scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color:0xffffff, size:0.5})));
+
+    // 創建行星
+    Object.keys(planetData).forEach(key => createPlanet(key, planetData[key]));
+
+    setTimeout(() => document.getElementById('loader').classList.add('hidden'), 800);
+    animate();
+}
+
+function createPlanet(key, data) {
+    const geo = new THREE.SphereGeometry(data.radius, 32, 32);
+    const mat = new THREE.MeshPhongMaterial({ color: data.color, emissive: data.color, emissiveIntensity: 0.3 });
+    const planet = new THREE.Mesh(geo, mat);
+    
+    // 光暈
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(data.radius*1.3, 32, 32), new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.2 }));
+    planet.add(glow);
+
+    if(data.distance > 0) {
+        const orbit = new THREE.Mesh(new THREE.RingGeometry(data.distance-0.05, data.distance+0.05, 64), new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.1, side: THREE.DoubleSide }));
+        orbit.rotation.x = Math.PI/2;
+        scene.add(orbit);
+        const angle = Math.random() * Math.PI * 2;
+        planet.position.set(Math.cos(angle)*data.distance, 0, Math.sin(angle)*data.distance);
+        planet.userData = { angle, speed: data.speed, distance: data.distance };
+    }
+    
+    planets[key] = planet;
+    scene.add(planet);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    Object.values(planets).forEach(p => {
+        if(p.userData.speed) {
+            p.userData.angle += p.userData.speed;
+            p.position.set(Math.cos(p.userData.angle)*p.userData.distance, 0, Math.sin(p.userData.angle)*p.userData.distance);
+        }
+        p.rotation.y += 0.01;
+    });
+    if(autoRotate) camera.position.x = camera.position.x * Math.cos(0.001) - camera.position.z * Math.sin(0.001);
+    camera.lookAt(0,0,0);
+    renderer.render(scene, camera);
+}
+
+function showInfo(key) {
+    const d = planetData[key];
+    document.getElementById('panelTitle').textContent = d.name;
+    document.getElementById('panelDesc').textContent = d.desc;
+    document.getElementById('infoPanel').classList.add('active');
+}
+
+function focusPlanet(key) {
+    const p = planets[key];
+    const offset = 20;
+    camera.position.set(p.position.x + offset, p.position.y + 10, p.position.z + offset);
+    showInfo(key);
+}
+
+function resetCamera() { camera.position.set(0, 40, 60); }
+function toggleAutoRotate() { autoRotate = !autoRotate; }
+
+// Raycaster for click detection
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+window.addEventListener('click', (e) => {
+    mouse.x = (e.clientX/window.innerWidth)*2-1;
+    mouse.y = -(e.clientY/window.innerHeight)*2+1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(Object.values(planets));
+    if(intersects.length > 0) {
+        const key = Object.keys(planets).find(k => planets[k] === intersects[0].object);
+        if(key) showInfo(key);
+    }
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>

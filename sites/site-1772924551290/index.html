@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星群計畫 - 整合智慧，驅動未來</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* 色彩 — 根據產品類型選一組主色 */
+            --primary: #6366f1;      /* 主色（indigo 系列） */
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --accent: #f59e0b;       /* 強調色 */
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            /* 背景/文字 */
+            --bg: #ffffff; --bg-secondary: var(--gray-50); --text: var(--gray-900); --text-secondary: var(--gray-500);
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            /* 陰影（5 級） */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        /* GLOBAL STYLES & RESETS */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all var(--duration) var(--ease);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: var(--text-base);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h1 { font-size: var(--text-5xl); }
+        h2 { font-size: var(--text-4xl); }
+        h3 { font-size: var(--text-3xl); }
+        h4 { font-size: var(--text-2xl); }
+
+        p {
+            margin-bottom: var(--space-4);
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--primary-dark);
+        }
+
+        img, svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* UTILITIES */
+        .container {
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: var(--space-6);
+            padding-right: var(--space-6);
+        }
+
+        .section {
+            padding-top: var(--space-20);
+            padding-bottom: var(--space-20);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: var(--space-12);
+        }
+
+        .section-title h2 {
+            font-size: var(--text-3xl);
+            margin-bottom: var(--space-4);
+        }
+
+        .section-title p {
+            font-size: var(--text-lg);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--space-8);
+        }
+        
+        .grid-3 {
+             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp var(--duration-slow) var(--ease) both;
+        }
+
+        /* HEADER */
+        .main-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-4) 0;
+        }
+
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: var(--text-xl);
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .logo i {
+            color: var(--primary);
+        }
+
+        .main-nav ul {
+            display: flex;
+            list-style: none;
+            gap: var(--space-8);
+        }
+        
+        .main-nav a {
+            color: var(--text);
+            font-weight: 500;
+            position: relative;
+            padding: var(--space-2) 0;
+        }
+
+        .main-nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            transition: width var(--duration) var(--ease);
+        }
+        
+        .main-nav a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-nav-toggle {
+            display: none;
+            font-size: var(--text-2xl);
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--text);
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-size: var(--text-base);
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            padding: var(--space-20) 0;
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(99, 102, 241, 0.1));
+        }
+
+        .hero h1 {
+            font-weight: 700;
+            margin-bottom: var(--space-6);
+        }
+        
+        .hero p {
+            font-size: var(--text-xl);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto var(--space-8) auto;
+        }
+
+        .hero .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-4);
+        }
+        
+        /* CARDS */
+        .card {
+            background-color: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+
+        .card-body {
+            padding: var(--space-8);
+            flex-grow: 1;
+        }
+
+        .card-icon {
+            font-size: var(--text-4xl);
+            color: var(--primary);
+            margin-bottom: var(--space-4);
+        }
+
+        .card-title {
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-3);
+        }
+
+        /* Staggered animation for cards */
+        .grid > .card {
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        .grid > .card:nth-child(1) { animation-delay: 0.1s; }
+        .grid > .card:nth-child(2) { animation-delay: 0.2s; }
+        .grid > .card:nth-child(3) { animation-delay: 0.3s; }
+        .grid > .card:nth-child(4) { animation-delay: 0.4s; }
+        .grid > .card:nth-child(5) { animation-delay: 0.5s; }
+        .grid > .card:nth-child(6) { animation-delay: 0.6s; }
+        
+        /* DASHBOARD SECTION */
+        .dashboard-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-12);
+        }
+        
+        .metric-item {
+            background: var(--bg-secondary);
+            padding: var(--space-6);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: var(--text-4xl);
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .metric-label {
+            font-size: var(--text-base);
+            color: var(--text-secondary);
+        }
+        
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-16);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--gray-200);
+        }
+        
+        .empty-state svg {
+            max-width: 200px;
+            margin: 0 auto var(--space-6);
+            color: var(--gray-300);
+        }
+        
+        .empty-state h3 {
+            margin-bottom: var(--space-4);
+        }
+        
+        .empty-state p {
+            margin-bottom: var(--space-8);
+        }
+        
+        /* CONTACT FORM */
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: var(--space-6);
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: var(--space-2);
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-base);
+            font-family: var(--font);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* FOOTER */
+        .main-footer {
+            background-color: var(--gray-800);
+            color: var(--gray-300);
+            padding: var(--space-12) 0;
+        }
+
+        .main-footer .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: var(--space-6);
+        }
+        
+        .footer-socials a {
+            color: var(--gray-300);
+            font-size: var(--text-xl);
+            margin: 0 var(--space-3);
+        }
+        
+        .footer-socials a:hover {
+            color: var(--primary-light);
+        }
+        
+        /* TOAST NOTIFICATION */
+        .toast {
+            position: fixed;
+            top: var(--space-6);
+            right: var(--space-6);
+            background-color: var(--gray-800);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            transform: translateX(calc(100% + var(--space-6)));
+            transition: transform var(--duration-slow) var(--ease);
+            z-index: 9999;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success {
+            background-color: var(--success);
+        }
+        
+        .toast.error {
+            background-color: var(--error);
+        }
+        
+        .toast-icon {
+            font-size: var(--text-lg);
+        }
+        
+        /* RWD - MOBILE FIRST */
+        @media (max-width: 768px) {
+            .main-nav {
+                display: none; /* Simple hide for now, a full mobile menu would need more JS */
+            }
+            .main-header .btn {
+                display: none;
+            }
+            .mobile-nav-toggle {
+                display: block;
+            }
+            .hero h1 {
+                font-size: var(--text-4xl);
+            }
+            .hero p {
+                font-size: var(--text-lg);
+            }
+            .section {
+                padding-top: var(--space-16);
+                padding-bottom: var(--space-16);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo">
+                <i class="fa-solid fa-star-of-life"></i>
+                <span>星群計畫</span>
+            </a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#services">核心服務</a></li>
+                    <li><a href="#dashboard">成果儀表板</a></li>
+                    <li><a href="#projects">最新專案</a></li>
+                    <li><a href="#contact">聯絡我們</a></li>
+                </ul>
+            </nav>
+            <a href="#contact" class="btn btn-primary">開始諮詢</a>
+            <button class="mobile-nav-toggle" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero fade-in-up">
+            <div class="container">
+                <h1>整合星群智慧，驅動未來商業</h1>
+                <p>我們結合頂尖 AI 技術、數據分析與商業策略，為您的企業打造無與倫比的競爭優勢。立即啟動您的數位轉型之旅。</p>
+                <div class="cta-buttons">
+                    <a href="#services" class="btn btn-primary">探索我們的服務</a>
+                    <a href="#contact" class="btn btn-secondary">預約專家諮詢</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="services" class="section">
+            <div class="container">
+                <div class="section-title">
+                    <h2>我們的核心服務</h2>
+                    <p>從策略到執行，我們提供全方位的解決方案，幫助您在快速變化的市場中保持領先。</p>
+                </div>
+                <div class="grid grid-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-icon"><i class="fa-solid fa-microchip"></i></div>
+                            <h3 class="card-title">AI 導入與優化</h3>
+                            <p>評估您的業務流程，導入最適合的 AI 模型與工具，從自動化日常任務到預測市場趨勢，全面提升營運效率。</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                            <h3 class="card-title">數據驅動決策</h3>
+                            <p>建立高效的數據管道，透過視覺化儀表板與深度分析，將原始數據轉化為有價值的商業洞察，讓每個決策都有依據。</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-icon"><i class="fa-solid fa-building-shield"></i></div>
+                            <h3 class="card-title">企業數位轉型</h3>
+                            <p>不僅是技術升級，更是思維模式的轉變。我們協助您規劃完整的轉型藍圖，建立敏捷、創新的企業文化。</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-icon"><i class="fa-solid fa-cloud"></i></div>
+                            <h3 class="card-title">雲端架構規劃</h3>
+                            <p>設計並實施安全、可擴展且具成本效益的雲端基礎設施。無論是公有雲、私有雲或混合雲，我們都能提供最佳方案。</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-icon"><i class="fa-solid fa-code"></i></div>
+                            <h3 class="card-title">客製化軟體開發</h3>
+                            <p>根據您的獨特需求，從零開始打造高性能的企業級應用程式、SaaS 產品或內部管理系統。</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-icon"><i class="fa-solid fa-user-gear"></i></div>
+                            <h3 class="card-title">長期技術顧問</h3>
+                            <p>成為您團隊的延伸，提供持續的技術指導、架構審查與戰略諮詢，確保您的技術發展與商業目標一致。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="dashboard" class="section" style="background-color: var(--bg-secondary);">
+            <div class="container">
+                <div class="section-title">
+                    <h2>成果儀表板</h2>
+                    <p>數字會說話。我們以卓越的成果為榮，並持續為客戶創造可衡量的價值。</p>
+                </div>
+                <div class="dashboard-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value">98%</div>
+                        <div class="metric-label">專案完成率</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">4.9/5</div>
+                        <div class="metric-label">客戶滿意度</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">+75%</div>
+                        <div class="metric-label">客戶平均效率提升</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">120+</div>
+                        <div class="metric-label">已完成專案</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">年度專案成長趨勢</h3>
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="section">
+            <div class="container">
+                <div class="section-title">
+                    <h2>最新專案</h2>
+                    <p>我們正在為各行各業的領導者打造創新的解決方案。敬請期待我們最新的成功案例。</p>
+                </div>
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                    <h3>專案正在準備中</h3>
+                    <p>我們最新的專案成果正在整理中，即將發布。想成為我們的下一個成功案例嗎？</p>
+                    <a href="#contact" class="btn btn-primary">立即與我們聯繫</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="section" style="background-color: var(--bg-secondary);">
+            <div class="container">
+                <div class="section-title">
+                    <h2>準備好開始了嗎？</h2>
+                    <p>請留下您的資訊，我們的專家團隊將在 24 小時內與您聯繫，共同探討您的需求與可能性。</p>
+                </div>
+                <form id="contactForm" class="contact-form" novalidate>
+                    <div class="form-group">
+                        <label for="name">您的姓名</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="請輸入您的姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">電子郵件</label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="example@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">您的需求</label>
+                        <textarea id="message" name="message" class="form-control" placeholder="請簡單描述您的專案需求或想諮詢的問題" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">送出諮詢</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <a href="#" class="logo" style="color: white;">
+                <i class="fa-solid fa-star-of-life"></i>
+                <span>星群計畫</span>
+            </a>
+            <div class="footer-socials">
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+            </div>
+            <p>&copy; 2024 星群計畫. All Rights Reserved. 由老蔡的 AI 夥伴小蔡強力驅動。</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast">
+        <i id="toast-icon" class="toast-icon fa-solid"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Chart.js Initialization ---
+        const ctx = document.getElementById('growthChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['第一季度', '第二季度', '第三季度', '第四季度'],
+                    datasets: [{
+                        label: '已完成專案數量',
+                        data: [22, 35, 48, 55],
+                        backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(200, 200, 200, 0.1)'
+                            }
+                        },
+                        x: {
+                           grid: {
+                                display: false
+                           }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Toast Notification Handler ---
+        const toast = {
+            element: document.getElementById('toast'),
+            icon: document.getElementById('toast-icon'),
+            message: document.getElementById('toast-message'),
+            timeoutId: null,
+            show(msg, type = 'success', duration = 3000) {
+                clearTimeout(this.timeoutId);
+                this.message.textContent = msg;
+                this.element.className = 'toast'; // Reset classes
+                this.element.classList.add(type, 'show');
+                
+                if (type === 'success') {
+                    this.icon.className = 'toast-icon fa-solid fa-check-circle';
+                } else {
+                    this.icon.className = 'toast-icon fa-solid fa-times-circle';
+                }
+
+                this.timeoutId = setTimeout(() => {
+                    this.element.classList.remove('show');
+                }, duration);
+            }
+        };
+
+        // --- Contact Form Handler ---
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (!contactForm.checkValidity()) {
+                    contactForm.reportValidity();
+                    toast.show('請填寫所有必填欄位', 'error');
+                    return;
+                }
+
+                const formData = new FormData(contactForm);
+                const data = {
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    message: formData.get('message'),
+                    timestamp: new Date().toISOString()
+                };
+
+                // Simulate saving to localStorage
+                try {
+                    const submissions = JSON.parse(localStorage.getItem('contactSubmissions')) || [];
+                    submissions.push(data);
+                    localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
+                    
+                    toast.show('訊息已成功送出！', 'success');
+                    contactForm.reset();
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                    toast.show('儲存失敗，請稍後再試', 'error');
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>

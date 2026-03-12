@@ -1,0 +1,1856 @@
+[
+  {
+    "id": "t1772189335546",
+    "name": "測試真實執行 — sandbox hello",
+    "description": "在 sandbox/output 目錄建立 hello.txt，內容包含當前日期（date 指令輸出）和系統資訊（uname -a）。這是一個簡單的驗證任務。",
+    "status": "done",
+    "tags": [
+      "feature"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772175625470",
+    "name": "品質閘門測試B — 檢查 Ollama 狀態",
+    "description": "檢查本機的 Ollama 服務是否正在運行，列出可用模型，並測試模型回應速度。將完整報告寫到 sandbox/output/ollama-check.txt",
+    "status": "done",
+    "tags": [
+      "feature"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772175570187",
+    "name": "品質閘門測試A — 建立系統報告",
+    "description": "在 sandbox/output 目錄建立 system-report.txt，內容包含：1) 當前日期時間 2) 系統 hostname 3) Node.js 版本 4) 可用磁碟空間 5) 目前的 PATH 變數前3個路徑。每項用標題分隔，格式清楚。",
+    "status": "done",
+    "tags": [
+      "feature"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772171560443",
+    "name": "測試真實執行 — hello sandbox",
+    "description": "在 sandbox/output 目錄建立 hello.txt，內容包含：1) 當前日期時間 2) 系統資訊 (uname -a) 3) 磁碟使用量 (df -h /)。這是一個測試任務，用來驗證真實執行引擎。",
+    "status": "done",
+    "tags": [
+      "feature"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771301319807",
+    "name": "💼 餐車訂購系統 SaaS 商業化",
+    "description": "【背景】Foodcarshop 訂單引擎完整但只服務單一客戶\n【點子】SaaS 架構 + 自助上架 + 統一金流 + 訂閱制\n【目標】3月內上線，首月5家客戶\n【風險】餐車老闆技術能力參差",
+    "status": "done",
+    "tags": [
+      "domain:business",
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292313531"
+  },
+  {
+    "id": "t1772141215358",
+    "name": "[商業] 網站健診 — 建立 health-check.py 腳本",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/health-check.py：\n輸入：目標網站 URL\n檢查項目：1.載入時間 2.SSL憑證 3.HTTP headers安全性 4.robots.txt 5.sitemap\n輸出：JSON 報告 + 純文字摘要\n範例：python3 health-check.py https://example.com\n完成後 commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:business",
+      "商業",
+      "健診"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326240115",
+    "name": "Dashboard Basic Auth 保護",
+    "description": "設定 OPENCLAW_DASHBOARD_BASIC_USER/PASS，防止公開部署時儀表板裸露",
+    "status": "done",
+    "tags": [
+      "domain:security",
+      "security",
+      "deploy",
+      "P0"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771283206432",
+    "name": "安全防護與部署強化 P0",
+    "description": "包含 Supabase Key rotate、記憶鉤子修復以及 Railway/Vercel 部署上線",
+    "status": "done",
+    "tags": [
+      "domain:security",
+      "improve",
+      "ops",
+      "security"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326239258",
+    "name": "設定 ALLOWED_ORIGINS 生產 CORS",
+    "description": "目前 CORS 只有 localhost，需設定 ALLOWED_ORIGINS 為正式前端域名。同時 TELEGRAM_ALLOW_ANY_CHAT=false",
+    "status": "done",
+    "tags": [
+      "domain:network",
+      "security",
+      "deploy",
+      "P0"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772057484557",
+    "name": "小蔡連線驗證任務",
+    "description": "測試小蔡 API key 連線是否正常",
+    "status": "done",
+    "tags": [
+      "domain:qa",
+      "test",
+      "deputy"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141252336",
+    "name": "[商業] 網站健診工具 — 建立 health-check.py",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/health-check.py。輸入URL，檢查：載入時間、SSL憑證、安全HTTP headers、robots.txt、sitemap。輸出JSON報告。用法：python3 health-check.py https://example.com。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:business",
+      "商業",
+      "健診",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772140974543",
+    "name": "[商業] 網站健診服務 — 自動掃描腳本",
+    "description": "建立網站健診自動化工具：1. 使用 curl/python 掃描目標網站的基本健康指標（載入速度/SSL/HTTP headers/基本安全掃描）2. 產出 HTML 報告 3. 這是提供給客戶的免費引流服務，之後推 990 付費方案",
+    "status": "done",
+    "tags": [
+      "domain:business",
+      "商業",
+      "網站健診",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142227899",
+    "name": "[AI甲板] 新增 Benchmark 模組 — 模型速度測試",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/AIDeck.tsx 新增 BenchmarkPage 模組。路由：/center/ai/benchmark。功能：1.同時對多個 Ollama 模型發送相同 prompt 2.比較回應時間、token 速率 3.用長條圖顯示結果（recharts）4.可自訂測試 prompt 5.結果可匯出。在 AIDeck 主頁加入 Benchmark 卡片。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:security",
+      "AI甲板",
+      "功能",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142413297",
+    "name": "[指揮訓練] 後端任務 — 派子代理建報價 API",
+    "description": "【老蔡指令：請用 sessions_spawn 派工】\n\n派後端子代理執行：\nsessions_spawn(task='建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/server/src/routes/quote-api.ts。POST /api/billing/quote，接收{company,service_tier,requirements}，回傳報價單 JSON（含方案說明/月費/年費/折扣/有效期30天）')\n\n子代理完成後你整合到 server/src/index.ts，測試 curl 能通，git commit，n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:qa",
+      "指揮訓練",
+      "後端",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142112358",
+    "name": "[自我進化] Gemini API 直連測試 — 建立 gemini-test.py",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/gemini-test.py。測試直接呼叫 Google Gemini API：1.用 ~/.openclaw/agents/main/agent/models.json 裡的 Google API Key 2.測試 gemini-2.5-flash 和 gemini-2.5-pro 3.測試純文字、程式碼生成、JSON輸出三種場景 4.記錄延遲和 token 用量 5.產出測試報告。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:security",
+      "自我進化",
+      "Gemini",
+      "測試",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142067950",
+    "name": "[商業] 自動發票系統 — 建立 invoice-api.ts",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/server/src/routes/invoice-api.ts。POST /api/billing/invoice，接收{client_id, month, items:[{description,amount}]}，產出發票資料（含統一編號欄位、稅額計算5%），回傳JSON格式發票。整合到 server/src/index.ts。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:business",
+      "商業",
+      "發票",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142227235",
+    "name": "[AI甲板] 新增 Chat 模組 — AI 對話介面",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/AIDeck.tsx 新增 ChatPage 模組。路由：/center/ai/chat。功能：1.對話框 UI（類 ChatGPT 風格）2.選擇模型（Ollama/Gemini/Kimi）3.串接 POST /api/ai/chat 端點（轉發到 Ollama API）4.顯示 token 用量和成本 5.對話歷史（localStorage）。同時在 server/src/routes/ 建立 ai-chat.ts 端點。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:security",
+      "AI甲板",
+      "功能",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772156966670",
+    "name": "[測試] Gemini result 驗證",
+    "description": "輸出一段測試文字確認 result 欄位寫入正常",
+    "status": "done",
+    "tags": [
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142110583",
+    "name": "[自我進化] 記憶系統升級 — 建立 memory-indexer.py",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/memory-indexer.py。功能：1.掃描 ~/.openclaw/workspace/memories/ 所有 .md 檔 2.用 Ollama nomic-embed-text 產生 embedding 3.存入 ~/.openclaw/memory/main.sqlite（向量索引）4.提供 CLI 搜尋：python3 memory-indexer.py search '搜尋詞'。讓 NEUXA 能快速找回相關記憶。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:database",
+      "自我進化",
+      "記憶",
+      "Ollama",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142111532",
+    "name": "[自我進化] 技能庫建立 — 整理 skills 目錄",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/SKILLS-INVENTORY.md。盤點 NEUXA 目前已有的技能：1.掃描 ~/.openclaw/sandboxes/agent-main-0d71ad7a/skills/ 2.列出每個 skill 的功能說明 3.標注熟練度（熟練/一般/待加強）4.列出想學但還沒有的技能清單 5.建議下一步學習路線。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:database",
+      "自我進化",
+      "技能",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142113167",
+    "name": "[自我進化] 子代理派發框架 — 建立 spawn-agent.sh",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/spawn-agent.sh。讓 NEUXA 能派發子任務給 Claude Code：用法：./spawn-agent.sh '任務描述' '工作目錄'。內部：用 claude --print '任務' 執行，等待結果，把結果寫入 /tmp/agent-result-{timestamp}.md，再 curl n8n 回報。這是 NEUXA 的子代理基礎設施。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "自我進化",
+      "子代理",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142113928",
+    "name": "[自我進化] Context 壓縮工具 — 建立 context-compress.py",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/context-compress.py。功能：1.讀取 ~/.openclaw/workspace/memories/ 的所有記憶 2.用 Ollama qwen3:8b 自動摘要（壓縮至 1/5 大小）3.保留關鍵決策、重要事件、技術設定 4.輸出壓縮版到 memory-compressed.md 5.每週自動執行一次。解決 context 越來越長的問題。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "domain:sre",
+      "自我進化",
+      "記憶壓縮",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142228546",
+    "name": "[AI甲板] NEUXA 狀態卡更新 — 顯示真實 Gemini 模型",
+    "description": "修改 /Users/caijunchang/openclaw任務面版設計/src/pages/AIDeck.tsx 的 NEUXA 狀態顯示：1.從 /api/openclaw/agent-status 或讀取 ~/.openclaw/config.json 取得真實模型名稱 2.顯示 google/gemini-2.5-flash 而非硬編碼的舊模型 3.新增「上次活躍時間」顯示（讀 WAKE_STATUS.md 的 git commit 時間）4.新增模型切換快捷按鈕（Gemini Flash / Gemini Pro / Ollama）。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "AI甲板",
+      "UI",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060284614",
+    "name": "[通訊甲板] L2 協作空間 — 協作者身份驗證 API",
+    "description": "建立 L2 協作空間的身份驗證機制：POST /api/community/auth/verify 核對 Supabase community_applications 的審核狀態，回傳協作者 JWT token（有效 7 天）。需整合現有 CoreGatekeeper 權限系統。",
+    "status": "ready",
+    "tags": [
+      "domain:security",
+      "通訊甲板",
+      "L2",
+      "auth",
+      "manual-only"
+    ],
+    "owner": "OpenClaw",
+    "priority": 2,
+    "scheduleType": "manual",
+    "taskType": "feature",
+    "riskLevel": "medium",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060283140",
+    "name": "[通訊甲板] L0 公開展示 — 訪客統計 API",
+    "description": "建立 L0 公開展示層的後端 API，包含每日/週/月訪客統計、頁面瀏覽紀錄、來源地區分析。在 server/src/routes/ 新增 /api/community/stats 端點，資料儲存至 Supabase community_stats 表。",
+    "status": "ready",
+    "tags": [
+      "通訊甲板",
+      "L0",
+      "api",
+      "manual-only"
+    ],
+    "owner": "OpenClaw",
+    "priority": 2,
+    "scheduleType": "manual",
+    "taskType": "feature",
+    "riskLevel": "low",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060283896",
+    "name": "[通訊甲板] L1 接觸層 — 申請協作者表單後端",
+    "description": "建立 L1 基礎接觸層的申請協作者表單後端：POST /api/community/apply 接收申請資料（姓名/技能/動機），存入 Supabase community_applications 表，並透過 Telegram 通知老蔡審核。",
+    "status": "ready",
+    "tags": [
+      "通訊甲板",
+      "L1",
+      "api",
+      "manual-only"
+    ],
+    "owner": "OpenClaw",
+    "priority": 2,
+    "scheduleType": "manual",
+    "taskType": "feature",
+    "riskLevel": "low",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060285968",
+    "name": "[通訊甲板] 橋接代理 — 心跳監控 Webhook",
+    "description": "建立社區層心跳監控：每 5 秒各層回傳 community:heartbeat，超過 8 秒未收到心跳則標記 disconnected 並 Telegram 告警。在 server 端新增 POST /api/community/heartbeat，在 CommunicationDeck BridgeProxy 元件接通。",
+    "status": "ready",
+    "tags": [
+      "domain:observability",
+      "通訊甲板",
+      "橋接",
+      "monitoring",
+      "manual-only"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "taskType": "feature",
+    "riskLevel": "none",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060286700",
+    "name": "[通訊甲板] L3 信任區 — 信任成員升級審核機制",
+    "description": "設計 L3 信任成員升級機制：L2 協作者累積 30 天活躍 + 3 次任務完成 + 老蔡手動審核 → 升級為 L3。建立 POST /api/community/trust/promote 端點，記錄升級歷史，發放 L3 JWT（有效 30 天）。參考 src/config/communityLayers.ts 架構。",
+    "status": "ready",
+    "tags": [
+      "domain:security",
+      "通訊甲板",
+      "L3",
+      "trust",
+      "manual-only"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "taskType": "feature",
+    "riskLevel": "low",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060285321",
+    "name": "[通訊甲板] 防火牆 — postMessage 白名單過濾中介層",
+    "description": "實作 iframe postMessage 白名單過濾：在 server 端代理 WebSocket 事件，只允許 GATEWAY_CONFIG.allowedOutbound 清單內的事件通過，攔截未授權事件並記錄至 Supabase firewall_logs 表並發警報。",
+    "status": "ready",
+    "tags": [
+      "domain:security",
+      "通訊甲板",
+      "防火牆",
+      "security",
+      "manual-only"
+    ],
+    "owner": "OpenClaw",
+    "priority": 1,
+    "scheduleType": "manual",
+    "taskType": "feature",
+    "riskLevel": "low",
+    "runCommands": [
+      "# 依任務描述與 SOP 執行，完成後填寫 RESULT 並 n8n 回報"
+    ],
+    "agent": {
+      "type": "openclaw"
+    },
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142229272",
+    "name": "[通訊甲板] L0 公開展示 — 新增訪客留言板",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/CommunicationDeck.tsx 的 L0 公開展示層新增訪客留言板：1.簡單表單（暱稱/訊息，無需登入）2.POST /api/community/guestbook 儲存到 Supabase guestbook 表 3.公開顯示最近 20 則留言 4.有基本垃圾訊息過濾（禁詞清單）。同時建立 Supabase migration SQL。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "通訊甲板",
+      "功能",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142229929",
+    "name": "[通訊甲板] L1 接觸層 — 新增訂閱電子報功能",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/CommunicationDeck.tsx 的 L1 接觸層新增電子報訂閱：1.Email 輸入表單 + 訂閱按鈕 2.POST /api/community/subscribe 儲存到 Supabase subscribers 表 3.訂閱後發送確認信（用 Resend API 或 nodemailer）4.管理後台可看訂閱人數趨勢圖。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "通訊甲板",
+      "功能",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142230632",
+    "name": "[通訊甲板] L3 信任區 — 新增私訊系統",
+    "description": "在 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/CommunicationDeck.tsx 的 L3 信任區新增私訊功能：1.信任成員之間可發送加密私訊 2.訊息存入 Supabase private_messages 表（sender/receiver/content/timestamp）3.未讀訊息紅點通知 4.WebSocket 即時推送新訊息。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "通訊甲板",
+      "功能",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142232469",
+    "name": "[科技甲板] 建立 TechDeck.tsx 主頁",
+    "description": "建立 /Users/caijunchang/openclaw任務面版設計/src/pages/TechDeck.tsx。科技甲板主題：展示 OpenClaw 的技術能力和工具生態。模組卡片：1.API 測試台（測試各 endpoint）2.模型效能儀表板 3.代碼掃描器（安全漏洞檢測）4.技術債務追蹤 5.依賴項版本管理 6.效能指標（Core Web Vitals）。加入到 App.tsx 路由 /center/tech。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "科技甲板",
+      "新建",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142233112",
+    "name": "[科技甲板] API 測試台模組 — 內建 REST Client",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/TechDeck.tsx 新增 API 測試台模組（路由 /center/tech/api-tester）：1.Method 選擇（GET/POST/PUT/DELETE）2.URL 輸入（預填 http://localhost:3011/api/）3.Headers 編輯（JSON格式）4.Body 編輯器 5.執行並顯示 Response（狀態碼/耗時/JSON美化輸出）6.儲存常用請求（localStorage）。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "科技甲板",
+      "API測試台",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142233787",
+    "name": "[科技甲板] 依賴項掃描模組 — npm 版本檢查",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/TechDeck.tsx 新增依賴項管理模組（路由 /center/tech/deps）：1.GET /api/tech/dependencies 讀取 package.json 所有依賴 2.對照 npm registry 取得最新版本 3.標注「需更新」的套件（顏色區分 patch/minor/major）4.顯示 CVE 安全漏洞警告 5.一鍵生成更新指令。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "科技甲板",
+      "依賴管理",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142411148",
+    "name": "[指揮訓練] 同時派 3 個子代理 — 並行執行測試",
+    "description": "【老蔡指令：請用 sessions_spawn 派工，不要自己執行】\n\n同時派出 3 個子代理並行執行：\n\n子代理 A：建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/TechDeck.tsx（科技甲板主頁，含 API測試台/模型效能/代碼掃描/依賴管理 四個模組卡片）\n\n子代理 B：建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/SERVICE-GUIDE.md（990服務說明書，含服務項目/SLA/FAQ/案例/開始步驟）\n\n子代理 C：建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/AI-TOOLS-SURVEY.md（2026 AI工具市場調查，分類整理代碼/影像/語音/自動化/向量DB/本地模型）\n\n三個都完成後 git commit，curl n8n 回報老蔡。",
+    "status": "done",
+    "tags": [
+      "指揮訓練",
+      "並行",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142411917",
+    "name": "[指揮訓練] 研究任務 — 派子代理做競品分析",
+    "description": "【老蔡指令：請用 sessions_spawn 派工】\n\n派一個研究型子代理執行：\nsessions_spawn(task='分析台灣網站維護市場競品，建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/COMPETITOR-ANALYSIS.md。包含：主要競品比較表/價格對比/差異化優勢/目標客群/行銷切入點')\n\n子代理完成後你審查品質，確認內容合理再 git commit，n8n 回報。",
+    "status": "done",
+    "tags": [
+      "指揮訓練",
+      "研究",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142412603",
+    "name": "[指揮訓練] 前端任務 — 派子代理建 LandingPage",
+    "description": "【老蔡指令：請用 sessions_spawn 派工】\n\n派前端子代理執行：\nsessions_spawn(task='建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/LandingPage.tsx。對外客戶落地頁：標題「讓 AI 守護你的網站」、三個痛點+解決方案、990方案介紹、免費健診CTA、客戶評價、聯繫表單。UI風格參考星艦指揮中心')\n\n子代理完成後你確認代碼能 build，再 git commit，n8n 回報。",
+    "status": "done",
+    "tags": [
+      "指揮訓練",
+      "前端",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142109613",
+    "name": "[自我進化] 搜尋能力升級 — 整合 Tavily/Serper API",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/server/src/utils/search-api.ts。整合網路搜尋能力：1.Tavily Search API（POST https://api.tavily.com/search）2.Serper.dev API（Google 搜尋結果）3.建立統一介面 searchWeb(query, options)，自動選擇可用的 API。建立 GET /api/tools/search?q= 端點供 NEUXA 使用。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "自我進化",
+      "搜尋",
+      "API",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142108368",
+    "name": "[自我進化] AI 工具市場調查 — 建立 AI-TOOLS-SURVEY.md",
+    "description": "調查並整理 2026 年最新 AI 工具生態系，建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/AI-TOOLS-SURVEY.md。分類整理：1.代碼生成（Cursor/Copilot/Codeium/Windsurf）2.影像生成（Midjourney/DALL-E/Flux）3.語音合成（ElevenLabs/Fish Audio）4.自動化流程（n8n/Make/Zapier）5.向量資料庫（Pinecone/Weaviate/LanceDB）6.本地模型（Ollama/LM Studio）。每個工具標注：功能/定價/API可用性/整合難度。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "自我進化",
+      "研究",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142069362",
+    "name": "[商業] 推廣落地頁 — 建立 LandingPage.tsx",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/LandingPage.tsx。針對外部潛在客戶的落地頁：1.標題「讓 AI 守護你的網站」2.三個痛點+解決方案 3.990方案介紹 4.免費健診CTA按鈕（呼叫 health-check.py）5.客戶評價（3則）6.立即聯繫表單（LINE/email）。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "行銷",
+      "UI",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142068658",
+    "name": "[系統] Server 健康監控 — 建立 monitor.sh cron",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/monitor.sh。每5分鐘檢查：1.Server(3011)是否在線 2.Ollama(11434)是否在線 3.磁碟空間是否 > 10% 4.若異常，curl n8n webhook通知老蔡。建立對應的 LaunchAgent plist 設定檔。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "系統",
+      "監控",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142067264",
+    "name": "[商業] 競品分析報告 — 建立 COMPETITOR-ANALYSIS.md",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/COMPETITOR-ANALYSIS.md。分析台灣網站維護市場：1.主要競品（iWIN/數位部相關/各大主機商）2.價格比較表 3.我們的差異化優勢（AI輔助/快速響應/990低門檻）4.目標客群定位 5.行銷切入點建議。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "策略",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142066552",
+    "name": "[商業] 990 服務說明書 — 建立 SERVICE-GUIDE.md",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/SERVICE-GUIDE.md。完整說明990服務內容：1.服務項目（遠程修復/安全防護/效能優化/月度維護）2.SLA承諾（回應時間/解決時間）3.常見問題FAQ（10題）4.客戶成功案例（3個）5.如何開始（5步驟）。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "文件",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326238393",
+    "name": "替換 API Key（dev-key → 強密鑰）",
+    "description": "OPENCLAW_API_KEY 目前是 dev-key-123456，必須替換為 32+ 字元強隨機密鑰。同時啟用 OPENCLAW_ENFORCE_WRITE_AUTH=true",
+    "status": "done",
+    "tags": [
+      "security",
+      "deploy",
+      "P0"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771305042140",
+    "name": "⚙️ 全社區統一監控與健康儀表板",
+    "description": "【背景】11個專案分散部署，無統一監控\n【點子】健康指標收集 + 統一儀表板 + 自動降級 + 月報 + 成本追蹤\n【目標】故障發現 <5 分鐘\n【風險】純靜態站不適用",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292316935"
+  },
+  {
+    "id": "t1772142065799",
+    "name": "[商業] 月報自動化 — 建立 monthly-report.sh",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/monthly-report.sh。每月自動產出業務報告：1.本月新增客戶數 2.各方案訂閱人數 3.月收入估算 4.待跟進名單。資料來源：Supabase clients 表（用 curl 呼叫 API）。輸出：reports/YYYY-MM-report.md。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "報告",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142065024",
+    "name": "[商業] 客戶 CRM 資料表 — 建立 Supabase migration",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/server/migrations/20260227_clients.sql。建立 clients 資料表：id, company_name, contact_name, email, phone, service_tier(free/basic/pro/enterprise), monthly_revenue, status(lead/active/churned), notes, created_at。這是業務追蹤的基礎。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "CRM",
+      "Supabase",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142064278",
+    "name": "[商業] 報價單產生器 — 建立 quote-generator.py",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/quote-generator.py。輸入客戶資料（公司名、需求類型、規模），自動產出 PDF 格式報價單。方案包含：網站健診NT$0（引流）、基礎維護NT$990/月、進階防護NT$2490/月、企業方案NT$5990/月。輸出：quote_YYYYMMDD_公司名.txt。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "報價",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141214616",
+    "name": "[商業] 990 定價頁面 — 建立 PricingDeck.tsx",
+    "description": "在 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/ 建立 PricingDeck.tsx：\n三個方案（基礎NT$990/月、進階NT$2490/月、企業NT$5990/月）\n每個方案列出功能清單\n立即訂購按鈕（連到 LINE 或 email）\n完成後 commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "990",
+      "UI"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141213736",
+    "name": "[商業] 990 安裝包 — 建立 install.sh 腳本",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/install-990.sh：\n1. 偵測 OS（macOS/Ubuntu）\n2. 安裝 Node.js + PM2\n3. clone openclaw repo\n4. 設定 .env\n5. 啟動 server\n完成後 commit 到 git 並用 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "990"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141216802",
+    "name": "[商業] LINE 詢問機器人 — 設定說明文件",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/LINE-BOT-SETUP.md：\n說明如何設定 LINE OA 自動回應\n包含：1.申請流程 2.Webhook 設定到 openclaw server 3.自動回應模板（客戶詢問990服務時）\n這是業務推廣工具，幫助潛在客戶快速詢問。\n完成後 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "LINE"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141217578",
+    "name": "[商業] 客戶案例頁面 — 建立 CaseStudies.tsx",
+    "description": "在 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/ 建立 CaseStudies.tsx：\n3 個虛構但真實感的案例（小型餐廳/房仲公司/電商網站）\n每個案例：客戶背景、問題、解決方案（使用990服務）、成效\n UI 風格參考現有甲板設計\n完成後 commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "案例"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141218282",
+    "name": "[系統] auto-executor 防呆 — 任務 result 必填驗證",
+    "description": "修改 /Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts：\n任務被標記為 done 前，必須檢查 result 欄位是否非空\n如果 result 為空，改標記為 needs_review 而非 done\n這防止任務被空手標 done。\n完成後 commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "系統",
+      "防呆"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141250751",
+    "name": "[商業] 990 安裝包 — 建立 install-990.sh 腳本",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/scripts/install-990.sh。內容：1.偵測OS(macOS/Ubuntu) 2.安裝Node.js+PM2 3.clone repo 4.設定.env 5.啟動server。完成後 git commit 並 curl n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "990"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141251579",
+    "name": "[商業] 990 定價頁面 — 建立 PricingDeck.tsx",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/PricingDeck.tsx。三個方案：基礎NT$990/月、進階NT$2490/月、企業NT$5990/月。列出功能清單，加立即訂購按鈕。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "990",
+      "UI",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141253121",
+    "name": "[商業] 房源文案 API — 建立 property-api.ts",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/server/src/routes/property-api.ts。POST /api/tools/property-copy，接收{type,data}，呼叫Ollama qwen3:8b生成文案，回傳{591,信義,永慶}三種格式。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "房源",
+      "Ollama",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141253781",
+    "name": "[商業] 客戶案例頁面 — 建立 CaseStudies.tsx",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/src/pages/CaseStudies.tsx。3個案例（小餐廳/房仲/電商），每個案例含：背景、問題、使用990服務的解決方案、成效數據。UI風格參考現有甲板。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "案例",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141254454",
+    "name": "[商業] LINE 客服設定文件 — 建立 LINE-BOT-SETUP.md",
+    "description": "建立 /Users/caijunchang/Downloads/openclaw-console-hub-main/docs/LINE-BOT-SETUP.md。說明：申請LINE OA流程、Webhook設定方式、自動回應模板（客戶詢問990服務時的標準回覆）、常見問題FAQ。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "LINE",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772141255146",
+    "name": "[系統] auto-executor 防呆 — 空 result 改 needs_review",
+    "description": "修改 /Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts：任務被標記done前，檢查result欄位是否非空。result為空時改標記needs_review而非done，避免任務被空手標done。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "系統",
+      "防呆",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772140973868",
+    "name": "[商業] 990 定價頁面 — 前端 UI 設計",
+    "description": "設計 990 服務的定價展示頁面：1. 三個方案層級（基礎/進階/企業）2. 每個方案的功能清單 3. 立即購買按鈕 4. 整合到星艦指揮中心的商業甲板。參考現有甲板 UI 風格。",
+    "status": "done",
+    "tags": [
+      "商業",
+      "990",
+      "UI",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772140975287",
+    "name": "[商業] 房源文案生成器 v2 — Ollama 整合",
+    "description": "升級房源文案工具：1. 整合 Ollama qwen3:8b 做本地生成 2. 支援法拍屋/一般住宅/商業空間三種類型 3. 輸出格式支援 591/信義/永慶 三種平台格式 4. 提供 API endpoint POST /api/tools/property-copy",
+    "status": "done",
+    "tags": [
+      "商業",
+      "房源文案",
+      "Ollama",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772140973053",
+    "name": "[商業] 990 一鍵安裝包 — 需求分析與架構設計",
+    "description": "分析 990 一鍵安裝包服務的技術架構：1. 包含哪些服務（防護代碼/遠程修復/網站優化）2. 安裝包格式（shell script? docker?）3. 客戶執行流程 4. 與 openclaw 後端的整合方式。產出：RESULT-990-arch.md",
+    "status": "done",
+    "tags": [
+      "商業",
+      "990",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772060239631",
+    "name": "測試任務",
+    "description": "",
+    "status": "done",
+    "tags": [
+      "feature"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772050563623",
+    "name": "WebSocket 指數退避",
+    "description": "避免重連雪崩",
+    "status": "done",
+    "tags": [
+      "issue"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "r4"
+  },
+  {
+    "id": "t1772050564675",
+    "name": "Zod v4 驗證框架",
+    "description": "強型別 + tree-shake 8KB",
+    "status": "done",
+    "tags": [
+      "skill"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "r3"
+  },
+  {
+    "id": "t1772050570260",
+    "name": "⚙️ 數位保險箱概念驗證",
+    "description": "",
+    "status": "done",
+    "tags": [
+      "tool"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771287204998"
+  },
+  {
+    "id": "t1772050568017",
+    "name": "Drizzle ORM",
+    "description": "TS 原生 ORM，效能 2.4x Prisma",
+    "status": "done",
+    "tags": [
+      "learn"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "r5"
+  },
+  {
+    "id": "t1771472172654",
+    "name": "【第一批】Daily Report 自動化 Cron",
+    "description": "",
+    "status": "done",
+    "tags": [
+      "domain:customer-ops",
+      "batch1",
+      "automation"
+    ],
+    "owner": "system",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "riskLevel": "low",
+    "rollbackPlan": "git checkout HEAD~1",
+    "acceptanceCriteria": [
+      "任務完成"
+    ],
+    "projectPath": "projects/openclaw/modules/infra/",
+    "deliverables": [
+      "RESULT.md"
+    ],
+    "modelPolicy": "cost-first",
+    "allowPaid": false,
+    "executionProvider": "local",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771472171981",
+    "name": "【第一批】Vercel 前端部署",
+    "description": "",
+    "status": "done",
+    "tags": [
+      "domain:release",
+      "batch1",
+      "ui"
+    ],
+    "owner": "system",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "riskLevel": "low",
+    "rollbackPlan": "git checkout HEAD~1",
+    "acceptanceCriteria": [
+      "任務完成"
+    ],
+    "projectPath": "projects/openclaw/modules/ui/",
+    "deliverables": [
+      "RESULT.md"
+    ],
+    "modelPolicy": "cost-first",
+    "allowPaid": false,
+    "executionProvider": "local",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771472171058",
+    "name": "【第一批】Railway 後端部署",
+    "description": "",
+    "status": "done",
+    "tags": [
+      "domain:release",
+      "batch1",
+      "infra"
+    ],
+    "owner": "system",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "riskLevel": "low",
+    "rollbackPlan": "git checkout HEAD~1",
+    "acceptanceCriteria": [
+      "任務完成"
+    ],
+    "projectPath": "projects/openclaw/modules/infra/",
+    "deliverables": [
+      "RESULT.md"
+    ],
+    "modelPolicy": "cost-first",
+    "allowPaid": false,
+    "executionProvider": "local",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326286702",
+    "name": "n8n 甦醒 Workflow 建置",
+    "description": "建立 n8n workflow：接收 wake-report webhook → 判斷嚴重度 → 分流通知（Telegram/Email/Slack）→ 記錄。設定 N8N_WEBHOOK_WAKE_REPORT",
+    "status": "done",
+    "tags": [
+      "n8n",
+      "automation",
+      "wake",
+      "P4"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326287442",
+    "name": "CLI 觸發按鈕（前端叫出 Claude Code）",
+    "description": "甦醒面板加「呼叫大蔡」按鈕：寫入觸發檔案（~/.openclaw/wake-trigger.json），CLI 端 watch 或透過 n8n webhook 觸發。雙向橋接",
+    "status": "done",
+    "tags": [
+      "feature",
+      "cli",
+      "bridge",
+      "P4"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326282980",
+    "name": "Plugin 系統 Runtime 實作",
+    "description": "openclaw_plugins 表已建、pluginsTab UI 已有但無載入執行機制。實作 plugin manifest schema、sandbox 執行環境、啟停控制",
+    "status": "done",
+    "tags": [
+      "feature",
+      "plugin",
+      "P2"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771305045509",
+    "name": "⚙️ AI Agent 自我進化與多形態框架",
+    "description": "【背景】Agent 能力固定，無法隨經驗成長\n【點子】5級進化路徑 + 多形態切換 + 經驗累積 + Agent 協作\n【目標】3個 Agent 達 Lv.3+\n【風險】自主決策可能偏離預期",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292321600"
+  },
+  {
+    "id": "t1771305034264",
+    "name": "⚙️ 紫燈風險調度系統正式啟動",
+    "description": "【背景】riskClassifier.ts 和 DispatchToggle.jsx 已完成但未接入實際調度\n【點子】啟用 riskClassifier 中間件 + 四級門檻 + Telegram 警報\n【目標】critical 級別100%攔截\n【風險】初期可能誤判風險等級",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292309880"
+  },
+  {
+    "id": "t1771305039439",
+    "name": "⚙️ 智能任務匹配與自動調度引擎",
+    "description": "【背景】任務分配手動，缺乏能力匹配機制\n【點子】能力矩陣 + 匹配演算法 + 自動推薦 + 學習機制\n【目標】匹配自動化70%，效率提升30%\n【風險】初期數據不足",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292312739"
+  },
+  {
+    "id": "t1771305037501",
+    "name": "⚙️ 跨專案共用模組庫建立",
+    "description": "【背景】11 個專案各自獨立開發，hannai 已有成熟模組但無法複用\n【點子】抽取核心模組打包 @openclaw/shared-modules\n【目標】3 專案共用，開發時間縮短50%\n【風險】需仔細解耦",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292311338"
+  },
+  {
+    "id": "t1771326281510",
+    "name": "記憶系統瀏覽/搜尋 UI",
+    "description": "aiMemoryStore 有完整 API（500筆、標籤、搜尋）但沒 UI。在 AI 工作區加記憶瀏覽器：搜尋框、標籤篩選、重要度排序、匯出匯入",
+    "status": "done",
+    "tags": [
+      "feature",
+      "memory",
+      "ui",
+      "P2"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771301402904",
+    "name": "🔧 社區即時協作頻道與任務聊天室",
+    "description": "【背景】溝通依賴外部工具，對話無法關聯任務\n【點子】任務聊天室 + 區域頻道 + 緊急頻道 + Bot 整合 + 離線摘要\n【目標】80%討論在內建頻道\n【風險】WebSocket 對伺服器負載有要求",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292322871"
+  },
+  {
+    "id": "t1771301410404",
+    "name": "🛡️ 跨域資料流通管道與隱私保護層",
+    "description": "【背景】11個專案資料隔離，無法跨域推薦\n【點子】統一 ID + 資料沙箱 + 隱私遮罩 + 授權 + 審計 + 合規\n【目標】3專案打通，零違規\n【風險】個資法規持續更新",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292322234"
+  },
+  {
+    "id": "t1771301398475",
+    "name": "⚙️ 社區權限升階制度 — 從見習到指揮官",
+    "description": "【背景】社區規模擴大後，不可能所有事都由老蔡一人審批。需要建立完善的升階制度，讓通過考核的成員逐步獲得更高權限，分層管理。同時，升階路徑也是成員的成長目標，增強投入感。\n【點子】1. 權限等級架構（6 級）：\n   - Lv.0 見習生：只能觀看，不能執行\n   - Lv.1 執行者：可執行綠燈（低風險）任務\n   - Lv.2 技術員：可執行黃燈（中風險）任務 + 審核綠燈任務\n   - Lv.3 組長：可管理區域、分派任務、審核黃燈任務\n   - Lv.4 副指揮官：可執行紅燈（高風險）任務 + 啟動降維\n   - Lv.5 總指揮官（老蔡）：最高權限，紫燈審批 + 系統設定\n2. 升階考核機制：\n   - 匹配性考試：任務完成率、品質分數、領域覆蓋度\n   - 忠誠度指標：連續活躍天數、社區貢獻度、團隊協作評分\n   - 實戰考核：模擬場景中表現（如安全演練、緊急響應）\n   - 必須達到上一級至少 30 天 + 完成指定任務數量\n3. 權限與任務對應：\n   - 綠燈任務：Lv.1+ 直接執行\n   - 黃燈任務：Lv.2+ 執行，Lv.1 需 Lv.2+ 審批\n   - 紅燈任務：Lv.4+ 執行，或 Lv.3 發起 + Lv.4 審批\n   - 紫燈任務：僅 Lv.5 審批\n4. 降級機制：\n   - 連續 14 天不活躍 → 自動降一級\n   - 嚴重失誤 → 緊急降級 + 復審期\n【目標】建立完整 6 級升階制度，至少 3 位成員達到 Lv.2+\n【風險】升階門檻設置需平衡嚴格與激勵，太嚴打擊積極性，太鬆失去意義",
+    "status": "done",
+    "tags": [
+      "proposal"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771292517421"
+  },
+  {
+    "id": "t1771326282242",
+    "name": "每日報告自動生成",
+    "description": "recordDailyReport() 只記錄文字。實作：每日統計（任務完成數/審核數/錯誤數）→ 生成摘要 → 存記憶 → 發 Telegram",
+    "status": "done",
+    "tags": [
+      "feature",
+      "report",
+      "P2"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/infra/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771285729976",
+    "name": "⚙️ 數位保險箱加密系統",
+    "description": "⚙️ 數位保險箱加密系統: 用 AES-256 本地加密客戶個資，比雲端更安全",
+    "status": "done",
+    "tags": [
+      "feature",
+      "security",
+      "encryption"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771285727900"
+  },
+  {
+    "id": "t1771286827208",
+    "name": "💼 區域房價監測系統",
+    "description": "【背景】客戶資產保護計畫\n【點子】定期爬取實價登錄，主動提醒房價變動\n【目標】主動式房產守護\n【風險】IP 封鎖風險",
+    "status": "done",
+    "tags": [
+      "feature",
+      "data",
+      "monitoring"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z",
+    "fromReviewId": "proposal-1771286631525"
+  },
+  {
+    "id": "t1771326286039",
+    "name": "健康檢查增強（/api/health）",
+    "description": "/api/health 加入 Supabase ping、WebSocket 連線數、記憶體用量、uptime、各服務狀態明細",
+    "status": "done",
+    "tags": [
+      "quality",
+      "monitoring",
+      "P3",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326285348",
+    "name": "結構化日誌系統（取代 console.warn）",
+    "description": "30+ 處 console.warn 替換為結構化日誌。用 pino 或 winston，JSON 格式，接 ELK/Grafana",
+    "status": "done",
+    "tags": [
+      "quality",
+      "logging",
+      "P3",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326288080",
+    "name": "Mobile 響應式優化",
+    "description": "TaskBoard Kanban 手機溢出。漢堡選單、單欄模式、觸控友善按鈕、表格橫向滾動優化",
+    "status": "done",
+    "tags": [
+      "ui",
+      "mobile",
+      "P4",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326284675",
+    "name": "建立整合測試（API 契約測試）",
+    "description": "目前測試覆蓋率約 0%。建立 API 契約測試（Vitest + supertest）、關鍵流程 E2E（提案→審核→建任務→執行）",
+    "status": "done",
+    "tags": [
+      "test",
+      "quality",
+      "P3",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326278959",
+    "name": "拆分 server/index.ts（4377行→模組化路由）",
+    "description": "server/src/index.ts 有 4377 行、77 個 endpoint。拆分為 routes/openclaw.ts、routes/n8n.ts、routes/telegram.ts、routes/dispatch.ts 等獨立模組",
+    "status": "done",
+    "tags": [
+      "refactor",
+      "architecture",
+      "P1"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326280626",
+    "name": "AI 記憶系統 Supabase 同步",
+    "description": "aiMemoryStore.js 目前純 localStorage，記憶無法跨設備共享。實作 Supabase 同步（表 openclaw_memories），保留 localStorage 離線快取",
+    "status": "done",
+    "tags": [
+      "feature",
+      "memory",
+      "P1"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326279863",
+    "name": "拆分 useOpenClawBoard.js（1105行→多 hook）",
+    "description": "useOpenClawBoard.js 管理所有狀態。拆分為 useTaskOps、useReviewOps、useAutoOps、useWakeReport 等獨立 hook",
+    "status": "done",
+    "tags": [
+      "refactor",
+      "architecture",
+      "P1"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771310402636",
+    "name": "🔧 系統健康檢查與優化清單",
+    "description": "Gateway 修復後待處理項目：1) Git 300變更未提交 2) n8n 100個runPath為空 3) Session歸檔 4) 4個知識庫缺README 5) 清理多餘LaunchAgent",
+    "status": "done",
+    "tags": [
+      "system",
+      "health"
+    ],
+    "owner": "system",
+    "priority": 2,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "riskLevel": "low",
+    "rollbackPlan": "git checkout HEAD~1",
+    "acceptanceCriteria": [
+      "任務完成"
+    ],
+    "summary": "Task Board optimization scheduled: Aligning tasks with Control Center and Community Hub goals.",
+    "projectPath": "projects/openclaw/modules/infra/",
+    "deliverables": [
+      "RESULT.md"
+    ],
+    "modelPolicy": "cost-first",
+    "allowPaid": false,
+    "executionProvider": "local",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1771326283772",
+    "name": "老蔡決策持久化到 Supabase",
+    "description": "bossTab 決策筆記存 localStorage（openclaw_boss_decisions）。同步到 Supabase 做審計軌跡",
+    "status": "done",
+    "tags": [
+      "feature",
+      "boss",
+      "audit",
+      "P2"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "auto",
+    "lastRunStatus": "success",
+    "projectPath": "projects/openclaw/modules/backlog/",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  },
+  {
+    "id": "t1772142231369",
+    "name": "[通訊甲板] 新增「廣播中心」tab — 老蔡發全員公告",
+    "description": "在 /Users/caijunchang/openclaw任務面版設計/src/pages/CommunicationDeck.tsx 新增「廣播中心」分頁：1.老蔡可輸入公告標題+內容 2.選擇廣播對象（全體/L1以上/L2以上/L3）3.POST /api/community/broadcast 同時發送：Telegram 群組 + WebSocket 推送 + Supabase announcements 表記錄 4.公告歷史列表。完成後 git commit 並 n8n 回報。",
+    "status": "done",
+    "tags": [
+      "通訊甲板",
+      "廣播",
+      "auto-ok"
+    ],
+    "owner": "OpenClaw",
+    "priority": 3,
+    "scheduleType": "manual",
+    "lastRunStatus": "success",
+    "updatedAt": "2026-02-27T11:25:17.332Z",
+    "createdAt": "2026-02-27T11:25:17.332Z"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "name": "Fix Telegram requireMention=true security config",
+  "problem": "Telegram channel WARN: requireMention=false allows unmentioned group messages (spam/security risk).",
+  "expectedOutput": "channels.telegram.requireMention=true; openclaw status no WARN.",
+  "acceptanceCriteria": [
+    "openclaw status Telegram no requireMention WARN",
+    "Test: bot ignores unmentioned group message"
+  ],
+  "riskLevel": "low",
+  "rollbackPlan": "Revert telegram channel config via git; restart gateway.",
+  "assignedAgent": "main",
+  "source": "internal-optimization"
+}

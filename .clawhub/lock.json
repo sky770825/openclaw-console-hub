@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "skills": {
+    "clawsec-suite": {
+      "version": "0.1.3",
+      "installedAt": 1772083268944
+    },
+    "neural-memory": {
+      "version": "1.0.0",
+      "installedAt": 1772188559286
+    },
+    "openclaw-skill-auditor": {
+      "version": "1.0.0",
+      "installedAt": 1772526498127
+    },
+    "vector-memory-hack": {
+      "version": "1.0.3",
+      "installedAt": 1772526520240
+    },
+    "openclaw-backup": {
+      "version": "1.0.0",
+      "installedAt": 1772526526184
+    },
+    "debug-pro": {
+      "version": "1.0.0",
+      "installedAt": 1772526532111
+    },
+    "openclaw-mem": {
+      "version": "2.1.0",
+      "installedAt": 1772526537866
+    },
+    "openclaw-watchdog": {
+      "version": "1.3.0",
+      "installedAt": 1772526546132
+    },
+    "n8n-workflow-automation": {
+      "version": "1.0.0",
+      "installedAt": 1772526548623
+    },
+    "openclaw-ops-guardrails": {
+      "version": "0.1.1",
+      "installedAt": 1772526551257
+    },
+    "security-sentinel-skill": {
+      "version": "2.0.3",
+      "installedAt": 1772526561020
+    },
+    "openclaw-cost-auditor": {
+      "version": "1.0.0",
+      "installedAt": 1772526568528
+    },
+    "bug-fixing": {
+      "version": "1.0.0",
+      "installedAt": 1772528685358
+    },
+    "memory-master": {
+      "version": "1.1.0",
+      "installedAt": 1772528689960
+    },
+    "memory-organizer": {
+      "version": "1.0.1",
+      "installedAt": 1772528692368
+    },
+    "macro-pipeline": {
+      "version": "3.0.0",
+      "installedAt": 1772528706675
+    }
+  }
+}

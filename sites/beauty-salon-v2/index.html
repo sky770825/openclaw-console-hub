@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloom & Blush | 頂級美學沙龍 - 線上預約</title>
+    <meta name="description" content="Bloom & Blush - 您的專屬美麗顧問。提供頂級美甲、美睫、臉部護理服務。立即線上預約，享受無與倫比的寵愛時光。">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* ------------------------------ */
+        /* Design System & Variables      */
+        /* ------------------------------ */
+        :root {
+            /* 色彩 — 美業粉色系 */
+            --primary: #ec4899;
+            --primary-light: #f472b6;
+            --primary-dark: #db2777;
+            --accent: #f59e0b;
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            
+            /* 背景/文字 */
+            --bg: #fff; --bg-secondary: #fff7fa; --text: var(--gray-800); --text-secondary: var(--gray-500);
+            
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            
+            /* 陰影（5 級） */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.08);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.08);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        /* ------------------------------ */
+        /* Global Styles & Reset          */
+        /* ------------------------------ */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        h1, h2, h3, h4, h5, h6 { margin: 0; line-height: 1.3; font-weight: 700; color: var(--gray-900); }
+        p { margin: 0; }
+        a { color: var(--primary); text-decoration: none; transition: all var(--duration) var(--ease); }
+        a:hover { color: var(--primary-dark); }
+        img { max-width: 100%; display: block; }
+        section { padding: var(--space-20) 0; }
+
+        /* ------------------------------ */
+        /* Utility Classes                */
+        /* ------------------------------ */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-6);
+        }
+        .text-center { text-align: center; }
+        .section-title {
+            font-size: var(--text-4xl);
+            margin-bottom: var(--space-4);
+        }
+        .section-subtitle {
+            font-size: var(--text-lg);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto var(--space-12);
+        }
+        .grid {
+            display: grid;
+            gap: var(--space-8);
+        }
+
+        /* ------------------------------ */
+        /* Components                     */
+        /* ------------------------------ */
+        /* Header */
+        .main-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: var(--space-4) 0;
+            border-bottom: 1px solid var(--gray-100);
+            transition: all var(--duration) var(--ease);
+        }
+        .main-header.scrolled {
+            box-shadow: var(--shadow-sm);
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: var(--text-2xl);
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -1px;
+        }
+        .main-nav a {
+            color: var(--gray-600);
+            font-weight: 500;
+            margin: 0 var(--space-4);
+            padding: var(--space-2) 0;
+            border-bottom: 2px solid transparent;
+        }
+        .main-nav a:hover, .main-nav a.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--gray-800);
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: var(--text-base);
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--duration) var(--ease);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            padding: var(--space-20) 0;
+            background: linear-gradient(135deg, rgba(252, 231, 243, 0.8), rgba(255, 247, 251, 0.8)), url('https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+        }
+        .hero-content {
+            animation: fadeInUp 0.8s var(--ease) forwards;
+        }
+        .hero h1 {
+            font-size: var(--text-5xl);
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+        }
+        .hero p {
+            font-size: var(--text-xl);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto var(--space-8);
+        }
+        
+        /* Service Card */
+        .service-card {
+            background: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all var(--duration) var(--ease);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s var(--ease) forwards;
+        }
+        .service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .service-card-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+        .service-card-content {
+            padding: var(--space-6);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .service-card h3 {
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-2);
+        }
+        .service-card p {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-4);
+            flex-grow: 1;
+        }
+        .service-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--text-base);
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: var(--space-4);
+        }
+        .service-meta .price { color: var(--primary); font-weight: 700; }
+        .service-meta .duration { color: var(--gray-500); }
+
+        /* Booking Process */
+        .process-step {
+            text-align: center;
+            position: relative;
+        }
+        .process-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: repeating-linear-gradient(90deg, var(--primary-light), var(--primary-light) 6px, transparent 6px, transparent 12px);
+            z-index: -1;
+            transform: translateX(16px);
+        }
+        .step-icon {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-light);
+            color: white;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: var(--text-2xl);
+            margin-bottom: var(--space-4);
+            border: 4px solid var(--bg-secondary);
+        }
+        .process-step h3 {
+            font-size: var(--text-lg);
+            margin-bottom: var(--space-2);
+        }
+        .process-step p {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+
+        /* Footer */
+        .main-footer {
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: var(--space-12) 0;
+            font-size: var(--text-sm);
+        }
+        .footer-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+        .footer-col h4 {
+            font-size: var(--text-lg);
+            color: var(--gray-800);
+            margin-bottom: var(--space-4);
+        }
+        .footer-col ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-col li {
+            margin-bottom: var(--space-2);
+        }
+        .footer-col a {
+            color: var(--text-secondary);
+        }
+        .footer-col a:hover {
+            color: var(--primary);
+        }
+        .social-links a {
+            font-size: var(--text-xl);
+            margin-right: var(--space-4);
+        }
+        .copyright {
+            text-align: center;
+            margin-top: var(--space-12);
+            padding-top: var(--space-6);
+            border-top: 1px solid var(--gray-200);
+        }
+
+        /* Booking Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: var(--bg);
+            padding: var(--space-8);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+            transform: scale(0.95);
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+        }
+        .modal-header h2 { font-size: var(--text-2xl); }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--gray-400);
+            cursor: pointer;
+            transition: all var(--duration) var(--ease);
+        }
+        .modal-close:hover { color: var(--gray-700); }
+        .form-group { margin-bottom: var(--space-4); }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: var(--space-2);
+            font-size: var(--text-sm);
+        }
+        .form-control {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: var(--text-base);
+            transition: all var(--duration) var(--ease);
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+        }
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: var(--space-2);
+        }
+        .time-slot {
+            padding: var(--space-2);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--duration) var(--ease);
+        }
+        .time-slot:hover {
+            background: var(--bg-secondary);
+            border-color: var(--primary-light);
+        }
+        .time-slot.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .form-error {
+            color: var(--error);
+            font-size: var(--text-sm);
+            margin-top: var(--space-1);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: var(--space-6);
+            right: var(--space-6);
+            background: var(--gray-800);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            z-index: 2000;
+            transform: translateX(120%);
+            transition: transform 0.5s var(--ease);
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+        .toast i { margin-right: var(--space-3); }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* ------------------------------ */
+        /* Responsive Design              */
+        /* ------------------------------ */
+        @media (max-width: 768px) {
+            .main-nav {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: white;
+                box-shadow: var(--shadow-md);
+                flex-direction: column;
+                padding: var(--space-4);
+            }
+            .main-nav.active { display: flex; }
+            .main-nav a {
+                margin: var(--space-2) 0;
+                text-align: center;
+            }
+            .nav-toggle { display: block; }
+            .header-content .btn { display: none; }
+            .hero h1 { font-size: var(--text-4xl); }
+            .hero p { font-size: var(--text-lg); }
+            .section-title { font-size: var(--text-3xl); }
+            .process-step:not(:last-child)::after { display: none; }
+            .footer-grid { text-align: center; }
+            .social-links { margin-top: var(--space-4); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="main-header" id="mainHeader">
+        <div class="container header-content">
+            <a href="#" class="logo">Bloom & Blush</a>
+            <nav class="main-nav" id="mainNav">
+                <a href="#services">服務項目</a>
+                <a href="#process">預約流程</a>
+                <a href="#about">關於我們</a>
+                <a href="#footer">聯絡資訊</a>
+            </nav>
+            <a href="#booking" class="btn btn-primary open-booking-modal">立即預約</a>
+            <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container hero-content">
+                <h1>綻放您的專屬美麗</h1>
+                <p>從美甲、美睫到肌膚護理，我們提供最專業細緻的服務。立即線上預約，開啟您的美麗旅程。</p>
+                <a href="#services" class="btn btn-primary btn-lg">探索我們的服務</a>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" style="background-color: var(--bg-secondary);">
+            <div class="container">
+                <div class="text-center">
+                    <h2 class="section-title">我們的服務項目</h2>
+                    <p class="section-subtitle">我們堅持使用頂級產品與最新技術，為您量身打造最適合的美學方案，讓您由內而外散發自信光彩。</p>
+                </div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+                    <!-- Service Card 1: Manicure -->
+                    <div class="service-card" data-service-id="1" data-service-name="經典手部光療" style="animation-delay: 0.1s;">
+                        <div class="service-card-image" style="background-image: url('https://images.unsplash.com/photo-1604654894610-df6444346f3d?q=80&w=1974&auto=format&fit=crop');"></div>
+                        <div class="service-card-content">
+                            <h3>經典手部光療</h3>
+                            <p>包含修甲型、甘皮處理、單色光療。採用日本進口 Presto 光療凝膠，色澤飽滿持久，溫和不傷甲。</p>
+                            <div class="service-meta">
+                                <span class="price">NT$ 1,200</span>
+                                <span class="duration"><i class="far fa-clock"></i> 90 分鐘</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal">選擇此服務</button>
+                        </div>
+                    </div>
+                    <!-- Service Card 2: Eyelash -->
+                    <div class="service-card" data-service-id="2" data-service-name="日式無重力美睫" style="animation-delay: 0.2s;">
+                        <div class="service-card-image" style="background-image: url('https://images.unsplash.com/photo-1512290746430-3ffb4fab31bc?q=80&w=2070&auto=format&fit=crop');"></div>
+                        <div class="service-card-content">
+                            <h3>日式無重力美睫</h3>
+                            <p>採用頂級蠶絲蛋白毛，柔軟舒適。依據您的眼型客製化設計，打造自然濃密、捲翹有神的迷人電眼。</p>
+                            <div class="service-meta">
+                                <span class="price">NT$ 1,800</span>
+                                <span class="duration"><i class="far fa-clock"></i> 120 分鐘</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal">選擇此服務</button>
+                        </div>
+                    </div>
+                    <!-- Service Card 3: Facial -->
+                    <div class="service-card" data-service-id="3" data-service-name="深層保濕臉部護理" style="animation-delay: 0.3s;">
+                        <div class="service-card-image" style="background-image: url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop');"></div>
+                        <div class="service-card-content">
+                            <h3>深層保濕臉部護理</h3>
+                            <p>使用法國頂級 Sothys 安瓶精華，搭配專業手技按摩，為乾燥肌膚注入滿滿水份，重現水潤透亮。</p>
+                            <div class="service-meta">
+                                <span class="price">NT$ 2,500</span>
+                                <span class="duration"><i class="far fa-clock"></i> 90 分鐘</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal">選擇此服務</button>
+                        </div>
+                    </div>
+                     <!-- Service Card 4: Pedicure -->
+                    <div class="service-card" data-service-id="4" data-service-name="足部深層保養" style="animation-delay: 0.4s;">
+                        <div class="service-card-image" style="background-image: url('https://images.unsplash.com/photo-1522338140262-f4650c13695e?q=80&w=2070&auto=format&fit=crop');"></div>
+                        <div class="service-card-content">
+                            <h3>足部深層保養</h3>
+                            <p>從足浴、去繭、去角質到滋潤按摩，完整呵護您的雙足。可搭配光療服務，讓趾尖也亮麗動人。</p>
+                            <div class="service-meta">
+                                <span class="price">NT$ 1,600</span>
+                                <span class="duration"><i class="far fa-clock"></i> 75 分鐘</span>
+                            </div>
+                            <button class="btn btn-primary open-booking-modal">選擇此服務</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Process Section -->
+        <section id="process">
+            <div class="container">
+                <div class="text-center">
+                    <h2 class="section-title">簡單三步驟，完成預約</h2>
+                    <p class="section-subtitle">我們設計了最直覺的預約流程，讓您輕鬆安排您的美麗時光。</p>
+                </div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                    <div class="process-step">
+                        <div class="step-icon"><i class="fas fa-hand-pointer"></i></div>
+                        <h3>1. 選擇服務項目</h3>
+                        <p>瀏覽我們的服務列表，選擇您想體驗的項目。</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-icon"><i class="far fa-calendar-alt"></i></div>
+                        <h3>2. 挑選日期與時間</h3>
+                        <p>選擇您方便的日期與時段，系統會顯示可預約時間。</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-icon"><i class="far fa-edit"></i></div>
+                        <h3>3. 填寫預約資訊</h3>
+                        <p>留下您的聯絡方式，我們將為您保留專屬時段。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Us Section (Placeholder) -->
+        <section id="about" style="background-color: var(--bg-secondary);">
+            <div class="container">
+                <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: center; gap: var(--space-16);">
+                    <div style="border-radius: var(--radius-lg); overflow: hidden;">
+                        <img src="https://images.unsplash.com/photo-1556742521-96b350d4a852?q=80&w=1974&auto=format&fit=crop" alt="Salon Interior">
+                    </div>
+                    <div>
+                        <h2 class="section-title" style="text-align: left;">關於 Bloom & Blush</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Bloom & Blush 成立於 2020 年，由一群對美學充滿熱情的專業技師組成。我們相信，美麗不只是外在的裝飾，更是一種由內而外散發的自信與態度。我們致力於提供一個舒適、私密的環境，讓每一位顧客都能在此放下疲憊，享受最純粹的寵愛與呵護。</p>
+                        <a href="#footer" class="btn btn-outline">聯絡我們</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Footer Section -->
+    <footer id="footer" class="main-footer">
+        <div class="container">
+            <div class="grid footer-grid">
+                <div class="footer-col">
+                    <h4>Bloom & Blush</h4>
+                    <p>頂級美學沙龍，為您打造專屬的美麗時刻。</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-line"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>快速連結</h4>
+                    <ul>
+                        <li><a href="#services">服務項目</a></li>
+                        <li><a href="#process">預約流程</a></li>
+                        <li><a href="#about">關於我們</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>聯絡資訊</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 台北市信義區忠孝東路五段8號</li>
+                        <li><i class="fas fa-phone"></i> (02) 1234-5678</li>
+                        <li><i class="fas fa-envelope"></i> service@bloomblush.com</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>營業時間</h4>
+                    <ul>
+                        <li>週一至週五: 11:00 - 20:00</li>
+                        <li>週六至週日: 10:00 - 19:00</li>
+                        <li>每月第二、四週週一公休</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2024 Bloom & Blush. All Rights Reserved. Designed by a Lovable.dev level professional.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Booking Modal -->
+    <div class="modal-overlay" id="bookingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>線上預約</h2>
+                <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="serviceSelect">選擇服務</label>
+                    <select id="serviceSelect" class="form-control" required>
+                        <option value="">請選擇您要的服務</option>
+                        <option value="1">經典手部光療</option>
+                        <option value="2">日式無重力美睫</option>
+                        <option value="3">深層保濕臉部護理</option>
+                        <option value="4">足部深層保養</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bookingDate">選擇日期</label>
+                    <input type="date" id="bookingDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>選擇時段</label>
+                    <div class="time-slots" id="timeSlots">
+                        <!-- Time slots will be generated by JS -->
+                    </div>
+                     <input type="hidden" id="selectedTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerName">您的姓名</label>
+                    <input type="text" id="customerName" class="form-control" placeholder="例如：王小姐" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerPhone">聯絡電話</label>
+                    <input type="tel" id="customerPhone" class="form-control" placeholder="例如：0912345678" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">確認預約</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i id="toastIcon" class="fas fa-check-circle"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Header Scroll Effect ---
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // --- Mobile Navigation ---
+        const navToggle = document.getElementById('navToggle');
+        const mainNav = document.getElementById('mainNav');
+        navToggle.addEventListener('click', () => {
+            mainNav.classList.toggle('active');
+        });
+        
+        // Close nav when a link is clicked
+        mainNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mainNav.classList.remove('active');
+            });
+        });
+
+        // --- Staggered Card Animation ---
+        const cards = document.querySelectorAll('.service-card');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationDelay = entry.target.dataset.delay;
+                    entry.target.classList.add('animated');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        cards.forEach(card => observer.observe(card));
+
+        // --- Booking Modal Logic ---
+        const bookingModal = document.getElementById('bookingModal');
+        const modalCloseBtn = document.getElementById('modalClose');
+        const openModalBtns = document.querySelectorAll('.open-booking-modal');
+        const serviceSelect = document.getElementById('serviceSelect');
+        const bookingForm = document.getElementById('bookingForm');
+        const bookingDateInput = document.getElementById('bookingDate');
+        const timeSlotsContainer = document.getElementById('timeSlots');
+        const selectedTimeInput = document.getElementById('selectedTime');
+
+        // Set min date for date input
+        const today = new Date().toISOString().split('T')[0];
+        bookingDateInput.setAttribute('min', today);
+
+        const openModal = (serviceId = '') => {
+            if (serviceId) {
+                serviceSelect.value = serviceId;
+            } else {
+                serviceSelect.value = '';
+            }
+            bookingModal.classList.add('active');
+            generateTimeSlots();
+        };
+
+        const closeModal = () => {
+            bookingModal.classList.remove('active');
+            bookingForm.reset();
+            timeSlotsContainer.innerHTML = '';
+        };
+
+        openModalBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const card = e.target.closest('.service-card');
+                const serviceId = card ? card.dataset.serviceId : '';
+                openModal(serviceId);
+            });
+        });
+
+        modalCloseBtn.addEventListener('click', closeModal);
+        bookingModal.addEventListener('click', (e) => {
+            if (e.target === bookingModal) {
+                closeModal();
+            }
+        });
+
+        // --- Time Slot Generation & Selection ---
+        const availableTimes = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+        
+        const generateTimeSlots = () => {
+            timeSlotsContainer.innerHTML = '';
+            availableTimes.forEach(time => {
+                // In a real app, you'd check availability here
+                const slot = document.createElement('div');
+                slot.classList.add('time-slot');
+                slot.textContent = time;
+                slot.dataset.time = time;
+                timeSlotsContainer.appendChild(slot);
+            });
+        };
+
+        timeSlotsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('time-slot')) {
+                // Remove selected class from all slots
+                timeSlotsContainer.querySelectorAll('.time-slot').forEach(slot => {
+                    slot.classList.remove('selected');
+                });
+                // Add selected class to the clicked one
+                e.target.classList.add('selected');
+                selectedTimeInput.value = e.target.dataset.time;
+            }
+        });
+
+        bookingDateInput.addEventListener('change', generateTimeSlots);
+
+        // --- Form Submission & Validation ---
+        bookingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Basic validation
+            if (!selectedTimeInput.value) {
+                showToast('請選擇一個預約時段', 'error');
+                return;
+            }
+
+            // Simulate booking
+            const bookingData = {
+                serviceId: serviceSelect.value,
+                serviceName: serviceSelect.options[serviceSelect.selectedIndex].text,
+                date: bookingDateInput.value,
+                time: selectedTimeInput.value,
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                bookingId: `B-${Date.now()}`
+            };
+
+            // Save to localStorage to simulate persistence
+            try {
+                let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+                bookings.push(bookingData);
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                
+                closeModal();
+                showToast('預約成功！我們期待您的光臨。');
+
+            } catch (error) {
+                console.error("Failed to save booking:", error);
+                showToast('預約失敗，請稍後再試。', 'error');
+            }
+        });
+
+        // --- Toast Notification Logic ---
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+
+        const showToast = (message, type = 'success') => {
+            toastMessage.textContent = message;
+            toast.className = 'toast'; // Reset classes
+            
+            if (type === 'success') {
+                toast.classList.add('success');
+                toastIcon.className = 'fas fa-check-circle';
+            } else {
+                toast.classList.add('error');
+                toastIcon.className = 'fas fa-times-circle';
+            }
+            
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        };
+    });
+    </script>
+</body>
+</html>

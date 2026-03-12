@@ -1,0 +1,48 @@
+{
+  "tree_id": "1771263320250",
+  "root_name": "Knowledge Base Analysis",
+  "status": "initialized",
+  "nodes": {
+    "1771263320266": {
+      "id": "1771263320266",
+      "name": "Research Subjects",
+      "parent_id": "root",
+      "engine_hint": "ollama:qwen3:4b",
+      "status": "completed",
+      "dependencies": [],
+      "results": "Node 1 result\n"
+    },
+    "1771263320278": {
+      "id": "1771263320278",
+      "name": "Gather Data",
+      "parent_id": "root",
+      "engine_hint": "ollama:qwen3:8b",
+      "status": "completed",
+      "dependencies": [],
+      "results": "Node 1771263320278 result\n"
+    },
+    "1771263320288": {
+      "id": "1771263320288",
+      "name": "Analyze Topics",
+      "parent_id": "1771263320266",
+      "engine_hint": "ollama:qwen2.5:14b",
+      "status": "completed",
+      "dependencies": [
+        "1771263320266"
+      ],
+      "results": "Node 1771263320288 result\n"
+    },
+    "1771263320297": {
+      "id": "1771263320297",
+      "name": "Draft Report",
+      "parent_id": "1771263320266",
+      "engine_hint": "gemini:flash",
+      "status": "completed",
+      "dependencies": [
+        "1771263320266"
+      ],
+      "results": "Node 1771263320297 result\n"
+    }
+  },
+  "created_at": "2026-02-16T17:35:20Z"
+}

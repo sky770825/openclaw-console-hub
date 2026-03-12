@@ -1,0 +1,17 @@
+CLAW HUB SKILL COMPLIANCE STATEMENT
+Generated Date: Mon Mar  2 22:19:55 CST 2026
+Reviewer: Task Executor (Automated)
+
+Result: FAILED
+
+Summary:
+The security audit scanned for hardcoded secrets and dangerous code patterns.
+The compliance check verified the presence of mandatory documentation and metadata.
+
+Policy Reference:
+1. No secrets in source code.
+2. Mandatory README for every skill.
+3. Metadata must be defined in skill.json or package.json.
+
+Action Required:
+Review the report at /Users/caijunchang/.openclaw/workspace/reports/security_compliance_report_20260302_221954.md and fix the issues identified.

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老蔡美食 - 購物車</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <a href="index.html"><h1>老蔡美食</h1></a>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">首頁/菜單</a></li>
+                <li><a href="#">關於我們</a></li>
+                <li><a href="#">聯絡方式</a></li>
+            </ul>
+        </nav>
+        <div class="cart-icon-container">
+            <a href="cart.html">
+                <img src="https://via.placeholder.com/24" alt="購物車圖示">
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <section id="cart-section">
+            <h2>我的購物車</h2>
+            <div class="cart-items-container">
+                <!-- Example Cart Item 1 -->
+                <article class="cart-item">
+                    <img src="https://via.placeholder.com/100x80?text=紅燒牛肉麵" alt="紅燒牛肉麵">
+                    <div class="item-details">
+                        <h3>紅燒牛肉麵</h3>
+                        <p>單價: $180</p>
+                        <div class="quantity-control">
+                            <button class="quantity-minus">-</button>
+                            <span class="item-quantity">1</span>
+                            <button class="quantity-plus">+</button>
+                        </div>
+                        <button class="remove-item">移除</button>
+                    </div>
+                    <div class="item-subtotal">
+                        $180
+                    </div>
+                </article>
+                <!-- Example Cart Item 2 -->
+                <article class="cart-item">
+                    <img src="https://via.placeholder.com/100x80?text=珍珠奶茶" alt="珍珠奶茶">
+                    <div class="item-details">
+                        <h3>珍珠奶茶</h3>
+                        <p>單價: $70</p>
+                        <div class="quantity-control">
+                            <button class="quantity-minus">-</button>
+                            <span class="item-quantity">2</span>
+                            <button class="quantity-plus">+</button>
+                        </div>
+                        <button class="remove-item">移除</button>
+                    </div>
+                    <div class="item-subtotal">
+                        $140
+                    </div>
+                </article>
+            </div>
+
+            <div class="cart-summary">
+                <p>總計：<span class="cart-total-price">$320</span></p>
+                <a href="checkout.html" class="checkout-button">前往結帳</a>
+                <a href="index.html" class="continue-shopping">繼續購物</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-info">
+            <p>地址：台北市美食街101號</p>
+            <p>電話：(02) 1234-5678</p>
+            <p>營業時間：週一至週日 11:00 - 21:00</p>
+        </div>
+        <div class="social-media">
+            <a href="#"><img src="https://via.placeholder.com/24?text=FB" alt="Facebook"></a>
+            <a href="#"><img src="https://via.placeholder.com/24?text=IG" alt="Instagram"></a>
+            <a href="#"><img src="https://via.placeholder.com/24?text=LINE" alt="Line"></a>
+        </div>
+        <p class="copyright">&copy; 2026 老蔡美食. All rights reserved.</p>
+    </footer>
+</body>
+</html>

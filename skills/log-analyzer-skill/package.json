@@ -1,0 +1,32 @@
+{
+  "name": "log-analyzer-skill",
+  "version": "1.0.0",
+  "description": "智慧日誌分析與監控 Skill，支援多種日誌格式，自動提取關鍵資訊並生成分析報告",
+  "main": "scripts/analyze.js",
+  "scripts": {
+    "analyze": "node scripts/analyze.js",
+    "monitor": "node scripts/monitor.js",
+    "test": "node tests/test-analyze.js",
+    "example:syslog": "node scripts/analyze.js --file examples/sample-syslog.log --format syslog",
+    "example:json": "node scripts/analyze.js --file examples/sample-json.log --format json",
+    "example:plain": "node scripts/analyze.js --file examples/sample-plain.log --format plain"
+  },
+  "keywords": [
+    "log",
+    "analyzer",
+    "monitor",
+    "syslog",
+    "json",
+    "parser",
+    "report",
+    "openclaw",
+    "skill"
+  ],
+  "author": "Cursor",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,38 @@
+{
+  "business": "普特斯防霾紗窗",
+  "type": "window_screen",
+  "category": "家居",
+  "name": "",
+  "description": "",
+  "price": "",
+  "material": "",
+  "dimensions": "",
+  "warranty": "",
+  "images": [],
+  "tags": [],
+  "platform_settings": {
+    "facebook": {
+      "marketplace_listing": true,
+      "page_post": true,
+      "catalog": true
+    },
+    "instagram": {
+      "shopping_post": true,
+      "carousel": true
+    },
+    "shopee": {
+      "listing": true,
+      "variant": true
+    }
+  },
+  "metadata": {
+    "screen_type": "anti-haze",
+    "filtration_rate": "",
+    "color_options": [],
+    "installation_service": true,
+    "care_instructions": "",
+    "certifications": [],
+    "availability": "in_stock",
+    "shipping_available": true
+  }
+}

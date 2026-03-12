@@ -1,0 +1,7 @@
+[
+  {"name": "gpt-4o", "capability": 95, "cost_per_1k": 0.015, "description": "High reasoning, complex logic"},
+  {"name": "gpt-4o-mini", "capability": 70, "cost_per_1k": 0.00015, "description": "Fast, efficient, balanced"},
+  {"name": "claude-3-5-sonnet", "capability": 92, "cost_per_1k": 0.009, "description": "Strong coding and nuance"},
+  {"name": "claude-3-haiku", "capability": 60, "cost_per_1k": 0.00025, "description": "Ultra fast, simple tasks"},
+  {"name": "llama-3-8b", "capability": 50, "cost_per_1k": 0.0001, "description": "Local/Small open model"}
+]

@@ -1,0 +1,183 @@
+#!/bin/bash
+set -e
+
+# n8n Webhook Receiver for OpenClaw
+# Usage: n8n-webhook-receiver [port]
+# Default port: 5679
+
+PORT="${1:-5679}"
+LOG_DIR="${HOME}/.openclaw/logs/n8n-webhooks"
+PID_FILE="${HOME}/.openclaw/run/n8n-webhook-receiver.pid"
+
+mkdir -p "$LOG_DIR"
+mkdir -p "$(dirname "$PID_FILE")"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/receiver.log"
+}
+
+# HTTP response helper
+http_response() {
+    local code="$1"
+    local body="$2"
+    local length=${#body}
+    
+    echo -e "HTTP/1.1 $code\r
+Content-Type: application/json\r
+Content-Length: $length\r
+Connection: close\r
+\r
+$body"
+}
+
+# Handle incoming request
+handle_request() {
+    local request=""
+    local body=""
+    local content_length=0
+    local method=""
+    local path=""
+    
+    # Read headers
+    while IFS= read -r line; do
+        line=$(echo "$line" | tr -d '\r\n')
+        
+        # First line: METHOD PATH HTTP/1.1
+        if [[ -z "$method" ]]; then
+            method=$(echo "$line" | cut -d' ' -f1)
+            path=$(echo "$line" | cut -d' ' -f2)
+        fi
+        
+        # Empty line = end of headers
+        [[ -z "$line" ]] && break
+        
+        # Content-Length
+        if [[ "$line" =~ ^[Cc]ontent-[Ll]ength:\ *([0-9]+)$ ]]; then
+            content_length="${BASH_REMATCH[1]}"
+        fi
+        
+        request+="$line\n"
+    done
+    
+    # Read body
+    if [[ "$content_length" -gt 0 ]]; then
+        body=$(head -c "$content_length")
+    fi
+    
+    # Log
+    log "[$method] $path - Body: ${body:0:200}"
+    
+    # Routing
+    case "$path" in
+        /health)
+            http_response "200 OK" '{"status":"ok"}'
+            ;;
+        /webhook/n8n)
+            # Save webhook data
+            local webhook_id=$(date +%s%N)
+            local webhook_file="$LOG_DIR/webhook_${webhook_id}.json"
+            
+            echo "$body" | jq . > "$webhook_file" 2>/dev/null || echo "$body" > "$webhook_file"
+            
+            # Notify OpenClaw via signal file
+            local signal_file="${HOME}/.openclaw/run/n8n-signal"
+            echo "webhook:$webhook_file:$body" > "$signal_file"
+            
+            http_response "200 OK" "{\"received\":true,\"id\":\"$webhook_id\"}"
+            log "Webhook saved: $webhook_file"
+            ;;
+        /webhook/n8n/*)
+            # Named webhook endpoint
+            local webhook_name=$(basename "$path")
+            local webhook_file="$LOG_DIR/webhook_${webhook_name}_$(date +%s).json"
+            
+            echo "$body" | jq . > "$webhook_file" 2>/dev/null || echo "$body" > "$webhook_file"
+            
+            http_response "200 OK" "{\"received\":true,\"webhook\":\"$webhook_name\"}"
+            log "Webhook [$webhook_name] saved"
+            ;;
+        *)
+            http_response "404 Not Found" '{"error":"Not Found"}'
+            ;;
+    esac
+}
+
+# Start server
+start_server() {
+    log "Starting n8n Webhook Receiver on port $PORT..."
+    
+    # Save PID
+    echo $$ > "$PID_FILE"
+    
+    # Main loop
+    while true; do
+        {
+            handle_request
+        } | nc -l -p "$PORT" 2>/dev/null || {
+            log "Connection error, restarting..."
+            sleep 1
+        }
+    done
+}
+
+# Stop server
+stop_server() {
+    if [[ -f "$PID_FILE" ]]; then
+        local pid=$(cat "$PID_FILE")
+        if kill "$pid" 2>/dev/null; then
+            log "Server stopped (PID: $pid)"
+            rm "$PID_FILE"
+        else
+            log "Server not running"
+        fi
+    else
+        log "No PID file found"
+    fi
+}
+
+# Status
+check_status() {
+    if [[ -f "$PID_FILE" ]]; then
+        local pid=$(cat "$PID_FILE")
+        if kill -0 "$pid" 2>/dev/null; then
+            echo "✅ Webhook receiver running (PID: $pid, Port: $PORT)"
+            curl -s http://localhost:$PORT/health && echo
+        else
+            echo "❌ PID file exists but process not running"
+        fi
+    else
+        echo "⏹️  Webhook receiver not running"
+    fi
+}
+
+# Usage
+case "${1:-}" in
+    start)
+        start_server
+        ;;
+    stop)
+        stop_server
+        ;;
+    status)
+        check_status
+        ;;
+    restart)
+        stop_server
+        sleep 1
+        start_server
+        ;;
+    *)
+        echo "n8n Webhook Receiver for OpenClaw"
+        echo ""
+        echo "Usage: $0 [start|stop|restart|status] [port]"
+        echo ""
+        echo "Default port: 5679"
+        echo ""
+        echo "Webhook endpoints:"
+        echo "  http://localhost:$PORT/webhook/n8n       - General webhook"
+        echo "  http://localhost:$PORT/webhook/n8n/NAME  - Named webhook"
+        echo ""
+        echo "Start in background:"
+        echo "  nohup $0 start > /dev/null 2>&1 &"
+        ;;
+esac

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO META START -->
+    <meta name="description" content="整合佛教經咒、道教咒文與禪樂音源，支援播放與經文展開，協助日常淨心修持。">
+    <meta property="og:title" content="經咒・禪樂 | 佛教・道教經典與淨心音聲">
+    <meta property="og:description" content="整合佛教經咒、道教咒文與禪樂音源，支援播放與經文展開，協助日常淨心修持。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://causelaw.io/pages/audio.html">
+    <meta property="og:image" content="https://causelaw.io/images/hero.jpg">
+    <meta property="og:locale" content="zh_TW">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="經咒・禪樂 | 佛教・道教經典與淨心音聲">
+    <meta name="twitter:description" content="整合佛教經咒、道教咒文與禪樂音源，支援播放與經文展開，協助日常淨心修持。">
+    <meta name="twitter:image" content="https://causelaw.io/images/hero.jpg">
+    <!-- SEO META END -->
+    <title>經咒・禪樂 | 佛教・道教經典與淨心音聲</title>
+    <!-- Performance Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//vbejswywswaeyfasnwjq.supabase.co">
+    <link rel="preload" href="../styles.css?v=20260305d" as="style">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="stylesheet" href="../styles.css?v=20260305d">
+    <script src="../causelaw-nav.js?v=20260305d" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../causelaw-config.js" defer></script>
+    <script src="../causelaw-client.js" defer></script>
+    <script src="../causelaw-ui.js" defer></script>
+    <script src="../causelaw-auth.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .audio-card {
+            background: rgba(15, 15, 15, 0.9);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 2.5rem;
+            transition: all 0.4s;
+            cursor: pointer;
+        }
+        .audio-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .audio-card.playing {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
+        .play-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        .playing .play-icon {
+            animation: pulse-icon 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        .audio-title { color: var(--gold); font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem; }
+        .audio-desc { color: rgba(245, 245, 220, 0.6); font-size: 0.9rem; }
+        .audio-duration { color: var(--cinnabar); font-size: 0.8rem; margin-top: 1rem; }
+        .player-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            border-top: 1px solid var(--gold);
+            padding: 1.5rem 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+        .player-bar.active { transform: translateY(0); }
+        .player-controls { display: flex; align-items: center; gap: 2rem; }
+        .control-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .control-btn:hover { background: var(--gold); color: black; }
+        .progress-container { flex: 1; margin: 0 3rem; }
+        .progress-bar { width: 100%; height: 4px; background: rgba(212, 175, 55, 0.2); cursor: pointer; }
+        .progress-fill { height: 100%; background: var(--gold); width: 0%; }
+        .now-playing { color: var(--gold); font-weight: bold; }
+        .sutra-text.hidden { display: none; }
+    </style>
+</head>
+<body class="bg-[#020202] text-stone-200 font-serif pb-32">
+    <nav class="fixed top-0 left-0 w-full z-50 px-12 py-8 bg-black/95 border-b border-gold/20 flex justify-end items-center gap-10 backdrop-blur-md">
+        <div class="space-x-6 text-sm font-bold tracking-[0.2em] text-stone-400 flex flex-wrap justify-end">
+            <a href="../index.html" class="hover:text-gold transition">回首頁</a>
+            <a href="deities.html" class="hover:text-gold transition">神明</a>
+            <a href="hell.html" class="hover:text-gold transition">地獄</a>
+            <a href="realms.html" class="hover:text-gold transition">輪迴</a>
+            <a href="merit.html" class="hover:text-gold transition">功過格</a>
+            <a href="shop.html" class="hover:text-gold transition">加持商城</a>
+            <a href="faq.html" class="hover:text-gold transition">參悟</a>
+            <a href="guide.html" class="hover:text-gold transition">導航</a>
+            <a href="forum.html" class="hover:text-gold transition">討論區</a>
+            <a href="simulator.html" class="hover:text-gold transition">加持台</a>
+            <a href="wall.html" class="hover:text-gold transition">懺悔</a>
+            <a href="audio.html" class="hover:text-gold transition text-purple-400">經咒・禪樂</a>
+            <a href="quiz.html" class="hover:text-gold transition">測驗</a>
+        </div>
+        <div class="text-2xl font-black text-gold tracking-widest border-l border-gold/30 pl-6"><a href="../index.html">玉帝欽旨</a></div>
+    </nav>
+
+    <main class="pt-40 pb-20 max-w-6xl mx-auto px-6">
+        <div class="text-center mb-20">
+            <h1 class="text-6xl mb-10 tracking-[0.5em] text-gold">經咒・禪樂</h1>
+            <p class="text-2xl text-stone-500 tracking-widest">佛教・道教經典與淨心音聲</p>
+        </div>
+
+        <!-- 誦經須知警語 -->
+        <div class="mb-12 p-6 border border-amber-500/30 bg-amber-950/20 rounded-lg text-left">
+            <h3 class="text-amber-200/90 font-bold tracking-wider mb-3 text-sm">⚠ 誦經須知（依印光大師讀經須知及道場常規整理）</h3>
+            <ul class="text-stone-400 text-sm space-y-2 list-disc list-inside">
+                <li><strong class="text-stone-300">勿在不敬、不淨處出聲誦經</strong>：如廁所、浴室、臥床、夫妻房、做葷菜廚房等；若不得已在此類場所，可改為<strong>默念</strong>，功德相同。</li>
+                <li><strong class="text-stone-300">宜在清淨處誦經</strong>：佛堂、道場、家中潔淨房間、桌面整潔、衣冠端正；避免雜物堆積、吵雜或氣場混亂的環境。</li>
+            </ul>
+            <p class="text-stone-500 text-xs mt-3">淨手潔案、主敬存誠、如面佛天，則無邊利益自可親得。（印光大師）</p>
+        </div>
+
+        <!-- 佛教經咒 -->
+        <div class="mb-20">
+            <h2 class="text-3xl text-gold mb-6 border-b border-gold/20 pb-4">🙏 佛教經咒</h2>
+            <p class="text-stone-500 mb-8">持誦經咒，淨心消業。點擊卡片播放；可展開經文對照跟誦。經文依流通本／大正藏校對。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="audio-card" onclick="playExternalAudio('https://www.namoamitabha.net/namo_mp3/avalokitesvara/greatcompassionpraise.mp3', '大悲咒')">
+                    <div class="play-icon">🙏</div>
+                    <h3 class="audio-title">大悲咒</h3>
+                    <p class="audio-desc">千手千眼觀世音菩薩廣大圓滿無礙大悲心陀羅尼。消災解厄，慈悲普渡。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-dabei')">展開／收合經文</button>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://www.namoamitabha.net/namo_mp3/avalokitesvara/heartsutra.mp3', '心經')">
+                    <div class="play-icon">📜</div>
+                    <h3 class="audio-title">般若波羅蜜多心經</h3>
+                    <p class="audio-desc">觀自在菩薩，行深般若波羅蜜多時… 照見五蘊皆空，度一切苦厄。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-heart')">展開／收合經文</button>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://www.namoamitabha.net/namo_mp3/amitabha/chant_ksitigarbha.mp3', '地藏菩薩聖號')">
+                    <div class="play-icon">📿</div>
+                    <h3 class="audio-title">地藏菩薩聖號</h3>
+                    <p class="audio-desc">南無大願地藏王菩薩。持誦聖號，超度亡靈，消業積福。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-ksitigarbha')">展開／收合經文</button>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://www.namoamitabha.net/namo_mp3/amitabha/chant_amitabha.mp3', '阿彌陀佛聖號')">
+                    <div class="play-icon">🪷</div>
+                    <h3 class="audio-title">阿彌陀佛聖號</h3>
+                    <p class="audio-desc">南無阿彌陀佛。淨土宗根本聖號，一心稱念，願生西方。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-amitabha')">展開／收合經文</button>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://www.buda.idv.tw/download.asp?file_serial_no=1', '往生咒')">
+                    <div class="play-icon">🪷</div>
+                    <h3 class="audio-title">往生咒</h3>
+                    <p class="audio-desc">拔一切業障根本得生淨土陀羅尼。淨土宗常用，助緣往生西方。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放（約 58 秒，佛學多媒體資料庫）</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-wangsheng')">展開／收合經文</button>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://www.buda.idv.tw/download.asp?file_serial_no=11837', '地藏菩薩本願經')">
+                    <div class="play-icon">📿</div>
+                    <h3 class="audio-title">地藏菩薩本願經</h3>
+                    <p class="audio-desc">閻浮眾生業感、地獄名號、見聞利益等品。與因果、地獄、孝道相應。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放（全經約 1 時 36 分，國語念誦，佛學多媒體資料庫）</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-ksitigarbha-sutra')">展開／收合簡介</button>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://www.buda.idv.tw/download.asp?file_serial_no=3378', '梁皇寶懺・卷一')">
+                    <div class="play-icon">🪷</div>
+                    <h3 class="audio-title">梁皇寶懺</h3>
+                    <p class="audio-desc">慈悲道場懺法，懺悔業障，洗滌心靈。南朝梁武帝為超度郗后所製。此為卷一（共十卷）。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放（卷一約 1 時 35 分，慧文法師，佛學多媒體資料庫）</p>
+                </div>
+            </div>
+            <!-- 佛教經文全文區（可展開） -->
+            <div id="text-dabei" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-gold/20 rounded text-stone-300 text-sm leading-loose whitespace-pre-line">
+                <h4 class="text-gold font-bold mb-3">大悲咒（千手千眼觀世音菩薩廣大圓滿無礙大悲心陀羅尼）</h4>
+                <p class="mb-2">南無喝囉怛那哆囉夜耶　南無阿唎耶　婆盧羯帝爍缽囉耶　菩提薩埵婆耶　摩訶薩埵婆耶　摩訶迦盧尼迦耶　唵　薩皤囉罰曳　數怛那怛寫　南無悉吉慄埵伊蒙阿唎耶　婆盧吉帝室佛囉楞馱婆　南無那囉謹墀　醯唎摩訶皤哆沙咩　薩婆阿他豆輸朋　阿逝孕　薩婆薩哆那摩婆薩哆那摩婆伽　摩罰特豆　怛姪他　唵阿婆盧醯　盧迦帝　迦羅帝　夷醯唎　摩訶菩提薩埵　薩婆薩婆　摩囉摩囉　摩醯摩醯唎馱孕　俱盧俱盧羯蒙　度盧度盧罰闍耶帝　摩訶罰闍耶帝　陀囉陀囉　地唎尼　室佛囉耶　遮囉遮囉　麼麼罰摩囉　穆帝隸　伊醯伊醯　室那室那　阿囉參佛囉舍利　罰沙罰參　佛囉舍耶　呼盧呼盧摩囉　呼盧呼盧醯利　娑囉娑囉　悉唎悉唎　蘇嚧蘇嚧　菩提夜菩提夜　菩馱夜菩馱夜　彌帝唎夜　那囉謹墀　地利瑟尼那　婆夜摩那　娑婆訶　悉陀夜　娑婆訶　摩訶悉陀夜　娑婆訶　悉陀喻藝　室皤囉耶　娑婆訶　那囉謹墀　娑婆訶　摩囉那囉　娑婆訶　悉囉僧阿穆佉耶　娑婆訶　娑婆摩訶阿悉陀夜　娑婆訶　者吉囉阿悉陀夜　娑婆訶　波陀摩羯悉陀夜　娑婆訶　那囉謹墀皤伽囉耶　娑婆訶　摩婆利勝羯囉夜　娑婆訶　南無喝囉怛那哆囉夜耶　南無阿唎耶　婆嚧吉帝　爍皤囉夜　娑婆訶　唵悉殿都　漫哆囉　跋陀耶　娑婆訶</p>
+                <p class="text-stone-500 text-xs mt-2">（伽梵達摩譯、84 句流通本；「慄」為正字。依大正藏 T20n1060 及寺院課誦本核對。）</p>
+            </div>
+            <div id="text-ksitigarbha" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-gold/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-gold font-bold mb-2">地藏菩薩聖號</h4>
+                <p>南無大願地藏王菩薩（反覆持誦）</p>
+            </div>
+            <div id="text-amitabha" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-gold/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-gold font-bold mb-2">阿彌陀佛聖號</h4>
+                <p>南無阿彌陀佛（反覆持誦，或十念、百念、千念）</p>
+            </div>
+            <div id="text-heart" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-gold/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-gold font-bold mb-2">般若波羅蜜多心經</h4>
+                <p>觀自在菩薩，行深般若波羅蜜多時，照見五蘊皆空，度一切苦厄。舍利子，色不異空，空不異色；色即是空，空即是色。受、想、行、識，亦復如是。舍利子，是諸法空相，不生不滅，不垢不淨，不增不減。是故空中無色，無受、想、行、識；無眼、耳、鼻、舌、身、意；無色、聲、香、味、觸、法；無眼界，乃至無意識界；無無明，亦無無明盡；乃至無老死，亦無老死盡。無苦、集、滅、道，無智亦無得，以無所得故。菩提薩埵，依般若波羅蜜多故，心無罣礙，無罣礙故，無有恐怖，遠離顛倒夢想，究竟涅槃。三世諸佛，依般若波羅蜜多故，得阿耨多羅三藐三菩提。故知般若波羅蜜多，是大神咒，是大明咒，是無上咒，是無等等咒，能除一切苦，真實不虛。故說般若波羅蜜多咒，即說咒曰：揭諦、揭諦，波羅揭諦，波羅僧揭諦，菩提薩婆訶。</p>
+                <p class="text-stone-500 text-xs mt-2">（依唐・玄奘譯《般若波羅蜜多心經》通行本核對）</p>
+            </div>
+            <div id="text-wangsheng" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-gold/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-gold font-bold mb-2">往生咒（拔一切業障根本得生淨土陀羅尼）</h4>
+                <p>南無阿彌多婆夜　哆他伽多夜　哆地夜他　阿彌利都婆毗　阿彌利哆　悉耽婆毗　阿彌唎哆　毗迦蘭帝　阿彌唎哆　毗迦蘭多　伽彌膩　伽伽那　枳多迦利　娑婆訶</p>
+                <p class="text-stone-500 text-xs mt-2">（劉宋・求那跋陀羅譯，大正藏 T12n368。日夜各誦廿一遍或六時各誦三七遍。）</p>
+            </div>
+            <div id="text-ksitigarbha-sutra" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-gold/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-gold font-bold mb-2">地藏菩薩本願經（簡介）</h4>
+                <p>唐・實叉難陀譯，共十三品。內容含閻浮眾生業感、地獄名號、見聞利益、囑累人天等，與本站「因果」「地獄」「孝道」主題相應。長篇誦持建議至寺廟請購正版或參加共修。</p>
+            </div>
+        </div>
+
+        <!-- 道教經咒 -->
+        <div class="mb-20">
+            <h2 class="text-3xl text-amber-400/90 mb-6 border-b border-amber-400/30 pb-4">☯ 道教經咒</h2>
+            <p class="text-stone-500 mb-8">道教早晚課常用神咒。護身淨心、安土地、開經玄蘊。依道教流通本核對。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="audio-card" onclick="playYouTubeEmbed('HKHSX2jG8K8', '金光神咒')">
+                    <div class="play-icon">☀️</div>
+                    <h3 class="audio-title">金光神咒</h3>
+                    <p class="audio-desc">天地玄宗，萬炁本根。廣修億劫，證吾神通。護身辟邪，淨化磁場。</p>
+                    <p class="audio-duration text-yellow-500">▶ YouTube 播放</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-golden')">展開／收合咒文</button>
+                </div>
+                <div class="audio-card" onclick="playYouTubeEmbed('CSzhIvYD_d4', '淨心神咒（道教早課）')">
+                    <div class="play-icon">☯</div>
+                    <h3 class="audio-title">淨心神咒</h3>
+                    <p class="audio-desc">八大神咒之首。太上台星，應變無停。驅邪縛魅，保命護身。</p>
+                    <p class="audio-duration text-yellow-500">▶ YouTube 早晚課播放</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-jingxin')">展開／收合咒文</button>
+                </div>
+                <div class="audio-card" onclick="showInfo('淨口神咒音檔可至道觀請購或搜尋道教早晚課。')">
+                    <div class="play-icon">☯</div>
+                    <h3 class="audio-title">淨口神咒</h3>
+                    <p class="audio-desc">丹朱口神，吐穢除氛。舌神正倫，通命養神。淨化口業。</p>
+                    <p class="audio-duration text-yellow-500">▶ 展開咒文跟誦</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-jingkou')">展開／收合咒文</button>
+                </div>
+                <div class="audio-card" onclick="showInfo('淨身神咒音檔可至道觀請購或搜尋道教早晚課。')">
+                    <div class="play-icon">☯</div>
+                    <h3 class="audio-title">淨身神咒</h3>
+                    <p class="audio-desc">靈寶天尊，安慰身形。弟子魂魄，五臟玄冥。淨化身業。</p>
+                    <p class="audio-duration text-yellow-500">▶ 展開咒文跟誦</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-jingshen')">展開／收合咒文</button>
+                </div>
+                <div class="audio-card" onclick="showInfo('安土地神咒音檔可至道觀請購或搜尋道教早晚課。')">
+                    <div class="play-icon">☯</div>
+                    <h3 class="audio-title">安土地神咒</h3>
+                    <p class="audio-desc">元始安鎮，普告萬靈。岳瀆真官，土地祗靈。召請土地護法。</p>
+                    <p class="audio-duration text-yellow-500">▶ 展開咒文跟誦</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-antudi')">展開／收合咒文</button>
+                </div>
+                <div class="audio-card" onclick="showInfo('開經玄蘊咒音檔可至道觀請購或搜尋道教早晚課。')">
+                    <div class="play-icon">☯</div>
+                    <h3 class="audio-title">開經玄蘊咒</h3>
+                    <p class="audio-desc">雲篆太虛，浩劫之初。開經玄蘊，啟請真文。開經前誦。</p>
+                    <p class="audio-duration text-yellow-500">▶ 展開咒文跟誦</p>
+                    <button type="button" class="mt-3 text-xs text-gold hover:underline" onclick="event.stopPropagation(); toggleText('text-xuanyun')">展開／收合咒文</button>
+                </div>
+            </div>
+            <!-- 道教咒文全文區（可展開） -->
+            <div id="text-golden" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-amber-400/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-amber-400 font-bold mb-2">金光神咒</h4>
+                <p>天地玄宗，萬炁本根。廣修億劫，證吾神通。三界內外，惟道獨尊。體有金光，覆映吾身。視之不見，聽之不聞。包羅天地，養育群生。誦持萬遍，身有光明。三界侍衛，五帝司迎。萬神朝禮，役使雷霆。鬼妖喪膽，精怪亡形。內有霹靂，雷神隱名。洞慧交徹，五炁騰騰。金光速現，覆護真人。急急如律令。</p>
+                <p class="text-stone-500 text-xs mt-2">（依道教通行本核對；「亡形」謂精怪失其形體）</p>
+            </div>
+            <div id="text-jingxin" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-amber-400/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-amber-400 font-bold mb-2">淨心神咒</h4>
+                <p>太上台星，應變無停。驅邪縛魅，保命護身。智慧明淨，心神安寧。三魂永久，魄無喪傾。急急如律令。</p>
+                <p class="text-stone-500 text-xs mt-2">（道教八大神咒之一，早晚課首咒）</p>
+            </div>
+            <div id="text-jingkou" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-amber-400/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-amber-400 font-bold mb-2">淨口神咒</h4>
+                <p>丹朱口神，吐穢除氛。舌神正倫，通命養神。羅千齒神，卻邪衛真。喉神虎賁，氣神引津。心神丹元，令我通真。思神鍊液，道炁長存。急急如律令。</p>
+                <p class="text-stone-500 text-xs mt-2">（道教八大神咒之一）</p>
+            </div>
+            <div id="text-jingshen" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-amber-400/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-amber-400 font-bold mb-2">淨身神咒</h4>
+                <p>靈寶天尊，安慰身形。弟子魂魄，五臟玄冥。青龍白虎，隊仗紛紜。朱雀玄武，侍衛我身。急急如律令。</p>
+                <p class="text-stone-500 text-xs mt-2">（道教八大神咒之一）</p>
+            </div>
+            <div id="text-antudi" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-amber-400/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-amber-400 font-bold mb-2">安土地神咒</h4>
+                <p>元始安鎮，普告萬靈。岳瀆真官，土地祗靈。左社右稷，不得妄驚。回向正道，內外澄清。各安方位，備守壇庭。太上有命，搜捕邪精。護法神王，保衛誦經。皈依大道，元亨利貞。急急如律令。</p>
+                <p class="text-stone-500 text-xs mt-2">（道教早晚課，召請土地護法）</p>
+            </div>
+            <div id="text-xuanyun" class="sutra-text hidden mt-4 p-6 bg-black/60 border border-amber-400/20 rounded text-stone-300 text-sm leading-loose">
+                <h4 class="text-amber-400 font-bold mb-2">開經玄蘊咒（太上玄蘊咒）</h4>
+                <p>雲篆太虛，浩劫之初。乍遐乍邇，或沉或浮。五方徘徊，一丈之餘。天真皇人，按筆乃書。以演洞章，次書靈符。元始下降，真文誕敷。昭昭其有，冥冥其無。沉痾能自痊，塵勞溺可扶。幽冥將有賴，由是昇仙都。急急如律令。</p>
+                <p class="text-stone-500 text-xs mt-2">（道教開經咒，常見於早晚課）</p>
+            </div>
+        </div>
+
+        <!-- 禪樂／音樂 -->
+        <div class="mb-20">
+            <h2 class="text-3xl text-gold mb-10 border-b border-gold/20 pb-4">🎵 禪樂／音樂</h2>
+            <p class="text-stone-500 mb-8">環境音樂與法器音聲，助緣靜心、打坐、抄經。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="audio-card" onclick="playExternalAudio('https://assets.mixkit.co/music/preview/mixkit-ethereal-zen-meditation-142.mp3', '禪意冥想')">
+                    <div class="play-icon">🧘</div>
+                    <h3 class="audio-title">禪意冥想</h3>
+                    <p class="audio-desc">空靈禪樂，適合打坐、放鬆、淨心。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://assets.mixkit.co/music/preview/mixkit-spirituality-120.mp3', '靈性氛圍')">
+                    <div class="play-icon">✨</div>
+                    <h3 class="audio-title">靈性氛圍</h3>
+                    <p class="audio-desc">柔和氛圍音樂，助緣靜心與抄經。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://assets.mixkit.co/music/preview/mixkit-soothing-wind-12.mp3', '清風徐來')">
+                    <div class="play-icon">🍃</div>
+                    <h3 class="audio-title">清風徐來</h3>
+                    <p class="audio-desc">自然風聲與輕柔環境音，安定心神。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://assets.mixkit.co/sfx/preview/mixkit-relaxing-bell-chime-966.mp3', '梵唄鐘磬')">
+                    <div class="play-icon">🔔</div>
+                    <h3 class="audio-title">梵唄鐘磬</h3>
+                    <p class="audio-desc">傳統寺院法器音聲，木魚引磬，安定心神。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放（Mixkit）</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://assets.mixkit.co/music/preview/mixkit-ethereal-zen-meditation-142.mp3', '古琴心韻')">
+                    <div class="play-icon">🎵</div>
+                    <h3 class="audio-title">古琴心韻</h3>
+                    <p class="audio-desc">道家古琴雅樂，中正平和，修身養性。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放（Mixkit）</p>
+                </div>
+                <div class="audio-card" onclick="playExternalAudio('https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.mp3', '喜馬拉雅缽音')">
+                    <div class="play-icon">🥣</div>
+                    <h3 class="audio-title">喜馬拉雅缽音</h3>
+                    <p class="audio-desc">深層共振，清理負面能量，回歸內在寧靜。</p>
+                    <p class="audio-duration text-green-500">▶ 點擊播放（Mixkit）</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 border border-gold/20 bg-gold/5 mt-20">
+            <h3 class="text-2xl text-gold mb-6">📜 音源與校對說明</h3>
+            <div class="space-y-4 text-stone-400">
+                <p><span class="text-gold font-bold">佛教經咒</span>：大悲咒、心經、地藏聖號、阿彌陀佛聖號 — 音檔來自 <a href="https://www.namoamitabha.net" class="text-gold hover:underline" target="_blank" rel="noopener noreferrer">南無阿彌陀佛網</a>（華藏淨宗學會）。往生咒、地藏菩薩本願經、梁皇寶懺 — 音檔來自 <a href="https://www.buda.idv.tw/" class="text-gold hover:underline" target="_blank" rel="noopener noreferrer">佛學多媒體資料庫</a>。經文依大正藏／流通本核對。</p>
+                <p><span class="text-amber-400 font-bold">道教經咒</span>：金光神咒、淨心神咒（YouTube 早晚課）；淨口、淨身、安土地、開經玄蘊 — 咒文依道教早晚課通行本核對，音檔可至道觀請購。</p>
+                <p><span class="text-gold font-bold">禪樂／音樂</span>：禪意冥想、靈性氛圍、清風徐來、梵唄鐘磬、古琴心韻、喜馬拉雅缽音 — 來自 Mixkit 免費音樂／音效。</p>
+                <p>📀 <span class="text-gold">建議請購</span>：梁皇寶懺、地藏菩薩本願經等長篇，建議至寺廟／道觀共修或請購正版。</p>
+                <p class="text-stone-500 text-sm mt-4">備註：佛教音檔來源為華藏淨宗學會，如侵權請告知下架。道教咒文依流通本，禪樂為免費授權之環境音樂。</p>
+                <div class="mt-6 pt-6 border-t border-gold/10">
+                    <h4 class="text-gold text-sm font-bold mb-2">📋 經文校對依據（大數據／權威版本）</h4>
+                    <ul class="text-stone-500 text-xs space-y-1 list-disc list-inside">
+                        <li><strong>大悲咒</strong>：伽梵達摩譯、84 句流通本，大正藏 T20n1060；「慄」為正字。</li>
+                        <li><strong>心經</strong>：唐・玄奘譯《般若波羅蜜多心經》通行本，大正藏 T08n251。</li>
+                        <li><strong>往生咒</strong>：劉宋・求那跋陀羅譯《拔一切業障根本得生淨土陀羅尼》，大正藏 T12n368。</li>
+                        <li><strong>聖號</strong>：地藏菩薩聖號、阿彌陀佛聖號依華藏淨宗學會慣用稱念。</li>
+                        <li><strong>金光神咒</strong>：道教通行本，「亡形」「誦持萬遍」「急急如律令」已校正。</li>
+                        <li><strong>道教八大神咒</strong>：淨心神咒、淨口神咒、淨身神咒、安土地咒、開經玄蘊咒依早晚課流通本。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="player-bar" class="player-bar">
+        <div class="now-playing" id="now-playing">尚未播放</div>
+        <div class="progress-container">
+            <div class="progress-bar" onclick="seekAudio(event)">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        <div class="player-controls">
+            <button class="control-btn" onclick="togglePlay()">▶</button>
+            <button class="control-btn" onclick="stopAudio()">⏹</button>
+        </div>
+    </div>
+
+    <!-- YouTube 播放器容器 -->
+    <div id="youtube-player-container" style="display:none; position:fixed; bottom:100px; right:20px; width:320px; height:180px; z-index:99; border:2px solid var(--gold); background:black;">
+        <div id="youtube-player"></div>
+        <button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>
+    </div>
+
+    <audio id="audio-player" ontimeupdate="updateProgress()" onended="audioEnded()"></audio>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        // 音頻檔案路徑（本地音檔與外部連結）
+        const audioSources = {
+            'golden-light': '../audio/golden-light-mantra.mp3',
+            'ksitigarbha': 'https://www.namoamitabha.net/namo_mp3/amitabha/chant_ksitigarbha.mp3',
+            'great-compassion': 'https://www.namoamitabha.net/namo_mp3/avalokitesvara/greatcompassionpraise.mp3',
+            'liang-huang': '../audio/liang-huang-bao-chan.mp3',
+            'zen-bell': '../audio/zen-bell.mp3',
+            'guqin': '../audio/guqin-music.mp3',
+            'singing-bowl': '../audio/singing-bowl.mp3'
+        };
+
+        let currentId = null, isPlaying = false, youtubePlayer = null, currentMode = 'local';
+        const audio = document.getElementById('audio-player');
+        const playerBar = document.getElementById('player-bar');
+        const nowPlaying = document.getElementById('now-playing');
+
+        // YouTube IFrame API 回呼
+        function onYouTubeIframeAPIReady() {
+            youtubePlayer = new YT.Player('youtube-player', {
+                height: '180',
+                width: '320',
+                videoId: 'HKHSX2jG8K8',
+                playerVars: {
+                    autoplay: 0,
+                    controls: 1,
+                    rel: 0,
+                    modestbranding: 1,
+                    playsinline: 1,
+                    enablejsapi: 1,
+                    origin: window.location.origin
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            console.log('YouTube Player Ready');
+        }
+
+        function onPlayerError(event) {
+            console.error('YouTube Player Error:', event.data);
+            let errorMsg = '播放錯誤';
+            switch(event.data) {
+                case 2: errorMsg = '無效的影片ID'; break;
+                case 5: errorMsg = 'HTML5播放器錯誤'; break;
+                case 100: errorMsg = '影片已被移除'; break;
+                case 101: 
+                case 150: errorMsg = '影片禁止嵌入播放'; break;
+                case 153: errorMsg = '影片版權限制，無法嵌入'; break;
+            }
+            alert('❌ ' + errorMsg + '\n\n建議：請使用「下載音檔後上傳」方案，或提供其他YouTube連結');
+            closeYouTube();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                isPlaying = false;
+                updatePlayButton();
+                document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            }
+        }
+
+        function playYouTubeEmbed(videoId, title) {
+            currentMode = 'youtube';
+            stopLocalAudio();
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            
+            const container = document.getElementById('youtube-player-container');
+            container.style.display = 'block';
+            
+            // 使用純 iframe 嵌入
+            container.innerHTML = `
+                <iframe width="320" height="180" 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
+                    title="${title}" frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+                <button onclick="closeYouTubeEmbed()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>
+            `;
+            
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title + ' (YouTube)';
+            isPlaying = true;
+            updatePlayButton();
+        }
+
+        function closeYouTubeEmbed() {
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div>';
+            container.style.display = 'none';
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            isPlaying = false;
+            updatePlayButton();
+            playerBar.classList.remove('active');
+        }
+
+        // 播放外部音檔（直接 URL）
+        function playExternalAudio(url, title) {
+            currentMode = 'local';
+            // 關閉 YouTube 播放器
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+            container.style.display = 'none';
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            
+            audio.src = url;
+            audio.play();
+            isPlaying = true;
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title;
+            updatePlayButton();
+        }
+
+        // 顯示資訊提示
+        function showInfo(message) {
+            alert('📿 ' + message);
+        }
+
+        // 展開／收合經文文字
+        function toggleText(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('hidden');
+        }
+
+        function playYouTube(videoId, title) {
+            currentMode = 'youtube';
+            stopLocalAudio();
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            
+            document.getElementById('youtube-player-container').style.display = 'block';
+            
+            if (youtubePlayer && youtubePlayer.loadVideoById) {
+                youtubePlayer.loadVideoById(videoId);
+                youtubePlayer.playVideo();
+            }
+            
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title + ' (YouTube)';
+            isPlaying = true;
+            updatePlayButton();
+        }
+
+        function closeYouTube() {
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+            container.style.display = 'none';
+            if (youtubePlayer && youtubePlayer.stopVideo) {
+                youtubePlayer.stopVideo();
+            }
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            isPlaying = false;
+            updatePlayButton();
+        }
+
+        function stopLocalAudio() {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+
+        function playAudio(id, title) {
+            currentMode = 'local';
+            // 關閉 YouTube 播放器
+            const container = document.getElementById('youtube-player-container');
+            container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+            container.style.display = 'none';
+            if (youtubePlayer && youtubePlayer.stopVideo) {
+                youtubePlayer.stopVideo();
+            }
+            
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            event.currentTarget.classList.add('playing');
+            currentId = id;
+            audio.src = audioSources[id];
+            audio.play();
+            isPlaying = true;
+            playerBar.classList.add('active');
+            nowPlaying.innerText = '▶ ' + title;
+            updatePlayButton();
+        }
+
+        function togglePlay() {
+            if (currentMode === 'youtube') {
+                // iframe 嵌入模式下無法直接控制播放/暫停
+                // 提示用戶直接在影片上操作
+                alert('ℹ️ YouTube 嵌入模式下，請直接點擊影片上的播放/暫停按鈕控制');
+                return;
+            }
+            if (!currentId) return;
+            if (isPlaying) { audio.pause(); isPlaying = false; }
+            else { audio.play(); isPlaying = true; }
+            updatePlayButton();
+        }
+
+        function updatePlayButton() {
+            document.querySelector('.control-btn').innerText = isPlaying ? '⏸' : '▶';
+        }
+
+        function stopAudio() {
+            const container = document.getElementById('youtube-player-container');
+            if (currentMode === 'youtube') {
+                // 重置 YouTube 容器
+                container.innerHTML = '<div id="youtube-player"></div><button onclick="closeYouTube()" style="position:absolute; top:-30px; right:0; background:var(--cinnabar); color:white; border:none; padding:5px 10px; cursor:pointer;">✕ 關閉</button>';
+                container.style.display = 'none';
+                if (youtubePlayer && youtubePlayer.stopVideo) {
+                    youtubePlayer.stopVideo();
+                }
+            }
+            audio.pause();
+            audio.currentTime = 0;
+            isPlaying = false;
+            playerBar.classList.remove('active');
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+            currentId = null;
+            updatePlayButton();
+        }
+
+        function updateProgress() {
+            const pct = (audio.currentTime / audio.duration) * 100 || 0;
+            document.getElementById('progress-fill').style.width = pct + '%';
+        }
+
+        function seekAudio(e) {
+            if (!currentId) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = pct * audio.duration;
+        }
+
+        function audioEnded() {
+            isPlaying = false;
+            updatePlayButton();
+            document.querySelectorAll('.audio-card').forEach(c => c.classList.remove('playing'));
+        }
+    </script>
+</body>
+</html>

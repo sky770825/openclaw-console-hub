@@ -1,0 +1,9 @@
+--- CLAUDE CODE /NEW SESSION REPORT ---
+Timestamp: 2026-03-07 19:43:57
+Action: Workspace Context Reset
+Status: SUCCESS
+Details:
+  - Sandbox contents cleared.
+  - Output directory contents cleared.
+  - Persistence layers (knowledge, skills, armory) preserved.
+  - Helper tool created: /Users/caijunchang/.openclaw/workspace/scripts/new_context.sh

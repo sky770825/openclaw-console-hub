@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "openclaw-task-update",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node[\"Webhook Trigger\"].json[\"body\"][\"newStatus\"] }}",
+              "value2": "COMPLETED"
+            }
+          ]
+        }
+      },
+      "name": "Is Completed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "openclaw-alerts",
+        "text": "=\ud83d\ude80 任務已完成！\n任務名稱: {{ $node[\"Webhook Trigger\"].json[\"body\"][\"taskName\"] }}\n執行人: {{ $node[\"Webhook Trigger\"].json[\"body\"][\"assignee\"] }}"
+      },
+      "name": "Telegram/Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [700, 250]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Completed?": {
+      "main": [
+        [
+          {
+            "node": "Telegram/Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

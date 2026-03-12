@@ -1,0 +1,3 @@
+#!/bin/bash
+# OC CLI Wrapper
+exec "${HOME}/.openclaw/workspace/projects/dashboard/modules/cli-tool/bin/oc" "$@"

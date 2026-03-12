@@ -1,0 +1,9 @@
+{
+  "name": "NEUXA-Nexus-Lite",
+  "version": "1.0.0",
+  "author": "NEUXA Starship Project",
+  "description": "Actuarial-grade local-first AI agent for 2026.",
+  "category": "productivity",
+  "tags": ["actuary", "self-healing", "mcp", "cost-saving"],
+  "homepage": "https://neuxa-nexus.vercel.app"
+}

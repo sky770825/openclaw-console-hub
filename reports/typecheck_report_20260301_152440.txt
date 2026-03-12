@@ -1,0 +1,1 @@
+/Users/caijunchang/.openclaw/workspace/sandbox/task-1772349880201.sh: line 29: npx: command not found

@@ -1,0 +1,10 @@
+# Suggested Security Patches for Clawhub
+# Note: These should be applied by the project owner.
+
+--- server/src/utils/executor.ts (Hypothetical)
+- exec(command)
++ execFile(command, args, { shell: false }) // Prevention of command injection
+
+--- src/components/SkillRenderer.tsx (Hypothetical)
+- <div dangerouslySetInnerHTML={{ __html: content }} />
++ <div>{sanitizeHtml(content)}</div> // Prevention of XSS

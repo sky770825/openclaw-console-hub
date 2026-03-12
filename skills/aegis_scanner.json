@@ -1,0 +1,17 @@
+{
+  "id": "aegis-scanner-v1",
+  "name": "神盾掃描器",
+  "version": "1.0.2",
+  "description": "SLM 效能測試與安全性掃描工具",
+  "runtime": "bash",
+  "entrypoint": "/Users/caijunchang/.openclaw/workspace/scripts/run_aegis_scan.sh",
+  "config": {
+    "output_path": "/Users/caijunchang/.openclaw/workspace/sandbox/output",
+    "timeout": 300,
+    "max_retries": 3
+  },
+  "parameters": {
+    "target": "string",
+    "mode": ["fast", "deep", "performance"]
+  }
+}

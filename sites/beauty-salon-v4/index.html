@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Beauty - 您的專屬美麗殿堂</title>
+    <meta name="description" content="Aura Beauty 提供頂級美睫、美甲與臉部護理服務。立即線上預約，開啟您的美麗旅程。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            /* 色彩 — 美業粉色系 */
+            --primary: #ec4899;
+            --primary-light: #f472b6;
+            --primary-dark: #db2777;
+            --accent: #f59e0b;
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            /* 背景/文字 */
+            --bg: #ffffff; --bg-secondary: var(--gray-50); --text: var(--gray-900); --text-secondary: var(--gray-500);
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            /* 陰影 */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        /* --- Global & Reset --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        img { max-width: 100%; height: auto; display: block; }
+        a { text-decoration: none; color: inherit; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
+        section { padding: var(--space-20) 0; }
+        .section-title {
+            font-size: var(--text-4xl);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: var(--space-12);
+            position: relative;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background-color: var(--primary);
+            border-radius: var(--radius-sm);
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+        }
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Components --- */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: var(--text-base);
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--duration) var(--ease);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background-color: var(--bg);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        .btn-secondary:hover {
+            background-color: var(--primary-light);
+            color: white;
+            border-color: var(--primary-light);
+        }
+        .card {
+            background-color: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: all var(--duration) var(--ease);
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+        .input-group {
+            margin-bottom: var(--space-4);
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: var(--space-2);
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-base);
+            font-family: var(--font);
+            transition: all var(--duration) var(--ease);
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+        }
+
+        /* --- Header --- */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: var(--space-4) 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-xs);
+            transition: all var(--duration) var(--ease);
+        }
+        .main-header.scrolled {
+            box-shadow: var(--shadow-sm);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: var(--text-2xl);
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .main-nav ul {
+            display: flex;
+            list-style: none;
+            gap: var(--space-8);
+        }
+        .main-nav a {
+            font-weight: 500;
+            color: var(--gray-600);
+            position: relative;
+            padding: var(--space-2) 0;
+        }
+        .main-nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            transition: width var(--duration) var(--ease);
+        }
+        .main-nav a:hover, .main-nav a.active {
+            color: var(--primary);
+        }
+        .main-nav a:hover::after, .main-nav a.active::after {
+            width: 100%;
+        }
+        .mobile-nav-toggle { display: none; }
+
+        /* --- Hero Section --- */
+        .hero {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 120px;
+            background: linear-gradient(135deg, rgba(253, 230, 242, 0.8), rgba(251, 235, 245, 0.9)), url('https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            color: var(--text);
+        }
+        .hero-content {
+            animation: fadeInUp 1s var(--ease) forwards;
+        }
+        .hero h1 {
+            font-size: var(--text-5xl);
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            line-height: 1.2;
+        }
+        .hero p {
+            font-size: var(--text-xl);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- Services Section --- */
+        #services { background-color: var(--bg-secondary); }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-8);
+        }
+        .service-card { text-align: center; }
+        .service-card .card-content { padding: var(--space-8); }
+        .service-card .icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: var(--space-4);
+        }
+        .service-card h3 {
+            font-size: var(--text-xl);
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+        }
+        .service-card p {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-4);
+        }
+        .service-card .price {
+            font-size: var(--text-lg);
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        /* --- Gallery Section --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-6);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .gallery-item img:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* --- Booking Section --- */
+        #booking { background-color: var(--bg-secondary); }
+        .booking-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-12);
+            align-items: center;
+        }
+        .booking-image {
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        .booking-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .booking-form-wrapper {
+            background-color: var(--bg);
+            padding: var(--space-10);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+        .booking-form-wrapper h3 {
+            font-size: var(--text-2xl);
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+
+        /* --- Testimonials Section --- */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-8);
+        }
+        .testimonial-card {
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-8);
+        }
+        .testimonial-card .quote {
+            flex-grow: 1;
+            font-style: italic;
+            color: var(--gray-600);
+            margin-bottom: var(--space-4);
+            position: relative;
+            padding-left: var(--space-8);
+        }
+        .testimonial-card .quote::before {
+            content: '\f10d';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            top: -5px;
+            font-size: 24px;
+            color: var(--primary-light);
+            opacity: 0.5;
+        }
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            margin-top: auto;
+        }
+        .testimonial-author img {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-full);
+            margin-right: var(--space-4);
+            object-fit: cover;
+        }
+        .author-info h4 { font-weight: 600; }
+        .author-info p { color: var(--text-secondary); font-size: var(--text-sm); }
+        .stars { color: var(--accent); }
+
+        /* --- Footer --- */
+        .main-footer {
+            background-color: var(--gray-800);
+            color: var(--gray-300);
+            padding: var(--space-12) 0;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-10);
+        }
+        .footer-col h4 {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            color: white;
+            margin-bottom: var(--space-4);
+        }
+        .footer-col ul { list-style: none; }
+        .footer-col li { margin-bottom: var(--space-2); }
+        .footer-col a { transition: color var(--duration) var(--ease); }
+        .footer-col a:hover { color: var(--primary-light); }
+        .social-icons a {
+            font-size: var(--text-xl);
+            margin-right: var(--space-4);
+        }
+        .footer-bottom {
+            margin-top: var(--space-10);
+            padding-top: var(--space-6);
+            border-top: 1px solid var(--gray-700);
+            text-align: center;
+            font-size: var(--text-sm);
+            color: var(--gray-400);
+        }
+
+        /* --- Toast Notification --- */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast.error { background-color: var(--error); }
+        .toast i { margin-right: var(--space-3); }
+
+        /* --- Responsive --- */
+        @media (max-width: 992px) {
+            .booking-container { grid-template-columns: 1fr; }
+            .booking-image { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .section-title { font-size: var(--text-3xl); }
+            .hero h1 { font-size: var(--text-4xl); }
+            .hero p { font-size: var(--text-lg); }
+            
+            .mobile-nav-toggle {
+                display: block;
+                font-size: 24px;
+                background: none;
+                border: none;
+                color: var(--text);
+                cursor: pointer;
+                z-index: 1001;
+            }
+            .main-nav {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                height: 100vh;
+                background: white;
+                box-shadow: var(--shadow-lg);
+                transition: right var(--duration-slow) var(--ease);
+            }
+            .main-nav.open { right: 0; }
+            .main-nav ul {
+                flex-direction: column;
+                padding: var(--space-20) var(--space-10);
+                gap: var(--space-6);
+                align-items: center;
+            }
+            .header-container .btn { display: none; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="main-header" id="main-header">
+        <div class="container header-container">
+            <a href="#" class="logo">Aura Beauty</a>
+            <nav class="main-nav" id="main-nav">
+                <ul>
+                    <li><a href="#hero" class="active">首頁</a></li>
+                    <li><a href="#services">服務項目</a></li>
+                    <li><a href="#gallery">作品集錦</a></li>
+                    <li><a href="#testimonials">顧客見證</a></li>
+                    <li><a href="#booking">線上預約</a></li>
+                </ul>
+            </nav>
+            <a href="#booking" class="btn btn-primary">立即預約</a>
+            <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="hero">
+            <div class="hero-content container">
+                <h1>綻放妳的獨特光芒</h1>
+                <p>在 Aura Beauty，我們相信每位女性都擁有獨一無二的美。讓我們用專業技術與貼心服務，喚醒您內在的自信與光彩。</p>
+                <a href="#booking" class="btn btn-primary btn-lg">探索美麗旅程</a>
+            </div>
+        </section>
+
+        <section id="services" class="animate-on-scroll">
+            <div class="container">
+                <h2 class="section-title">我們的服務</h2>
+                <div class="services-grid">
+                    <div class="card service-card">
+                        <div class="card-content">
+                            <div class="icon"><i class="fas fa-low-vision"></i></div>
+                            <h3>精緻日式美睫</h3>
+                            <p>採用頂級蠶絲蛋白毛，輕柔無感，根根分明，打造自然深邃的迷人電眼。</p>
+                            <div class="price">NT$ 1,200 起</div>
+                        </div>
+                    </div>
+                    <div class="card service-card">
+                        <div class="card-content">
+                            <div class="icon"><i class="fas fa-hand-sparkles"></i></div>
+                            <h3>經典手部凝膠</h3>
+                            <p>多款流行色系與設計可選，強化甲面，持久亮麗，讓您的指尖成為焦點。</p>
+                            <div class="price">NT$ 990 起</div>
+                        </div>
+                    </div>
+                    <div class="card service-card">
+                        <div class="card-content">
+                            <div class="icon"><i class="fas fa-spa"></i></div>
+                            <h3>深層保濕護理</h3>
+                            <p>針對缺水乾燥肌膚，使用高效保濕精華導入，恢復肌膚水潤透亮光澤。</p>
+                            <div class="price">NT$ 1,800 起</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="gallery" class="animate-on-scroll">
+            <div class="container">
+                <h2 class="section-title">作品集錦</h2>
+                <div class="gallery-grid">
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1599333646545-5303c3a15f3e?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="精緻美甲設計"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="濃密美睫效果"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1616394584738-65b4a40733da?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="臉部護理過程"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1600965962104-50d242b784a0?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="足部護理環境"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1632329783991-88c245997233?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="專業護膚產品"></div>
+                    <div class="gallery-item"><img src="https://images.unsplash.com/photo-1605494321482-3531b4e33fad?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="美甲師工作細節"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="testimonials" class="animate-on-scroll">
+            <div class="container">
+                <h2 class="section-title">顧客見證</h2>
+                <div class="testimonials-grid">
+                    <div class="card testimonial-card">
+                        <p class="quote">這裡的美睫師技術真的太棒了！接完的睫毛很自然又舒服，朋友們都說超好看！</p>
+                        <div class="testimonial-author">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop" alt="顧客照片">
+                            <div class="author-info">
+                                <h4>陳小姐</h4>
+                                <div class="stars">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card testimonial-card">
+                        <p class="quote">第一次嘗試凝膠美甲，美甲師非常細心，給了很多專業建議，成果我很滿意！環境也很舒適放鬆。</p>
+                        <div class="testimonial-author">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" alt="顧客照片">
+                            <div class="author-info">
+                                <h4>林小姐</h4>
+                                <div class="stars">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card testimonial-card">
+                        <p class="quote">臉部護理做完皮膚真的變超亮，而且過程很舒服，差點睡著。絕對會再來！</p>
+                        <div class="testimonial-author">
+                            <img src="https://images.unsplash.com/photo-1521146764736-56c929d59c83?q=80&w=200&auto=format&fit=crop" alt="顧客照片">
+                            <div class="author-info">
+                                <h4>王小姐</h4>
+                                <div class="stars">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="booking" class="animate-on-scroll">
+            <div class="container">
+                <h2 class="section-title">線上預約</h2>
+                <div class="booking-container">
+                    <div class="booking-image">
+                        <img src="https://images.unsplash.com/photo-1556760544-74068565f05c?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="舒適的沙龍環境">
+                    </div>
+                    <div class="booking-form-wrapper">
+                        <h3>預約您的美麗時光</h3>
+                        <form id="booking-form">
+                            <div class="input-group">
+                                <label for="name">您的姓名</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="phone">聯絡電話</label>
+                                <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}">
+                            </div>
+                            <div class="input-group">
+                                <label for="service">選擇服務</label>
+                                <select id="service" name="service" required>
+                                    <option value="">請選擇服務項目</option>
+                                    <option value="日式美睫">精緻日式美睫</option>
+                                    <option value="手部凝膠">經典手部凝膠</option>
+                                    <option value="保濕護理">深層保濕護理</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="date">預約日期</label>
+                                <input type="date" id="date" name="date" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">確認送出</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Aura Beauty</h4>
+                    <p>您的專屬美麗殿堂，提供最專業、貼心的服務。</p>
+                </div>
+                <div class="footer-col">
+                    <h4>快速連結</h4>
+                    <ul>
+                        <li><a href="#services">服務項目</a></li>
+                        <li><a href="#gallery">作品集錦</a></li>
+                        <li><a href="#booking">線上預約</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>聯絡我們</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 台北市信義區...</li>
+                        <li><i class="fas fa-phone"></i> (02) 1234-5678</li>
+                        <li><i class="fas fa-envelope"></i> service@aurabeauty.com</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>關注我們</h4>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-line"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Aura Beauty. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Header Scroll Effect ---
+        const header = document.getElementById('main-header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // --- Mobile Navigation ---
+        const navToggle = document.getElementById('mobile-nav-toggle');
+        const mainNav = document.getElementById('main-nav');
+        navToggle.addEventListener('click', () => {
+            mainNav.classList.toggle('open');
+            const icon = navToggle.querySelector('i');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
+        });
+        document.querySelectorAll('#main-nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                if(mainNav.classList.contains('open')) {
+                    mainNav.classList.remove('open');
+                    navToggle.querySelector('i').classList.add('fa-bars');
+                    navToggle.querySelector('i').classList.remove('fa-times');
+                }
+            });
+        });
+
+        // --- Active Nav Link on Scroll ---
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.main-nav a');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // --- Animate on Scroll ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    // Add staggered delay for child cards
+                    const cards = entry.target.querySelectorAll('.card, .gallery-item');
+                    cards.forEach((card, index) => {
+                        card.style.transitionDelay = `${index * 100}ms`;
+                    });
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // --- Booking Form Handling ---
+        const bookingForm = document.getElementById('booking-form');
+        bookingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Basic Frontend Validation
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const service = document.getElementById('service').value;
+            const date = document.getElementById('date').value;
+
+            if (!name || !phone || !service || !date) {
+                showToast('請填寫所有必填欄位', 'error');
+                return;
+            }
+
+            if (!/^[0-9]{10}$/.test(phone)) {
+                showToast('請輸入有效的 10 位手機號碼', 'error');
+                return;
+            }
+            
+            const today = new Date().toISOString().split('T')[0];
+            if (date < today) {
+                showToast('預約日期不能早於今天', 'error');
+                return;
+            }
+
+            // Simulate saving to localStorage
+            const newBooking = { name, phone, service, date, id: Date.now() };
+            const bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+            bookings.push(newBooking);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            // Show success message and clear form
+            showToast('預約成功！我們將盡快與您聯繫。');
+            bookingForm.reset();
+        });
+
+        // --- Toast Notification Function ---
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+            toast.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+            document.body.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 400);
+            }, 3000);
+        }
+        
+        // Set min date for date input
+        document.getElementById('date').min = new Date().toISOString().split("T")[0];
+
+    });
+    </script>
+</body>
+</html>

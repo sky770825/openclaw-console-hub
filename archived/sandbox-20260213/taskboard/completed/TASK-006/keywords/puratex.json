@@ -1,0 +1,78 @@
+{
+  "business": "普特斯防霾紗窗 (PURATEX)",
+  "category": "建材/空氣品質",
+  "description": "德國進口防霾紗窗品牌，主打防PM2.5、防花粉、通風透氣功能",
+  "keywords": {
+    "brand": {
+      "primary": ["普特斯", "PURATEX", "普特斯防霾紗窗", "Puratex防霾紗窗"],
+      "secondary": ["普特斯紗窗", "PURATEX紗窗", "普特斯總代理", "普特斯台灣"],
+      "related": ["普特斯價格", "普特斯評價", "普特斯安裝", "普特斯保固"]
+    },
+    "product": {
+      "function": ["防霾紗窗", "防PM2.5紗窗", "防塵紗窗", "防蟲紗窗", "防花粉紗窗", "奈米紗窗"],
+      "feature": ["通風紗窗", "高透氣紗窗", "隱形紗窗", "靜電紗窗", "奈米纖維紗窗"],
+      "scenario": ["換紗窗", "裝紗窗", "紗窗推薦", "紗窗比較", "紗窗價格", "紗窗品牌"]
+    },
+    "industry": {
+      "air_quality": ["PM2.5", "空氣品質", "空氣汙染", "霾害", "霧霾", "紫爆", "空品紅害", "AQI"],
+      "pollution": ["空汙", "細懸浮微粒", "沙塵暴", "霾害警報", "空氣清淨", "空汙季"],
+      "health": ["過敏", "鼻炎", "氣喘", "呼吸道疾病", "室內空氣品質"],
+      "seasonal": ["冬季空汙", "秋冬空汙", "沙塵季", "花粉季"]
+    },
+    "competitors": {
+      "direct": [
+        {"name": "3M防霾紗窗", "keywords": ["3M防霾紗窗", "3M紗窗", "3M淨呼吸"]},
+        {"name": "藍鯨防霾紗窗", "keywords": ["藍鯨防霾紗窗", "藍鯨紗窗", "Blue Whale"]},
+        {"name": "淨森防霾紗窗", "keywords": ["淨森防霾紗窗", "淨森紗窗", "Jinsen"]},
+        {"name": "森呼吸防霾紗窗", "keywords": ["森呼吸防霾紗窗", "森呼吸紗窗"]},
+        {"name": "Topp防霾紗窗", "keywords": ["Topp防霾紗窗", "Topp紗窗"]},
+        {"name": "日光防霾紗窗", "keywords": ["日光防霾紗窗", "日光紗窗"]},
+        {"name": "Hunter Douglas", "keywords": ["Hunter Douglas", "風琴簾", "防塵窗簾"]}
+      ],
+      "indirect": [
+        {"name": "空氣清淨機", "keywords": ["空氣清淨機", "清淨機", "空氣濾淨", "HEPA"]},
+        {"name": "全熱交換器", "keywords": ["全熱交換器", "新風系統", "換氣系統"]},
+        {"name": "防霾口罩", "keywords": ["防霾口罩", "PM2.5口罩", "N95"]},
+        {"name": "傳統紗窗", "keywords": ["傳統紗窗", "一般紗窗", "紗網", "防蚊紗窗"]}
+      ]
+    }
+  },
+  "data_sources": {
+    "google_trends": {
+      "enabled": true,
+      "keywords": ["防霾紗窗", "PM2.5", "空氣品質", "3M防霾紗窗", "普特斯"],
+      "geo": "TW",
+      "time_range": "today 3-m"
+    },
+    "news": {
+      "enabled": true,
+      "sources": ["yahoo新聞", "中時", "聯合新聞網", "自由時報", "環保署", "氣象局"],
+      "keywords": ["PM2.5", "空氣品質", "空汙", "霾害", "紫爆", "防霾紗窗"]
+    },
+    "social": {
+      "enabled": true,
+      "ptt_boards": ["Gossiping", "home-sale", "Lifeismoney", "hardware"],
+      "keywords": ["防霾紗窗", "PM2.5", "換紗窗", "空氣品質", "普特斯"],
+      "facebook_groups": ["居家裝潢", "室內設計", "過敏兒父母", "空氣清淨機"]
+    },
+    "government": {
+      "enabled": true,
+      "sources": ["環保署空品監測網", "中央氣象局"],
+      "keywords": ["空氣品質預報", "AQI", "PM2.5預報"]
+    }
+  },
+  "alert_thresholds": {
+    "search_volume_change": 0.25,
+    "negative_sentiment_ratio": 0.35,
+    "competitor_mention_spike": 0.4,
+    "air_quality_spike": {
+      "pm25_level": 54,
+      "aqi_level": 100
+    }
+  },
+  "seasonal_patterns": {
+    "high_season": ["11月", "12月", "1月", "2月", "3月", "4月"],
+    "peak_months": ["12月", "1月", "2月"],
+    "reason": "冬季東北季風帶來境外空汙，為防霾紗窗需求高峰"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    { "id": "frontend", "type": "microservice", "tags": ["external-facing"], "language": "javascript" },
+    { "id": "api-gateway", "type": "middleware", "tags": ["internal"], "language": "go" },
+    { "id": "auth-service", "type": "microservice", "tags": ["internal", "sensitive"], "language": "python" },
+    { "id": "data-service", "type": "microservice", "tags": ["internal", "database-access"], "language": "python" },
+    { "id": "external-log-aggregator", "type": "external-service", "tags": ["external"], "language": "unknown" }
+  ],
+  "edges": [
+    { "source": "frontend", "target": "api-gateway", "protocol": "https", "data": ["user-input"] },
+    { "source": "api-gateway", "target": "auth-service", "protocol": "grpc", "data": ["credentials"] },
+    { "source": "api-gateway", "target": "data-service", "protocol": "grpc", "data": ["query-params"] },
+    { "source": "data-service", "target": "external-log-aggregator", "protocol": "http", "data": ["system-logs", "user-email"] }
+  ]
+}

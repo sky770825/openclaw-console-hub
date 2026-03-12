@@ -1,0 +1,6 @@
+{
+  "m3_ultra_base_path": "/Volumes/M3_Ultra_SSD/llm_models",
+  "ollama_path": "/usr/local/bin/ollama",
+  "mlx_path": "/Users/caijunchang/miniconda3/envs/mlx/bin/python",
+  "token_data_source": "/Users/caijunchang/.openclaw/workspace/sandbox/output/token_usage_30d.csv"
+}

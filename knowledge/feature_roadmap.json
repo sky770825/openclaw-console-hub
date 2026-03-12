@@ -1,0 +1,11 @@
+{
+  "project": "OpenClaw Official Website",
+  "category": "Feature Pages - Progress Tracking",
+  "owner": "阿秘 (A-Mi)",
+  "features": [
+    { "id": "F01", "name": "Landing Page Shell", "target_file": "src/App.tsx", "status": "In Progress" },
+    { "id": "F02", "name": "Feature Grid Component", "target_file": "src/components/Features.tsx", "status": "Pending" },
+    { "id": "F03", "name": "Task Management Dashboard UI", "target_file": "src/components/Dashboard.tsx", "status": "Pending" },
+    { "id": "F04", "name": "Progress API Integration", "target_file": "server/src/index.ts", "status": "Locked" }
+  ]
+}

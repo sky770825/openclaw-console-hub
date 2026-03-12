@@ -1,0 +1,12 @@
+/**
+ * 因果真相 — 後端／Supabase 設定範例
+ * 使用方式：複製為 causelaw-config.js，填入實際值。勿將 causelaw-config.js 提交至版本庫。
+ */
+(function () {
+    'use strict';
+    window.CAUSELAW_SUPABASE_URL = '';      // 例：https://xxxx.supabase.co
+    window.CAUSELAW_SUPABASE_ANON_KEY = ''; // 建議填 publishable key（或 legacy anon key）
+    window.CAUSELAW_DB_SCHEMA = 'causelaw_yinguo_v1'; // 共用資料庫請使用獨立 schema
+    window.CAUSELAW_ACCOUNT_EMAIL_DOMAIN = 'account.causelaw.local'; // 帳號制會在內部轉成 account@domain
+    window.CAUSELAW_LINE_LOGIN_ENABLED = false; // 部署 LINE Edge Functions 並完成 env 後再改 true
+})();

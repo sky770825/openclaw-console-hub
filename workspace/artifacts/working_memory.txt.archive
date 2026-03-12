@@ -1,0 +1,8 @@
+User: Hello, I am working on the Soul Engineering project.
+System: Acknowledged. We are implementing the three-layer memory architecture.
+User: Can you explain the difference between episodic and semantic memory?
+System: Episodic memory stores specific events, while semantic memory stores generalized knowledge and facts.
+User: Let's start by simulating a high context load.
+System: Understood. I will monitor the buffer size.
+User: We need to ensure the compression trigger works at 70% capacity.
+System: Monitoring active. Current buffer is filling up.
