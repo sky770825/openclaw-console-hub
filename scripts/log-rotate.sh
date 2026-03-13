@@ -2,7 +2,7 @@
 # scripts/log-rotate.sh
 # 日誌自動旋轉腳本：旋轉、壓縮並清理舊日誌
 
-LOG_DIR="/Users/caijunchang/.openclaw/logs"
+LOG_DIR="/Users/sky770825/.openclaw/logs"
 MAX_DAYS=14
 MAX_SIZE_MB=50
 TIMESTAMP=$(date +'%Y%m%d%H%M%S')

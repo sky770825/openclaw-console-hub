@@ -12,8 +12,8 @@ set -euo pipefail
 # - This fetches the top-level pages only (no crawling).
 # - Some sites block automated fetches; those will be marked as failed and skipped.
 
-RESOURCES_MD="${RESOURCES_MD:-/Users/caijunchang/Desktop/小蔡/知識庫/SOP-資訊庫/RESOURCES/RESOURCES.md}"
-OUT_DIR="${OUT_DIR:-/Users/caijunchang/Desktop/小蔡/知識庫/SOP-資訊庫/RESOURCES/SNAPSHOTS/$(date +%F)}"
+RESOURCES_MD="${RESOURCES_MD:-/Users/sky770825/Desktop/小蔡/知識庫/SOP-資訊庫/RESOURCES/RESOURCES.md}"
+OUT_DIR="${OUT_DIR:-/Users/sky770825/Desktop/小蔡/知識庫/SOP-資訊庫/RESOURCES/SNAPSHOTS/$(date +%F)}"
 MAX_TIME="${MAX_TIME:-25}"
 CONNECT_TIMEOUT="${CONNECT_TIMEOUT:-5}"
 

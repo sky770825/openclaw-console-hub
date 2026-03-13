@@ -7,7 +7,7 @@ import { readFileSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import { createHash } from 'crypto';
 
-const DIR = process.argv[2] || '/Users/caijunchang/openclaw任務面版設計/cookbook';
+const DIR = process.argv[2] || '/Users/sky770825/openclaw任務面版設計/cookbook';
 const CATEGORY = process.argv[3] || 'cookbook';
 const GOOGLE_KEY = process.env.GOOGLE_API_KEY || '';
 const SB_URL = 'https://vbejswywswaeyfasnwjq.supabase.co';

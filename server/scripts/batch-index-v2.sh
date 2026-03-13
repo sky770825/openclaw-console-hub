@@ -1,6 +1,6 @@
 #!/bin/bash
 # batch-index v2: 每個文件獨立 node 進程
-DIR="${1:-/Users/caijunchang/openclaw任務面版設計/cookbook}"
+DIR="${1:-/Users/sky770825/openclaw任務面版設計/cookbook}"
 CAT="${2:-cookbook}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 T=0; OK=0; FAIL=0

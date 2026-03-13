@@ -8,7 +8,7 @@
 
 ```bash
 # 進入工作目錄（統一目錄，不再分老蔡/小蔡）
-cd /Users/caijunchang/openclaw任務面版設計
+cd /Users/sky770825/openclaw任務面版設計
 
 # 同步最新代碼
 git pull origin main
@@ -24,7 +24,7 @@ grep '"version"' package.json
 ## 📌 身份與角色
 
 - **我是小蔡**（副手/Deputy），老蔡的代理人
-- **工作目錄（統一）**：`/Users/caijunchang/openclaw任務面版設計`
+- **工作目錄（統一）**：`/Users/sky770825/openclaw任務面版設計`
 - GitHub repo：`sky770825/openclaw-console-hub`
 - 我的任務推到 `xiaoji` remote：`andy825lay-tech/openclaw-workspace`
 
@@ -83,14 +83,14 @@ grep '"version"' package.json
 每次完成任務、push 後，**必須呼叫通知腳本**：
 
 ```bash
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註說明"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註說明"
 ```
 
 例如：
 ```bash
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "修復登入 Bug" "done" "已推到 main，需老蔡測試"
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "FADP 資料表建立" "done" "已完成，等老蔡確認"
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "部署失敗" "error" "Railway build error，需老蔡處理"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "修復登入 Bug" "done" "已推到 main，需老蔡測試"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "FADP 資料表建立" "done" "已完成，等老蔡確認"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "部署失敗" "error" "Railway build error，需老蔡處理"
 ```
 
 老蔡會在 Telegram 收到通知，不需要等他主動來問。
@@ -120,7 +120,7 @@ cd server && npm run build
 launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw.taskboard
 
 # 7. 通知老蔡（必做！）
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 ```
 
 > ⚠️ **統一目錄**：老蔡和小蔡都在 `openclaw任務面版設計/` 工作，不再有雙目錄同步問題。
@@ -133,7 +133,7 @@ bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任
 
 ```bash
 # 基本用法（API Key 已在 .env）
-source ~/.env 2>/dev/null || export GEMINI_API_KEY=$(grep GEMINI_API_KEY /Users/caijunchang/openclaw任務面版設計/server/.env | cut -d= -f2)
+source ~/.env 2>/dev/null || export GEMINI_API_KEY=$(grep GEMINI_API_KEY /Users/sky770825/openclaw任務面版設計/server/.env | cut -d= -f2)
 
 # 單次問答
 GEMINI_API_KEY="$GEMINI_API_KEY" gemini "你的問題或任務" -m gemini-2.5-flash
@@ -181,7 +181,7 @@ curl -X POST http://localhost:3011/api/n8n/webhook/task-done \
 
 ### 小蔡完成任務的完整流程（一行搞定）
 ```bash
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 # 上面這行會同時：推 Telegram 給老蔡 + 觸發 n8n 後續流程
 ```
 

@@ -4,7 +4,7 @@ import os, sys, json, hashlib, time, glob, re
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else "/Users/caijunchang/openclaw任務面版設計/cookbook"
+DIR = sys.argv[1] if len(sys.argv) > 1 else "/Users/sky770825/openclaw任務面版設計/cookbook"
 CATEGORY = sys.argv[2] if len(sys.argv) > 2 else "cookbook"
 GOOGLE_KEY = os.environ.get("GOOGLE_API_KEY", "")
 SB_URL = "https://vbejswywswaeyfasnwjq.supabase.co"

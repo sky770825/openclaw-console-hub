@@ -1,8 +1,8 @@
 #!/bin/bash
 # 版本一致性快速檢查 — 掃描 6 處版本號並比對
-BASE="/Users/caijunchang/openclaw任務面版設計"
-MEMORY="/Users/caijunchang/.claude/projects/-Users-caijunchang-openclaw------/memory/MEMORY.md"
-HEARTBEAT="/Users/caijunchang/.openclaw/workspace/HEARTBEAT.md"
+BASE="/Users/sky770825/openclaw任務面版設計"
+MEMORY="/Users/sky770825/.claude/projects/-Users-sky770825-openclaw------/memory/MEMORY.md"
+HEARTBEAT="/Users/sky770825/.openclaw/workspace/HEARTBEAT.md"
 
 VERSIONS=()
 LABELS=()

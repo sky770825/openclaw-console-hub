@@ -2,8 +2,8 @@
 # 啟動 cloudflared tunnel 並將 URL 寫入 .env
 # 用法：bash scripts/start-tunnel.sh
 
-ENV_FILE="/Users/caijunchang/openclaw任務面版設計/server/.env"
-LOG_FILE="/Users/caijunchang/.openclaw/automation/logs/tunnel.log"
+ENV_FILE="/Users/sky770825/openclaw任務面版設計/server/.env"
+LOG_FILE="/Users/sky770825/.openclaw/automation/logs/tunnel.log"
 
 # 殺掉舊的 tunnel
 pkill -f "cloudflared tunnel" 2>/dev/null
@@ -35,4 +35,4 @@ sed -i '' '/^TUNNEL_URL=/d' "$ENV_FILE" 2>/dev/null
 echo "TUNNEL_URL=$TUNNEL_URL" >> "$ENV_FILE"
 
 echo "已寫入 .env: TUNNEL_URL=$TUNNEL_URL"
-echo "$TUNNEL_URL" > /Users/caijunchang/.openclaw/workspace/TUNNEL_URL.txt
+echo "$TUNNEL_URL" > /Users/sky770825/.openclaw/workspace/TUNNEL_URL.txt
