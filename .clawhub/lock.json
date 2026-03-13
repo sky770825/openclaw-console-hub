@@ -80,6 +80,78 @@
     "email-daily-summary": {
       "version": "0.1.0",
       "installedAt": 1773408801429
+    },
+    "agent-memory-patterns": {
+      "version": "1.0.0",
+      "installedAt": 1773411664319
+    },
+    "cross-agent-memory": {
+      "version": "1.0.0",
+      "installedAt": 1773411962109
+    },
+    "security-audit-toolkit": {
+      "version": "1.0.0",
+      "installedAt": 1773411961931
+    },
+    "deep-research-pro": {
+      "version": "1.0.2",
+      "installedAt": 1773412141806
+    },
+    "actionbook": {
+      "version": "0.1.1",
+      "installedAt": 1773411961893
+    },
+    "devops": {
+      "version": "1.0.0",
+      "installedAt": 1773411661972
+    },
+    "elite-longterm-memory": {
+      "version": "1.2.3",
+      "installedAt": 1773411961125
+    },
+    "devops-automation-pack": {
+      "version": "1.0.0",
+      "installedAt": 1773411961955
+    },
+    "arc-memory-pruner": {
+      "version": "1.1.0",
+      "installedAt": 1773411963836
+    },
+    "docker-essentials": {
+      "version": "1.0.0",
+      "installedAt": 1773412221398
+    },
+    "smart-web-scraper": {
+      "version": "1.0.0",
+      "installedAt": 1773412443403
+    },
+    "cron-scheduler": {
+      "version": "1.0.0",
+      "installedAt": 1773412621316
+    },
+    "daily-life-autopilot": {
+      "version": "1.0.0",
+      "installedAt": 1773422101576
+    },
+    "telegram": {
+      "version": "1.0.1",
+      "installedAt": 1773422161569
+    },
+    "openclaw-github-assistant": {
+      "version": "2.0.1",
+      "installedAt": 1773422223872
+    },
+    "code-review": {
+      "version": "1.0.0",
+      "installedAt": 1773422283280
+    },
+    "ollama-local": {
+      "version": "1.1.0",
+      "installedAt": 1773422341398
+    },
+    "monitoring": {
+      "version": "1.0.0",
+      "installedAt": 1773422401321
     }
   }
 }
