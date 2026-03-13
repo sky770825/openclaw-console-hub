@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>達爾 AI 詠唱助理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+          /* 色彩 — 根據產品類型選一組主色 (科技類) */
+          --primary: #3b82f6;      /* 主色（深藍系） */
+          --primary-light: #60a5fa;
+          --primary-dark: #2563eb;
+          --accent: #f59e0b;       /* 強調色 */
+          --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+          /* 中性色 */
+          --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+          --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+          --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+          /* 背景/文字 */
+          --bg: #ffffff; --bg-secondary: var(--gray-50); --text: var(--gray-900); --text-secondary: var(--gray-500);
+          /* 間距 — 8px 網格 */
+          --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+          --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+          --space-12: 48px; --space-16: 64px; --space-20: 80px;
+          /* 字型 */
+          --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+          --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+          --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+          --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+          /* 圓角 */
+          --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+          /* 陰影（5 級） */
+          --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+          --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+          --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+          --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+          --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+          /* 動畫 */
+          --ease: cubic-bezier(0.4, 0, 0.2, 1);
+          --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        /* 暗色模式 */
+        html.dark:root {
+            --bg: #0f172a; --bg-secondary: #1e293b;
+            --text: #f1f5f9; --text-secondary: #94a3b8;
+            --gray-50: #1e293b; --gray-100: #334155; --gray-200: #475569;
+            --gray-300: #64748b; --gray-800: #e2e8f0; --gray-900: #f8fafc;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.3);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.3);
+        }
+
+        /* 全域樣式 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all var(--duration) var(--ease);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            animation: fadeIn 0.5s var(--ease) forwards;
+        }
+
+        /* 動畫 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s var(--ease) forwards;
+            opacity: 0;
+        }
+
+        /* 佈局 */
+        .container {
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 var(--space-6);
+        }
+
+        section {
+            padding: var(--space-20) 0;
+        }
+
+        /* 標題 */
+        h1, h2, h3 {
+            color: var(--text);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        h1 { font-size: var(--text-5xl); }
+        h2 { font-size: var(--text-3xl); }
+        h3 { font-size: var(--text-xl); }
+
+        /* Header */
+        .main-header {
+            padding: var(--space-4) 0;
+            position: sticky;
+            top: 0;
+            background-color: color-mix(in srgb, var(--bg) 80%, transparent);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            font-size: var(--text-xl);
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--primary);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: var(--text-lg);
+            cursor: pointer;
+            padding: var(--space-2);
+            border-radius: var(--radius-full);
+        }
+        .theme-toggle:hover {
+            color: var(--text);
+            background-color: var(--gray-100);
+        }
+
+        /* Hero 區塊 */
+        .hero {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle, color-mix(in srgb, var(--primary) 15%, transparent) 0%, color-mix(in srgb, var(--bg) 100%, transparent) 70%), var(--bg);
+            padding-top: var(--space-10);
+            padding-bottom: var(--space-10);
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            margin-bottom: var(--space-4);
+        }
+
+        .hero p {
+            font-size: var(--text-xl);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+        }
+        
+        /* 表單元素 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-6);
+        }
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            font-size: var(--text-base);
+            font-family: var(--font);
+        }
+
+        input[type="text"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* 按鈕 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: var(--text-base);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            user-select: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--gray-100);
+            color: var(--text);
+            border: 1px solid var(--gray-200);
+        }
+        .btn-secondary:hover {
+            background-color: var(--gray-200);
+        }
+        
+        .btn-danger {
+            background-color: var(--error);
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #d03737;
+        }
+        
+        .btn-sm {
+            padding: var(--space-2) var(--space-4);
+            font-size: var(--text-sm);
+        }
+        
+        .btn-icon {
+            padding: var(--space-2);
+            width: 36px;
+            height: 36px;
+            font-size: var(--text-base);
+        }
+
+
+        /* App 區塊 */
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-12);
+        }
+        @media (min-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .panel {
+            background-color: var(--bg-secondary);
+            padding: var(--space-8);
+            border-radius: var(--radius-lg);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+        }
+
+        .output-container {
+            background-color: var(--bg);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius);
+            padding: var(--space-4);
+            min-height: 200px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-secondary);
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: var(--text-sm);
+        }
+
+        /* 儲存的詠唱卡片 */
+        #saved-prompts-heading {
+            text-align: center;
+            margin-bottom: var(--space-10);
+        }
+        
+        .prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-6);
+        }
+
+        .prompt-card {
+            background-color: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+            opacity: 0;
+            animation: fadeInUp 0.5s var(--ease) forwards;
+        }
+
+        .prompt-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .prompt-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--space-4);
+        }
+        
+        .prompt-card-header h3 {
+            flex-grow: 1;
+        }
+
+        .prompt-card-content {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .prompt-card-actions {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: auto; /* Pushes actions to the bottom */
+        }
+
+        /* 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-16) var(--space-6);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--gray-200);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-6);
+        }
+
+        .empty-state-icon {
+            font-size: var(--text-5xl);
+            color: var(--primary);
+            background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+            width: 100px;
+            height: 100px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .empty-state h3 {
+            color: var(--text);
+        }
+        
+        .empty-state p {
+            color: var(--text-secondary);
+            max-width: 400px;
+        }
+
+        /* Toast 通知 */
+        #toast-container {
+            position: fixed;
+            top: var(--space-6);
+            right: var(--space-6);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .toast {
+            min-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-4);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            color: white;
+            animation: slideInRight 0.3s var(--ease);
+        }
+        
+        .toast.fade-out {
+            animation: fadeOut 0.3s var(--ease) forwards;
+        }
+
+        .toast-icon { font-size: var(--text-xl); }
+        .toast-message { font-weight: 500; }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--error); }
+        .toast.info { background-color: var(--info); }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        /* Footer */
+        .main-footer {
+            border-top: 1px solid var(--gray-100);
+            padding: var(--space-8) 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>達爾 AI 詠唱助理</span>
+            </a>
+            <button id="theme-toggle" class="theme-toggle" aria-label="切換深色模式">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-content fade-in-up">
+                <h1>您的專屬 AI 詠唱工程師</h1>
+                <p>整合星群的智慧，為您打造精準、高效的 AI 指令。無論是程式碼生成、文案撰寫或創意發想，達爾都能協助您與 AI 進行更深度的對話。</p>
+                <a href="#app" class="btn btn-primary">
+                    <i class="fa-solid fa-rocket"></i> 開始詠唱
+                </a>
+            </div>
+        </section>
+
+        <section id="app" class="container">
+            <div class="app-container">
+                <div class="panel fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-feather-pointed"></i> 指令產生器</h2>
+                    </div>
+                    <form id="prompt-form" class="form-grid">
+                        <div class="form-group">
+                            <label for="prompt-title">詠唱標題</label>
+                            <input type="text" id="prompt-title" placeholder="例如：生成 React 按鈕組件" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prompt-role">角色扮演</label>
+                            <select id="prompt-role">
+                                <option>頂尖前端開發者</option>
+                                <option>資深行銷經理</option>
+                                <option>專業法律顧問</option>
+                                <option>SEO 專家</option>
+                                <option>數據分析師</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="prompt-task">任務目標</label>
+                            <textarea id="prompt-task" placeholder="請詳細描述您希望 AI 完成的具體任務..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="prompt-format">輸出格式</label>
+                            <select id="prompt-format">
+                                <option>Markdown</option>
+                                <option>JSON</option>
+                                <option>條列式清單</option>
+                                <option>HTML 程式碼</option>
+                                <option>純文字</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="prompt-tone">語氣風格</label>
+                            <select id="prompt-tone">
+                                <option>專業嚴謹</option>
+                                <option>活潑有趣</option>
+                                <option>親切誠懇</option>
+                                <option>簡潔有力</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                             <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 生成詠唱腳本
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="panel fade-in-up" style="animation-delay: 0.4s;">
+                     <div class="panel-header">
+                        <h2><i class="fa-solid fa-scroll"></i> 詠唱腳本</h2>
+                        <div id="output-actions" style="display: none;">
+                             <button id="copy-btn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-copy"></i> 複製</button>
+                             <button id="save-btn" class="btn btn-primary btn-sm"><i class="fa-solid fa-save"></i> 儲存</button>
+                        </div>
+                    </div>
+                    <div id="prompt-output" class="output-container">
+                        此處將顯示您生成的詠唱腳本...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="saved-prompts" class="container">
+            <h2 id="saved-prompts-heading" class="fade-in-up">已儲存的詠唱腳本</h2>
+            <div id="prompts-grid-container" class="prompts-grid">
+                <!-- 儲存的 Prompts 會動態插入此處 -->
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>© 2024 達爾 AI. 由星群智慧驅動.</p>
+    </footer>
+
+    <div id="toast-container"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const promptForm = document.getElementById('prompt-form');
+        const promptOutput = document.getElementById('prompt-output');
+        const outputActions = document.getElementById('output-actions');
+        const copyBtn = document.getElementById('copy-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const gridContainer = document.getElementById('prompts-grid-container');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        let currentGeneratedPrompt = null;
+        let currentGeneratedTitle = '';
+
+        // --- Theme Toggler ---
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            }
+        };
+
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+        
+        // --- Toast Notifications ---
+        const showToast = (message, type = 'info') => {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                info: 'fa-info-circle'
+            };
+
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type]} toast-icon"></i>
+                <span class="toast-message">${message}</span>
+            `;
+            
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 3000);
+        };
+
+        // --- Prompt Logic ---
+        const getPrompts = () => {
+            return JSON.parse(localStorage.getItem('savedPrompts')) || [];
+        };
+
+        const savePrompts = (prompts) => {
+            localStorage.setItem('savedPrompts', JSON.stringify(prompts));
+        };
+        
+        const renderPrompts = () => {
+            const prompts = getPrompts();
+            gridContainer.innerHTML = ''; // Clear existing content
+
+            if (prompts.length === 0) {
+                gridContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="fa-solid fa-folder-open"></i></div>
+                        <h3>尚未儲存任何詠唱腳本</h3>
+                        <p>當您生成並儲存一個腳本後，它將會顯示在這裡，方便您隨時取用。</p>
+                        <a href="#app" class="btn btn-primary">立即生成第一個腳本</a>
+                    </div>
+                `;
+                 if(document.querySelector('.empty-state')) {
+                    document.querySelector('.empty-state').style.gridColumn = '1 / -1';
+                }
+                return;
+            }
+
+            prompts.forEach((prompt, index) => {
+                const card = document.createElement('div');
+                card.className = 'prompt-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.innerHTML = `
+                    <div class="prompt-card-header">
+                        <h3>${prompt.title}</h3>
+                        <button class="btn btn-danger btn-icon btn-sm delete-btn" data-id="${prompt.id}" aria-label="刪除"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <p class="prompt-card-content">${prompt.prompt}</p>
+                    <div class="prompt-card-actions">
+                        <button class="btn btn-secondary btn-sm use-btn" data-id="${prompt.id}"><i class="fa-solid fa-wand-magic-sparkles"></i> 使用</button>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+        };
+        
+        promptForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('prompt-title').value.trim();
+            if (!title) {
+                showToast('請輸入詠唱標題', 'error');
+                return;
+            }
+
+            const role = document.getElementById('prompt-role').value;
+            const task = document.getElementById('prompt-task').value.trim();
+             if (!task) {
+                showToast('請輸入任務目標', 'error');
+                return;
+            }
+            const format = document.getElementById('prompt-format').value;
+            const tone = document.getElementById('prompt-tone').value;
+
+            const generatedPrompt = `
+# 角色
+扮演一位${role}。
+
+# 任務
+${task}
+
+# 限制
+- 輸出格式必須是：${format}
+- 溝通語氣與風格請保持：${tone}
+- 根據以上要求，現在請開始執行任務。
+            `.trim();
+
+            promptOutput.textContent = generatedPrompt;
+            promptOutput.style.color = 'var(--text)';
+            outputActions.style.display = 'flex';
+            currentGeneratedPrompt = generatedPrompt;
+            currentGeneratedTitle = title;
+        });
+
+        copyBtn.addEventListener('click', () => {
+            if (currentGeneratedPrompt) {
+                navigator.clipboard.writeText(currentGeneratedPrompt)
+                    .then(() => showToast('已成功複製到剪貼簿', 'success'))
+                    .catch(() => showToast('複製失敗', 'error'));
+            }
+        });
+
+        saveBtn.addEventListener('click', () => {
+            if (currentGeneratedPrompt && currentGeneratedTitle) {
+                const prompts = getPrompts();
+                const newPrompt = {
+                    id: Date.now(),
+                    title: currentGeneratedTitle,
+                    prompt: currentGeneratedPrompt
+                };
+                prompts.unshift(newPrompt); // Add to the beginning
+                savePrompts(prompts);
+                renderPrompts();
+                showToast('詠唱腳本已儲存', 'success');
+            } else {
+                showToast('沒有可儲存的腳本', 'error');
+            }
+        });
+        
+        gridContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            
+            const id = parseInt(target.dataset.id);
+            let prompts = getPrompts();
+
+            if (target.classList.contains('delete-btn')) {
+                prompts = prompts.filter(p => p.id !== id);
+                savePrompts(prompts);
+                renderPrompts();
+                showToast('腳本已刪除', 'info');
+            }
+            
+            if (target.classList.contains('use-btn')) {
+                const promptToUse = prompts.find(p => p.id === id);
+                if (promptToUse) {
+                    promptOutput.textContent = promptToUse.prompt;
+                    promptOutput.style.color = 'var(--text)';
+                    document.getElementById('prompt-title').value = promptToUse.title;
+                    currentGeneratedPrompt = promptToUse.prompt;
+                    currentGeneratedTitle = promptToUse.title;
+                    outputActions.style.display = 'flex';
+                    window.scrollTo({ top: document.getElementById('app').offsetTop, behavior: 'smooth' });
+                    showToast(`已載入腳本：${promptToUse.title}`, 'info');
+                }
+            }
+        });
+
+        // Initial Render
+        renderPrompts();
+    });
+    </script>
+</body>
+</html>

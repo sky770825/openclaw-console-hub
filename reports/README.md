@@ -1,5 +1,5 @@
-# 進度管理系統
-此目錄包含 OpenClaw 官網功能特色頁面的開發進度。
-- task_data.json: 任務資料庫存儲。
-- progress_report.md: 自動生成的 Markdown 報表。
-- 使用 `python3 /Users/sky770825/.openclaw/workspace/scripts/task_tracker.py` 進行管理。
+# Vue 3 + TypeScript + Vite
+
+This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+
+Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).

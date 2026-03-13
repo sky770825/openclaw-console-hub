@@ -18,7 +18,7 @@
 ---
 
 ## 2. 本地環境分析 (System Diagnostic)
-*環境：MacBook Pro (M4 Max / 64GB RAM)*
+*環境：Mac Studio M3 Ultra (96GB RAM)*
 
 | 維度 | 現狀 | 建議優化 |
 | :--- | :--- | :--- |

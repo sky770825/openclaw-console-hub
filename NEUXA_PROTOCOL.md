@@ -18,7 +18,7 @@
 
 {
   "protocol": "NSCP-v1",
-  "from": "Xiaocai",
+  "from": "NEUXA",
   "to": ["Ah-Yan"], // 目標船員：Ah-Yan, Ah-Gong, Ah-Ce, Ah-Mi, Ah-Shang, Ah-Shu
   "type": "task", // task | query | broadcast
   "priority": "high",

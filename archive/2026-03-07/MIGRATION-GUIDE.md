@@ -1,6 +1,6 @@
-# 🚀 M3 Max 遷移指南
+# 🚀 M3 Ultra 遷移指南
 
-> 適用機型：Mac Studio M3 Max (96GB RAM)
+> 適用機型：Mac Studio M3 Ultra (96GB RAM)
 > 目標：將舊機的 OpenClaw 完整遷移並啟動 MLX 本地模型
 
 ## 步驟 1：在舊機 (這裡)

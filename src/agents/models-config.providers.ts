@@ -69,8 +69,9 @@ const QWEN_PORTAL_DEFAULT_COST = {
   cacheWrite: 0,
 };
 
-const OLLAMA_BASE_URL = "http://127.0.0.1:11434/v1";
-const OLLAMA_API_BASE_URL = "http://127.0.0.1:11434";
+// Ollama 統一走 Server 代理（避免直連，方便日誌/監控/管理）
+const OLLAMA_BASE_URL = "http://127.0.0.1:3011/api/ollama/v1";
+const OLLAMA_API_BASE_URL = "http://127.0.0.1:3011/api/ollama";
 const OLLAMA_DEFAULT_CONTEXT_WINDOW = 128000;
 const OLLAMA_DEFAULT_MAX_TOKENS = 8192;
 const OLLAMA_DEFAULT_COST = {
@@ -112,7 +113,7 @@ async function discoverOllamaModels(): Promise<ModelDefinitionConfig[]> {
     return [];
   }
   try {
-    const response = await fetch(`${OLLAMA_API_BASE_URL}/api/tags`, {
+    const response = await fetch(`${OLLAMA_API_BASE_URL}/tags`, {
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) {

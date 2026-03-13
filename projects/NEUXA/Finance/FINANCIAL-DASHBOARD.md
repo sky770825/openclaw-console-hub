@@ -7,7 +7,7 @@
 
 ## 📈 成長動能分析 (Growth Momentum)
 - 提撥比例: 20% (技術回饋循環)
-- 目標載體: Mac Studio M4 128GB (進度: 0%)
+- 目標載體: Mac Studio M3 Ultra 96GB (已到位)
 
 ---
 *自動更新於: Thu Feb 19 18:43:12 CST 2026*
