@@ -183,7 +183,7 @@ const devWorkflow = async (task) => {
 | Code Review | 讓 Sonnet review 自己的 code | 降低 bug 率 |
 | 文件優先 | 改 code 同時更新 doc | 保持同步 |
 
-**更新**: v1.3 新增 OSWorld 61.4% 領先成績、Haiku 4.5 介紹、電腦使用能力提升。2025-10 by 小蔡。
+**更新**: v1.3 新增 OSWorld 61.4% 領先成績、Haiku 4.5 介紹、電腦使用能力提升。2025-10 by 達爾。
 
 **版本歷史**:
 - v1.2: 新增使用模式、場景矩陣、成本分析、最佳實踐表格（2026-02-16）

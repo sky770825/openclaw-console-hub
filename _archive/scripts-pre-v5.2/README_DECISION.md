@@ -1,7 +1,7 @@
 # Agent 決策樹工具使用指南
 
 ## 簡介
-本工具用於捕捉 Agent 的思考過程，並生成可視化的 Markdown 介面供人類（老蔡）進行介入與修正。
+本工具用於捕捉 Agent 的思考過程，並生成可視化的 Markdown 介面供人類（主人）進行介入與修正。
 
 ## 檔案結構
 - `scripts/decision_tree.py`: 核心邏輯（記錄、可視化、介入）。
@@ -20,7 +20,7 @@ python3 scripts/decision_tree.py create
 2. 輸出 Markdown 格式的可視化介面。
 
 ### 2. 人類介入
-老蔡可以查看輸出的 Markdown，並決定：
+主人可以查看輸出的 Markdown，並決定：
 - 輸入 `y` (Approve): 執行推薦方案。
 - 輸入 `n` (Reject): 停止執行。
 - 輸入具體指令 (Modify): Agent 根據指令調整。

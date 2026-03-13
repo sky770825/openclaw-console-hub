@@ -15,7 +15,7 @@ Telegram Bot 沒有回應任何訊息，需要排查問題原因。
 
 ### 步驟二：檢查通用伺服器日誌
 
-- **操作**: `tail -50 /Users/caijunchang/.openclaw/logs/server.log | grep -i -E "error|warn|f"`
+- **操作**: `tail -50 /Users/sky770825/.openclaw/logs/server.log | grep -i -E "error|warn|f"`
 - **發現**: 命令執行成功，但在日誌的最新 50 行中，未發現任何包含 `error` 或 `warn` 等關鍵字的嚴重錯誤訊息。這表明伺服器層級沒有發生明顯的崩潰或異常。
 
 ## 3. 初步結論

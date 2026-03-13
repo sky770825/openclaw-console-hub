@@ -11,11 +11,11 @@
 ### 2. Telegram Bot 建立
 - **Bot**: @caij_n8n_bot
 - **Token**: 已儲存於 `~/.openclaw/secrets/n8n-telegram.env`
-- **Target Chat**: 5819565005 (老蔡)
+- **Target Chat**: 5819565005 (主人)
 
 ### 3. MVP 通路驗證 ✅
 ```
-Webhook (localhost:5679) → Python 處理 → Telegram Bot API → 老蔡
+Webhook (localhost:5679) → Python 處理 → Telegram Bot API → 主人
 ```
 - 測試成功：收到 "Codex Agent 通知" 測試訊息
 - 延遲 < 3秒
@@ -44,11 +44,11 @@ OPENCLAW_API_KEY=dev-key-123456 ✅
 ## 🎯 架構確認
 
 ```
-老蔡 → 小蔡 (決策層) → 指派任務
+主人 → 達爾 (決策層) → 指派任務
               ↓
       n8n (執行層) ← 定時/資料/彙整
               ↓
-      Telegram Bot → 老蔡
+      Telegram Bot → 主人
 ```
 
 ## 💰 預期節省

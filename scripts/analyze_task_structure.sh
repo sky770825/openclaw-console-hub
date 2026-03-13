@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 echo "### Project Structure Analysis (Focus on Task Panel)"
 find "$PROJECT_ROOT" -maxdepth 2 -not -path '*/.*'
 

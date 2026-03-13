@@ -6,14 +6,14 @@ DATE=$(date '+%Y-%m-%d %H:%M:%S')
 echo "Timestamp: $DATE"
 
 # 檢查唯讀源代碼區
-if [ -d "/Users/caijunchang/openclaw任務面版設計" ]; then
+if [ -d "/Users/sky770825/openclaw任務面版設計" ]; then
     echo "[OK] Source directory is accessible."
 else
     echo "[FAIL] Source directory NOT FOUND."
 fi
 
 # 檢查工作區寫入權限
-WORKSPACE_DIRS=("/Users/caijunchang/.openclaw/workspace/scripts" "/Users/caijunchang/.openclaw/workspace/knowledge" "/Users/caijunchang/.openclaw/workspace/sandbox")
+WORKSPACE_DIRS=("/Users/sky770825/.openclaw/workspace/scripts" "/Users/sky770825/.openclaw/workspace/knowledge" "/Users/sky770825/.openclaw/workspace/sandbox")
 for dir in "${WORKSPACE_DIRS[@]}"; do
     if [ -w "$dir" ]; then
         echo "[OK] Directory is writable: $dir"

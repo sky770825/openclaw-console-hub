@@ -1,6 +1,6 @@
 # 自動化總體規劃 — Automation Master Plan
 
-> 規劃人：小蔡（Opus 4.6）| 日期：2026-02-13
+> 規劃人：達爾（Opus 4.6）| 日期：2026-02-13
 > 執行指揮：Kimi K2.5 | 開發人員：Cursor / CoDEX
 
 ---
@@ -209,18 +209,18 @@ recovery: 120 秒
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/node</string>
-    <string>/Users/caijunchang/openclaw任務面版設計/server/dist/index.js</string>
+    <string>/Users/sky770825/openclaw任務面版設計/server/dist/index.js</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/caijunchang/openclaw任務面版設計/server</string>
+  <string>/Users/sky770825/openclaw任務面版設計/server</string>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>/Users/caijunchang/.openclaw/automation/logs/taskboard.log</string>
+  <string>/Users/sky770825/.openclaw/automation/logs/taskboard.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/caijunchang/.openclaw/automation/logs/taskboard-error.log</string>
+  <string>/Users/sky770825/.openclaw/automation/logs/taskboard-error.log</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>NODE_ENV</key>
@@ -303,7 +303,7 @@ recovery: 120 秒
    - 全部用 bash systemEvent，不用 agentTurn
    - 參考本文件第四節的頻率設定
 
-5. 完成後回報老蔡
+5. 完成後回報主人
 ```
 
 ---

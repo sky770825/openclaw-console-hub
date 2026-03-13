@@ -1,6 +1,6 @@
 # Next.js Calibration Report: Dual Nature (Server vs Client)
 **Generated on:** Wed Mar  4 20:04:03 CST 2026
-**Project Root:** /Users/caijunchang/openclaw任務面版設計
+**Project Root:** /Users/sky770825/openclaw任務面版設計
 
 ## Executive Summary
 This report calibrates our understanding of the Next.js architecture used in this project. By identifying the distribution of Server and Client components, we ensure alignment with Next.js 13/14 App Router patterns.

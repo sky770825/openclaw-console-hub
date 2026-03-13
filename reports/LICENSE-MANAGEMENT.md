@@ -109,7 +109,7 @@ node supabase-license.js sync-to-cloud
 #!/bin/bash
 # backup.sh - 加到 crontab 每天執行
 
-cd /Users/caijunchang/.openclaw/workspace/skill-github-automation/scripts
+cd /Users/sky770825/.openclaw/workspace/skill-github-automation/scripts
 
 # 備份本地資料庫
 cp licenses.json "backups/licenses-$(date +%Y%m%d).json"

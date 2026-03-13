@@ -1,7 +1,7 @@
 # OpenClaw Recommended Cron Jobs
 # Move reports every 5 minutes
-*/5 * * * * /Users/caijunchang/.openclaw/workspace/scripts/monitor_and_move.sh >> /Users/caijunchang/.openclaw/workspace/logs/monitor.log 2>&1
+*/5 * * * * /Users/sky770825/.openclaw/workspace/scripts/monitor_and_move.sh >> /Users/sky770825/.openclaw/workspace/logs/monitor.log 2>&1
 # Daily checkpoint
-0 0 * * * /Users/caijunchang/.openclaw/workspace/scripts/auto-checkpoint.sh >> /Users/caijunchang/.openclaw/workspace/logs/checkpoint.log 2>&1
+0 0 * * * /Users/sky770825/.openclaw/workspace/scripts/auto-checkpoint.sh >> /Users/sky770825/.openclaw/workspace/logs/checkpoint.log 2>&1
 # n8n recovery check every 10 minutes
-*/10 * * * * /Users/caijunchang/.openclaw/workspace/scripts/docker-n8n-recovery.sh >> /Users/caijunchang/.openclaw/workspace/logs/recovery.log 2>&1
+*/10 * * * * /Users/sky770825/.openclaw/workspace/scripts/docker-n8n-recovery.sh >> /Users/sky770825/.openclaw/workspace/logs/recovery.log 2>&1

@@ -1,6 +1,6 @@
 # 核心模組化 — 立即行動清單
 
-## 決策確認（需要老蔡回覆）
+## 決策確認（需要主人回覆）
 
 1. *990 Lite 的具體功能* — 是什麼東西？掃描工具？報表生成？
 2. *Auto-Executor 優先級* — 要在 Phase 4 就支持，還是之後再做？
@@ -31,12 +31,12 @@
 
 ## 建議分派
 
-- *小蔡（NEUXA）*：Task 1, 2, 3（分析 + 規範設計）
-- *Claude Code（小蔡）*：Task 4（實際開發）
+- *達爾（NEUXA）*：Task 1, 2, 3（分析 + 規範設計）
+- *Claude Code（達爾）*：Task 4（實際開發）
 
 ## 預期時間線
 
-- *本週*（第 1 週）：完成 Task 1-3，確認老蔡的決策
+- *本週*（第 1 週）：完成 Task 1-3，確認主人的決策
 - *下週*（第 2 週）：開始 Phase 1，完成 Data Layer + Core Logic 的初版
 - *第 3 週*：Phase 2，Gateway + User Management
 - *第 4 週*：Phase 3，Notification + Action Executor

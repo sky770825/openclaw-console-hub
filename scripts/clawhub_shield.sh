@@ -7,9 +7,9 @@ shift
 COMMAND=$1
 shift
 
-SKILLS_ROOT="/Users/caijunchang/.openclaw/workspace/skills"
+SKILLS_ROOT="/Users/sky770825/.openclaw/workspace/skills"
 SKILL_DIR="$SKILLS_ROOT/$SKILL_NAME"
-SANDBOX_ROOT="/Users/caijunchang/.openclaw/workspace/sandbox"
+SANDBOX_ROOT="/Users/sky770825/.openclaw/workspace/sandbox"
 
 if [ ! -d "$SKILL_DIR" ]; then
     echo "Error: Skill $SKILL_NAME not found."

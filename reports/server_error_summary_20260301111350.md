@@ -2,7 +2,7 @@
 Generated on: Sun Mar  1 11:13:50 CST 2026
 
 ## 1. Log Error Scanning Results
-Scan target: /Users/caijunchang/.openclaw/automation/logs/taskboard.log
+Scan target: /Users/sky770825/.openclaw/automation/logs/taskboard.log
 Total 'error' or 'failed' instances found: 5479
 
 ### Recent Error Snippets (Last 20 entries):
@@ -44,15 +44,15 @@ Total 'error' or 'failed' instances found: 5479
 ### Largest Backend Files (Density Check)
 ```text
    17708 total
-    4115 /Users/caijunchang/openclaw任務面版設計/server/src/index.ts
-    1835 /Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts
-    1512 /Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts
-    1185 /Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts
+    4115 /Users/sky770825/openclaw任務面版設計/server/src/index.ts
+    1835 /Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts
+    1512 /Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts
+    1185 /Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts
 ```
 
 ## 3. 結論 (Conclusion & Recommendations)
 本報告針對伺服器日誌與專案原始碼進行了深入掃描。分析結果如下：
-1. **穩定性評估**: 系統在日誌中檢測到 5479 處錯誤或失敗標記。這顯示系統在執行期間存在異常，應優先排查 /Users/caijunchang/.openclaw/automation/logs/taskboard.log 中記錄的行號。
+1. **穩定性評估**: 系統在日誌中檢測到 5479 處錯誤或失敗標記。這顯示系統在執行期間存在異常，應優先排查 /Users/sky770825/.openclaw/automation/logs/taskboard.log 中記錄的行號。
 2. **代碼規模**: 後端系統包含 17708 行代碼，分佈在 49 個檔案中。平均每檔案約 361 行，代碼密度尚屬合理。
 3. **異常處理能力**: 偵測到 219 個 catch 區塊。相較於 288 個函數定義，錯誤捕捉覆蓋率約為 75%。建議針對關鍵的 API 進入點增加更嚴謹的 try-catch 結構。
 4. **具體建議**: 針對 largest files 中列出的檔案進行模組化拆解，特別是行數過多的核心邏輯檔案，以降低維護難度並提升日誌除錯的精確度。應確保所有的 264 個異步函數都有完善的錯誤捕捉機制，避免未捕獲的 Promise Rejection 導致伺服器崩潰。

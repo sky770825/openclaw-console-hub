@@ -15,4 +15,4 @@
 
 ## 4. 認證層 (Auth Layer)
 - [ ] 從靜態 API Key 轉向 Supabase Auth (JWT)。
-- [ ] 實作分層權限：Admin (老蔡) vs User (客戶)。
+- [ ] 實作分層權限：Admin (主人) vs User (客戶)。

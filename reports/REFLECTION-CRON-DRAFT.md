@@ -10,7 +10,7 @@
 - **負載控制**：使用本地模型 `qwen2.5:14b` 執行。
 - **Cron 語法**：
   ```bash
-  30 23 * * * /Users/caijunchang/.openclaw/workspace/scripts/run-daily-reflection.sh
+  30 23 * * * /Users/sky770825/.openclaw/workspace/scripts/run-daily-reflection.sh
   ```
 
 ### B. 每週深度反思 (Weekly Retrospective)
@@ -19,7 +19,7 @@
 - **負載控制**：使用 `google/gemini-2.0-flash-thinking` 或 `claude-3-5-sonnet` 以獲得深度推理。
 - **Cron 語法**：
   ```bash
-  0 9 * * 6 /Users/caijunchang/.openclaw/workspace/scripts/run-weekly-reflection.sh
+  0 9 * * 6 /Users/sky770825/.openclaw/workspace/scripts/run-weekly-reflection.sh
   ```
 
 ---

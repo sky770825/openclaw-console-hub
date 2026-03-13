@@ -1,7 +1,7 @@
 #!/bin/bash
 # Generate high quality READMEs for L1 completion
 
-KB_PATH="/Users/caijunchang/.openclaw/workspace/knowledge"
+KB_PATH="/Users/sky770825/.openclaw/workspace/knowledge"
 
 generate_readme() {
     local name=$1

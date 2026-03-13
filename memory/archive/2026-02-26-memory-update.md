@@ -26,8 +26,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -49,8 +49,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```

@@ -2,15 +2,15 @@
 set -e
 
 # Define paths
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計/server"
-REPORT_DIR="/Users/caijunchang/.openclaw/workspace/reports"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計/server"
+REPORT_DIR="/Users/sky770825/.openclaw/workspace/reports"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 REPORT_FILE="$REPORT_DIR/type_check_report_$TIMESTAMP.txt"
-SCRIPT_PATH="/Users/caijunchang/.openclaw/workspace/scripts/verify_executor_fix.sh"
+SCRIPT_PATH="/Users/sky770825/.openclaw/workspace/scripts/verify_executor_fix.sh"
 
 # Ensure report directory exists
 mkdir -p "$REPORT_DIR"
-mkdir -p "/Users/caijunchang/.openclaw/workspace/scripts"
+mkdir -p "/Users/sky770825/.openclaw/workspace/scripts"
 
 # Verification logic encapsulated in a function/script
 check_types() {

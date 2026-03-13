@@ -8,7 +8,7 @@ const testCases = [
 const improvedWhitelist = [
     /^curl (-s )?http:\/\/localhost:\d+\/api\/health$/,
     /^node -v$/,
-    /^ls -R \/Users\/caijunchang\/\.openclaw\/workspace\/sandbox\/.*$/
+    /^ls -R \/Users\/sky770825\/\.openclaw\/workspace\/sandbox\/.*$/
 ];
 
 function check(cmd) {

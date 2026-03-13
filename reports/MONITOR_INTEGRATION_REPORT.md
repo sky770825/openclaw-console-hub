@@ -192,13 +192,13 @@ TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-5819565005}" # 目標聊天 ID
 
 ```bash
 # 每 5 分鐘快速檢查（系統繁忙時自動升級為詳細）
-*/5 * * * * /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --telegram
+*/5 * * * * /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --telegram
 
 # 每小時詳細監控
-0 * * * * /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --detailed --telegram
+0 * * * * /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --detailed --telegram
 
 # 每天清理一次殭屍 Session（午夜 2:00）
-0 2 * * * /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --cleanup --detailed
+0 2 * * * /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --cleanup --detailed
 ```
 
 ---
@@ -212,15 +212,15 @@ TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-5819565005}" # 目標聊天 ID
 ```bash
 # agent-monitor-local.sh → 轉發到 unified-monitor.sh
 #!/bin/bash
-exec /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --detailed --telegram
+exec /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --detailed --telegram
 
 # sub-agent-monitor.sh → 轉發到 unified-monitor.sh
 #!/bin/bash
-exec /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --detailed
+exec /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --detailed
 
 # dashboard-monitor.sh → 轉發到 unified-monitor.sh
 #!/bin/bash
-exec /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --quick
+exec /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --quick
 ```
 
 ---
@@ -232,7 +232,7 @@ exec /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --quick
 - ✅ 設計統一版本
 - ✅ 實現所有原始功能
 - ✅ 添加 5 項新增功能
-- ✅ 寫入 `/Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh`
+- ✅ 寫入 `/Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh`
 - ✅ 設定 chmod +x（已驗證）
 - ✅ 生成完整整合報告
 
@@ -242,8 +242,8 @@ exec /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --quick
 
 1. **測試驗證**
    ```bash
-   /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --quick
-   /Users/caijunchang/.openclaw/workspace/scripts/unified-monitor.sh --json
+   /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --quick
+   /Users/sky770825/.openclaw/workspace/scripts/unified-monitor.sh --json
    ```
 
 2. **Cron 排程**

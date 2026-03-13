@@ -3,7 +3,7 @@
 > 收到指令先查這裡，用關鍵字找到檔案，再用 read_file 看內容。不要 list_dir 一層層找。
 > 更新：2026-03-02
 
-專案位置：/Users/caijunchang/openclaw任務面版設計/
+專案位置：/Users/sky770825/openclaw任務面版設計/
 技術棧：React + TypeScript + Vite + Express + Supabase
 
 想做什麼 → 去看哪個檔案：
@@ -76,7 +76,7 @@ NEUXA Action 清單（action-handlers.ts，共 21 個）：
 - 搜尋操作：semantic_search（向量庫語義搜尋）, grep_project（正則搜尋專案）, find_symbol（符號定位）
 - 知識操作：index_file, reindex_knowledge
 - 網路操作：web_search, web_fetch, proxy_fetch
-- AI 諮詢：ask_ai（flash 優先，claude 只在老蔡指定或真正需要時用）, analyze_code
+- AI 諮詢：ask_ai（flash 優先，claude 只在主人指定或真正需要時用）, analyze_code
 - 資料庫：query_supabase
 - 規劃操作：plan_project（拆解專案為子任務進 draft）, roadmap（路線圖 create/status/update）
 - 已封鎖：run_script_bg（禁用）
@@ -99,6 +99,6 @@ auto-executor.ts 並發架構：
 ---
 
 xiaocai-think.ts systemPrompt 要點：
-- ask_ai model=flash 優先（2-5 秒），claude 很慢（30-60 秒）只在老蔡明確要求或真正搞不定時用
+- ask_ai model=flash 優先（2-5 秒），claude 很慢（30-60 秒）只在主人明確要求或真正搞不定時用
 - 工具說明內嵌 prompt：每個 action 的用途、參數、使用時機
-- 終極目標：「老蔡能根據你的結論做決定」，不是單純「我執行了」
+- 終極目標：「主人能根據你的結論做決定」，不是單純「我執行了」

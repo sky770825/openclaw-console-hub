@@ -2,7 +2,7 @@
   "name": "verify-file",
   "version": "0.1.0",
   "description": "Verifies if a file exists, is a regular file, is readable, and is not empty.",
-  "author": "小蔡",
+  "author": "達爾",
   "params": [
     {
       "name": "path",

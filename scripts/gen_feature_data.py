@@ -21,7 +21,7 @@ if __name__ == "__main__":
         generate_feature("安全沙箱環境", "所有腳本在隔離環境中執行，確保主機安全。")
     ]
     
-    output_path = "/Users/caijunchang/.openclaw/workspace/sandbox/output/features_data.json"
+    output_path = "/Users/sky770825/.openclaw/workspace/sandbox/output/features_data.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(features, f, ensure_ascii=False, indent=2)
     print(f"Feature data generated at {output_path}")

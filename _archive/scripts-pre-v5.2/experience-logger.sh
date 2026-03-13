@@ -2,9 +2,9 @@
 set -e
 
 # Configuration
-SRC_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output"
-BASE_ARTIFACTS_DIR="/Users/caijunchang/.openclaw/workspace/artifacts"
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/experience-log.jsonl"
+SRC_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output"
+BASE_ARTIFACTS_DIR="/Users/sky770825/.openclaw/workspace/artifacts"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/experience-log.jsonl"
 DATE_STAMP=$(date +%Y%m%d)
 DEST_DIR="$BASE_ARTIFACTS_DIR/$DATE_STAMP"
 

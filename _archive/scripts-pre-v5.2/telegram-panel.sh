@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# 小蔡控制面板 - Telegram Inline Keyboard Handler
+# 達爾控制面板 - Telegram Inline Keyboard Handler
 # 版本: 2.0
 # 用途: 一按就跑，結果直接回傳
 # 使用: ./scripts/telegram-panel.sh [start|send|stop|status]
@@ -10,7 +10,7 @@ BOT_TOKEN="8355839830:AAE3eB94HeNPsNPYEfsuUtB_3BJNKgfuRBU"
 BOT_API="https://api.telegram.org/bot${BOT_TOKEN}"
 CHAT_ID="5819565005"
 TASKBOARD="http://localhost:3011"
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 PID_FILE="${WORKSPACE}/.telegram-panel.pid"
 LOG_FILE="${WORKSPACE}/logs/telegram-panel.log"
 OFFSET=0
@@ -308,7 +308,7 @@ else:
       local markup='{"inline_keyboard":[[{"text":"✅ 確認重啟 Gateway","callback_data":"confirm_restart_gw"},{"text":"❌ 取消","callback_data":"show_panel"}]]}'
       edit_msg "$chat_id" "$msg_id" "🔄 *重啟 OpenClaw Gateway*
 
-即將關閉並重啟小蔡主程式（openclaw gateway）
+即將關閉並重啟達爾主程式（openclaw gateway）
 確定要執行嗎？" "$markup"
       ;;
 
@@ -352,7 +352,7 @@ ${gw_status}" "$BACK_MARKUP"
 
       pkill -f "node.*openclaw任務面版設計/server" 2>/dev/null
       sleep 1
-      cd "/Users/caijunchang/openclaw任務面版設計/server" && nohup node dist/index.js > /tmp/openclaw-taskboard.log 2>&1 &
+      cd "/Users/sky770825/openclaw任務面版設計/server" && nohup node dist/index.js > /tmp/openclaw-taskboard.log 2>&1 &
       local tb_pid=$!
       cd "$WORKSPACE"
       sleep 2
@@ -433,7 +433,7 @@ ${result}" "$BACK_MARKUP"
     confirm_stop)
       curl -s -X POST "http://127.0.0.1:5678/webhook/system-event-notify" \
         -H 'Content-Type: application/json' \
-        -d '{"source":"telegram-panel","event":"emergency_stop","message":"🛑 老蔡透過 Telegram 面板發出緊急停止指令"}' > /dev/null 2>&1
+        -d '{"source":"telegram-panel","event":"emergency_stop","message":"🛑 主人透過 Telegram 面板發出緊急停止指令"}' > /dev/null 2>&1
 
       local markup='{"inline_keyboard":[[{"text":"▶️ 恢復運作","callback_data":"resume_ops"}],[{"text":"🔙 返回面板","callback_data":"show_panel"}]]}'
       edit_msg "$chat_id" "$msg_id" "🛑 *緊急停止已發出*
@@ -447,7 +447,7 @@ ${result}" "$BACK_MARKUP"
     resume_ops)
       curl -s -X POST "http://127.0.0.1:5678/webhook/system-event-notify" \
         -H 'Content-Type: application/json' \
-        -d '{"source":"telegram-panel","event":"resume","message":"▶️ 老蔡透過 Telegram 面板恢復運作"}' > /dev/null 2>&1
+        -d '{"source":"telegram-panel","event":"resume","message":"▶️ 主人透過 Telegram 面板恢復運作"}' > /dev/null 2>&1
 
       edit_msg "$chat_id" "$msg_id" "▶️ *已恢復運作*
 
@@ -558,7 +558,7 @@ ${dirty_files}"
 📋 系統檢查 → Docker + 任務板狀態
 🔍 偵測活動 → 近 10 分鐘檔案變動
 📊 任務狀態 → 各狀態統計 + 明細
-🔄 重啟 Gateway → 重啟小蔡主程式
+🔄 重啟 Gateway → 重啟達爾主程式
 🔄 重啟任務板 → 重啟 localhost:3011
 🧹 快速巡檢 → 執行 self-heal.sh check
 🔧 自動修復 → 執行 self-heal.sh fix

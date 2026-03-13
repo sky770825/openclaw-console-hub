@@ -104,7 +104,7 @@ curl -s http://localhost:5678/api/v1/workflows \
 ## 修不了的時候
 
 1. 確認是不是對方的問題（查 status page）
-2. 如果是 key/權限問題 → 告訴老蔡，讓他處理
+2. 如果是 key/權限問題 → 告訴主人，讓他處理
 3. 如果是 rate limit → 等待，或切換備援
 4. 如果是網路問題 → 確認本機網路正常（`curl google.com`）
 

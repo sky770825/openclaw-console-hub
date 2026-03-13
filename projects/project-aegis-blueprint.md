@@ -18,11 +18,11 @@
 
 2.  [P1] 自動化哨兵：
     - 目標：建立自動掃描機制。
-    - 任務：設定 n8n 工作流或 Cron Job，在每次有新的 git commit 時，自動對 /Users/caijunchang/openclaw任務面版設計/ 目錄執行 security-scanner。
+    - 任務：設定 n8n 工作流或 Cron Job，在每次有新的 git commit 時，自動對 /Users/sky770825/openclaw任務面版設計/ 目錄執行 security-scanner。
 
 3.  [P2] 警報與整合：
     - 目標：將掃描結果與我們的日常工作流整合。
-    - 任務：修改自動化流程，如果掃描結果中 Severity 為 HIGH 或 CRITICAL，自動呼叫 API 在任務板上建立一個 P0 等級的 Bug 任務，並指派給「小蔡」。
+    - 任務：修改自動化流程，如果掃描結果中 Severity 為 HIGH 或 CRITICAL，自動呼叫 API 在任務板上建立一個 P0 等級的 Bug 任務，並指派給「達爾」。
 
 ## 第二階段：進階防禦 (The Spear)
 

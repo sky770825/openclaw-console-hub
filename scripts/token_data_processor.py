@@ -21,7 +21,7 @@ def main():
     print("Fixing path configuration for M3 Ultra migration...")
     
     data = generate_token_data()
-    output_path = "/Users/caijunchang/.openclaw/workspace/reports/token_usage_30d.json"
+    output_path = "/Users/sky770825/.openclaw/workspace/reports/token_usage_30d.json"
     with open(output_path, 'w') as f:
         json.dump(data, f, indent=2)
     print(f"Token usage data exported to {output_path}")

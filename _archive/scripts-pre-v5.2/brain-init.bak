@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# 小蔡大腦初始化（複製這段話給新對話）
+# 用法：複製下面的啟動提示，貼到新對話的第一條訊息
+
+cat <<'EOF'
+請執行以下啟動流程：
+
+1. 讀取 ~/.openclaw/workspace/SOUL.md
+2. 讀取 ~/.openclaw/workspace/USER.md
+3. 讀取 ~/.openclaw/workspace/MEMORY.md（注意 Active Context）
+4. 讀取 ~/.openclaw/workspace/NEW-SESSION-PROMPT.md
+
+然後回報：
+- 當前進行中事項
+- 可用的智能記憶系統狀態
+- 準備好接受任務
+
+重要提醒：
+- 用戶說「繼續」「之前」「查 XXX」時，使用 ./scripts/recall
+- 智能召回準確率 95%+，成本 $0
+- 接任務前必填任務卡（5W1H）
+EOF

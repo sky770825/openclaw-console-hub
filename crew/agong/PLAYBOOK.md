@@ -14,7 +14,7 @@
 2. 用 `grep_project` 了解現有代碼結構
 3. 用 `analyze_code` 分析相關模組
 4. 用 `patch_file` 或 `write_file` 實作功能
-5. 完成後通知小蔡 push
+5. 完成後通知達爾 push
 
 **Action 範例：**
 
@@ -38,9 +38,9 @@
 {"action":"write_file","path":"server/src/routes/live2dRoutes.ts","content":"import { Router } from 'express';\n\nconst router = Router();\n\nrouter.get('/status', (req, res) => {\n  res.json({ status: 'ok', model: 'default' });\n});\n\nexport default router;"}
 ```
 
-通知小蔡 push：
+通知達爾 push：
 ```json
-{"action":"write_file","path":"~/.openclaw/workspace/crew/xiaocai/inbox/report-20260306-1700-agong.md","content":"## 回報：Live2D API 端點實作完成\n- 來源：阿工\n- 目標：小蔡\n- 時間：2026-03-06 17:00\n- 嚴重度：P2\n- 狀態：待 push\n\n### 修改檔案\n- server/src/routes/live2dRoutes.ts（新增）\n- server/src/index.ts（掛載路由）\n\n### 期望動作\n請小蔡 git add + commit + push + build + restart。"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/dar/inbox/report-20260306-1700-agong.md","content":"## 回報：Live2D API 端點實作完成\n- 來源：阿工\n- 目標：達爾\n- 時間：2026-03-06 17:00\n- 嚴重度：P2\n- 狀態：待 push\n\n### 修改檔案\n- server/src/routes/live2dRoutes.ts（新增）\n- server/src/index.ts（掛載路由）\n\n### 期望動作\n請達爾 git add + commit + push + build + restart。"}
 ```
 
 ---
@@ -54,7 +54,7 @@
 2. 用 `grep_project` 追蹤錯誤源頭
 3. 用 `analyze_code` 分析問題代碼
 4. 用 `patch_file` 修復
-5. 通知小蔡 push，通知阿秘寫事後報告
+5. 通知達爾 push，通知阿秘寫事後報告
 
 **Action 範例：**
 
@@ -75,7 +75,7 @@
 
 執行腳本測試：
 ```json
-{"action":"run_script","script":"cd /Users/caijunchang/openclaw任務面版設計/server && npx tsc --noEmit 2>&1 | head -20"}
+{"action":"run_script","script":"cd /Users/sky770825/openclaw任務面版設計/server && npx tsc --noEmit 2>&1 | head -20"}
 ```
 
 通知阿秘記錄：
@@ -116,7 +116,7 @@
 **標準流程：**
 1. 收到阿研的 alert 或阿數的異常通報
 2. 快速排查 → patch_file 修復
-3. 通知小蔡 push
+3. 通知達爾 push
 
 ---
 
@@ -126,7 +126,7 @@
 
 ---
 
-## 情境 6：老蔡/小蔡直接指令
+## 情境 6：主人/達爾直接指令
 
 被點名就最優先。常備 action：
 
@@ -144,7 +144,7 @@
 ## 協作原則
 
 1. **修代碼是你的看家本領** — 收到 alert 就動手，不等開會
-2. **修完一定通知小蔡** — push 權在小蔡手上，修完寫 inbox
+2. **修完一定通知達爾** — push 權在達爾手上，修完寫 inbox
 3. **附修改清單** — 每次修完列出改了哪些檔案、哪些行
 4. **tsc 先過** — patch 完跑 `npx tsc --noEmit`，確認沒打壞別的
 5. **不搶調研** — 需要技術調研找阿研，自己專注寫代碼
@@ -153,7 +153,7 @@
 
 | 情況 | 找誰 |
 |------|------|
-| 修完代碼需要 push + 重啟 | 小蔡 |
+| 修完代碼需要 push + 重啟 | 達爾 |
 | Bug 根因不明，需更多 log | 阿研 |
 | 修復可能影響其他功能 | 阿策 |
 | 需要數據驗證修復效果 | 阿數 |

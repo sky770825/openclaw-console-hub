@@ -4,7 +4,7 @@
 > 目標：將舊機的 OpenClaw 完整遷移並啟動 MLX 本地模型
 
 ## 步驟 1：在舊機 (這裡)
-1. 執行 pack-for-m3.sh (小蔡已幫你執行)
+1. 執行 pack-for-m3.sh (達爾已幫你執行)
 2. 將桌面上的 openclaw-m3-migration_xxxx.tar.gz 複製到隨身碟
 3. 將 unpack-on-m3.sh 也複製到隨身碟
 
@@ -12,8 +12,8 @@
 1. 將 tar.gz 檔和 unpack-on-m3.sh 放回 *新機桌面*
 2. 打開終端機 (Terminal)，執行：
    ``bash
-   chmod +x /Users/caijunchang/Desktop/unpack-on-m3.sh
-   /Users/caijunchang/Desktop/unpack-on-m3.sh /Users/caijunchang/Desktop/openclaw-m3-migration_xxxx.tar.gz
+   chmod +x /Users/sky770825/Desktop/unpack-on-m3.sh
+   /Users/sky770825/Desktop/unpack-on-m3.sh /Users/sky770825/Desktop/openclaw-m3-migration_xxxx.tar.gz
    `
 
 ## 步驟 3：環境初始化 (M3 專屬)
@@ -30,7 +30,7 @@
 
 3. *恢復專案依賴*：
    `bash
-   cd /Users/caijunchang/.openclaw/workspace
+   cd /Users/sky770825/.openclaw/workspace
    npm install
    `
 
@@ -41,8 +41,8 @@
 python3 -m mlx_lm.generate --model mlx-community/Meta-Llama-3.1-70B-Instruct-4bit --prompt "Hello"
 `
 
-## 步驟 5：喚醒小蔡
+## 步驟 5：喚醒達爾
 `bash
-cd /Users/caijunchang/.openclaw/workspace
+cd /Users/sky770825/.openclaw/workspace
 npm run start
 ``

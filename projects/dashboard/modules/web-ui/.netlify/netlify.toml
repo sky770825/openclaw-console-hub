@@ -7,10 +7,10 @@ redirects = []
 [functions."*"]
 
 [build]
-publish = "/Users/caijunchang/.openclaw/workspace/projects/dashboard/modules/web-ui/dist"
+publish = "/Users/sky770825/.openclaw/workspace/projects/dashboard/modules/web-ui/dist"
 publishOrigin = "config"
 commandOrigin = "config"
-base = "/Users/caijunchang/.openclaw/workspace/projects/dashboard/modules/web-ui"
+base = "/Users/sky770825/.openclaw/workspace/projects/dashboard/modules/web-ui"
 command = "npm run build"
 
 [build.environment]

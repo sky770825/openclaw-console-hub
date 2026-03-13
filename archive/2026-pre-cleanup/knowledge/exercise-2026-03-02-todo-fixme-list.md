@@ -76,12 +76,12 @@ const sendAlert = async (eventType: string, origin: string): Promise<void> => {
 };
 ```
 
-**问题**：postMessage 防火墙拦截到恶意请求时，只写 log.warn，不会通知老蔡。如果有人在攻击，老蔡不会即时知道。
+**问题**：postMessage 防火墙拦截到恶意请求时，只写 log.warn，不会通知主人。如果有人在攻击，主人不会即时知道。
 
 **影响**：高 -- 安全事件没有即时通知，可能延误应急响应。
 
 **建议修复**：
-1. 调用 `POST http://localhost:3011/internal/notify` 发 Telegram 给老蔡
+1. 调用 `POST http://localhost:3011/internal/notify` 发 Telegram 给主人
 2. 或调用 n8n webhook `http://localhost:5678/webhook/security-alert`
 3. 加上频率限制（同一个 origin 5 分钟内只通知一次，避免刷屏）
 
@@ -110,4 +110,4 @@ const sendAlert = async (eventType: string, origin: string): Promise<void> => {
 1. **高优先**：firewall.ts 警报通知 -- 安全相关，应尽快接入
 2. **中优先**：anti-stuck.ts 数据持久化 -- 诊断数据，不紧急但有价值
 
-**给小蔡的建议**：这 2 个 TODO 都可以作为 create_task 派工的候选任务。firewall 那个可以先做，因为涉及安全。anti-stuck 那个可以等老蔡确认是否需要建新的 Supabase 表。
+**给達爾的建议**：这 2 个 TODO 都可以作为 create_task 派工的候选任务。firewall 那个可以先做，因为涉及安全。anti-stuck 那个可以等主人确认是否需要建新的 Supabase 表。

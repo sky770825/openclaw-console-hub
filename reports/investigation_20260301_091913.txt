@@ -29,11 +29,11 @@ No direct 'done' string found in executor-agents.ts
 --- Search for API Route definitions for Dispatch ---
 
 === Summary of Actions ===
-1. Investigated /Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts for 'done' status logic.
-2. Created /Users/caijunchang/.openclaw/workspace/scripts/fix_task_statuses.sh to manually reset tasks t1772326075591 and t1772325127506.
-3. Recreated missing dispatch script at /Users/caijunchang/.openclaw/workspace/scripts/openclaw-dispatch.sh.
-4. Created /Users/caijunchang/.openclaw/workspace/scripts/rebuild-cron-jobs.sh to restore cron automation.
-5. Logged findings to /Users/caijunchang/.openclaw/workspace/reports/investigation_20260301_091913.txt.
+1. Investigated /Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts for 'done' status logic.
+2. Created /Users/sky770825/.openclaw/workspace/scripts/fix_task_statuses.sh to manually reset tasks t1772326075591 and t1772325127506.
+3. Recreated missing dispatch script at /Users/sky770825/.openclaw/workspace/scripts/openclaw-dispatch.sh.
+4. Created /Users/sky770825/.openclaw/workspace/scripts/rebuild-cron-jobs.sh to restore cron automation.
+5. Logged findings to /Users/sky770825/.openclaw/workspace/reports/investigation_20260301_091913.txt.
 
 === Root Cause Analysis (Preliminary) ===
 The false 'done' status likely occurs because the execution wrapper in executor-agents.ts

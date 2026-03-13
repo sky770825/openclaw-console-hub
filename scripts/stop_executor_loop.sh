@@ -11,4 +11,4 @@ else
     done
 fi
 # Remove the stop flag if it exists (for a clean restart later if needed)
-# rm -f /Users/caijunchang/.openclaw/workspace/sandbox/.auto_executor_stop
+# rm -f /Users/sky770825/.openclaw/workspace/sandbox/.auto_executor_stop

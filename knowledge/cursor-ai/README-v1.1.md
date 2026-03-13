@@ -233,7 +233,7 @@ $20 Pro credits 大約可用：
 在 OpenClaw 四層 Agent 架構中，Cursor 定位為 **L4 終極備援**：
 
 ```
-L1 🐣 Kimi K2.5（小蔡）— 主要對話，指揮協調
+L1 🐣 Kimi K2.5（達爾）— 主要對話，指揮協調
 L2 💻 Claude Code — 程式開發、技術決策
 L3 💎 Gemini 2.5 Flash — 免費額度備援
 L4 🎨 Cursor — 終極備援，訂閱制無額度限制
@@ -277,7 +277,7 @@ L4 🎨 Cursor — 終極備援，訂閱制無額度限制
 
 ---
 
-**更新**: v1.2 新增 Cursor 2.0 + Composer (4倍速度)、Long-running Agents (研究預覽)、章節重編號。2025-10 by 小蔡。
+**更新**: v1.2 新增 Cursor 2.0 + Composer (4倍速度)、Long-running Agents (研究預覽)、章節重編號。2025-10 by 達爾。
 
 **版本歷史**:
 - v1.1: 初始深度補完版（2026-02-16）

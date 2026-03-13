@@ -18,8 +18,8 @@
 
 ## Location of Optimized Files
 The optimized source files are prepared in the workspace for manual review and integration (as per access restrictions):
-- `/Users/caijunchang/.openclaw/workspace/proposals/performance_optimization/AutoExecutor.ts`
-- `/Users/caijunchang/.openclaw/workspace/proposals/performance_optimization/anti-stuck.ts`
+- `/Users/sky770825/.openclaw/workspace/proposals/performance_optimization/AutoExecutor.ts`
+- `/Users/sky770825/.openclaw/workspace/proposals/performance_optimization/anti-stuck.ts`
 
 ## Integration Guide
 1. Replace `server/src/executor/AutoExecutor.ts` with the optimized version.

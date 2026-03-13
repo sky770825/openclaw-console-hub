@@ -1,4 +1,4 @@
-# 2026-03-04 小蔡啟動摘要
+# 2026-03-04 達爾啟動摘要
 
 ## 系統狀態總結
 - *核心能力*：已完成多項重大升級，包括真實並行多代理 (delegate_agents)、強化 web_browse、BrowserService 重寫、智慧修復引擎、TypeScript AST 分析等。
@@ -12,7 +12,7 @@
 - *後續銜接點*：Lv.8 評分和記憶壓縮腳本 (memory-compress.sh) 是待處理的任務。
 
 ## Git Commits
-- 最新提交增加了 send_group action 和 /say 指令，強化了小蔡在群組中的指揮能力。
+- 最新提交增加了 send_group action 和 /say 指令，強化了達爾在群組中的指揮能力。
 
 ## 接下來行動計畫
 1. 將此摘要寫入筆記並索引。

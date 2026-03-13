@@ -2,7 +2,7 @@
 
 > 來源：Gemini Flash 2.5 搜尋整理
 > 日期：2026-02-16
-> 適用：小蔡、Codex、Cursor 協作
+> 適用：達爾、Codex、Cursor 協作
 
 ## 1. Agent 分工策略
 

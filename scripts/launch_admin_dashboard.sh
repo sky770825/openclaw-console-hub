@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /Users/caijunchang/.openclaw/workspace/sandbox/admin-dashboard
+cd /Users/sky770825/.openclaw/workspace/sandbox/admin-dashboard
 echo "正在安裝依賴項..."
 # npm install --silent
 echo "後台管理介面模擬啟動成功！"

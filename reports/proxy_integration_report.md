@@ -13,4 +13,4 @@
 - `server/src/routes/proxy.ts`: Proxy logic with BrowserService integration.
 
 ## Verification
-- Use the script at `/Users/caijunchang/.openclaw/workspace/scripts/test_proxy_integration.sh` to verify functionality.
+- Use the script at `/Users/sky770825/.openclaw/workspace/scripts/test_proxy_integration.sh` to verify functionality.

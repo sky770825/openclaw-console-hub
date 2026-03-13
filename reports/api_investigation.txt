@@ -1,111 +1,111 @@
 API Investigation Report
 ------------------------
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:135:    method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:260:      { text: '🟣 切換派工', callback_data: '/dispatch' },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:395:    `<code>curl -sS -X POST ${TASKBOARD_BASE_URL}/api/openclaw/maintenance/cleanup-stale-runs -H 'Content-Type: application/json' -d '{"olderThanMinutes":45,"limit":50}' | jq .</code>`;
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:400:  const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/handoff/generate`, { method: 'POST' }, 15000);
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:564:      method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:596:    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'telegram' }) },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:629:    `<b>Dispatch：</b> ${ae.dispatchMode === true ? '🟢 ON' : '🔴 OFF'}\n` +
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:635:  const status = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/dispatch/status`, {}, 5000);
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:637:  const currentOn = sobj.dispatchMode === true;
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:639:    `${TASKBOARD_BASE_URL}/api/openclaw/dispatch/toggle`,
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:641:      method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:648:  const newState = robj.dispatchMode === true;
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:666:    { method: 'POST', headers: { 'Content-Type': 'application/json' } },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:705:        { text: '🟣 切換派工', callback_data: '/dispatch' },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:838:        method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:861:      { method: 'POST', headers: { 'Content-Type': 'application/json' } },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1035:            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId }) },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1054:            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision }) },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1152:      if (cmd === '/dispatch') { await replyDispatchToggle(chatId); continue; }
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1284:        const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled, source: 'telegram-group' }) }, 8000);
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1292:        const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled, source: 'telegram-group' }) }, 8000);
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1309:              { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled: false, source: 'boss-return' }) },
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1676:      log.info('[TelegramControl] 已啟動（getUpdates 輪詢），支援 /start /status /tasks /health /dispatch /report /reconcile /wake /cmd /recover /codex-triage /stop ...');
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:26:      method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:285:        method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:447:      return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/xiaocai-think.ts:405:          method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/model-registry.ts:141:    method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:290:const WRITE_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2043:    log.error('[OpenClaw] POST /api/openclaw/command error:', e);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2133:    log.error('[OpenClaw] POST /api/openclaw/interrupt error:', e);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2224:    log.error('[OpenClaw] POST /api/openclaw/resume error:', e);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2370:    { name: '建立任務', method: 'POST', path: '/api/tasks', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '建立新任務', rateLimit: '30/min', status: 'live', storage: 'Supabase · tasks' },
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2373:    { name: '批准審核', method: 'POST', path: '/api/reviews/:id/approve', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '批准審核項目，寫入 reviews.status=approved', rateLimit: '20/min', status: 'live', storage: 'Supabase · reviews' },
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2374:    { name: '駁回審核', method: 'POST', path: '/api/reviews/:id/reject', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '駁回審核項目，寫入 reviews.status=rejected', rateLimit: '20/min', status: 'live', storage: 'Supabase · reviews' },
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2375:    { name: 'OpenClaw Webhook', method: 'POST', path: '/api/webhook/openclaw', auth: 'api_key', authDesc: '請求需帶 X-API-Key 或 Authorization Bearer', desc: 'n8n 接收 Agent 結果後呼叫，寫入 tasks/reviews', rateLimit: '200/min', status: 'live', storage: 'Supabase · tasks, reviews' },
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2376:    { name: 'Telegram Webhook', method: 'POST', path: '/api/webhook/telegram', auth: 'tg_secret', authDesc: 'Header 驗證 Telegram Bot Webhook Secret（HMAC）', desc: '接收 Telegram 指令（/approve /reject 等）', rateLimit: '300/min', status: 'live', storage: 'Supabase · reviews（更新狀態）' },
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2378:    { name: '註冊 Plugin', method: 'POST', path: '/api/plugins/register', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '註冊新 Plugin，寫入 plugins 表', rateLimit: '10/min', status: 'beta', storage: 'Supabase · plugins' },
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2636:        dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2701:        dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2793:    log.error('[Community] POST /api/community/apply error:', e);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2911:// POST — 前端甦醒時寫入
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:2993:    log.error('[OpenClaw] POST /api/openclaw/wake-report error:', e);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:3096:        dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:3115:        `<b>自動執行</b>：今日 ${totalExecutedToday} 次 | 派工${autoExecutorState.dispatchMode ? '開啟' : '關閉'}`,
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:3788:      method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:3900:      dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:4015:  log.info(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:4017:  log.info(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:4018:  log.info(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:4063:  if (disk.dispatchMode) {
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:4064:    autoExecutorState.dispatchMode = true;
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:4065:    autoExecutorState.dispatchStartedAt = new Date().toISOString();
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:213: * POST /api/federation/handshake/init
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:280: * POST /api/federation/handshake/respond
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:487: * POST /api/federation/attack/broadcast
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:656: * POST /api/federation/blocklist
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:741: * 供 auto-executor.ts dispatchTask() 在執行前呼叫
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:791: * POST /api/federation/webhook
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:898: * POST /api/federation/heartbeat
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:991: * POST /api/federation/trust/request-upgrade
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:5: * POST   /api/openclaw/auto-executor/start
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:6: * POST   /api/openclaw/auto-executor/stop
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:7: * GET    /api/openclaw/dispatch/status
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:8: * POST   /api/openclaw/dispatch/toggle
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:9: * POST   /api/openclaw/dispatch/review/:taskId
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:78:  dispatchMode: boolean;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:79:  dispatchStartedAt: string | null;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:91:  dispatchMode?: boolean;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:106:  dispatchMode: false,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:107:  dispatchStartedAt: null,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:127:let dispatchDigestTimer: NodeJS.Timeout | null = null;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:188:        method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:270:      dispatchMode: j.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:306:  dispatchDigestTimer = setInterval(async () => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:312:  if (dispatchDigestTimer) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:313:    clearInterval(dispatchDigestTimer);
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:314:    dispatchDigestTimer = null;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:319:  const since = autoExecutorState.lastDigestAt || autoExecutorState.dispatchStartedAt || new Date().toISOString();
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:422:        // In dispatch mode, skip strict gate validation (no runCommands/agent needed for dispatch)
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:423:        if (autoExecutorState.dispatchMode) return true;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:441:    // Dispatch gate: 在 dispatch mode 下，找到第一個「可執行」的任務
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:444:    if (autoExecutorState.dispatchMode) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:498:    if (autoExecutorState.dispatchMode) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:678:      if (autoExecutorState.dispatchMode) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:726:      if (autoExecutorState.dispatchMode) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:811:autoExecutorRouter.get('/dispatch/status', (_req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:814:    dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:815:    dispatchStartedAt: autoExecutorState.dispatchStartedAt,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:826:autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:828:  const wasOn = autoExecutorState.dispatchMode;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:829:  autoExecutorState.dispatchMode = enabled !== undefined ? Boolean(enabled) : !autoExecutorState.dispatchMode;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:831:  if (autoExecutorState.dispatchMode && !wasOn) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:832:    autoExecutorState.dispatchStartedAt = new Date().toISOString();
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:847:  if (!autoExecutorState.dispatchMode && wasOn) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:848:    autoExecutorState.dispatchStartedAt = null;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:859:    if (autoExecutorState.dispatchMode) {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:865:    dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:871:    dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:872:    message: autoExecutorState.dispatchMode ? '自動派工已開啟' : '自動派工已關閉',
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:876:autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:936:    dispatchMode: autoExecutorState.dispatchMode,
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/insights.ts:30:// POST /api/openclaw/insights — 新增構想
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/insights.ts:51:// POST /api/openclaw/insights/mark-sent — 標記已發送
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/deputy.ts:23:// POST /api/openclaw/deputy/toggle
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/deputy.ts:38:// POST /api/openclaw/deputy/level
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/property-api.ts:5: * POST /api/tools/property-copy
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/property-api.ts:101:      method: 'POST',
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/property-api.ts:161:// POST /api/tools/property-copy
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:135:    method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:260:      { text: '🟣 切換派工', callback_data: '/dispatch' },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:395:    `<code>curl -sS -X POST ${TASKBOARD_BASE_URL}/api/openclaw/maintenance/cleanup-stale-runs -H 'Content-Type: application/json' -d '{"olderThanMinutes":45,"limit":50}' | jq .</code>`;
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:400:  const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/handoff/generate`, { method: 'POST' }, 15000);
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:564:      method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:596:    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'telegram' }) },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:629:    `<b>Dispatch：</b> ${ae.dispatchMode === true ? '🟢 ON' : '🔴 OFF'}\n` +
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:635:  const status = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/dispatch/status`, {}, 5000);
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:637:  const currentOn = sobj.dispatchMode === true;
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:639:    `${TASKBOARD_BASE_URL}/api/openclaw/dispatch/toggle`,
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:641:      method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:648:  const newState = robj.dispatchMode === true;
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:666:    { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:705:        { text: '🟣 切換派工', callback_data: '/dispatch' },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:838:        method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:861:      { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1035:            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId }) },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1054:            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision }) },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1152:      if (cmd === '/dispatch') { await replyDispatchToggle(chatId); continue; }
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1284:        const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled, source: 'telegram-group' }) }, 8000);
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1292:        const result = await fetchJsonWithTimeout(`${TASKBOARD_BASE_URL}/api/openclaw/deputy/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled, source: 'telegram-group' }) }, 8000);
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1309:              { method: 'POST', headers: { 'Content-Type': 'application/json', ...(OPENCLAW_API_KEY ? { 'x-api-key': OPENCLAW_API_KEY } : {}) }, body: JSON.stringify({ enabled: false, source: 'boss-return' }) },
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:1676:      log.info('[TelegramControl] 已啟動（getUpdates 輪詢），支援 /start /status /tasks /health /dispatch /report /reconcile /wake /cmd /recover /codex-triage /stop ...');
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:26:      method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:285:        method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:447:      return handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/xiaocai-think.ts:405:          method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/model-registry.ts:141:    method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:290:const WRITE_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2043:    log.error('[OpenClaw] POST /api/openclaw/command error:', e);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2133:    log.error('[OpenClaw] POST /api/openclaw/interrupt error:', e);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2224:    log.error('[OpenClaw] POST /api/openclaw/resume error:', e);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2370:    { name: '建立任務', method: 'POST', path: '/api/tasks', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '建立新任務', rateLimit: '30/min', status: 'live', storage: 'Supabase · tasks' },
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2373:    { name: '批准審核', method: 'POST', path: '/api/reviews/:id/approve', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '批准審核項目，寫入 reviews.status=approved', rateLimit: '20/min', status: 'live', storage: 'Supabase · reviews' },
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2374:    { name: '駁回審核', method: 'POST', path: '/api/reviews/:id/reject', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '駁回審核項目，寫入 reviews.status=rejected', rateLimit: '20/min', status: 'live', storage: 'Supabase · reviews' },
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2375:    { name: 'OpenClaw Webhook', method: 'POST', path: '/api/webhook/openclaw', auth: 'api_key', authDesc: '請求需帶 X-API-Key 或 Authorization Bearer', desc: 'n8n 接收 Agent 結果後呼叫，寫入 tasks/reviews', rateLimit: '200/min', status: 'live', storage: 'Supabase · tasks, reviews' },
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2376:    { name: 'Telegram Webhook', method: 'POST', path: '/api/webhook/telegram', auth: 'tg_secret', authDesc: 'Header 驗證 Telegram Bot Webhook Secret（HMAC）', desc: '接收 Telegram 指令（/approve /reject 等）', rateLimit: '300/min', status: 'live', storage: 'Supabase · reviews（更新狀態）' },
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2378:    { name: '註冊 Plugin', method: 'POST', path: '/api/plugins/register', auth: 'admin', authDesc: '管理員（JWT role=admin）', desc: '註冊新 Plugin，寫入 plugins 表', rateLimit: '10/min', status: 'beta', storage: 'Supabase · plugins' },
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2636:        dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2701:        dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2793:    log.error('[Community] POST /api/community/apply error:', e);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2911:// POST — 前端甦醒時寫入
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:2993:    log.error('[OpenClaw] POST /api/openclaw/wake-report error:', e);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:3096:        dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:3115:        `<b>自動執行</b>：今日 ${totalExecutedToday} 次 | 派工${autoExecutorState.dispatchMode ? '開啟' : '關閉'}`,
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:3788:      method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:3900:      dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:4015:  log.info(`  GET  /api/runs, /api/runs/:id, POST /api/tasks/:taskId/run, POST /api/runs/:id/rerun`);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:4017:  log.info(`  AutoExecutor: GET/POST /api/openclaw/auto-executor/status|start|stop`);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:4018:  log.info(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:4063:  if (disk.dispatchMode) {
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:4064:    autoExecutorState.dispatchMode = true;
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:4065:    autoExecutorState.dispatchStartedAt = new Date().toISOString();
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:213: * POST /api/federation/handshake/init
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:280: * POST /api/federation/handshake/respond
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:487: * POST /api/federation/attack/broadcast
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:656: * POST /api/federation/blocklist
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:741: * 供 auto-executor.ts dispatchTask() 在執行前呼叫
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:791: * POST /api/federation/webhook
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:898: * POST /api/federation/heartbeat
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:991: * POST /api/federation/trust/request-upgrade
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:5: * POST   /api/openclaw/auto-executor/start
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:6: * POST   /api/openclaw/auto-executor/stop
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:7: * GET    /api/openclaw/dispatch/status
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:8: * POST   /api/openclaw/dispatch/toggle
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:9: * POST   /api/openclaw/dispatch/review/:taskId
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:78:  dispatchMode: boolean;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:79:  dispatchStartedAt: string | null;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:91:  dispatchMode?: boolean;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:106:  dispatchMode: false,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:107:  dispatchStartedAt: null,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:127:let dispatchDigestTimer: NodeJS.Timeout | null = null;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:188:        method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:270:      dispatchMode: j.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:306:  dispatchDigestTimer = setInterval(async () => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:312:  if (dispatchDigestTimer) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:313:    clearInterval(dispatchDigestTimer);
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:314:    dispatchDigestTimer = null;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:319:  const since = autoExecutorState.lastDigestAt || autoExecutorState.dispatchStartedAt || new Date().toISOString();
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:422:        // In dispatch mode, skip strict gate validation (no runCommands/agent needed for dispatch)
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:423:        if (autoExecutorState.dispatchMode) return true;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:441:    // Dispatch gate: 在 dispatch mode 下，找到第一個「可執行」的任務
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:444:    if (autoExecutorState.dispatchMode) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:498:    if (autoExecutorState.dispatchMode) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:678:      if (autoExecutorState.dispatchMode) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:726:      if (autoExecutorState.dispatchMode) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:811:autoExecutorRouter.get('/dispatch/status', (_req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:814:    dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:815:    dispatchStartedAt: autoExecutorState.dispatchStartedAt,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:826:autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:828:  const wasOn = autoExecutorState.dispatchMode;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:829:  autoExecutorState.dispatchMode = enabled !== undefined ? Boolean(enabled) : !autoExecutorState.dispatchMode;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:831:  if (autoExecutorState.dispatchMode && !wasOn) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:832:    autoExecutorState.dispatchStartedAt = new Date().toISOString();
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:847:  if (!autoExecutorState.dispatchMode && wasOn) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:848:    autoExecutorState.dispatchStartedAt = null;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:859:    if (autoExecutorState.dispatchMode) {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:865:    dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:871:    dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:872:    message: autoExecutorState.dispatchMode ? '自動派工已開啟' : '自動派工已關閉',
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:876:autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:936:    dispatchMode: autoExecutorState.dispatchMode,
+/Users/sky770825/openclaw任務面版設計/server/src/routes/insights.ts:30:// POST /api/openclaw/insights — 新增構想
+/Users/sky770825/openclaw任務面版設計/server/src/routes/insights.ts:51:// POST /api/openclaw/insights/mark-sent — 標記已發送
+/Users/sky770825/openclaw任務面版設計/server/src/routes/deputy.ts:23:// POST /api/openclaw/deputy/toggle
+/Users/sky770825/openclaw任務面版設計/server/src/routes/deputy.ts:38:// POST /api/openclaw/deputy/level
+/Users/sky770825/openclaw任務面版設計/server/src/routes/property-api.ts:5: * POST /api/tools/property-copy
+/Users/sky770825/openclaw任務面版設計/server/src/routes/property-api.ts:101:      method: 'POST',
+/Users/sky770825/openclaw任務面版設計/server/src/routes/property-api.ts:161:// POST /api/tools/property-copy

@@ -7,8 +7,8 @@
 4. **作品集管理**：支援作品新增（標題、圖片路徑、描述）。
 
 ## 技術細節
-- **資料存儲**：採用 JSON 文件作為輕量級資料庫 (/Users/caijunchang/.openclaw/workspace/sandbox/shop_db.json)。
-- **邏輯控制**：使用 Node.js (ES Module) 編寫管理工具 (/Users/caijunchang/.openclaw/workspace/scripts/shop_manager.js)。
+- **資料存儲**：採用 JSON 文件作為輕量級資料庫 (/Users/sky770825/.openclaw/workspace/sandbox/shop_db.json)。
+- **邏輯控制**：使用 Node.js (ES Module) 編寫管理工具 (/Users/sky770825/.openclaw/workspace/scripts/shop_manager.js)。
 - **環境適應**：已修正對 `type: module` 環境的支援，確保在 macOS 環境下正常運作。
 
 ## 管理工具用法
@@ -19,7 +19,7 @@
 ```json
 {
   "shopInfo": {
-    "name": "老蔡的美業工坊",
+    "name": "主人的美業工坊",
     "address": "台北市大安區忠孝東路四段",
     "contact": "0912-345-678"
   },

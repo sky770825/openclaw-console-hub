@@ -17,9 +17,9 @@
     - **連線模式 (API Mode)**: 可隨時切換至實體 API 端點 (`http://localhost:/api`)。
 
 ## 3. 檔案清單
-- 介面檔案: `/Users/caijunchang/.openclaw/workspace/sandbox/output/admin_dashboard.html`
-- 啟動腳本: `/Users/caijunchang/.openclaw/workspace/scripts/launch_admin_ui.sh`
+- 介面檔案: `/Users/sky770825/.openclaw/workspace/sandbox/output/admin_dashboard.html`
+- 啟動腳本: `/Users/sky770825/.openclaw/workspace/scripts/launch_admin_ui.sh`
 
 ## 4. 使用說明
-1. 執行 `bash /Users/caijunchang/.openclaw/workspace/scripts/launch_admin_ui.sh` 即可開啟管理介面。
+1. 執行 `bash /Users/sky770825/.openclaw/workspace/scripts/launch_admin_ui.sh` 即可開啟管理介面。
 2. 介面右上角可切換「模擬數據」或「連線模式」。

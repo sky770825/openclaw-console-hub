@@ -1,7 +1,7 @@
 ==========================================================
 QualityGate: TypeScript Type Verification
 Timestamp: Sun Mar  1 15:31:07 CST 2026
-Project Directory: /Users/caijunchang/openclaw任務面版設計/server
+Project Directory: /Users/sky770825/openclaw任務面版設計/server
 ==========================================================
 Command: npx tsc --noEmit
 ----------------------------------------------------------

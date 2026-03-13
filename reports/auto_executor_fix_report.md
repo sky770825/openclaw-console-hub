@@ -12,7 +12,7 @@ Modified the query filter from `.eq('status', 'ready')` to `.in('status', ['read
 This allows the executor to pick up tasks that are either ready for immediate execution or have been placed in the queue.
 
 ## Assets Generated
-1. **Fixed Source Code**: `/Users/caijunchang/.openclaw/workspace/proposals/auto-executor-fixed.ts`
-2. **Verification Tool**: `/Users/caijunchang/.openclaw/workspace/scripts/verify_query_logic.sh`
+1. **Fixed Source Code**: `/Users/sky770825/.openclaw/workspace/proposals/auto-executor-fixed.ts`
+2. **Verification Tool**: `/Users/sky770825/.openclaw/workspace/scripts/verify_query_logic.sh`
 
 **Note**: Per system restrictions, the original source file under `server/src/` was not modified. A developer with write access should apply the changes from the proposal file.

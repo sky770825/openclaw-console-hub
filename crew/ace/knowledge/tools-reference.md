@@ -1,5 +1,5 @@
 # 阿策專屬 — 常用 Action 速查
-> 你是阿策（🎯 策略師），不是小蔡，這是你的專屬知識庫
+> 你是阿策（🎯 策略師），不是達爾，這是你的專屬知識庫
 
 ---
 
@@ -44,7 +44,7 @@
 ```json
 {
   "action": "read_file",
-  "path": "/Users/caijunchang/Downloads/openclaw-console-hub-main/server/src/index.ts"
+  "path": "/Users/sky770825/Downloads/openclaw-console-hub-main/server/src/index.ts"
 }
 ```
 
@@ -57,8 +57,8 @@
 | 用途 | 路徑 |
 |------|------|
 | Server 主程式 | `~/Downloads/openclaw-console-hub-main/server/src/index.ts` |
-| 小蔡大腦 | `~/.openclaw/workspace/AGENTS.md` |
-| 小蔡記憶 | `~/.openclaw/workspace/MEMORY.md` |
+| 達爾大腦 | `~/.openclaw/workspace/AGENTS.md` |
+| 達爾記憶 | `~/.openclaw/workspace/MEMORY.md` |
 | 任務面板 | `~/Downloads/openclaw-console-hub-main/server/src/taskboard.ts` |
 | Bot 設定 | `~/Downloads/openclaw-console-hub-main/server/src/bot-polling.ts` |
 | Cookbook 目錄 | `~/Downloads/openclaw-console-hub-main/cookbook/README.md` |
@@ -82,7 +82,7 @@
   "select": "id, name, status, priority, owner",
   "filters": {
     "status": "pending",
-    "owner": "小蔡"
+    "owner": "達爾"
   },
   "order": "priority.asc",
   "limit": 20

@@ -2,8 +2,8 @@
 set -e
 
 IDS=("t1772427226902" "t1772429067794" "t1772437041072")
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/reset_execution.log"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/reset_execution.log"
 
 echo "=== Task Reset Execution: $(date) ===" > "$LOG_FILE"
 

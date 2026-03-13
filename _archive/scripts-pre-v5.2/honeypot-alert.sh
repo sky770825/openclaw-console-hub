@@ -1,6 +1,6 @@
 #!/bin/zsh
 # honeypot-alert.sh — 蜜罐監控 + Telegram 即時告警 v1.0
-# 用途：監控蜜罐檔案是否被存取，碰了立刻通知老蔡
+# 用途：監控蜜罐檔案是否被存取，碰了立刻通知主人
 # 用法：
 #   ./scripts/honeypot-alert.sh watch   # 啟動監控（背景）
 #   ./scripts/honeypot-alert.sh stop    # 停止監控
@@ -52,7 +52,7 @@ send_alert() {
 主機: $(hostname)
 
 ⚠️ 有東西在嘗試讀取假金鑰/假腳本。
-請檢查小蔡最近的操作記錄。"
+請檢查堤諾米斯達爾（達爾）最近的操作記錄。"
 
   curl -sf -X POST \
     "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \

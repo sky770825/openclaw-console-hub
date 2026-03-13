@@ -13,4 +13,4 @@ Based on source code analysis of `server/src/executor-agents.ts`:
     2. API Authentication: If the token lacks `write` permission for task status, the transition from `ready` to `in_progress` fails, causing the dispatch to abort.
 
 ## 3. Cron Script Status
-Missing scripts have been reconstructed in `/Users/caijunchang/.openclaw/workspace/scripts`.
+Missing scripts have been reconstructed in `/Users/sky770825/.openclaw/workspace/scripts`.

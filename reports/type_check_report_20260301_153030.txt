@@ -1,6 +1,6 @@
 === QualityGate Verification: TypeScript Type Check ===
 Time: Sun Mar  1 15:30:30 CST 2026
-Target: /Users/caijunchang/openclaw任務面版設計/server
+Target: /Users/sky770825/openclaw任務面版設計/server
 Running: npx tsc --noEmit...
 Status: FAILURE - Type errors detected.
-/Users/caijunchang/.openclaw/workspace/sandbox/task-1772350230658.sh: line 32: npx: command not found
+/Users/sky770825/.openclaw/workspace/sandbox/task-1772350230658.sh: line 32: npx: command not found

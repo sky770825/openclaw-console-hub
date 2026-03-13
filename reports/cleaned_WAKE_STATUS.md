@@ -19,7 +19,7 @@
 
 ## 🟢 系統狀態
 - **後端 Server (3011)**：✅ 在線
-- **小蔡工作目錄**：✅ /Users/caijunchang/Downloads/openclaw-console-hub-main
+- **達爾工作目錄**：✅ /Users/sky770825/Downloads/openclaw-console-hub-main
 - **Deputy 模式**：啟用 | 最後跑: 2026-02-19T02:00
 - **Auto-Executor**：運行中 | 最後執行: 2026-03-01T11:30
 - **FADP 聯盟協防**：成員:0 封鎖IP:0 封鎖Token:0
@@ -40,7 +40,7 @@
 ## 🔀 最新 Git Commits
   a711e2de chore: 清理無用檔案 scan-v2.sh
   75fa5511 chore: 版本號統一更新至 v2.4.0 / NEUXA v5.3
-  77fe2b75 feat: 小蔡學會自己索引向量庫 — index_file + reindex_knowledge
+  77fe2b75 feat: 達爾學會自己索引向量庫 — index_file + reindex_knowledge
 
 ## 🧠 NEUXA 動態
 - **Gateway**：✅ 運行中 (PID 13872)
@@ -50,7 +50,7 @@
 - **NEUXA memory 目錄**：~/.openclaw/workspace/memory/（讀最新 .md 可銜接）
 
 ## 🤝 協作指引
-1. **小蔡（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
+1. **達爾（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
 2. **review/pending**：有待審文件就優先處理
 3. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
 4. **Server 重啟**：如果 Server 離線，用 launchctl stop/start com.openclaw.taskboard

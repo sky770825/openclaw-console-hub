@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test script to verify Quality Gate 2.0 implementation
-SRC_ROOT="/Users/caijunchang/openclaw任務面版設計"
+SRC_ROOT="/Users/sky770825/openclaw任務面版設計"
 
 echo "Checking taskCompliance.ts..."
 grep "acceptanceCriteria" "$SRC_ROOT/server/src/compliance/taskCompliance.ts" || echo "FAILED: No mandatory check found"

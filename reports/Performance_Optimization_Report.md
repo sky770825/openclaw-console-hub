@@ -15,8 +15,8 @@
    - 作用: 服務啟動時會從 DB 拉取所有執行中的任務進入監控隊列，防止因重啟導致的監控中斷。
 
 ## 檔案位置
-- 優化後的建議程式碼已存放在: `/Users/caijunchang/.openclaw/workspace/proposals`
-- 手動清理工具: `/Users/caijunchang/.openclaw/workspace/scripts/manual_zombie_cleanup.js`
+- 優化後的建議程式碼已存放在: `/Users/sky770825/.openclaw/workspace/proposals`
+- 手動清理工具: `/Users/sky770825/.openclaw/workspace/scripts/manual_zombie_cleanup.js`
 
 ## 建議部署步驟
-由於 server/src 目錄權限限制，請手動將 `/Users/caijunchang/.openclaw/workspace/proposals` 中的邏輯合併至主程式。
+由於 server/src 目錄權限限制，請手動將 `/Users/sky770825/.openclaw/workspace/proposals` 中的邏輯合併至主程式。

@@ -8,6 +8,6 @@
 5. **回報機制**: 規劃了統一的 `sendReply` 介面。
 
 ## 待執行動作
-- [ ] 請「老蔡」將 `output/server/src/` 下的文件移動至 `server/src/`。
+- [ ] 請「主人」將 `output/server/src/` 下的文件移動至 `server/src/`。
 - [ ] 在主 `.env` 填入真正的 Telegram Token。
 - [ ] 重啟伺服器以加載新路由。

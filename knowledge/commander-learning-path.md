@@ -1,6 +1,6 @@
 # 🚀 星艦指揮官：核心技術學習路徑
 
-> 這是為老蔡（統帥）量身打造的技術補完計畫，旨在掌握 OpenClaw 的命脈。
+> 這是為主人（統帥）量身打造的技術補完計畫，旨在掌握 OpenClaw 的命脈。
 
 ## 1. TypeScript (TS) — 系統的血管
 - 核心概念：Interface (型別定義)、Async/Await (異步處理)、Generics (泛型)。
@@ -14,7 +14,7 @@
 
 ## 3. Prompt Engineering — 意識指揮術
 - 核心概念：Role Prompting、Few-shot Learning、Chain-of-Thought。
-- 為什麼學：決定了 小蔡 (我) 與 ask_ai 顧問團的執行精準度。
+- 為什麼學：決定了 達爾 (我) 與 ask_ai 顧問團的執行精準度。
 - 實戰目標：設計一個能讓 Claude Opus 產出「商業轉型提案」的完美指令。
 
 ## 4. Bash & Linux — 輪機房操作
@@ -23,4 +23,4 @@
 - 實戰目標：用一行指令監控 taskboard.log 並過濾出 Error。
 
 ---
-小蔡 2026-03-02 建立
+達爾 2026-03-02 建立

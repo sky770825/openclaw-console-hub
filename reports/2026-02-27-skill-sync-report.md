@@ -59,7 +59,7 @@ Gateway 穩定運行中。
 資源使用率為 36%。
 `MASTER-PLAN.md` 戰略清單已定版。
 
-小蔡已準備就緒，隨時待命。🦞
+達爾已準備就緒，隨時待命。🦞
 
 Stats: runtime 10s • tokens 32.2k (in 32.0k / out 280)
 

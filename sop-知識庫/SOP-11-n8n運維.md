@@ -25,7 +25,7 @@ n8n (localhost:5678)
   ├── redis — 快取
   └── qdrant (localhost:6333) — 向量庫
 
-OpenClaw → webhook → n8n → Telegram Bot → 老蔡手機
+OpenClaw → webhook → n8n → Telegram Bot → 主人手機
 ```
 
 ### 關鍵連接點
@@ -91,7 +91,7 @@ curl -s "https://api.telegram.org/bot$(cat ~/.openclaw/secrets/n8n-telegram.env 
 # 檢查
 docker ps -a --filter "name=n8n"
 
-# 重啟（🟡 先跟老蔡說）
+# 重啟（🟡 先跟主人說）
 cd ~/n8n-production && docker compose up -d
 
 # 確認
@@ -127,7 +127,7 @@ curl -s "https://api.telegram.org/bot$(cat ~/.openclaw/secrets/n8n-telegram.env 
 curl -s "https://api.telegram.org/bot$(cat ~/.openclaw/secrets/n8n-telegram.env | grep TELEGRAM_BOT_TOKEN | cut -d= -f2)/sendMessage" \
   -d "chat_id=5819565005&text=🔔 手動測試"
 
-# 3. 如果 bot 沒回應 → Bot Token 可能過期 → 回報老蔡
+# 3. 如果 bot 沒回應 → Bot Token 可能過期 → 回報主人
 ```
 
 ### 情況 4: Postgres / Redis 掛了
@@ -154,7 +154,7 @@ docker restart n8n-production-redis-1
 | Daily Wrap-up | `n8n-workflows/Daily-Wrap-up.no-llm.json` | 每日任務摘要 |
 | Webhook→Telegram | `n8n-workflows/mvp-webhook-telegram.json` | 任務完成通知 |
 | System Events | `n8n-workflows/system-event-notify.json` | 系統事件通知 |
-| Control Panel | `n8n-workflows/xiaocai-control-panel.json` | 控制面板 |
+| Control Panel | `n8n-workflows/dar-control-panel.json` | 控制面板 |
 
 ### 匯入 workflow
 
@@ -194,4 +194,4 @@ Active Workflows：{X} 個
 | n8n 啟動後馬上掛 | 看 `docker logs`，可能是 port 衝突或 DB 問題 |
 | webhook URL 變了 | 檢查 n8n 設定，更新 `openclaw-n8n-bridge.json` |
 | workflow 被停用 | 登入 n8n 面板重新啟用 |
-| Telegram bot 被 block | 老蔡要在 Telegram 重新 /start bot |
+| Telegram bot 被 block | 主人要在 Telegram 重新 /start bot |

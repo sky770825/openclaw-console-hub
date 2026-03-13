@@ -1,7 +1,7 @@
 #!/bin/bash
 # 阿秘的進度追蹤小助手 - 自動掃描項目進度
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
-REPORT_PATH="/Users/caijunchang/.openclaw/workspace/reports/live_status.json"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
+REPORT_PATH="/Users/sky770825/.openclaw/workspace/reports/live_status.json"
 
 echo "Scanning OpenClaw project for task status..."
 

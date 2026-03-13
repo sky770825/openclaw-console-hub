@@ -6,7 +6,7 @@ BOT_NAME=$2
 PROGRESS=$3
 MESSAGE=$4
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-STATUS_FILE="/Users/caijunchang/.openclaw/workspace/reports/crew_tasks_status.json"
+STATUS_FILE="/Users/sky770825/.openclaw/workspace/reports/crew_tasks_status.json"
 
 if [ -z "$TASK_NAME" ] || [ -z "$BOT_NAME" ]; then
     echo "錯誤: 必須提供 任務名稱 與 機器人名稱"

@@ -1,7 +1,7 @@
 #!/bin/bash
-# heartbeat.sh - 小蔡每日心跳報告生成器 v1.0
+# heartbeat.sh - 達爾每日心跳報告生成器 v1.0
 
-# 確保我們在正確的工作目錄下 (/Users/caijunchang/.openclaw/workspace)
+# 確保我們在正確的工作目錄下 (/Users/sky770825/.openclaw/workspace)
 cd "$(dirname "$0")/.."
 
 # 1. 準備環境
@@ -10,7 +10,7 @@ OUTPUT_DIR="status"
 OUTPUT_FILE="$OUTPUT_DIR/heartbeat-$DATE.md"
 
 # 2. 寫入報告標頭
-echo "# 小蔡心跳報告 - $DATE" > "$OUTPUT_FILE"
+echo "# 達爾心跳報告 - $DATE" > "$OUTPUT_FILE"
 echo "---" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 

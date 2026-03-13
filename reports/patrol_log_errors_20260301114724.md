@@ -1,6 +1,6 @@
 # OpenClaw Server Patrol: Error Log Summary
 - **Scan Time:** 2026-03-01 11:47:24
-- **Source Log:** /Users/caijunchang/.openclaw/automation/logs/taskboard.log
+- **Source Log:** /Users/sky770825/.openclaw/automation/logs/taskboard.log
 
 ## Error Log Summary (Top 20 Matches)
 ```text

@@ -1,7 +1,7 @@
 # 美業網站技術棧與架構調研報告 (P1-任務1)
 
 ## 1. 現狀分析
-- **現有項目路徑**: /Users/caijunchang/openclaw任務面版設計
+- **現有項目路徑**: /Users/sky770825/openclaw任務面版設計
 - **檢測到的技術棧**: Next.js
 - **目標**: 針對美業（Beauty Industry）特性，評估 Nuxt.js, Next.js, 與 SvelteKit。
 

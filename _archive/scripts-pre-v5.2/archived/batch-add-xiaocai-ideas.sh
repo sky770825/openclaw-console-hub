@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# 批次新增14個發想到小蔡發想審核中心
+# 批次新增14個發想到堤諾米斯達爾（達爾）發想審核中心
 
 API_BASE="${OPENCLAW_TASKBOARD_URL:-http://localhost:3011}"
 
@@ -18,7 +18,7 @@ ideas=(
   "Agent 決策樹視覺化|視覺化呈現 Agent 如何分解任務、做決策。驗收：互動式決策樹、時間軸、分支探索|agent,visualization|6"
   "即時協作模式|多人多 Agent 同時協作同一任務。驗收：即時同步、衝突解決、協作游標|collaboration,realtime|10"
   "Agent 成本追蹤儀表板|追蹤每個 Agent 的 Token 成本、執行時間。驗收：成本分類、預算警示、節省建議|cost,dashboard|5"
-  "老蔡專屬 Agent 訓練|基於歷史偏好訓練專屬 Agent，更懂老蔡。驗收：偏好學習、自動推薦、個人化回應|personalization,training|12"
+  "主人專屬 Agent 訓練|基於歷史偏好訓練專屬 Agent，更懂主人。驗收：偏好學習、自動推薦、個人化回應|personalization,training|12"
   "Agent 任務品質評分|自動評分 Agent 執行結果品質，給予反饋。驗收：品質指標、自動評分、改進建議|quality,evaluation|6"
   "Agent 技能市場整合|內建類似 ClawHub 的技能市場，一鍵安裝。驗收：技能瀏覽、一鍵安裝、版本管理|marketplace,skills|8"
   "語音指令系統|用語音直接指派任務給 Agent。驗收：語音辨識、指令解析、即時反饋|voice,ui|6"

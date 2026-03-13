@@ -3,7 +3,7 @@
 **任務 ID**: fix-dashboard-bugs-v1  
 **執行 ID**: codex-fix-001  
 **執行時間**: 2026-02-14 17:42:00+08:00  
-**執行者**: 小蔡 (SubAgent)
+**執行者**: 達爾 (SubAgent)
 
 ---
 
@@ -17,7 +17,7 @@
 - **狀態**: ✅ 完成
 
 #### 2. 修復 autoexecutor.sh
-- **路徑**: `/Users/caijunchang/.openclaw/workspace/scripts/autoexecutor.sh`
+- **路徑**: `/Users/sky770825/.openclaw/workspace/scripts/autoexecutor.sh`
 - **主要修復**:
   - ✅ 修正任務讀取邏輯：從 `tasks/task-index.jsonl` 讀取（而非 TASK-*.md）
   - ✅ 使用 `jq` 解析 JSONL 格式任務資料

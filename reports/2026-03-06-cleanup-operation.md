@@ -1,7 +1,7 @@
 # 知識庫大掃除報告 (Operation Clean Sweep)
 
 > 日期：2026-03-06
-> 執行者：小蔡
+> 執行者：達爾
 
 ## 執行摘要
 為了提升 semantic_search 品質，對 workspace 進行了檔案清理。
@@ -13,8 +13,8 @@
 4. 觸發 reindex_knowledge
 
 ## 成效
-- *清理前*：/Users/caijunchang531 檔案
-- *清理後*：/Users/caijunchang240 檔案
+- *清理前*：/Users/sky770825531 檔案
+- *清理後*：/Users/sky770825240 檔案
 - *瘦身幅度*：55%
 
 ## 後續建議

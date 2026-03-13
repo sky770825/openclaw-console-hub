@@ -1,7 +1,7 @@
 #!/bin/bash
 # new_context.sh - Clears sandbox and output for a fresh start
-SANDBOX="/Users/caijunchang/.openclaw/workspace/sandbox"
-OUTPUT="/Users/caijunchang/.openclaw/workspace/sandbox/output"
+SANDBOX="/Users/sky770825/.openclaw/workspace/sandbox"
+OUTPUT="/Users/sky770825/.openclaw/workspace/sandbox/output"
 
 echo "Running workspace cleanup..."
 # Remove everything in sandbox EXCEPT the output directory and scripts/knowledge/etc (which are outside sandbox)

@@ -24,8 +24,8 @@ Agent (google/gemini-3-flash-preview)
    - 本地 Gateway 運行正常（Port 18789），但 Vercel 雲端部署因帳務問題受阻。
 
 ## 阻礙點 (Blockers)
-- **Vercel 帳務問題**：帳號 `sky770825s-projects` 被停用，需要老蔡處理帳單或更換部署帳號。
+- **Vercel 帳務問題**：帳號 `sky770825s-projects` 被停用，需要主人處理帳單或更換部署帳號。
 
 ## Next Steps
-1. 請老蔡處理 Vercel 帳務問題，或提供其他可用的部署方式（如本地 nginx 或其他雲平台）。
+1. 請主人處理 Vercel 帳務問題，或提供其他可用的部署方式（如本地 nginx 或其他雲平台）。
 2. 待帳號恢復後重新執行部署任務。

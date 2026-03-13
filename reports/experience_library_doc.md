@@ -4,8 +4,8 @@
 This tool abstracts the "Fingerprint + Experience" pattern. It allows any script to store successful execution patterns (experiences) and retrieve them later using a hash-based lookup, reducing the need for expensive re-computation or AI calls.
 
 ## Location
-- Library: `/Users/caijunchang/.openclaw/workspace/scripts/lib_experience.sh`
-- Database Dir: `/Users/caijunchang/.openclaw/workspace/knowledge/experience_db`
+- Library: `/Users/sky770825/.openclaw/workspace/scripts/lib_experience.sh`
+- Database Dir: `/Users/sky770825/.openclaw/workspace/knowledge/experience_db`
 
 ## API Reference
 
@@ -26,7 +26,7 @@ Higher-level wrapper that checks if a task has been done before. If yes, it runs
 
 ## Example Usage
 ```bash
-source "/Users/caijunchang/.openclaw/workspace/scripts/lib_experience.sh"
+source "/Users/sky770825/.openclaw/workspace/scripts/lib_experience.sh"
 exp_init "my_tool_cache"
 exp_smart_run "Generate report" "./run_complex_analysis.sh"
 ```

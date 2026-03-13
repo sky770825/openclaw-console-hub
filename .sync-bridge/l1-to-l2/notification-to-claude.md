@@ -6,7 +6,7 @@
 
 ### 同步狀態檔案位置
 ```
-/Users/caijunchang/.openclaw/workspace/.sync-bridge/shared-state/current-state.json
+/Users/sky770825/.openclaw/workspace/.sync-bridge/shared-state/current-state.json
 ```
 
 ### 當前狀態
@@ -18,7 +18,7 @@
 
 ### 讀取指令
 ```bash
-cat /Users/caijunchang/.openclaw/workspace/.sync-bridge/shared-state/current-state.json
+cat /Users/sky770825/.openclaw/workspace/.sync-bridge/shared-state/current-state.json
 ```
 
 ### 回應方式

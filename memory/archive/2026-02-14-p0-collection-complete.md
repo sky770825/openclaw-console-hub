@@ -106,4 +106,4 @@ Total Ready: 30 個（超過目標 20）
 
 ---
 
-🐣 小蔡 | P0 Collection Complete | 2026-02-14 02:51 GMT+8
+🐣 達爾 | P0 Collection Complete | 2026-02-14 02:51 GMT+8

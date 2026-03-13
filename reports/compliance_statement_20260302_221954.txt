@@ -14,4 +14,4 @@ Policy Reference:
 3. Metadata must be defined in skill.json or package.json.
 
 Action Required:
-Review the report at /Users/caijunchang/.openclaw/workspace/reports/security_compliance_report_20260302_221954.md and fix the issues identified.
+Review the report at /Users/sky770825/.openclaw/workspace/reports/security_compliance_report_20260302_221954.md and fix the issues identified.

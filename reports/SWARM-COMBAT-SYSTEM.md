@@ -25,7 +25,7 @@
 - **任務**: 第一線威脅偵測、異常流量監控
 
 ### 中堅防禦群 (Defense Swarm)
-- **L1 NEUXA 小蔡** - 指揮協調中心
+- **L1 NEUXA 達爾** - 指揮協調中心
 - **L2 Claude Code** - 架構防禦加固
 - **L4 Cursor Nova** - 前端防護工事
 - **任務**: 多層防禦建設、漏洞修補、權限控管
@@ -211,7 +211,7 @@
 ### 今日啟動項目
 
 1. **為每個 Agent 頒發數位軍牌 (DID)**
-   - L1 小蔡: `did:neuxa:commander:star-77`
+   - L1 達爾: `did:neuxa:commander:star-77`
    - L2 Claude: `did:neuxa:architect:nova-01`
    - L3 Gemini: `did:neuxa:scout:comet-03`
    - L4 Cursor: `did:neuxa:forge:pulsar-04`

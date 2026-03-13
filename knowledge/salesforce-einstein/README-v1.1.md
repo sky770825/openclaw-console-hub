@@ -203,7 +203,7 @@ const crmWorkflow = async () => {
 | 持續訓練 | 定期校正模型 | 維持品質 |
 | 整合 n8n | 自動化 workflow | 效率最大化 |
 
-**更新**: v1.3 新增 Agentforce/Agentforce 3/Atlas Reasoning、ChatGPT 整合、119% Agent 增長數據、產品矩陣更新。2025-12 by 小蔡。
+**更新**: v1.3 新增 Agentforce/Agentforce 3/Atlas Reasoning、ChatGPT 整合、119% Agent 增長數據、產品矩陣更新。2025-12 by 達爾。
 
 **版本歷史**:
 - v1.2: 新增產品矩陣、使用模式、場景矩陣、成本分析、最佳實踐表格（2026-02-16）

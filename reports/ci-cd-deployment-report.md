@@ -13,7 +13,7 @@
 - `netlify.toml`: 針對 Netlify 部署的備選配置文件。
 
 ## 3. 自動化測試實施
-- 已建立自動化測試執行腳本: `/Users/caijunchang/.openclaw/workspace/scripts/run-ci-pipeline.sh`
+- 已建立自動化測試執行腳本: `/Users/sky770825/.openclaw/workspace/scripts/run-ci-pipeline.sh`
 - 該腳本可在開發環境手動執行，確保程式碼符合上線標準。
 
 ## 4. 部署流程建議

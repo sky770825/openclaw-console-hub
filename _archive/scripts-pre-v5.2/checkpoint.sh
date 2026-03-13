@@ -37,7 +37,7 @@ trap 'ec=$?; [ $ec -eq 0 ] && update_state_success || update_state_failure; exit
 # ============ 熔斷器結束 ============
 
 OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/.openclaw}"
-CHECKPOINT_DIR="$HOME/Desktop/小蔡/檢查點"
+CHECKPOINT_DIR="$HOME/Desktop/堤諾米斯達爾（達爾）/檢查點"
 WORKSPACE="${OPENCLAW_WORKSPACE:-$OPENCLAW_HOME/workspace}"
 
 # 顏色
@@ -269,7 +269,7 @@ OpenClaw Checkpoint 系統 - 任務執行保護
   $0 rollback
   $0 list
 
-檢查點位置: ~/Desktop/小蔡/檢查點/
+檢查點位置: ~/Desktop/堤諾米斯達爾（達爾）/檢查點/
 EOF
 }
 

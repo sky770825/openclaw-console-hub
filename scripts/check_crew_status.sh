@@ -1,3 +1,3 @@
 #!/bin/bash
 # 快速查看進度摘要
-column -t -s '|' /Users/caijunchang/.openclaw/workspace/reports/CREW_DASHBOARD.md | grep -v "---"
+column -t -s '|' /Users/sky770825/.openclaw/workspace/reports/CREW_DASHBOARD.md | grep -v "---"

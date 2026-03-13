@@ -1,6 +1,6 @@
 #!/bin/bash
 # 阿秘的狀態更新工具
-KNOWLEDGE_JSON="/Users/caijunchang/.openclaw/workspace/knowledge/feature_roadmap.json"
+KNOWLEDGE_JSON="/Users/sky770825/.openclaw/workspace/knowledge/feature_roadmap.json"
 
 if [ "$#" -ne 2 ]; then
     echo "使用方法: $0 [FeatureID] [NewStatus]"

@@ -11,7 +11,7 @@ version: 2.0
 created: 2026-02-16
 trigger: git pull / merge / rebase 出現衝突
 priority: P1
-燈號: 🔴 不可自行決定保留哪邊，必須老蔡決定
+燈號: 🔴 不可自行決定保留哪邊，必須主人決定
 ```
 
 ---
@@ -46,18 +46,18 @@ git diff {conflicted_file}
 - 每個檔案的衝突段落（HEAD vs incoming）
 - 衝突雙方的內容摘要
 
-### Step 3: 回報老蔡
+### Step 3: 回報主人
 
 用下面的格式。
 
-### Step 4: 等老蔡決定
+### Step 4: 等主人決定
 
-老蔡會告訴你保留哪邊，或怎麼合併。
+主人會告訴你保留哪邊，或怎麼合併。
 
 ### Step 5: 執行解決
 
 ```bash
-# 依照老蔡指示編輯衝突檔案
+# 依照主人指示編輯衝突檔案
 # 移除 <<<<<<< ======= >>>>>>> 標記
 
 # 標記已解決
@@ -104,7 +104,7 @@ git commit -m "resolve merge conflict: {描述}"
 
 | 狀況 | 處理方式 |
 |------|----------|
-| 衝突太多看不完 | 只列出前 5 個，回報老蔡總數 |
-| 二進位檔案衝突 | 回報老蔡，二進位檔無法 diff |
-| merge 做到一半想放棄 | `git merge --abort`（🟡 先跟老蔡說） |
-| rebase 衝突 | `git rebase --abort`（🟡 先跟老蔡說） |
+| 衝突太多看不完 | 只列出前 5 個，回報主人總數 |
+| 二進位檔案衝突 | 回報主人，二進位檔無法 diff |
+| merge 做到一半想放棄 | `git merge --abort`（🟡 先跟主人說） |
+| rebase 衝突 | `git rebase --abort`（🟡 先跟主人說） |

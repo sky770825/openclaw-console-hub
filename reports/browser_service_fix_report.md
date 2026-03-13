@@ -11,4 +11,4 @@
 - Entry Point: `server/src/index.ts`
 
 ## Verification
-- Run `bash /Users/caijunchang/.openclaw/workspace/scripts/verify_browser_service.sh` to verify file integrity.
+- Run `bash /Users/sky770825/.openclaw/workspace/scripts/verify_browser_service.sh` to verify file integrity.

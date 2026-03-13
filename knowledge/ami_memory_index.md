@@ -1,5 +1,5 @@
 # 阿秘自動完成：知識庫索引記錄
-- **來源文件**: /Users/caijunchang/.openclaw/workspace/crew/ami/MEMORY.md
+- **來源文件**: /Users/sky770825/.openclaw/workspace/crew/ami/MEMORY.md
 - **索引狀態**: ✅ 已完成索引
 - **更新時間**: 2026-03-04 20:27:36
 - **執行上下文**: Astro-POC 專案初始化

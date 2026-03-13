@@ -2,12 +2,12 @@
 set -e
 
 REPORT_DATE=$(date +%Y-%m-%d)
-WORKSPACE_ROOT="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_ROOT="/Users/sky770825/.openclaw/workspace"
 OUTPUT_FILE="$WORKSPACE_ROOT/reports/heartbeat-$REPORT_DATE.md"
 
 # 1. Header
 {
-    echo "# 小蔡主動心跳報告 ($REPORT_DATE)"
+    echo "# 達爾主動心跳報告 ($REPORT_DATE)"
     echo "報告生成時間: $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
 } > "$OUTPUT_FILE"
@@ -68,7 +68,7 @@ OUTPUT_FILE="$WORKSPACE_ROOT/reports/heartbeat-$REPORT_DATE.md"
 # 5. Conclusion
 {
     echo "---"
-    echo "*本報告由小蔡自動化腳本生成。*"
+    echo "*本報告由達爾自動化腳本生成。*"
 } >> "$OUTPUT_FILE"
 
 echo "Heartbeat report generated at $OUTPUT_FILE"

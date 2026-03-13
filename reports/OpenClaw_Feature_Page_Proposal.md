@@ -23,4 +23,4 @@
 
 ---
 *自動生成時間: Wed Mar  4 19:52:53 CST 2026*
-*參考源路徑: /Users/caijunchang/openclaw任務面版設計*
+*參考源路徑: /Users/sky770825/openclaw任務面版設計*

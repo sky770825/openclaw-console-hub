@@ -1,6 +1,6 @@
 #!/bin/bash
 # Tool to search for functional project content, skipping meta-docs
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 SEARCH_TERM=$1
 
 if [ -z "$SEARCH_TERM" ]; then

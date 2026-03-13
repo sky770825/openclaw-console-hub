@@ -2,7 +2,7 @@ import json
 import os
 
 def run_auction():
-    output_dir = "/Users/caijunchang/.openclaw/workspace/sandbox/output"
+    output_dir = "/Users/sky770825/.openclaw/workspace/sandbox/output"
     
     with open(f"{output_dir}/models_registry.json", "r") as f:
         models = json.load(f)

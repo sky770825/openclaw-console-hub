@@ -1,4 +1,4 @@
-# 【小蔡執行-EASYCLAW-PRO-WEBSITE】
+# 【達爾執行-EASYCLAW-PRO-WEBSITE】
 
 ## 完成摘要
 
@@ -51,4 +51,4 @@ vercel --prod  # 或 netlify deploy --prod
 
 ---
 
-🐣 小蔡 | 2026-02-14 15:05
+🐣 達爾 | 2026-02-14 15:05

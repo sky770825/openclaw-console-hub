@@ -1,7 +1,7 @@
 import json
 import os
 
-file_path = os.path.expanduser('/Users/caijunchang/.openclaw/workspace/reports/temp_tasks_data.json')
+file_path = os.path.expanduser('/Users/sky770825/.openclaw/workspace/reports/temp_tasks_data.json')
 
 try:
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -20,7 +20,7 @@ try:
     for task in tasks:
         report_content += f'- *{task["name"]}* ({task["id"]})\n  - 狀態: {task["status"]}\n  - 分類: {task["cat"]}\n  - 進度: {task["progress"]}%\n  - 創建時間: {task["createdAt"]}\n  - 更新時間: {task["updatedAt"]}\n\n'
 
-    report_output_path = os.path.expanduser('/Users/caijunchang/.openclaw/workspace/reports/task-analysis-report.md')
+    report_output_path = os.path.expanduser('/Users/sky770825/.openclaw/workspace/reports/task-analysis-report.md')
     with open(report_output_path, 'w', encoding='utf-8') as f:
         f.write(report_content)
 

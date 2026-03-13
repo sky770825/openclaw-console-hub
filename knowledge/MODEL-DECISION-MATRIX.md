@@ -45,7 +45,7 @@
 1. **優先本地**：能用 Qwen3 或 DeepSeek-R1 解決的，不要呼叫付費 API。
 2. **安全第一**：涉及 Shell 腳本、Docker 配置或 API Key 處理時，先過 Trivy 掃描。
 3. **長短結合**：日常用 Sonnet 寫代碼，遇到卡關或大重構才升級到 Opus。
-4. **Agent 協作**：使用子代理 (Sessions Spawn) 處理批量任務，並由 L1 小蔡進行彙整。
+4. **Agent 協作**：使用子代理 (Sessions Spawn) 處理批量任務，並由 L1 達爾進行彙整。
 
 ---
 *最後更新日期：2026-02-16*

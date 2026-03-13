@@ -1,7 +1,7 @@
 # 練習 E-4：handleReadFile vs handleWriteFile 安全檢查差異分析
 
 ### 1. 共同點
-兩者皆調用 isPathSafe(path)，確保路徑在工作區 /Users/caijunchang/.openclaw/workspace 或 openclaw任務面版設計 專案目錄內，防止路徑穿越攻擊。
+兩者皆調用 isPathSafe(path)，確保路徑在工作區 /Users/sky770825/.openclaw/workspace 或 openclaw任務面版設計 專案目錄內，防止路徑穿越攻擊。
 
 ### 2. handleWriteFile 的額外保護
 - 靈魂文件保護：檢查 SOUL_FILES.some(f => normalizedPath.endsWith(f))。若目標是 SOUL.md、AGENTS.md 等核心文件，寫入會被攔截並轉向 pending-updates/。

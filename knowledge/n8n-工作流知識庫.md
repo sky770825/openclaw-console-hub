@@ -11,7 +11,7 @@
 | # | 工作流名稱 | 檔案 | 觸發方式 | 功能 |
 |---|-----------|------|---------|------|
 | 1 | CR-9 解鎖 Telegram 通知 | cr9-unlock-telegram.json | Webhook POST | 當 CR-9 解鎖事件發生時，發送 Telegram 通知 |
-| 2 | 小蔡控制面板 | xiaocai-control-panel.json | Webhook POST | 小蔡的集中控制中心，管理任務分派、狀態查詢、系統控制 |
+| 2 | 達爾控制面板 | dar-control-panel.json | Webhook POST | 達爾的集中控制中心，管理任務分派、狀態查詢、系統控制 |
 | 3 | 記憶代理人 | openclaw-memory-agent.json | Webhook POST | 自動記憶管理 — 儲存、檢索、更新知識到記憶庫 |
 | 4 | MVP Webhook Telegram | mvp-webhook-telegram.json | Webhook POST | 最基礎的 webhook → Telegram 轉發 |
 | 5 | 系統事件通知 | system-event-notify.json | Webhook POST | 系統事件（任務完成、錯誤、警報）→ Telegram 通知 |
@@ -25,7 +25,7 @@
 ### 2.1 任務完成通知（最常用）
 
 ```bash
-# 通知老蔡任務已完成
+# 通知主人任務已完成
 curl -X POST http://localhost:3011/api/n8n/webhook/task-done \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1" \
@@ -49,7 +49,7 @@ curl -X POST http://localhost:3011/api/n8n/webhook/system-event \
 curl -X POST http://localhost:3011/api/n8n/webhook/cr9-unlock \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1" \
-  -d '{"unlockCode":"xxx","operator":"小蔡","timestamp":"2026-03-01T12:00:00Z"}'
+  -d '{"unlockCode":"xxx","operator":"達爾","timestamp":"2026-03-01T12:00:00Z"}'
 ```
 
 ### 2.4 記憶代理人
@@ -79,7 +79,7 @@ Telegram / Notion / 其他服務
 ### 整合方式
 1. **Server 代理**：所有 n8n webhook 呼叫都經過 OpenClaw Server 的 `/api/n8n/` 路由代理
 2. **認證**：使用 OpenClaw API Key（Bearer token）認證
-3. **Telegram**：透過 n8n 的 Telegram node 發送訊息給老蔡
+3. **Telegram**：透過 n8n 的 Telegram node 發送訊息給主人
 
 ---
 
@@ -107,14 +107,14 @@ curl -X PATCH http://localhost:3011/api/n8n/workflows/{id}/deactivate \
   -H "Authorization: Bearer oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1"
 ```
 
-### 4.3 通知老蔡的標準流程（一行搞定）
+### 4.3 通知主人的標準流程（一行搞定）
 
 ```bash
-bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
+bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 ```
 
 這個腳本會同時：
-- 推送 Telegram 通知給老蔡
+- 推送 Telegram 通知給主人
 - 觸發 n8n 後續流程（如果配置了的話）
 
 ---

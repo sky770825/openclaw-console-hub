@@ -1,27 +1,27 @@
 Sun Mar  8 11:49:51 CST 2026
 Searching for Task/Mission related files in server...
-/Users/caijunchang/openclaw任務面版設計/server/dist/models/Task.js
-/Users/caijunchang/openclaw任務面版設計/server/dist/models/Live2DTask.js
-/Users/caijunchang/openclaw任務面版設計/server/dist/controllers/Live2DTaskController.js
-/Users/caijunchang/openclaw任務面版設計/server/dist/controllers/TaskController.js
+/Users/sky770825/openclaw任務面版設計/server/dist/models/Task.js
+/Users/sky770825/openclaw任務面版設計/server/dist/models/Live2DTask.js
+/Users/sky770825/openclaw任務面版設計/server/dist/controllers/Live2DTaskController.js
+/Users/sky770825/openclaw任務面版設計/server/dist/controllers/TaskController.js
 Scanning for Status/Update triggers...
-/Users/caijunchang/openclaw任務面版設計/server/src/websocket.ts:  broadcastAgentUpdate(data: { agentId: string; status: string; message?: string }): void {
-/Users/caijunchang/openclaw任務面版設計/server/src/websocket.ts:      status: string;
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:    status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:      status: 'idle',
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:async function saveSharedState(session: SharedState, status: 'active' | 'paused' | 'completed' | 'failed' = 'active'): Promise<void> {
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:      status,
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:    return res.status(403).json({ ok: false, message: 'localhost only' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:  if (!isTelegramConfigured()) return res.status(503).json({ ok: false, message: 'Telegram 未設定' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:  if (!message) return res.status(400).json({ ok: false, message: '缺少 message' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:    res.status(500).json({ ok: false, message: String(e) });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:      | 'status'
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:    if (!oc) return res.status(404).json({ message: 'Task not found' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:    if (body.status === 'ready') {
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:        return res.status(400).json({
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:          return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:      return res.status(500).json({ message: 'Failed to update task' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:  if (idx === -1) return res.status(404).json({ message: 'Task not found' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:    'summary' | 'nextSteps' | 'evidenceLinks' | 'runPath' | 'idempotencyKey' | 'status'
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:  if (!current) return res.status(404).json({ message: 'Task not found' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts.bak:  const safeStatus = clampText(body.status, 40) as Task['status'] | undefined;
+/Users/sky770825/openclaw任務面版設計/server/src/websocket.ts:  broadcastAgentUpdate(data: { agentId: string; status: string; message?: string }): void {
+/Users/sky770825/openclaw任務面版設計/server/src/websocket.ts:      status: string;
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:    status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:      status: 'idle',
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:async function saveSharedState(session: SharedState, status: 'active' | 'paused' | 'completed' | 'failed' = 'active'): Promise<void> {
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:      status,
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:    return res.status(403).json({ ok: false, message: 'localhost only' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:  if (!isTelegramConfigured()) return res.status(503).json({ ok: false, message: 'Telegram 未設定' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:  if (!message) return res.status(400).json({ ok: false, message: '缺少 message' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:    res.status(500).json({ ok: false, message: String(e) });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:      | 'status'
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:    if (!oc) return res.status(404).json({ message: 'Task not found' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:    if (body.status === 'ready') {
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:        return res.status(400).json({
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:          return res.status(400).json({ message: `Invalid projectPath: ${ensured.message}` });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:      return res.status(500).json({ message: 'Failed to update task' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:  if (idx === -1) return res.status(404).json({ message: 'Task not found' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:    'summary' | 'nextSteps' | 'evidenceLinks' | 'runPath' | 'idempotencyKey' | 'status'
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:  if (!current) return res.status(404).json({ message: 'Task not found' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak:  const safeStatus = clampText(body.status, 40) as Task['status'] | undefined;

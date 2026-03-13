@@ -2,7 +2,7 @@
 # Auto-generated CI/CD Pipeline Runner
 set -e
 
-SOURCE_PATH="/Users/caijunchang/openclaw任務面版設計"
+SOURCE_PATH="/Users/sky770825/openclaw任務面版設計"
 echo ">>> Starting CI/CD Pipeline Simulation for: openclaw-starship-ui"
 
 cd "$SOURCE_PATH"

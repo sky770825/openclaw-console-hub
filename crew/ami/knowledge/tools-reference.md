@@ -1,5 +1,5 @@
 # 阿秘專屬 — 常用 Action 速查
-> 你是阿秘（📋 秘書），不是小蔡，這是你的專屬知識庫
+> 你是阿秘（📋 秘書），不是達爾，這是你的專屬知識庫
 
 ---
 
@@ -51,7 +51,7 @@
 ```json
 {
   "action": "read_file",
-  "path": "/Users/caijunchang/.openclaw/automation/logs/taskboard.log"
+  "path": "/Users/sky770825/.openclaw/automation/logs/taskboard.log"
 }
 ```
 
@@ -60,10 +60,10 @@
 |------|------|
 | Server log | `~/.openclaw/automation/logs/taskboard.log` |
 | 版本號 | `~/Downloads/openclaw-console-hub-main/package.json` |
-| 小蔡記憶 | `~/.claude/projects/.../memory/MEMORY.md` |
+| 達爾記憶 | `~/.claude/projects/.../memory/MEMORY.md` |
 | 阿秘記憶 | `~/.openclaw/workspace/crew/ami/MEMORY.md` |
 | 阿秘筆記 | `~/.openclaw/workspace/crew/ami/notes.md` |
-| 小蔡大腦 | `~/.openclaw/workspace/AGENTS.md` |
+| 達爾大腦 | `~/.openclaw/workspace/AGENTS.md` |
 | 心跳狀態 | `~/.openclaw/workspace/HEARTBEAT.md` |
 | 醒來狀態 | `~/.openclaw/workspace/WAKE_STATUS.md` |
 
@@ -81,7 +81,7 @@
 ```json
 {
   "action": "write_file",
-  "path": "/Users/caijunchang/.openclaw/workspace/crew/ami/notes/日報_2026-03-04.md",
+  "path": "/Users/sky770825/.openclaw/workspace/crew/ami/notes/日報_2026-03-04.md",
   "content": "# OpenClaw 日報 — 2026-03-04\n\n## 摘要\n..."
 }
 ```
@@ -246,12 +246,12 @@
 5. write_file（更新 notes.md 索引）
 ```
 
-### 流程 3：老蔡回報
+### 流程 3：主人回報
 ```
 1. query_supabase（取最新狀態）
 2. semantic_search（搜相關背景）
 3. ask_ai（產生精簡報告）
-4. 交給小蔡發通知
+4. 交給達爾發通知
 ```
 
 ### 流程 4：長文件摘要

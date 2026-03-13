@@ -2,7 +2,7 @@
 name: openclaw-taskboard
 version: 2.0.0
 description: OpenClaw 任務板 - Agent 指揮中心。管理任務、調度 AI Agent（Cursor、CoDEX、OpenClaw）、編排工作流程、監控執行狀態。
-author: 小蔡
+author: 達爾
 tags: [task-management, agent-orchestration, cursor, codex, workflow]
 metadata:
   openclaw:
@@ -24,7 +24,7 @@ metadata:
 ## 🎯 核心概念
 
 ```
-老蔡（指揮官）
+主人（指揮官）
     ↓
 OpenClaw 任務板（參謀部）
     ↓
@@ -40,7 +40,7 @@ OpenClaw 任務板（參謀部）
 
 | 類型 | 說明 | 執行者 |
 |------|------|--------|
-| `basic` | 基本任務（人工執行） | 老蔡或小蔡 |
+| `basic` | 基本任務（人工執行） | 主人或達爾 |
 | `cursor` | 程式開發任務 | Cursor Agent |
 | `codex` | 複雜編碼/分析 | CoDEX CLI |
 | `openclaw` | 本機操作/自動化 | OpenClaw |
@@ -274,40 +274,40 @@ cd {workingDir} && codex exec '{prompt}'
 
 ### 範例 1：簡單程式任務
 ```
-老蔡：「用 cursor 幫我分析這個資料夾的程式碼品質」
+主人：「用 cursor 幫我分析這個資料夾的程式碼品質」
 
-小蔡：
+達爾：
 1. 建立任務 t-015: "分析程式碼品質"
 2. 設定 agent.type = "cursor"
 3. 設定 context.workingDir = 當前資料夾
 4. 執行任務
-5. 回傳結果給老蔡
+5. 回傳結果給主人
 ```
 
 ### 範例 2：複雜工作流程
 ```
-老蔡：「重構這個專案，先分析再測試再重構」
+主人：「重構這個專案，先分析再測試再重構」
 
-小蔡：
+達爾：
 1. 建立工作流：
    - t-020: 分析現有程式碼 (cursor)
    - t-021: 建立測試檔案 (cursor, dependsOn: t-020)
    - t-022: 執行測試確保通過 (openclaw, dependsOn: t-021)
    - t-023: 重構主要程式碼 (codex, dependsOn: t-022)
 2. 啟動工作流（依序執行）
-3. 每步完成通知老蔡
+3. 每步完成通知主人
 ```
 
 ### 範例 3：自動修復
 ```
-老蔡：「這個測試失敗了，自動修復看看」
+主人：「這個測試失敗了，自動修復看看」
 
-小蔡：
+達爾：
 1. 建立任務 t-025: "修復測試失敗"
 2. 設定 agent.type = "cursor"
 3. 設定 agent.config.approval = "suggest" (建議但等確認)
 4. 執行並監控
-5. 當 Cursor 提出修改時，發送 Telegram 通知老蔡確認
+5. 當 Cursor 提出修改時，發送 Telegram 通知主人確認
 ```
 
 ---

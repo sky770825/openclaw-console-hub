@@ -9,8 +9,8 @@ echo "🚀 n8n 100% 全自動化部署 - 預打包方案"
 echo "======================================="
 echo ""
 
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
-N8N_PROD_DIR="/Users/caijunchang/n8n-production"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace"
+N8N_PROD_DIR="/Users/sky770825/n8n-production"
 OPENAI_KEY="${OPENAI_API_KEY:-}"
 
 if [ -z "$OPENAI_KEY" ]; then
@@ -126,7 +126,7 @@ cat > "$BUILD_DIR/init-scripts/workflows-final.json" << 'WORKFLOWJSON'
     {
       "parameters": {
         "options": {
-          "systemMessage": "你是小蔡的記憶助手。你的任務是：\n1. 理解用戶輸入的內容\n2. 從長期記憶中檢索相關資訊\n3. 結合記憶生成回應\n4. 將重要資訊儲存到長期記憶\n\n記憶檢索工具 'RAG_MEMORY' 可以幫你找到相關的歷史對話和知識。"
+          "systemMessage": "你是堤諾米斯達爾（達爾）的記憶助手。你的任務是：\n1. 理解用戶輸入的內容\n2. 從長期記憶中檢索相關資訊\n3. 結合記憶生成回應\n4. 將重要資訊儲存到長期記憶\n\n記憶檢索工具 'RAG_MEMORY' 可以幫你找到相關的歷史對話和知識。"
         }
       },
       "name": "AI Agent",

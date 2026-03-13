@@ -38,7 +38,7 @@
 
 - **預設**：Ollama / 免費層優先；Kimi 次之；Opus/Pro 最後
 - **升級門檻**：
-  - 僅 `riskLevel = P0` 且老蔡確認，才可使用 Opus/Pro 類高成本模型
+  - 僅 `riskLevel = P0` 且主人確認，才可使用 Opus/Pro 類高成本模型
 - **小模型限制**：
   - 本地小模型（例如 8B）不得搭配不受控 web tools（降低 prompt injection 風險）
 
@@ -47,9 +47,9 @@
 ## 9) Telegram 群組/私訊觸發規範
 
 - **群組**：預設 `requireMention=true`（避免群組對話誤觸發）
-- **私訊**：只允許 allowlist（老蔡 chat_id），避免陌生人注入指令
+- **私訊**：只允許 allowlist（主人 chat_id），避免陌生人注入指令
 - **Token 原則**：
-  - 小蔡（gateway）與小ollama（任務板通知）使用不同 bot token，避免 `409 getUpdates conflict`
+  - 達爾（gateway）與小ollama（任務板通知）使用不同 bot token，避免 `409 getUpdates conflict`
 
 ---
 
@@ -63,4 +63,4 @@
 
 ---
 
-🐣 小蔡 | 2026-02-14 13:54 | 避免踩雷核心記憶
+🐣 達爾 | 2026-02-14 13:54 | 避免踩雷核心記憶

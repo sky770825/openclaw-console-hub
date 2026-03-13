@@ -1,5 +1,5 @@
 #!/bin/bash
-STATUS_FILE="/Users/caijunchang/.openclaw/workspace/reports/live2d_task_status.json"
+STATUS_FILE="/Users/sky770825/.openclaw/workspace/reports/live2d_task_status.json"
 
 # Initialize file if not exists
 if [ ! -f "$STATUS_FILE" ]; then

@@ -30,7 +30,7 @@
 - **Description:** 提供核心系統的命令行維護與檢測工具。
 
 ## 3. 索引與路徑 (Index & Paths)
-- 所有子任務交付物存放於: `/Users/caijunchang/.openclaw/workspace/sandbox/output`
+- 所有子任務交付物存放於: `/Users/sky770825/.openclaw/workspace/sandbox/output`
 - 總結報告: `task_status.json`
 
 ## 4. 合規性檢查 (Compliance)

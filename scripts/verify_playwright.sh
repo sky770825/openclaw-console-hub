@@ -1,5 +1,5 @@
 #!/bin/bash
-cd "/Users/caijunchang/.openclaw/workspace/sandbox/server"
+cd "/Users/sky770825/.openclaw/workspace/sandbox/server"
 echo "Verifying Playwright installation in sandbox..."
 if [ -d "node_modules/playwright" ]; then
     echo "✅ Playwright package installed."

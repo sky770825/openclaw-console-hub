@@ -55,7 +55,7 @@
    - 命中 BLOCK 规则 -> 400 + `PROMPT_GUARD_BLOCK` 错误码
 
 **特殊参数**：
-- `?allowStub=1` -- 允许小蔡等代理建简易任务（跳过 compliance 检查）
+- `?allowStub=1` -- 允许達爾等代理建简易任务（跳过 compliance 检查）
 - `body.fromR` / `body.from_review_id` -- 标记任务来源（从 review 衍生）
 
 **ID 生成**：`body.id ?? 't' + Date.now()`

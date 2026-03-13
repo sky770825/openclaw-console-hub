@@ -2,7 +2,7 @@
 
 > **任務 ID**: task_1739473740_scripts-audit  
 > **執行時間**: 2026-02-14 02:29:00  
-> **掃描範圍**: `/Users/caijunchang/.openclaw/workspace`  
+> **掃描範圍**: `/Users/sky770825/.openclaw/workspace`  
 > **掃描規則**: `.sh`, `.py`, `.js`, `.ts` 檔案
 
 ---

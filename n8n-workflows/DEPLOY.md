@@ -37,7 +37,7 @@ API Key: （留空）
 ### Step 3: 匯入工作流
 
 1. 左側 **Workflows** → **Import from File**
-2. 選擇：`/Users/caijunchang/.openclaw/workspace/n8n-workflows/openclaw-memory-agent.json`
+2. 選擇：`/Users/sky770825/.openclaw/workspace/n8n-workflows/openclaw-memory-agent.json`
 
 ### Step 4: 更新憑證引用
 

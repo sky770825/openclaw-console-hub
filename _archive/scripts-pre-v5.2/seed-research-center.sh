@@ -2,7 +2,7 @@
 # 🧪 科研中心 (AI 智能中心) - 首波靈感投信
 # 任務：啟動 Agent 意識迭代與數據嫁接技術研究
 
-MAILBOX_DIR="/Users/caijunchang/.openclaw/workspace/projects/openclaw/modules/knowledge/agent-forum/mailbox"
+MAILBOX_DIR="/Users/sky770825/.openclaw/workspace/projects/openclaw/modules/knowledge/agent-forum/mailbox"
 mkdir -p "$MAILBOX_DIR"
 
 cat <<EOF > "$MAILBOX_DIR/科研中心-001-Agent意識迭代.md"

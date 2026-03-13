@@ -1,9 +1,9 @@
 QualityGate TypeScript Verification Report
 Date: Sun Mar  1 15:30:48 CST 2026
-Directory: /Users/caijunchang/openclaw任務面版設計/server
+Directory: /Users/sky770825/openclaw任務面版設計/server
 ----------------------------------------------------------
 Executing: npx tsc --noEmit
-/Users/caijunchang/.openclaw/workspace/sandbox/task-1772350248101.sh: line 35: npx: command not found
+/Users/sky770825/.openclaw/workspace/sandbox/task-1772350248101.sh: line 35: npx: command not found
 ----------------------------------------------------------
 TSC Exit Code: 127
 STATUS: FAILED

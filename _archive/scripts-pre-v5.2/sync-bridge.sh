@@ -2,9 +2,9 @@
 # NEUXA L1-L2 即時同步橋接器
 # 用途: 監測檔案變更並即時同步到對方
 
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 SYNC_DIR="$WORKSPACE/.sync-bridge"
-CLAUDE_PROJECT="/Users/caijunchang/.claude/projects/-Users-caijunchang-openclaw------"
+CLAUDE_PROJECT="/Users/sky770825/.claude/projects/-Users-caijunchang-openclaw------"
 
 # 建立同步目錄
 mkdir -p "$SYNC_DIR"

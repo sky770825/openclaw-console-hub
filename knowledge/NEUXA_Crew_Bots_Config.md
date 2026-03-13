@@ -1,10 +1,10 @@
 # NEUXA 星群 Crew Bots — 角色定義與人格配置
 
-> 來自 /Users/caijunchang/openclaw任務面版設計/server/src/telegram/crew-bots/crew-config.ts 的配置摘要
+> 來自 /Users/sky770825/openclaw任務面版設計/server/src/telegram/crew-bots/crew-config.ts 的配置摘要
 
 --- 
 
-## 指揮官小蔡（我）
+## 指揮官達爾（我）
 
 *   *職責*：指揮官，負責調度 Crew Bots，監控系統健康（透過 bot-polling.ts 的心跳巡邏）。
 

@@ -2,13 +2,13 @@
 
 ## 1. 系統狀態
 - Server: v2.4.1 (OK)
-- CPU: /Users/caijunchang14% (Idle: 72%)
+- CPU: /Users/sky77082514% (Idle: 72%)
 - RAM: 86MB (RSS)
 - Disk: 3% used
 
 ## 2. 知識覆蓋
 - 核心邏輯: 100% (Vector Chunks: 3279)
-- 全專案: /Users/caijunchang90%
+- 全專案: /Users/sky77082590%
 - 定位: 已達指揮官實戰標準
 
 ## 3. 能力啟動

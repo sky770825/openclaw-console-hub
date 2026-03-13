@@ -10,6 +10,6 @@ MOCK_TASK_NAME="測試爬取任務"
 MOCK_ERROR="Error: Connection timeout after 30000ms at fetch (node:internal/deps/undici/wrapper:58:25)"
 
 # 觸發分析
-/Users/caijunchang/.openclaw/workspace/scripts/trigger_failure_analysis.sh "$MOCK_TASK_ID" "$MOCK_TASK_NAME" "$MOCK_ERROR"
+/Users/sky770825/.openclaw/workspace/scripts/trigger_failure_analysis.sh "$MOCK_TASK_ID" "$MOCK_TASK_NAME" "$MOCK_ERROR"
 
 echo "[INFO] 監控輪詢結束。"

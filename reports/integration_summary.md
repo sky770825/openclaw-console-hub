@@ -9,5 +9,5 @@
 4.  **Compatibility**: Response format standardized for both Axios and BrowserService paths.
 
 ## Files Generated
-- Output Source: `/Users/caijunchang/.openclaw/workspace/sandbox/output/server/src/`
-- Verification Script: `/Users/caijunchang/.openclaw/workspace/scripts/test_proxy_integration.sh`
+- Output Source: `/Users/sky770825/.openclaw/workspace/sandbox/output/server/src/`
+- Verification Script: `/Users/sky770825/.openclaw/workspace/scripts/test_proxy_integration.sh`

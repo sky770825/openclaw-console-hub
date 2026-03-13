@@ -4,8 +4,8 @@
 本日誌報告記錄了一次對系統伺服器日誌的例行檢查。目的是為了排查潛在的錯誤或警告訊息。
 
 ## 執行動作
-- **指令**: `tail -50 /Users/caijunchang/.openclaw/logs/server.log | grep -i -E "error|warn|f"`
-- **目的**: 檢查 `/Users/caijunchang/.openclaw/logs/server.log` 檔案的最後 50 行，篩選出包含 "error", "warn", 或 "f" (通常代表 fatal) 的日誌條目，不區分大小寫。
+- **指令**: `tail -50 /Users/sky770825/.openclaw/logs/server.log | grep -i -E "error|warn|f"`
+- **目的**: 檢查 `/Users/sky770825/.openclaw/logs/server.log` 檔案的最後 50 行，篩選出包含 "error", "warn", 或 "f" (通常代表 fatal) 的日誌條目，不區分大小寫。
 
 ## 結果
 - **執行狀態**: 命令成功執行 (Exit Code: 0)。

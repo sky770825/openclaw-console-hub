@@ -45,10 +45,10 @@ CREATE INDEX IF NOT EXISTS idx_action_logs_status      ON openclaw_action_logs (
 *   *created_at 欄位順序調整*: NOT NULL 放在 DEFAULT 之前，符合 PostgreSQL 慣例。
 *   *加 Indexes*: 日誌表幾乎必然會按時間、session、類型查詢，提前建索引以提升查詢效能。
 
-## 執行 DDL 的方法 (推薦給老蔡)
+## 執行 DDL 的方法 (推薦給主人)
 
-*   *方法 A（推薦）*: 請老蔡直接前往 Supabase Dashboard → SQL Editor，貼入上方建議 SQL 並執行即可。
+*   *方法 A（推薦）*: 請主人直接前往 Supabase Dashboard → SQL Editor，貼入上方建議 SQL 並執行即可。
 
-## 小蔡的下一步
+## 達爾的下一步
 
-一旦 openclaw_action_logs 表建立完成，小蔡將會修改 action-handlers.ts`，實作 ask_ai 的日誌記錄功能，將 Token 消耗、執行時間等資訊寫入新表。
+一旦 openclaw_action_logs 表建立完成，達爾將會修改 action-handlers.ts`，實作 ask_ai 的日誌記錄功能，將 Token 消耗、執行時間等資訊寫入新表。

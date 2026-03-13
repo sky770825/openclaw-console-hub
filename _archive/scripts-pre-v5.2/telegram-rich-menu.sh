@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================================
 # Telegram 圖文選單 - 設定底部固定按鈕
-# 用途: 讓老蔡可以直接點按鈕，不用打字
+# 用途: 讓主人可以直接點按鈕，不用打字
 # 使用: bash scripts/telegram-rich-menu.sh [set|remove|status]
 # ============================================================
 
 set -euo pipefail
 
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 CONFIG_FILE="${WORKSPACE}/config/telegram-menu.json"
 BOT_TOKEN_FILE="${HOME}/.openclaw/secure/telegram-bot-token"
 
@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-# Chat ID（老蔡）
+# Chat ID（主人）
 CHAT_ID="5819565005"
 
 # 顯示使用說明
@@ -54,7 +54,7 @@ set_menu() {
         -H "Content-Type: application/json" \
         -d "{
             \"chat_id\": \"${CHAT_ID}\",
-            \"text\": \"🎛️ 小蔡控制面板已啟動\\n\\n點擊下方按鈕快速執行指令：\",
+            \"text\": \"🎛️ 達爾控制面板已啟動\\n\\n點擊下方按鈕快速執行指令：\",
             \"reply_markup\": {
                 \"keyboard\": [
                     [{\"text\": \"🆕 新對話\"}, {\"text\": \"📊 進度同步\"}],

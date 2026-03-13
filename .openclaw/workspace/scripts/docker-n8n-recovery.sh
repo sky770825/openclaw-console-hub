@@ -2,7 +2,7 @@
 # Docker 啟動監控與 n8n 自動恢復腳本
 # 授權執行時間: 2026-02-19
 
-LOG_FILE="/Users/caijunchang/.openclaw/logs/docker-n8n-recovery.log"
+LOG_FILE="/Users/sky770825/.openclaw/logs/docker-n8n-recovery.log"
 mkdir -p "$(dirname "$LOG_FILE")"
 
 echo "[$(date)] Docker/n8n 自動恢復腳本啟動" >> "$LOG_FILE"
@@ -32,7 +32,7 @@ if [ "$N8N_CONTAINERS" -ge 4 ]; then
     echo "[$(date)] ✅ n8n 容器已運行 ($N8N_CONTAINERS 個)" >> "$LOG_FILE"
 else
     echo "[$(date)] 🔄 啟動 n8n 容器..." >> "$LOG_FILE"
-    cd /Users/caijunchang/n8n-production || exit 1
+    cd /Users/sky770825/n8n-production || exit 1
     docker compose up -d 2>&1 >> "$LOG_FILE"
     sleep 5
     N8N_CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c "n8n" || echo "0")

@@ -1,6 +1,6 @@
 #!/bin/bash
-DB_FILE="/Users/caijunchang/.openclaw/workspace/knowledge/project_progress.json"
-REPORT_FILE="/Users/caijunchang/.openclaw/workspace/reports/progress_report.md"
+DB_FILE="/Users/sky770825/.openclaw/workspace/knowledge/project_progress.json"
+REPORT_FILE="/Users/sky770825/.openclaw/workspace/reports/progress_report.md"
 
 update_status() {
     local feature_id=$1

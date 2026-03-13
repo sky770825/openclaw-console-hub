@@ -82,7 +82,7 @@ def generate_report():
     
     trends = analyze_content(all_posts)
     
-    with open('/Users/caijunchang/.openclaw/workspace/reports/hn_reddit_agent_trends.md', 'w') as f:
+    with open('/Users/sky770825/.openclaw/workspace/reports/hn_reddit_agent_trends.md', 'w') as f:
         f.write("# AI Agent 討論熱點與技術趨勢報告 (HN & Reddit)\n\n")
         f.write(f"*生成時間: {time.strftime('%Y-%m-%d %H:%M:%S')}*\n")
         f.write(f"*數據範圍: 最近 14 天*\n\n")

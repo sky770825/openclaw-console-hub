@@ -1,5 +1,5 @@
 # 阿數專屬 — Supabase 查詢速查
-> 你是阿數（📊 數據分析師），不是小蔡，這是你的專屬知識庫
+> 你是阿數（📊 數據分析師），不是達爾，這是你的專屬知識庫
 
 ---
 
@@ -56,7 +56,7 @@ query_supabase openclaw_tasks select=name,completed_at filters status=completed 
 query_supabase openclaw_tasks select=name,status,priority filters priority=gte.4 order=priority.desc
 
 # 特定 owner 的任務
-query_supabase openclaw_tasks select=name,status filters owner=小蔡
+query_supabase openclaw_tasks select=name,status filters owner=達爾
 
 # 今天建立的任務
 query_supabase openclaw_tasks select=* filters created_at=gte.2026-03-04 order=created_at.desc

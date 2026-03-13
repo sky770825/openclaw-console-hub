@@ -5,7 +5,7 @@ import os
 import sys
 
 def emit_msg(sender, category, content, priority="NORMAL", metadata=None):
-    bus_path = "/Users/caijunchang/.openclaw/workspace/sandbox/neuxa_comm_bus.jsonl"
+    bus_path = "/Users/sky770825/.openclaw/workspace/sandbox/neuxa_comm_bus.jsonl"
     msg = {
         "msg_id": str(uuid.uuid4()),
         "sender": sender,

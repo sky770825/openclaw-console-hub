@@ -81,7 +81,7 @@ send_msg() {
         -d "$payload" > /dev/null
 }
 
-# 發送緊急通知（需要小蔡介入）- 含快速操作按鈕
+# 發送緊急通知（需要達爾介入）- 含快速操作按鈕
 alert_critical() {
     local task_id="${2:-}"
     local task_name="${3:-任務}"
@@ -317,7 +317,7 @@ monitor_summary() {
 # 回調處理（按鈕點擊）
 # =============================================================================
 
-# 處理按鈕回調 - 發送可執行指令給小蔡
+# 處理按鈕回調 - 發送可執行指令給達爾
 handle_callback() {
     local callback_data="$1"
     local action=$(echo "$callback_data" | cut -d':' -f1)

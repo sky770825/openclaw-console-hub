@@ -27,5 +27,5 @@
 
 ## 5. 專案現狀分析 (Existing Codebase)
 ### 現有專案分析結果
-- 掃描目錄: /Users/caijunchang/openclaw任務面版設計
+- 掃描目錄: /Users/sky770825/openclaw任務面版設計
 -  中未發現明顯的 Google 專用 SDK，可能需手動安裝或使用純 REST 請求。

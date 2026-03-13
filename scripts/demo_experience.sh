@@ -1,6 +1,6 @@
 #!/bin/bash
 # Demo of the Experience Library
-source "/Users/caijunchang/.openclaw/workspace/scripts/lib_experience.sh"
+source "/Users/sky770825/.openclaw/workspace/scripts/lib_experience.sh"
 
 # 1. Initialize DB
 exp_init "demo_tasks"

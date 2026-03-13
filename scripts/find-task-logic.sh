@@ -2,7 +2,7 @@
 # OpenClaw Task Logic Finder
 # Authorized tool for searching the design project
 
-SEARCH_ROOT="/Users/caijunchang/openclaw任務面版設計"
+SEARCH_ROOT="/Users/sky770825/openclaw任務面版設計"
 TERM=$1
 
 if [ -z "$TERM" ]; then

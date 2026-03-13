@@ -1,7 +1,7 @@
 #!/bin/bash
 # Auto-generated deployment script
 set -e
-TARGET="/Users/caijunchang/.openclaw/workspace/sandbox/server/src/services"
+TARGET="/Users/sky770825/.openclaw/workspace/sandbox/server/src/services"
 echo "Ensuring directory exists..."
 mkdir -p "$TARGET"
 chmod 755 "$TARGET"

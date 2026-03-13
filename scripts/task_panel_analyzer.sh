@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script to analyze the OpenClaw Task Panel design files
-SOURCE="/Users/caijunchang/openclaw任務面版設計"
+SOURCE="/Users/sky770825/openclaw任務面版設計"
 
 if [ ! -d "$SOURCE" ]; then
     echo "Error: Project path not found at $SOURCE"

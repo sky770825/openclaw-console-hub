@@ -9,8 +9,8 @@
 - **安全保障**: 全本地運作。
 
 ## 2. 操作指南
-- 執行 `source /Users/caijunchang/.openclaw/workspace/scripts/path_fixer.sh` 以修正路徑。
-- 檢查 `/Users/caijunchang/.openclaw/workspace/reports/token_usage_30d.json` 獲取最新基準。
+- 執行 `source /Users/sky770825/.openclaw/workspace/scripts/path_fixer.sh` 以修正路徑。
+- 檢查 `/Users/sky770825/.openclaw/workspace/reports/token_usage_30d.json` 獲取最新基準。
 
 ## 3. 階段里程碑
 1. 環境配置 [完成]

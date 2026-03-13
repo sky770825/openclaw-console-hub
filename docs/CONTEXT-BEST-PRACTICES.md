@@ -69,7 +69,7 @@ Checkpoint 是「存檔點」，在 Context 危急時保存進度，讓你能安
 ### Checkpoint 包含什麼？
 
 ```
-~/Desktop/小蔡/檢查點/
+~/Desktop/達爾/檢查點/
 ├── MM/DD_HH:MM-步驟名稱/
 │   ├── backup.tar.gz      # 打包的備份
 │   └── meta.json          # 檢查點元數據
@@ -182,7 +182,7 @@ ls ~/.openclaw/workspace/skills/
 |--------|------|------|------|
 | P0 | `AGENTS.md` | ~1k | 工作指南 |
 | P0 | `SOUL.md` | ~500 | 人設與風格 |
-| P0 | `USER.md` | ~500 | 老蔡檔案 |
+| P0 | `USER.md` | ~500 | 主人檔案 |
 | P1 | `MEMORY.md` | ~2k | 速查表（只讀索引段落）|
 | P2 | `HEARTBEAT.md` | 變動 | 心跳任務（若空則跳過）|
 

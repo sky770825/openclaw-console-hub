@@ -233,7 +233,7 @@ Google Sheets 更新 → 同步到 CRM → 發送通知
 
 ### 架構範例
 ```
-[外部事件] → [n8n 觸發] → [n8n 處理] → [OpenClaw API] → [小蔡回應]
+[外部事件] → [n8n 觸發] → [n8n 處理] → [OpenClaw API] → [達爾回應]
 ```
 
 ---

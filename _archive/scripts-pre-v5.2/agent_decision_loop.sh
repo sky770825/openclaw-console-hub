@@ -16,7 +16,7 @@ echo "$OUTPUT" | sed '1,1d' # 去掉 DECISION_ID 行
 echo "----------------------------------------"
 
 # 步驟 2: 模擬等待介入
-echo "📝 [老蔡介入專區] 請輸入你的指令 (y/n/自定義):"
+echo "📝 [主人介入專區] 請輸入你的指令 (y/n/自定義):"
 # 在自動化腳本中，這裡會暫停等待讀取檔案或標準輸入
 # 這裡我們模擬讀取一個名為 INTERVENTION.txt 的檔案
 echo "Waiting for INTERVENTION.txt..."
@@ -29,7 +29,7 @@ while [ ! -s INTERVENTION.txt ]; do
 done
 
 USER_INPUT=$(cat INTERVENTION.txt)
-echo "📥 收到老蔡指令: $USER_INPUT"
+echo "📥 收到主人指令: $USER_INPUT"
 
 # 步驟 3: 套用介入並更新狀態
 python3 scripts/decision_tree.py intervene "$DECISION_ID" "$USER_INPUT"

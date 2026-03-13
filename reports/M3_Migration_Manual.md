@@ -4,8 +4,8 @@
 追蹤 05:15 發起的 M3 Ultra 遷移計畫。
 
 ## 1. 數據與自動化 (阿數)
-- **數據源**: /Users/caijunchang/.openclaw/workspace/reports/token_usage_30d.csv (已生成 30 天樣本)
-- **修復工具**: /Users/caijunchang/.openclaw/workspace/scripts/fix_m3_paths.sh
+- **數據源**: /Users/sky770825/.openclaw/workspace/reports/token_usage_30d.csv (已生成 30 天樣本)
+- **修復工具**: /Users/sky770825/.openclaw/workspace/scripts/fix_m3_paths.sh
 
 ## 2. 財務與合規性分析 (阿商)
 # M3 Ultra 成本與安全優勢分析報告

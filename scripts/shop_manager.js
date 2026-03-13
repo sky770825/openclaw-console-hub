@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const DB_PATH = process.env.DB_PATH || '/Users/caijunchang/.openclaw/workspace/sandbox/shop_db.json';
+const DB_PATH = process.env.DB_PATH || '/Users/sky770825/.openclaw/workspace/sandbox/shop_db.json';
 
 function readDB() {
     try {

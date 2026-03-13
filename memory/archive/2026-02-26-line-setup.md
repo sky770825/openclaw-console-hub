@@ -18,8 +18,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -53,8 +53,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -82,19 +82,19 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
 
 你檢查看看吧
-assistant: 好的，老蔡。
+assistant: 好的，主人。
 
 我無法直接看到您的 LINE 畫面，但我可以從後台檢查系統的「執行日誌」，看看在您發送訊息後，雲端系統是否有被正確觸發。
 
 正在連接到 n8n 雲端平台，調閱工作流程 `JZKaaAN5OomfIPJ7` 的最新執行紀錄...
-assistant: 老蔡，檢查失敗。伺服器回報 `unauthorized` (未授權)。
+assistant: 主人，檢查失敗。伺服器回報 `unauthorized` (未授權)。
 
 這表示您剛剛提供給我的第二組 API 金鑰 (`...W4d6bY` 結尾的那個)，也已經失效或被撤銷了。
 
@@ -123,14 +123,14 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
 
 你可以進去拿 n8n 嗎？
-assistant: 不行，老蔡，我目前進不去。
+assistant: 不行，主人，我目前進不去。
 
 您上次給我的 API 金鑰（通行證）已經被您回收了，所以我現在又被擋在 n8n 的門外了。
 
@@ -158,17 +158,17 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
 
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTJlYTk5Ny1mYjQyLTRiMWYtYjQ3OC00NmFmZTdkZDViNjkiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzcyMDgwNDc5fQ.P0htqWtVHn-QpKXbb07JmLIdaMfaBdALSswKQiCIg8s
-assistant: 收到新的金鑰，感謝老蔡。我現在擁有後台的臨時通行證了。
+assistant: 收到新的金鑰，感謝主人。我現在擁有後台的臨時通行證了。
 
 正在使用這組新的通行證，重新連線到 n8n 雲端平台，調閱工作流程的執行紀錄...
-assistant: 老蔡，情況有點出乎意料，伺服器再次回報 `unauthorized`。
+assistant: 主人，情況有點出乎意料，伺服器再次回報 `unauthorized`。
 
 這表示您剛剛從 n8n 後台複製出來給我的 API 金鑰是無效的。
 
@@ -192,8 +192,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```

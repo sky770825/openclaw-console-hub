@@ -287,5 +287,5 @@ launchctl kickstart gui/$(id -u)/ai.openclaw.gateway
 
 ---
 
-**維護者**：小蔡（Claude）
+**維護者**：達爾（Claude）
 **最後更新**：2026-02-16

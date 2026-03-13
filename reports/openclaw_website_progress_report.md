@@ -10,7 +10,7 @@
 | 阿策 | 策略/整體規劃 | 已發現相關進度記錄 (19) | Live2D_Tech_Eval_Crew_Report_20260304.md,openclaw_features_core_message.md |
 
 ## 二、 專案源碼分析 (OpenClaw 官網建置)
-檢索關鍵字在 /Users/caijunchang/openclaw任務面版設計 中的出現情況：
+檢索關鍵字在 /Users/sky770825/openclaw任務面版設計 中的出現情況：
 ```text
 ```
 

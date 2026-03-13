@@ -7,7 +7,7 @@ echo "[INFO] Starting Final Verification for Project 990..."
 # Simulation of Regression Tests for Core Logic
 # We check if the migrated logic files exist and are syntactically valid (for JS/TS)
 CORE_FILES=("server/src/index.ts" "src/App.tsx")
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
 
 echo "Checking Core Logic Migration Status..."
 for file in "${CORE_FILES[@]}"; do

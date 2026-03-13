@@ -2,7 +2,7 @@
 # Reconstructed Auto-Executor Dispatch Script
 # This script ensures the dispatcher is triggered and logs activity.
 
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/cron_dispatch.log"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/cron_dispatch.log"
 API_ENDPOINT="http://localhost:3000/api/openclaw/auto-executor/dispatch"
 
 echo "[$(date)] Starting Auto-Executor Dispatch Check..." >> "$LOG_FILE"

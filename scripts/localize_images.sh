@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generated script to download external images for localization
-TARGET_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output/localized_images"
+TARGET_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output/localized_images"
 mkdir -p "$TARGET_DIR"
 
 echo "Downloading images..."

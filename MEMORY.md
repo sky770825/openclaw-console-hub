@@ -1,1 +1,1 @@
-/Users/caijunchang/.openclaw/workspace/memories/MEMORY.md
+/Users/sky770825/.openclaw/workspace/memories/MEMORY.md

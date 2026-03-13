@@ -60,14 +60,14 @@ if __name__ == "__main__":
     memory_store = MemoryStore()
 
     # Add some memories
-    memory_store.add_memory("老蔡喜歡喝珍珠奶茶。")
+    memory_store.add_memory("主人喜歡喝珍珠奶茶。")
     memory_store.add_memory("OpenClaw 可以透過技能擴展功能。")
     memory_store.add_memory("今天天氣很好，適合出去走走。")
-    memory_store.add_memory("小蔡是一個AI戰友。")
+    memory_store.add_memory("達爾是一個AI戰友。")
 
     # Search for related memories
     print("\n--- Search Results ---")
-    results = memory_store.search("老蔡最愛喝什麼？")
+    results = memory_store.search("主人最愛喝什麼？")
     for res in results:
         print(f"Text: {res['text']} (Distance: {res['distance']:.2f})")
 

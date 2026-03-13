@@ -36,5 +36,5 @@ L2 Claude Code (Gemini 3 Flash)
 - `test_projects/`: 測試用模擬目錄（可手動刪除）。
 
 ## Next Steps
-- 建議將 `scripts/` 加入系統 `PATH` 或在 `.zshrc` 中設置 `alias oc='/Users/caijunchang/.openclaw/workspace/scripts/oc.sh'`。
+- 建議將 `scripts/` 加入系統 `PATH` 或在 `.zshrc` 中設置 `alias oc='/Users/sky770825/.openclaw/workspace/scripts/oc.sh'`。
 - 未來可擴充 `find-start-script.sh` 以支援更複雜的多模組項目 (Monorepo)。

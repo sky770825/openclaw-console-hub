@@ -8,11 +8,11 @@
    - 解決 Vercel 部署問題固然重要，但請確保程式碼中的 `src` 元件包含商業追蹤埋點。
    - 頁面載入速度直接影響轉換率，部署優化應以此為目標。
 2. **阿商 (商業優化)**:
-   - 已建立 `/Users/caijunchang/.openclaw/workspace/knowledge/landing_page_business_strategy.md` 作為後續作戰依據。
+   - 已建立 `/Users/sky770825/.openclaw/workspace/knowledge/landing_page_business_strategy.md` 作為後續作戰依據。
    - 所有的 Landing Page 修改必須通過 `audit_lp_commercial.sh` 的自動化檢測。
 
 ## 現有原始碼審計結果摘要
-$(cat "/Users/caijunchang/.openclaw/workspace/sandbox/output/lp_audit_results.txt")
+$(cat "/Users/sky770825/.openclaw/workspace/sandbox/output/lp_audit_results.txt")
 
 ## 後續行動
 - 將商業優化指標併入「作戰原則」。

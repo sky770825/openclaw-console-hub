@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT_DIR="/Users/caijunchang/openclaw任務面版設計/server"
+PROJECT_DIR="/Users/sky770825/openclaw任務面版設計/server"
 cd "$PROJECT_DIR"
 
 # 嘗試找出 tsc 的路徑，優先使用本地 node_modules

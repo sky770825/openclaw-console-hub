@@ -23,7 +23,7 @@
 我們不直接傳遞 process.env，而是重建一個乾淨的 SANDBOX_ENV。
 
 ``typescript
-const ENHANCED_PATH = /Users/caijunchang/.local/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'};
+const ENHANCED_PATH = /Users/sky770825/.local/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'};
 
 // 只保留非敏感變數
 const SANDBOX_ENV: Record<string, string> = {
@@ -40,7 +40,7 @@ const SANDBOX_ENV: Record<string, string> = {
 
 ### 2. 工作目錄鎖定
 
-所有腳本預設在 /Users/caijunchang/.openclaw/workspace/sandbox 執行。產出物必須寫入此處或指定的白名單目錄。
+所有腳本預設在 /Users/sky770825/.openclaw/workspace/sandbox 執行。產出物必須寫入此處或指定的白名單目錄。
 
 `typescript
 const SANDBOX_WORKDIR = path.join(

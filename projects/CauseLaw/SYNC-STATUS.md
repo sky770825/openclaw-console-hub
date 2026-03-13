@@ -1,6 +1,6 @@
 # MISSION: 因果真相旗艦版同步完成
 - **Status**: SYNCED & READY
-- **Synced From**: L2 Claude (projects/小蔡/因果/)
+- **Synced From**: L2 Claude (projects/達爾/因果/)
 - **Synced To**: projects/CauseLaw/
 - **Sync Time**: 2026-02-26
 
@@ -53,7 +53,7 @@ index.html          # 旗艦門戶首頁
 - [ ] Tailwind 4K 優化
 - [ ] 按鈕呼吸燈效果
 
-### L1 小蔡 (我) 待辦
+### L1 達爾 (我) 待辦
 - [ ] 執行 Git 提交
 - [ ] 更新 MEMORY.md
 - [ ] 設定部署 (Netlify/Vercel)

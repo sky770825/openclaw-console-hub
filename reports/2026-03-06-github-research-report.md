@@ -1,14 +1,14 @@
 # GitHub 高星專案調研報告：Agent 框架與 Live2D 實作
 
 > 日期：2026-03-06
-> 執行者：小蔡 (Commander)
+> 執行者：達爾 (Commander)
 > 目的：尋找高星開源專案以強化 NEUXA 星群協作與 Live2D 專案架構
 
 ---
 
 ## 1. 執行摘要
 
-根據老蔡指示，針對「自主代理框架」與「Live2D 實作」進行了 GitHub 高星專案調研。重點鎖定 **Microsoft AutoGen (52k+ stars)** 與 **Open-LLM-VTuber**。
+根據主人指示，針對「自主代理框架」與「Live2D 實作」進行了 GitHub 高星專案調研。重點鎖定 **Microsoft AutoGen (52k+ stars)** 與 **Open-LLM-VTuber**。
 
 **核心結論：**
 *   **協作層面**：AutoGen 證明了「結構化對話」比單純的指令派發更適合複雜任務。我們現有的 `delegate_agents` 偏向並行執行，需引入「對話流」機制。
@@ -50,7 +50,7 @@
 
 ### Phase 1: 靈魂強化 (立即執行)
 1.  **定義 Crew Bots 對話協議**：參考 AutoGen，制定《NEUXA 星群通訊協定 v1.0》，規範 Bot 之間的交接格式。
-2.  **引入情緒標記**：修改 `AGENTS.md` 或 Bot Prompt，讓小蔡和 Crew Bots 開始練習輸出情緒狀態。
+2.  **引入情緒標記**：修改 `AGENTS.md` 或 Bot Prompt，讓達爾和 Crew Bots 開始練習輸出情緒狀態。
 
 ### Phase 2: Live2D 實作 (一週內)
 1.  **架構對齊**：決定是否直接 Fork Open-LLM-VTuber 進行魔改，或是參考其架構重寫核心（建議參考架構重寫，以保持與 NEUXA 系統的整合性）。

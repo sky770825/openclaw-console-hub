@@ -116,7 +116,7 @@
 | 變數名 | 默認值 | 說明 |
 |--------|--------|------|
 | `OPENCLAW_HOME` | `$HOME/.openclaw` | OpenClaw 主目錄 |
-| `CHECKPOINT_DIR` | `$HOME/Desktop/小蔡/檢查點` | 檢查點存儲位置 |
+| `CHECKPOINT_DIR` | `$HOME/Desktop/堤諾米斯達爾（達爾）/檢查點` | 檢查點存儲位置 |
 | `DEBUG` | `false` | 啟用除錯模式 |
 
 ## 故障排查
@@ -128,8 +128,8 @@
 **解決方案**：
 ```bash
 # 檢查目錄權限
-ls -la $HOME/Desktop/小蔡/
-chmod 755 $HOME/Desktop/小蔡/
+ls -la $HOME/Desktop/堤諾米斯達爾（達爾）/
+chmod 755 $HOME/Desktop/堤諾米斯達爾（達爾）/
 
 # 檢查磁盤空間
 df -h $HOME
@@ -145,7 +145,7 @@ df -h $HOME
 ./checkpoint.sh list
 
 # 檢查檢查點文件完整性
-ls -lh $HOME/Desktop/小蔡/檢查點/
+ls -lh $HOME/Desktop/堤諾米斯達爾（達爾）/檢查點/
 
 # 查看日誌
 tail -50 ~/.openclaw/automation/logs/checkpoint.log
@@ -234,7 +234,7 @@ tail -f ~/.openclaw/automation/logs/automation.log
 cat ~/.openclaw/automation/state/state.json | jq .
 
 # 監控檢查點磁盤使用
-du -sh $HOME/Desktop/小蔡/檢查點/
+du -sh $HOME/Desktop/堤諾米斯達爾（達爾）/檢查點/
 ```
 
 ## 常見問題

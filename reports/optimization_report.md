@@ -17,4 +17,4 @@
     - 自動處理因意外中斷（如網路問題、進程崩潰）導致的「卡死」任務。
 
 ## 建議操作
-由於 `server/src/` 目錄受保護，請手動將 `/Users/caijunchang/.openclaw/workspace/scripts/optimization/` 下的程式碼片段整合進原始碼中。
+由於 `server/src/` 目錄受保護，請手動將 `/Users/sky770825/.openclaw/workspace/scripts/optimization/` 下的程式碼片段整合進原始碼中。

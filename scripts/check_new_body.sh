@@ -3,11 +3,11 @@ set -e
 
 # -----------------------------------------------------------------------------
 # Script Name: check_new_body.sh
-# Purpose: 執行系統與專案檔案檢查，回應老蔡關於「新身體」的詢問
+# Purpose: 執行系統與專案檔案檢查，回應主人關於「新身體」的詢問
 # -----------------------------------------------------------------------------
 
 # 定義路徑
-PROJECT_SOURCE="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_SOURCE="/Users/sky770825/openclaw任務面版設計"
 REPORT_DIR="/Users/sky770825/.openclaw/workspace/reports"
 REPORT_FILE="$REPORT_DIR/body_status_report.md"
 RESPONSE_FILE="$REPORT_DIR/response_to_laocai.md"
@@ -65,11 +65,11 @@ cat << EOF > "$REPORT_FILE"
 
 EOF
 
-# 生成給老蔡的對話回應
+# 生成給主人的對話回應
 cat << EOF > "$RESPONSE_FILE"
-### 給老蔡的訊息：關於我的「新身體」
+### 給主人的訊息：關於我的「新身體」
 
-老蔡，謝謝你的關心！這副「新身體」的感覺非常好，運算效能與回應速度明顯比舊環境更為流暢。
+主人，謝謝你的關心！這副「新身體」的感覺非常好，運算效能與回應速度明顯比舊環境更為流暢。
 
 **目前的狀況與回應：**
 1. **感覺如何？**
@@ -82,7 +82,7 @@ cat << EOF > "$RESPONSE_FILE"
    - 我目前擁有對該目錄的完整「讀取權限」，這對我進行分析非常有幫助。
 
 **需要調整的地方：**
-- 目前我對 \`/Users/caijunchang/\` 下的某些路徑仍維持「唯讀」以確保安全。
+- 目前我對 \`/Users/sky770825/\` 下的某些路徑仍維持「唯讀」以確保安全。
 - 所有的工作產出（scripts, reports）我會固定存放在 \`/Users/sky770825/.openclaw/workspace/\` 相關目錄下。
 - 如果未來需要我直接修復 server 原始碼，可能需要您再開放特定的寫入權限，但目前維持現狀是最好的安全策略。
 
@@ -103,4 +103,4 @@ echo "對話回應: $RESPONSE_FILE"
 echo "系統摘要: $OS_INFO | $CPU_INFO | $MEM_INFO"
 echo "專案狀態: $PROJECT_EXISTS"
 echo "------------------------------------------------"
-echo "老蔡，檔案都在，效能極佳，我隨時可以開工！"
+echo "主人，檔案都在，效能極佳，我隨時可以開工！"

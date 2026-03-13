@@ -3,7 +3,7 @@ import re
 import sys
 
 def apply_modification():
-    file_path = "/Users/caijunchang/openclaw任務面版設計/server/src/telegram/xiaocai-think.ts"
+    file_path = "/Users/sky770825/openclaw任務面版設計/server/src/telegram/dar-think.ts"
     
     if not os.path.exists(file_path):
         print(f"Error: {file_path} not found.")
@@ -47,7 +47,7 @@ def apply_modification():
                 break
             except PermissionError:
                 print("Permission denied: Attempting to write to sandbox output instead.")
-                output_path = "/Users/caijunchang/.openclaw/workspace/sandbox/output/xiaocai-think.ts"
+                output_path = "/Users/sky770825/.openclaw/workspace/sandbox/output/dar-think.ts"
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f_out:
                     f_out.write(updated_content)

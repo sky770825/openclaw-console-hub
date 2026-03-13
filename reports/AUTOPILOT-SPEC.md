@@ -1,7 +1,7 @@
 # Autopilot（自主循環模式）功能規格
 
 ## 概述
-在任務板中控台加入「自動駕駛」開關，讓小蔡在老蔡不在電腦前時自主循環執行任務。
+在任務板中控台加入「自動駕駛」開關，讓達爾在主人不在電腦前時自主循環執行任務。
 
 ## API 端點
 
@@ -54,7 +54,7 @@ interface AutopilotState {
 
 Autopilot 透過 OpenClaw Cron Job 觸發：
 - Cron 每 10 分鐘發一個 systemEvent
-- systemEvent 觸發小蔡檢查 autopilot 狀態
+- systemEvent 觸發達爾檢查 autopilot 狀態
 - 如果 ON → 執行循環邏輯
 - 如果 OFF → 跳過
 

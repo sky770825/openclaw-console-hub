@@ -1,5 +1,5 @@
 #!/bin/bash
-TARGET_FILE="/Users/caijunchang/.openclaw/workspace/sandbox/output/auto-executor.ts"
+TARGET_FILE="/Users/sky770825/.openclaw/workspace/sandbox/output/auto-executor.ts"
 echo "Verifying fix in $TARGET_FILE..."
 if grep -q "status" "$TARGET_FILE" | grep -q "queued"; then
     echo "Verification SUCCESS: 'queued' status found in query logic."

@@ -14,4 +14,4 @@
 邏輯：構造符合 Provider 規範的 HTTP 請求，並注入 API Key（來自環境變數或 KeyVault）。
 
 ### 4. 資料流總結
-小蔡 JSON → handleAskAI → ModelRegistry → Provider API → 小蔡回傳。
+達爾 JSON → handleAskAI → ModelRegistry → Provider API → 達爾回傳。

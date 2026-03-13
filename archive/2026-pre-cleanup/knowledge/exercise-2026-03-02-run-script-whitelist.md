@@ -21,4 +21,4 @@
 
 ### 6. 執行限制
 - Timeout: 30s
-- CWD: /Users/caijunchang/openclaw任務面版設計/
+- CWD: /Users/sky770825/openclaw任務面版設計/

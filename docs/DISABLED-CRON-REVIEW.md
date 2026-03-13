@@ -2,7 +2,7 @@
 
 **審查日期**: 2026-02-13  
 **執行者**: Codex 子代理  
-**報告位置**: `/Users/caijunchang/.openclaw/workspace/docs/DISABLED-CRON-REVIEW.md`
+**報告位置**: `/Users/sky770825/.openclaw/workspace/docs/DISABLED-CRON-REVIEW.md`
 
 ---
 
@@ -42,7 +42,7 @@
 **如需啟用，需調整**:
 ```bash
 # 建議改為：週六 14:00 檢查並通知（不自動更新）
-0 14 * * 6 /Users/caijunchang/.openclaw/workspace/scripts/clawhub-check.sh
+0 14 * * 6 /Users/sky770825/.openclaw/workspace/scripts/clawhub-check.sh
 ```
 
 ---
@@ -206,7 +206,7 @@
 
 ## 下一步
 
-1. **等待老蔡確認**: 批准本報告建議
+1. **等待主人確認**: 批准本報告建議
 2. **如需執行**: 
    - 建立 `weekly-performance-review.sh`
    - 建立 `weekly-taskboard-analysis.sh`

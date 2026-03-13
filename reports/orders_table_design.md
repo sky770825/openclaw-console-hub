@@ -19,6 +19,6 @@ Design and implementation of the `orders` table to support purchase management a
 - **Automation**: Database-level trigger ensures `updated_at` reflects the latest change.
 
 ## Artifacts
-- **SQL DDL**: `/Users/caijunchang/.openclaw/workspace/sandbox/output/001_create_orders_table.sql`
-- **Prisma Schema**: `/Users/caijunchang/.openclaw/workspace/sandbox/output/orders_schema.prisma`
-- **Deployment Script**: `/Users/caijunchang/.openclaw/workspace/scripts/deploy_orders_schema.sh`
+- **SQL DDL**: `/Users/sky770825/.openclaw/workspace/sandbox/output/001_create_orders_table.sql`
+- **Prisma Schema**: `/Users/sky770825/.openclaw/workspace/sandbox/output/orders_schema.prisma`
+- **Deployment Script**: `/Users/sky770825/.openclaw/workspace/scripts/deploy_orders_schema.sh`

@@ -14,8 +14,8 @@
 - *執行時間*: 2026-03-06T21:44:11.999+00:00 至 2026-03-06T21:44:57.641+00:00 (45秒)
 
 ## 產出物檢查
-- *日誌檔*: /Users/caijunchang/.openclaw/workspace/sandbox/output/auth_task.log 嘗試讀取失敗，回報「檔案不存在」。
-- *產出目錄*: /Users/caijunchang/.openclaw/workspace/sandbox/output/ 經 list_dir 確認為「空目錄」。
+- *日誌檔*: /Users/sky770825/.openclaw/workspace/sandbox/output/auth_task.log 嘗試讀取失敗，回報「檔案不存在」。
+- *產出目錄*: /Users/sky770825/.openclaw/workspace/sandbox/output/ 經 list_dir 確認為「空目錄」。
 
 ## 結論
 此任務執行結果為 *徹底失敗*，沒有任何日誌或產出物生成。品質評級 F 分說明了任務在多個環節都未能通過驗收標準，特別是產出物未正確落地 (artifacts_real_landing) 導致無從追溯詳細錯誤資訊。需要重新審查任務目標或執行策略。

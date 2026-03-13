@@ -1,6 +1,6 @@
 Starting diagnosis of Auto-Executor and Dispatch API...
 ### 1. Inspecting Route Definition
-Found route file: /Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts
+Found route file: /Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts
 ```typescript
 /**
  * AutoExecutor + Auto Dispatch API
@@ -120,7 +120,7 @@ let autoExecutorInterval: NodeJS.Timeout | null = null;
 // ─── 並發鎖：防止多個 poll 同時執行 executeNextPendingTask ───
 let executorLocked = false;
 
-// 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
+// 主人已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
 const autoExecutorExecHistoryMs: number[] = [];
 // AI分析 類任務限頻：每小時最多 5 個，避免量產低價值分析報告
@@ -208,7 +208,7 @@ async function triggerIdlePatrol(): Promise<void> {
 
   const prompt = `你是 OpenClaw 星艦指揮中心的自動巡邏系統。任務板目前是空的。
 
-專案路徑：/Users/caijunchang/openclaw任務面版設計
+專案路徑：/Users/sky770825/openclaw任務面版設計
 技術棧：React + TypeScript + Vite + Express.js (server/src/)
 
 最近完成的任務：
@@ -269,7 +269,7 @@ ${taskContext || '（無資料）'}
     let created = 0;
     for (const t of tasks.slice(0, 3)) {
       if (!t.name || !t.description) continue;
-      const result = await createTask(`[巡邏] ${t.name}`, t.description, '小蔡');
+      const result = await createTask(`[巡邏] ${t.name}`, t.description, '達爾');
       log.info(`[IdlePatrol] 建立任務: ${t.name} → ${result}`);
       created++;
     }
@@ -393,7 +393,7 @@ async function sendDispatchDigest(): Promise<void> {
   text += `<b>已執行：</b>${d.totalExecuted} 個任務\n`;
   text += `<b>成功：</b>${d.successes}  <b>失敗：</b>${d.failures}\n`;
   if (d.pendingReviews > 0) {
-    text += `\n🟣 <b>等待老蔡審核：${d.pendingReviews} 個</b>\n`;
+    text += `\n🟣 <b>等待主人審核：${d.pendingReviews} 個</b>\n`;
   }
   if (d.tasks.length > 0) {
     text += `\n<b>任務明細：</b>\n`;
@@ -462,8 +462,8 @@ async function executeNextPendingTask(): Promise<void> {
       .map(openClawTaskToTask)
       .filter((t) => {
         if (t.status !== 'ready') return false;
-        // 跳過指派給老蔡的任務 — 需要老蔡本人處理
-        if (t.owner === '老蔡') return false;
+        // 跳過指派給主人的任務 — 需要主人本人處理
+        if (t.owner === '主人') return false;
         // 跳過標記為 manual-only 的任務（需人工執行，不交給 auto-executor）
         if (t.tags?.includes('manual-only')) return false;
         // AI分析 類任務限頻：每小時最多 5 個
@@ -504,18 +504,18 @@ async function executeNextPendingTask(): Promise<void> {
               taskId: candidate.id,
               taskName: candidate.name || '未命名任務',
               riskLevel,
-              reason: '高風險任務需要老蔡審核',
+              reason: '高風險任務需要主人審核',
               queuedAt: new Date().toISOString(),
             });
             await upsertOpenClawTask({ id: candidate.id, status: 'pending_review' as never });
             await sendTelegramMessage(
               `🟣 <b>高風險任務等待審核</b>\n\n` +
               `<b>任務：</b>${candidate.name}\n` +
-              `<b>風險：</b>critical（需老蔡親自確認）\n` +
+              `<b>風險：</b>critical（需主人親自確認）\n` +
               `<b>說明：</b>${(candidate.description || '無').slice(0, 200)}`,
               { parseMode: 'HTML' }
             );
-            log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」需老蔡審核，已排入待審佇列，繼續找下一個`);
+            log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」需主人審核，已排入待審佇列，繼續找下一個`);
             autoExecutorState.recentExecutions.push({
               taskId: candidate.id,
               taskName: candidate.name || '',
@@ -523,7 +523,7 @@ async function executeNextPendingTask(): Promise<void> {
               status: 'pending_review',
               executedAt: new Date().toISOString(),
               agentType: 'pending',
-              summary: '等待老蔡審核',
+              summary: '等待主人審核',
             });
           } else {
             log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」已在待審佇列，跳過繼續找下一個`);
@@ -538,7 +538,7 @@ async function executeNextPendingTask(): Promise<void> {
       // 如果所有任務都是 critical 待審，沒有可執行的
       if (autoExecutorState.pendingReviews.some((r) => r.taskId === task.id) &&
           classifyTaskRisk(task) === 'critical' && !approvedCriticalTaskIds.has(task.id)) {
-        log.info('[AutoDispatch] 所有任務都在待審佇列，等待老蔡審核');
+        log.info('[AutoDispatch] 所有任務都在待審佇列，等待主人審核');
         return;
       }
     }
@@ -556,7 +556,7 @@ async function executeNextPendingTask(): Promise<void> {
       }
 
       if (bossApproved) {
-        log.info(`[AutoDispatch] ✅ 任務「${task.name}」已獲老蔡批准，跳過風險派工，直接執行`);
+        log.info(`[AutoDispatch] ✅ 任務「${task.name}」已獲主人批准，跳過風險派工，直接執行`);
         // 注意：不在這裡 delete，等到 upsertOpenClawTask('in_progress') 完成後再 delete
         // 避免競爭條件：delete 後但 upsert 前，另一個 poll 又把它加回 pendingReviews
       } else if (riskLevel === 'medium') {
@@ -657,7 +657,7 @@ async function executeNextPendingTask(): Promise<void> {
           `<b>任務：</b>${task.name}\n` +
           `<b>評分：</b>${quality.grade} (${quality.score}/100)\n` +
           `<b>原因：</b>${quality.reason}\n\n` +
-          `任務已改為 needs_review，等老蔡決定`,
+          `任務已改為 needs_review，等主人決定`,
           { parseMode: 'HTML' }
         );
         return;
@@ -890,7 +890,7 @@ autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
     }
     startDispatchDigestTimer();
     await sendTelegramMessage(
-      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，Agent 向 Claude 報告\n紫燈任務將暫存等老蔡審核',
+      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，Agent 向 Claude 報告\n紫燈任務將暫存等主人審核',
       { parseMode: 'HTML' }
     );
   }
@@ -900,7 +900,7 @@ autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
     stopDispatchDigestTimer();
     await sendDispatchDigest();
     await sendTelegramMessage(
-      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向老蔡報告',
+      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向主人報告',
       { parseMode: 'HTML' }
     );
   }
@@ -936,12 +936,12 @@ autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
   const review = autoExecutorState.pendingReviews[idx];
 
   if (decision === 'approved') {
-    // 記錄為老蔡已批准，下一次 poll 時跳過 critical 派工閘，直接執行
+    // 記錄為主人已批准，下一次 poll 時跳過 critical 派工閘，直接執行
     approvedCriticalTaskIds.add(taskId);
     await upsertOpenClawTask({ id: taskId, status: 'queued' });
     autoExecutorState.pendingReviews.splice(idx, 1);
     await sendTelegramMessage(
-      `✅ 老蔡已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 直接執行`,
+      `✅ 主人已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 直接執行`,
       { parseMode: 'HTML' }
     );
     return res.json({ ok: true, taskId, decision: 'approved' });
@@ -951,7 +951,7 @@ autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
   await upsertOpenClawTask({ id: taskId, status: 'done' });
   autoExecutorState.pendingReviews.splice(idx, 1);
   await sendTelegramMessage(
-    `❌ 老蔡已拒絕任務：<b>${review.taskName}</b>`,
+    `❌ 主人已拒絕任務：<b>${review.taskName}</b>`,
     { parseMode: 'HTML' }
   );
   res.json({ ok: true, taskId, decision: 'rejected' });
@@ -1008,7 +1008,7 @@ export {
 export default autoExecutorRouter;
 ```
 ### 2. Inspecting Router Mounting
-Found reference in /Users/caijunchang/openclaw任務面版設計/server/src/index.ts:
+Found reference in /Users/sky770825/openclaw任務面版設計/server/src/index.ts:
   saveAutoExecutorDiskState,
   startDispatchDigestTimer,
 } from './routes/auto-executor.js';
@@ -1033,9 +1033,9 @@ import propertyApiRouter from './routes/property-api.js';
   log.info(`  OpenClaw v4 (Supabase): GET/POST/PATCH /api/openclaw/tasks, /api/openclaw/reviews, /api/openclaw/automations`);
   log.info(`  FADP: GET /api/federation/status|members|attack/events|blocklist`);
 ### 3. Analyzing Task Polling Logic (executor-agents.ts)
-Reading /Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts to find 'ready' task filter...
+Reading /Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts to find 'ready' task filter...
 ### 4. Log Analysis
-Log file /Users/caijunchang/.openclaw/workspace/sandbox/taskboard.log not found.
+Log file /Users/sky770825/.openclaw/workspace/sandbox/taskboard.log not found.
 ### 5. API Token and Auth Analysis
 ### 6. Path Analysis
 - Mount Path: 
@@ -1048,6 +1048,6 @@ The API is failing because the server is listening on `` but the client is calli
 ### 8. Done Status Investigation
 ---
 SUMMARY:
-1. API 404 is likely due to route path mismatch in /Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts.
+1. API 404 is likely due to route path mismatch in /Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts.
 2. Task execution status (done instead of actual state) may be caused by early return or incorrect status update logic in executor-agents.ts.
 3. lastExecutedAt updates suggest the loop is active, but it might be skipping 'ready' tasks due to a filter mismatch (e.g., case sensitivity or namespace).

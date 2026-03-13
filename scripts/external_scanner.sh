@@ -1,6 +1,6 @@
 #!/bin/bash
 # External Scanner Tool - Used to find external protocol definitions and API integrations
-SEARCH_DIR="/Users/caijunchang/openclaw任務面版設計"
+SEARCH_DIR="/Users/sky770825/openclaw任務面版設計"
 KEYWORD=$1
 
 if [ -z "$KEYWORD" ]; then

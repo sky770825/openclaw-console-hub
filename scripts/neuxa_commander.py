@@ -2,8 +2,8 @@ import json
 import os
 import datetime
 
-BUS_PATH = "/Users/caijunchang/.openclaw/workspace/sandbox/neuxa_comm_bus.jsonl"
-REPORT_DIR = "/Users/caijunchang/.openclaw/workspace/reports"
+BUS_PATH = "/Users/sky770825/.openclaw/workspace/sandbox/neuxa_comm_bus.jsonl"
+REPORT_DIR = "/Users/sky770825/.openclaw/workspace/reports"
 
 def process_messages():
     if not os.path.exists(BUS_PATH):

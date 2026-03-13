@@ -2,7 +2,7 @@
 # Script to apply CSP fixes to the production source (to be run by authorized user)
 # Task: Fix img-src and script-src CSP rules
 
-TARGET_DIR="/Users/caijunchang/openclaw任務面版設計"
+TARGET_DIR="/Users/sky770825/openclaw任務面版設計"
 SERVER_APP="$TARGET_DIR/server/src/app.ts"
 
 if [ ! -f "$SERVER_APP" ]; then

@@ -2,9 +2,9 @@
 # refresh_wake_status.sh - Forces a fresh sync from Supabase to WAKE_STATUS.md
 set -e
 
-WORKSPACE_ROOT="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_ROOT="/Users/sky770825/.openclaw/workspace"
 WAKE_STATUS_PATH="$WORKSPACE_ROOT/sandbox/WAKE_STATUS.md"
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 
 echo "🔄 Initiating Real-time Status Sync..."
 
@@ -65,7 +65,7 @@ async function updateStatus() {
     if (pending.length === 0) md += "_No pending tasks._\n";
     pending.forEach(t => md += `- [${t.id}] ${t.title}\n`);
 
-    fs.writeFileSync('/Users/caijunchang/.openclaw/workspace/sandbox/WAKE_STATUS.md', md);
+    fs.writeFileSync('/Users/sky770825/.openclaw/workspace/sandbox/WAKE_STATUS.md', md);
     console.log("✅ WAKE_STATUS.md has been synchronized with Supabase.");
 }
 

@@ -3,7 +3,7 @@
 
 cd "$(dirname "$0")"
 
-echo "🎭 小蔡 Live2D 啟動中..."
+echo "🎭 達爾 Live2D 啟動中..."
 
 # 檢查 node 是否存在
 if ! command -v node &> /dev/null; then
@@ -19,5 +19,5 @@ fi
 
 # 啟動
 echo "✅ 啟動 http://localhost:8080"
-echo "📱 用瀏覽器開啟上面的網址就能看到小蔡"
+echo "📱 用瀏覽器開啟上面的網址就能看到達爾"
 node server.js

@@ -6,15 +6,15 @@
 
 在 Supabase SQL Editor 依序執行：
 
-1. [docs/sql/2026-02-28-membership-v1.sql](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/docs/sql/2026-02-28-membership-v1.sql)
+1. [docs/sql/2026-02-28-membership-v1.sql](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/docs/sql/2026-02-28-membership-v1.sql)
 2. （可選）智慧修行助手 schema：
-   - [docs/sql/2026-02-28-smart-assistant-v1-isolated-schema.sql](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/docs/sql/2026-02-28-smart-assistant-v1-isolated-schema.sql)
+   - [docs/sql/2026-02-28-smart-assistant-v1-isolated-schema.sql](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/docs/sql/2026-02-28-smart-assistant-v1-isolated-schema.sql)
 3. （可選）祈福/懺悔牆會員橋接：
-   - [docs/sql/2026-03-01-member-practice-bridge.sql](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/docs/sql/2026-03-01-member-practice-bridge.sql)
+   - [docs/sql/2026-03-01-member-practice-bridge.sql](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/docs/sql/2026-03-01-member-practice-bridge.sql)
 
 ## 2. 前端填入 Supabase 設定
 
-編輯 [causelaw-config.js](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/causelaw-config.js)：
+編輯 [causelaw-config.js](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/causelaw-config.js)：
 
 ```js
 window.CAUSELAW_SUPABASE_URL = 'https://<your-project-ref>.supabase.co';
@@ -30,7 +30,7 @@ window.CAUSELAW_SUPABASE_ANON_KEY = '<your-anon-key>';
 先讓管理員信箱至少登入一次（網站會員登入或 Supabase Auth Users 手動建立），確保帳號存在 `auth.users`。
 
 接著執行：
-- [docs/sql/2026-03-01-bootstrap-admin-members.sql](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/docs/sql/2026-03-01-bootstrap-admin-members.sql)
+- [docs/sql/2026-03-01-bootstrap-admin-members.sql](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/docs/sql/2026-03-01-bootstrap-admin-members.sql)
 
 把 SQL 內的示例信箱（`admin@example.com` 等）改成你的真實信箱。
 

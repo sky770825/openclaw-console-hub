@@ -1,7 +1,7 @@
 #!/bin/bash
 # 模擬驗證追蹤事件發送的腳本
 
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/tracking_test_log.json"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/tracking_test_log.json"
 
 echo "=== OpenClaw Tracking Event Verifier ==="
 echo "監控時間: $(date)"

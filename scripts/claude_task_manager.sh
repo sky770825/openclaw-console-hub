@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Task Helper - Authorized by 老蔡
+# Claude Task Helper - Authorized by 主人
 # This script provides read-only context for the task dashboard project.
 
 SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"

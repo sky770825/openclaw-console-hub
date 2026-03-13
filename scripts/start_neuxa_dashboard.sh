@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script to run the NEUXA Dashboard Simulator
-export OUTPUT_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output/neuxa_dashboard"
-PYTHON_SIM="/Users/caijunchang/.openclaw/workspace/scripts/ai_state_simulator.py"
+export OUTPUT_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output/neuxa_dashboard"
+PYTHON_SIM="/Users/sky770825/.openclaw/workspace/scripts/ai_state_simulator.py"
 
 echo "Launching NEUXA State Simulator..."
 # Run simulation in loop for 60 seconds (as a demonstration)

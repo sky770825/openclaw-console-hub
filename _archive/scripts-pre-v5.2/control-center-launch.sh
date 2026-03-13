@@ -16,16 +16,16 @@ echo "收集系統狀態..."
 OPENCLAW_STATUS=$(openclaw status 2>/dev/null | head -5 || echo "狀態未知")
 
 # 2. 檢查備份狀態
-LATEST_BACKUP=$(ls -t ~/Desktop/小蔡/系統備份/ 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | head -1 || echo "無")
+LATEST_BACKUP=$(ls -t ~/Desktop/堤諾米斯達爾（達爾）/系統備份/ 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | head -1 || echo "無")
 
 # 3. 檢查檢查點
-CHECKPOINT_COUNT=$(find ~/Desktop/小蔡/檢查點/ -mindepth 1 -maxdepth 1 -type d ! -name '.history' 2>/dev/null | wc -l || echo 0)
+CHECKPOINT_COUNT=$(find ~/Desktop/堤諾米斯達爾（達爾）/檢查點/ -mindepth 1 -maxdepth 1 -type d ! -name '.history' 2>/dev/null | wc -l || echo 0)
 
 # 4. 檢查 cron 任務
 CRON_COUNT=$(openclaw cron list 2>/dev/null | grep -c "enabled" || echo 0)
 
 # 生成中控台 HTML
-cat > ~/Desktop/小蔡/中控台/中控台.html << HTML_EOF
+cat > ~/Desktop/堤諾米斯達爾（達爾）/中控台/中控台.html << HTML_EOF
 <!DOCTYPE html>
 <html>
 <head>
@@ -195,9 +195,9 @@ HTML_EOF
 
 echo "✅ 中控台已建立"
 echo ""
-echo "位置: ~/Desktop/小蔡/中控台/中控台.html"
+echo "位置: ~/Desktop/堤諾米斯達爾（達爾）/中控台/中控台.html"
 echo ""
 
 # 用瀏覽器開啟
-open ~/Desktop/小蔡/中控台/中控台.html 2>/dev/null || echo "請手動開啟"
+open ~/Desktop/堤諾米斯達爾（達爾）/中控台/中控台.html 2>/dev/null || echo "請手動開啟"
 

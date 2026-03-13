@@ -1,8 +1,8 @@
 import os
 
 def analyze():
-    base_path = "/Users/caijunchang/openclaw任務面版設計"
-    report_path = "/Users/caijunchang/.openclaw/workspace/reports/business_strategy_v1.md"
+    base_path = "/Users/sky770825/openclaw任務面版設計"
+    report_path = "/Users/sky770825/.openclaw/workspace/reports/business_strategy_v1.md"
     
     features = {
         "User System": ["auth", "user", "login", "profile"],

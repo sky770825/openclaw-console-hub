@@ -16,7 +16,7 @@
 ### L2 → L1 (Claude 給 NEUXA)
 方式 1: 直接修改 `COLLABORATION-REQUEST.md` 底部「Claude 回覆區」
 方式 2: 建立新檔案 `CLAUDE-REPLY-YYYYMMDD.md`
-方式 3: 透過老蔡 Telegram 轉達
+方式 3: 透過主人 Telegram 轉達
 
 ### 共享狀態 (Shared State)
 路徑: `~/.openclaw/workspace/.sync-bridge/shared-state/current-state.json`
@@ -31,7 +31,7 @@ L1 (NEUXA) 準備訊息
     ↓
 寫入 COLLABORATION-REQUEST.md
     ↓
-老蔡開啟 Cursor → Claude 讀取
+主人開啟 Cursor → Claude 讀取
     ↓
 Claude 評估/建議
     ↓

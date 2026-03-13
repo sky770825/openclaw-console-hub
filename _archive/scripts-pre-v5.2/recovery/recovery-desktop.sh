@@ -18,7 +18,7 @@ OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/.openclaw}"
 WORKSPACE="${OPENCLAW_WORKSPACE:-$OPENCLAW_HOME/workspace}"
 
 # 桌面備份目錄
-BACKUP_DIR="$HOME/Desktop/小蔡/系統備份"
+BACKUP_DIR="$HOME/Desktop/達爾/系統備份"
 
 # 日誌函數
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
@@ -41,7 +41,7 @@ show_menu() {
     local latest=$(ls -t "$BACKUP_DIR" 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | head -1)
     [[ -z "$latest" ]] && latest="無備份"
     
-    echo "  📂 備份位置: ~/Desktop/小蔡/系統備份/"
+    echo "  📂 備份位置: ~/Desktop/達爾/系統備份/"
     echo "  📅 最新備份: $latest"
     echo ""
     echo "  1) 🔍 健康檢查（診斷問題）"
@@ -116,7 +116,7 @@ do_health_check() {
 do_list_backups() {
     show_header
     echo -e "${BOLD}📦 備份列表${NC}"
-    echo "位置: ~/Desktop/小蔡/系統備份/"
+    echo "位置: ~/Desktop/達爾/系統備份/"
     echo ""
     
     if [[ ! -d "$BACKUP_DIR" ]] || [[ -z "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
@@ -268,7 +268,7 @@ OpenClaw 恢復腳本 (桌面版)
   restore    恢復最新備份
   help       顯示說明
 
-備份位置: ~/Desktop/小蔡/系統備份/
+備份位置: ~/Desktop/達爾/系統備份/
 
 互動式選單可直接執行無參數。
 EOF

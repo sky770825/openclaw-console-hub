@@ -1,6 +1,6 @@
 #!/bin/bash
 # Tool to inject security layer into existing scripts
-SECURITY_LIB="/Users/caijunchang/.openclaw/workspace/armory/claw_security_lib.sh"
+SECURITY_LIB="/Users/sky770825/.openclaw/workspace/armory/claw_security_lib.sh"
 TARGET_SCRIPT="$1"
 
 if [ -z "$TARGET_SCRIPT" ] || [ ! -f "$TARGET_SCRIPT" ]; then
@@ -10,7 +10,7 @@ fi
 
 # Create a hardened version in the workspace
 FILENAME=$(basename "$TARGET_SCRIPT")
-OUTPUT="/Users/caijunchang/.openclaw/workspace/skills/hardened_$FILENAME"
+OUTPUT="/Users/sky770825/.openclaw/workspace/skills/hardened_$FILENAME"
 
 echo "#!/bin/bash" > "$OUTPUT"
 echo "source $SECURITY_LIB" >> "$OUTPUT"

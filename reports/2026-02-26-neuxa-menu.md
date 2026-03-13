@@ -26,8 +26,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -50,14 +50,14 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
 
 /menu@xiaoji_cai_bot
-assistant: [[reply_to_current]] 🚀 **NEUXA 戰術選單** | 統帥老蔡，請下令：
+assistant: [[reply_to_current]] 🚀 **NEUXA 戰術選單** | 統帥主人，請下令：
 
 1. 📊 **/status** - 系統效能與星艦狀態
 2. ⚡ **/codex** - 啟動開發者代理 (L2)

@@ -5,11 +5,11 @@ Date: Sun Mar  1 15:40:03 CST 2026
 ## 1. Analysis of Failure Reason Storage
 Searching for 'recentExecutions' and error handling logic...
 ```typescript
-510-              `<b>風險：</b>critical（需老蔡親自確認）\n` +
+510-              `<b>風險：</b>critical（需主人親自確認）\n` +
 511-              `<b>說明：</b>${(candidate.description || '無').slice(0, 200)}`,
 512-              { parseMode: 'HTML' }
 513-            );
-514-            log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」需老蔡審核，已排入待審佇列，繼續找下一個`);
+514-            log.info(`[AutoDispatch] 🟣 任務「${candidate.name}」需主人審核，已排入待審佇列，繼續找下一個`);
 515:            autoExecutorState.recentExecutions.push({
 516-              taskId: candidate.id,
 517-              taskName: candidate.name || '',
@@ -135,7 +135,7 @@ Searching for sendDispatchDigest and dispatch logic...
 --
 887-    startDispatchDigestTimer();
 888-    await sendTelegramMessage(
-889-      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，Agent 向 Claude 報告\n紫燈任務將暫存等老蔡審核',
+889-      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，Agent 向 Claude 報告\n紫燈任務將暫存等主人審核',
 890-      { parseMode: 'HTML' }
 891-    );
 892-  }
@@ -145,7 +145,7 @@ Searching for sendDispatchDigest and dispatch logic...
 896-    stopDispatchDigestTimer();
 897:    await sendDispatchDigest();
 898-    await sendTelegramMessage(
-899-      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向老蔡報告',
+899-      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向主人報告',
 900-      { parseMode: 'HTML' }
 901-    );
 902-  }

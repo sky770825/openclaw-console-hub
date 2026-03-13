@@ -1,7 +1,7 @@
 #!/bin/bash
 # Workspace Integrity Monitor
-TARGET_DIR="/Users/caijunchang/.openclaw/workspace/sandbox"
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/integrity_violations.log"
+TARGET_DIR="/Users/sky770825/.openclaw/workspace/sandbox"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/integrity_violations.log"
 
 echo "Monitoring $TARGET_DIR for changes..."
 # Use fswatch if available, otherwise fallback to polling

@@ -26,4 +26,4 @@ LLM 在撰寫 Post-mortem 時可能產生「高可信度的幻覺」，將失敗
 
 ### 4. 路由機制
 - Verified: 三層通過 -> 索引至向量庫。
-- Uncertain: 驗證失敗 -> 標記為 needs_review 提交給老蔡。
+- Uncertain: 驗證失敗 -> 標記為 needs_review 提交給主人。

@@ -24,4 +24,4 @@ const cmd = `nohup /bin/bash -c "${sanitizedCommand}"`;
 ```
 
 ## Implementation Script
-A diagnostic/fix script has been created at `/Users/caijunchang/.openclaw/workspace/scripts/verify_fix.sh`.
+A diagnostic/fix script has been created at `/Users/sky770825/.openclaw/workspace/scripts/verify_fix.sh`.

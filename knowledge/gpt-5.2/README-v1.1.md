@@ -216,7 +216,7 @@ const result = await sessions_spawn({
 }
 ```
 
-**更新**: v1.3 新增 o3/o4-mini 模型資訊（2025年7月發布）、196k context limit、GPT-5 延遲公告、最新 benchmark 數據。2025-07 by 小蔡。
+**更新**: v1.3 新增 o3/o4-mini 模型資訊（2025年7月發布）、196k context limit、GPT-5 延遲公告、最新 benchmark 數據。2025-07 by 達爾。
 
 **版本歷史**:
 - v1.2: 新增 Thinking 模式、場景矩陣、成本分析、限制表格、進階整合範例（2026-02-16）

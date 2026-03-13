@@ -58,7 +58,7 @@ async function runTests() {
     }
 
     // Write final state to reports
-    const reportPath = "/Users/caijunchang/.openclaw/workspace/reports/appointment_test_report.json";
+    const reportPath = "/Users/sky770825/.openclaw/workspace/reports/appointment_test_report.json";
     fs.writeFileSync(reportPath, JSON.stringify({ results, data: engine.getAppointments() }, null, 2));
     console.log(`Report written to ${reportPath}`);
 }

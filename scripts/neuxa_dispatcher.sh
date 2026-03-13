@@ -5,7 +5,7 @@ ASSIGNEE=$1
 TERM=$2
 TASK_ID=$(date +%s)
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-INBOX="/Users/caijunchang/.openclaw/workspace/sandbox/inbox"
+INBOX="/Users/sky770825/.openclaw/workspace/sandbox/inbox"
 
 TASK_FILE="$INBOX/task_$TASK_ID.json"
 

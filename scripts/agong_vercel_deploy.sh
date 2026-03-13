@@ -2,8 +2,8 @@
 # 阿工自動化部署工具 - Vercel 版
 # 此腳本由任務執行器自動生成
 
-SOURCE_ROOT="/Users/caijunchang/openclaw任務面版設計"
-CONFIG_FILE="/Users/caijunchang/.openclaw/workspace/sandbox/output/vercel.json"
+SOURCE_ROOT="/Users/sky770825/openclaw任務面版設計"
+CONFIG_FILE="/Users/sky770825/.openclaw/workspace/sandbox/output/vercel.json"
 
 echo "--- 阿工部署啟動 ---"
 
@@ -29,7 +29,7 @@ echo "3. 同步原始碼到臨時目錄..."
 rsync -av --exclude 'node_modules' --exclude '.git' "$SOURCE_ROOT/" "$TEMP_DEPLOY_DIR/"
 
 echo "4. 注入校準後的 vercel.json..."
-cp "/Users/caijunchang/.openclaw/workspace/sandbox/output/vercel.json" "$TEMP_DEPLOY_DIR/vercel.json"
+cp "/Users/sky770825/.openclaw/workspace/sandbox/output/vercel.json" "$TEMP_DEPLOY_DIR/vercel.json"
 
 echo "5. 執行 Vercel 部署..."
 cd "$TEMP_DEPLOY_DIR"

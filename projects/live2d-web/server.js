@@ -41,7 +41,7 @@ wss.on('connection', (ws) => {
 
   ws.send(JSON.stringify({
     type: 'message',
-    text: '你好！我是小蔡，有什麼需要幫忙的嗎？✨',
+    text: '你好！我是達爾，有什麼需要幫忙的嗎？✨',
     emotion: 'happy'
   }));
 

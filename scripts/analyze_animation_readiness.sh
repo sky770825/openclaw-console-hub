@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT_DIR="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_DIR="/Users/sky770825/openclaw任務面版設計"
 echo "--- Animation Tech Stack Check ---"
 if [ -f "$PROJECT_DIR/package.json" ]; then
     grep -E "framer-motion|framer|gsap|tailwind|radix" "$PROJECT_DIR/package.json"

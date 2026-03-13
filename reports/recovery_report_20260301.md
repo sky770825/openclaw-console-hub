@@ -1,7 +1,7 @@
 # OpenClaw System Recovery Report
 
 ## Actions Taken
-1. **Script Restoration**: Recreated missing scripts in `/Users/caijunchang/.openclaw/workspace/scripts`.
+1. **Script Restoration**: Recreated missing scripts in `/Users/sky770825/.openclaw/workspace/scripts`.
    - `monitor_and_move.sh`
    - `auto-checkpoint.sh`
    - `docker-n8n-recovery.sh`
@@ -18,4 +18,4 @@
 
 ## Next Steps
 1. Old tasks marked as 'done' incorrectly should be manually moved back to 'ready'.
-2. Monitor `/Users/caijunchang/.openclaw/workspace/reports/recovery.log` for cron execution verification.
+2. Monitor `/Users/sky770825/.openclaw/workspace/reports/recovery.log` for cron execution verification.

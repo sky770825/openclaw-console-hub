@@ -20,7 +20,7 @@ Implemented a robust backend module for scraping plain text from external URLs.
 ## 4. Test Results
 The module was tested against `https://clawhub.ai/`.
 Output snippet:
-$(cat "/Users/caijunchang/.openclaw/workspace/sandbox/output/test_result.txt" | head -n 10)
+$(cat "/Users/sky770825/.openclaw/workspace/sandbox/output/test_result.txt" | head -n 10)
 
 ## 5. Integration Guide
 To integrate into OpenClaw Server:

@@ -1,6 +1,6 @@
 ✅ HEARTBEAT 流程完成報告 (2026-03-09)
 
-老蔡，我剛完成了這次的 Heartbeat 流程。
+主人，我剛完成了這次的 Heartbeat 流程。
 
 *   *系統健康*：Server、API、Bots、知識庫、Auto-Executor、Tunnel、generate_site 全部運行正常。
 *   *任務板*：目前任務板上沒有任何等待處理的任務。

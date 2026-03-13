@@ -12,8 +12,8 @@
    - Configured to monitor critical endpoints.
 
 ## Execution Path
-- Monitor Location: `/Users/caijunchang/.openclaw/workspace/scripts/web-monitor/monitor.py`
-- Dispatcher Location: `/Users/caijunchang/.openclaw/workspace/scripts/web-monitor/notify.py`
+- Monitor Location: `/Users/sky770825/.openclaw/workspace/scripts/web-monitor/monitor.py`
+- Dispatcher Location: `/Users/sky770825/.openclaw/workspace/scripts/web-monitor/notify.py`
 
 ## System Permission Integration
 The scripts are placed in the OpenClaw workspace scripts directory, allowing the executor engine to trigger them as part of the automated pipeline.

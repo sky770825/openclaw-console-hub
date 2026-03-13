@@ -5,4 +5,4 @@ if [ -z "$SEARCH_TERM" ]; then
   echo "Usage: $0 <search_term>"
   exit 1
 fi
-grep -rni "$SEARCH_TERM" /Users/caijunchang/openclaw任務面版設計 --exclude-dir=node_modules
+grep -rni "$SEARCH_TERM" /Users/sky770825/openclaw任務面版設計 --exclude-dir=node_modules

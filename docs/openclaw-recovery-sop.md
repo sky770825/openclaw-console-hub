@@ -47,7 +47,7 @@
 可以在 Cron 中加入定期檢查：
 ```bash
 # 每小時檢查一次，如果服務異常就自動恢復
-*/60 * * * * /Users/caijunchang/.openclaw/workspace/scripts/openclaw-recovery.sh --soft > /dev/null 2>&1
+*/60 * * * * /Users/sky770825/.openclaw/workspace/scripts/openclaw-recovery.sh --soft > /dev/null 2>&1
 ```
 
 ## 四、與專家團隊的整合

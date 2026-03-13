@@ -1,4 +1,4 @@
-# 【小蔡執行-FUNNEL_DIAGNOSIS】營運漏斗診斷報告
+# 【達爾執行-FUNNEL_DIAGNOSIS】營運漏斗診斷報告
 
 > task_id: funnel-diagnosis-20250214  
 > run_id: run_001  
@@ -11,7 +11,7 @@
 
 ## 📊 執行摘要
 
-針對老蔡三個事業（住商biz_realestate、biz_drinks、普特斯防霾biz_window_screen）進行註冊到首單漏斗診斷，識別出 **13 個阻塞點**，產出 **12 個可執行修復任務**。
+針對主人三個事業（住商biz_realestate、biz_drinks、普特斯防霾biz_window_screen）進行註冊到首單漏斗診斷，識別出 **13 個阻塞點**，產出 **12 個可執行修復任務**。
 
 **關鍵發現**：
 1. biz_realestate漏斗最長（決策週期 1-3 個月），阻塞點在「信任建立」與「帶看轉化」
@@ -200,4 +200,4 @@ biz_drinks為實體店面，無「註冊」概念，需重新定義漏斗：
 ---
 
 **報告完成** 🐣  
-小蔡 | 2026-02-14 06:25
+達爾 | 2026-02-14 06:25

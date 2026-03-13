@@ -3,7 +3,7 @@ import os
 import sys
 
 def run_monitor(duration_sec=5):
-    log_file = "/Users/caijunchang/.openclaw/workspace/reports/live2d_perf_log.csv"
+    log_file = "/Users/sky770825/.openclaw/workspace/reports/live2d_perf_log.csv"
     print(f"Monitoring started. Logging to {log_file}")
     
     if not os.path.exists(os.path.dirname(log_file)):

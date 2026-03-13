@@ -42,7 +42,7 @@
    - Ollama：整理/監控
 
 3. **I/O 閉環模式**
-   - 小蔡指派 → Agent 執行 → 小ollama 回報
+   - 達爾指派 → Agent 執行 → 小ollama 回報
    - 省 30-40% Token
 
 ## 待延續項目
@@ -64,4 +64,4 @@ docs/AI-AGENT-SOP-v1.0.md                             # SOP 標準程序
 ```
 
 ---
-🐣 小蔡 | Checkpoint 已保存
+🐣 達爾 | Checkpoint 已保存

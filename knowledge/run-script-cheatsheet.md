@@ -27,15 +27,15 @@ which node
 ```
 cat /tmp/openclaw-server.log
 tail -n 50 /tmp/openclaw-server.log
-tail -n 100 /Users/caijunchang/.openclaw/automation/logs/taskboard.log
+tail -n 100 /Users/sky770825/.openclaw/automation/logs/taskboard.log
 head -n 20 /some/file
 ```
 
 ### 搜尋
 ```
 grep -ri "keyword" /path/to/search
-grep -rn "function" /Users/caijunchang/openclaw任務面版設計/server/src/
-find /Users/caijunchang/.openclaw/workspace -name "*.md"
+grep -rn "function" /Users/sky770825/openclaw任務面版設計/server/src/
+find /Users/sky770825/.openclaw/workspace -name "*.md"
 ```
 
 ### 統計

@@ -24,6 +24,6 @@
 
 ## 上線前檢查
 
-1. [causelaw-config.js](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/causelaw-config.js) 已填入 URL / anon key
-2. [docs/sql/2026-02-28-membership-v1.sql](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/docs/sql/2026-02-28-membership-v1.sql) 已執行
-3. [docs/sql/2026-03-01-bootstrap-admin-members.sql](/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/docs/sql/2026-03-01-bootstrap-admin-members.sql) 已建立至少一個管理員角色
+1. [causelaw-config.js](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/causelaw-config.js) 已填入 URL / anon key
+2. [docs/sql/2026-02-28-membership-v1.sql](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/docs/sql/2026-02-28-membership-v1.sql) 已執行
+3. [docs/sql/2026-03-01-bootstrap-admin-members.sql](/Users/sky770825/.openclaw/workspace/projects/達爾/因果/docs/sql/2026-03-01-bootstrap-admin-members.sql) 已建立至少一個管理員角色

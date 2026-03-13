@@ -93,23 +93,23 @@
 1917-      break;
 -e 
 ### Proxy/AI Config Search Results
-/Users/caijunchang/openclaw任務面版設計/server/src/error-handler.ts:74:      /fetch|axios|request/i,
-/Users/caijunchang/openclaw任務面版設計/server/src/utils/key-vault.ts:10: * - routes/proxy.ts — 回應脫敏
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:713:  if (!url) return { ok: false, output: 'proxy_fetch 需要 url 參數' };
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:765:    return { ok: false, output: `proxy_fetch: URL 不在白名單。允許的目標: ${TARGETS.map(t => t.name).join(', ')}` };
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:793:    return { ok: false, output: sanitize(`proxy_fetch ${target.name} 失敗: ${msg}`) };
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/action-handlers.ts:1915:    case 'proxy_fetch':
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/xiaocai-think.ts:299:呼叫外部 API（server 代理，自動注入 key）：{"action":"proxy_fetch","url":"https://...","method":"POST","body":"{}"}
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:79:import { proxyRouter } from './routes/proxy.js';
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:151:// If you deploy behind a reverse proxy (Caddy/Nginx/Cloudflare), set OPENCLAW_TRUST_PROXY=true
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:154:  // Express accepts boolean/number; 1 means trust first proxy hop.
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:155:  app.set('trust proxy', 1);
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:518:// API Key 安全代理（proxy_fetch action + HTTP endpoint）
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:519:app.use('/api/proxy', proxyRouter);
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:4: * POST /api/proxy/fetch — 代理外部 API 請求，server 自動注入 key
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:5: * GET  /api/proxy/targets — 列出可用的代理目標（不暴露 key）
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:16:const log = createLogger('proxy');
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:17:const proxyRouter = Router();
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:71:// ─── POST /api/proxy/fetch ───
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:73:proxyRouter.post('/fetch', async (req: Request, res: Response) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts:134:// ─── GET /api/proxy/targets ───
+/Users/sky770825/openclaw任務面版設計/server/src/error-handler.ts:74:      /fetch|axios|request/i,
+/Users/sky770825/openclaw任務面版設計/server/src/utils/key-vault.ts:10: * - routes/proxy.ts — 回應脫敏
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:713:  if (!url) return { ok: false, output: 'proxy_fetch 需要 url 參數' };
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:765:    return { ok: false, output: `proxy_fetch: URL 不在白名單。允許的目標: ${TARGETS.map(t => t.name).join(', ')}` };
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:793:    return { ok: false, output: sanitize(`proxy_fetch ${target.name} 失敗: ${msg}`) };
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/action-handlers.ts:1915:    case 'proxy_fetch':
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/xiaocai-think.ts:299:呼叫外部 API（server 代理，自動注入 key）：{"action":"proxy_fetch","url":"https://...","method":"POST","body":"{}"}
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:79:import { proxyRouter } from './routes/proxy.js';
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:151:// If you deploy behind a reverse proxy (Caddy/Nginx/Cloudflare), set OPENCLAW_TRUST_PROXY=true
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:154:  // Express accepts boolean/number; 1 means trust first proxy hop.
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:155:  app.set('trust proxy', 1);
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:518:// API Key 安全代理（proxy_fetch action + HTTP endpoint）
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:519:app.use('/api/proxy', proxyRouter);
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:4: * POST /api/proxy/fetch — 代理外部 API 請求，server 自動注入 key
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:5: * GET  /api/proxy/targets — 列出可用的代理目標（不暴露 key）
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:16:const log = createLogger('proxy');
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:17:const proxyRouter = Router();
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:71:// ─── POST /api/proxy/fetch ───
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:73:proxyRouter.post('/fetch', async (req: Request, res: Response) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts:134:// ─── GET /api/proxy/targets ───

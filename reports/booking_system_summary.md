@@ -11,7 +11,7 @@
 3. 狀態更新: 成功從 Pending 轉為 Confirmed
 
 ## 檔案路徑
-- 核心邏輯: /Users/caijunchang/.openclaw/workspace/scripts/booking_manager.py
-- CLI 工具: /Users/caijunchang/.openclaw/workspace/scripts/booking_cli.sh
-- 資料庫: /Users/caijunchang/.openclaw/workspace/sandbox/booking_system.db
-- 通知日誌: /Users/caijunchang/.openclaw/workspace/sandbox/booking_notifications.log
+- 核心邏輯: /Users/sky770825/.openclaw/workspace/scripts/booking_manager.py
+- CLI 工具: /Users/sky770825/.openclaw/workspace/scripts/booking_cli.sh
+- 資料庫: /Users/sky770825/.openclaw/workspace/sandbox/booking_system.db
+- 通知日誌: /Users/sky770825/.openclaw/workspace/sandbox/booking_notifications.log

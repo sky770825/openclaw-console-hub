@@ -1,7 +1,7 @@
 # OpenClaw 核心路徑清單 (2026-03-03)
 
-## 1. 小蔡意識核心 (Xiao Cai Brain)
-路徑: server/src/telegram/xiaocai-think.ts 
+## 1. 達爾意識核心 (Xiao Cai Brain)
+路徑: server/src/telegram/dar-think.ts 
 用途: 定義 System Prompt、知識分層、模型路由。
 
 ## 2. OpenClaw 系統核心 (System Core)

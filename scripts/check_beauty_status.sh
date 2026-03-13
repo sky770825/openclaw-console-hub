@@ -1,8 +1,8 @@
 #!/bin/bash
 # 自動搜尋美業相關進度的工具
 SEARCH_TERM="美業"
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
-PROJECT="/Users/caijunchang/openclaw任務面版設計"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
+PROJECT="/Users/sky770825/openclaw任務面版設計"
 
 echo "=== 搜尋 Workspace 中的美業記錄 ==="
 grep -rn "$SEARCH_TERM" "$WORKSPACE" --include="*.md" --include="*.json" 2>/dev/null || echo "Workspace 中未發現關鍵字"

@@ -68,7 +68,7 @@ if [ "$MANUAL" = "1" ]; then
 fi
 
 # ----- 方式一：Deeplink（推薦）-----
-# 開啟 cursor.com/link/prompt?text=... 會讓 Cursor 預填對話內容，老蔡只需按 Enter 送出
+# 開啟 cursor.com/link/prompt?text=... 會讓 Cursor 預填對話內容，主人只需按 Enter 送出
 use_deeplink() {
   local encoded
   encoded=$(printf '%s' "$message" | python3 -c "

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetFile = '/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts';
+const targetFile = '/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts';
 
 if (!fs.existsSync(targetFile)) {
     console.error(`Error: ${targetFile} not found.`);

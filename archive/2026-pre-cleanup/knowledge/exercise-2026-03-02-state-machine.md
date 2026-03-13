@@ -109,7 +109,7 @@ banana -> ready  : Unknown state: banana
 | `Array.includes()` | 检查目标状态是否在合法列表中 |
 | `try...catch` | 测试错误路径时用 catch 捕获，程序不会中断 |
 
-**小蔡笔记**：OpenClaw 任务板的状态机也是类似逻辑。
+**達爾笔记**：OpenClaw 任务板的状态机也是类似逻辑。
 实际系统中 `VALID_TRANSITIONS` 更复杂（ready 可以退回 pending、running 可以变 error），
 但核心模式一样：查表 -> 合法就转 -> 非法就报错。
 理解这个模式，以后读 `server/src/` 里的任务状态逻辑就不会迷路。

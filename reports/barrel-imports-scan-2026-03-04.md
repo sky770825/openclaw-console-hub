@@ -14,7 +14,7 @@
     *   `server/src/telegram/index.ts` 統一匯出了 `bot-polling.js`, `model-registry.js`, `security.js`, `action-handlers.js`, `xiaocai-think.js` 等核心功能。
     *   `server/src/telegram/crew-bots/index.ts` 匯出了 `crew-patrol.js` 和 `crew-config.js` 的相關內容。
 *   **判斷**：
-    *   **設計考量**：`server/src/telegram/index.ts` 作為整個 Telegram 模組的統一入口點，旨在提供便利的模組化管理。當 `telegram` 模組被引入時，其重新匯出的功能大部分都是小蔡核心運作所需的。
+    *   **設計考量**：`server/src/telegram/index.ts` 作為整個 Telegram 模組的統一入口點，旨在提供便利的模組化管理。當 `telegram` 模組被引入時，其重新匯出的功能大部分都是達爾核心運作所需的。
     *   **效能影響**：對於 Node.js 後端環境，這種桶裝引入會導致被重新匯出的所有模組被同時載入。雖然理論上會增加啟動時間和記憶體佔用，但考慮到這些功能的重要性，目前的設計權衡可能是合理的。對於前端打包大小的影響則不適用於此後端模組。
 
 ## 結論與建議

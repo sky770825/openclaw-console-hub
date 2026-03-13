@@ -1,6 +1,6 @@
 # [Bash 腳本基礎]
 > 學習日期：2026-03-02
-> 讀的檔案：/Users/caijunchang/openclaw任務面版設計/scripts/health-check.sh
+> 讀的檔案：/Users/sky770825/openclaw任務面版設計/scripts/health-check.sh
 
 ## 我學到什麼
 1. Shebang: #!/bin/bash 是腳本的第一行，用來告訴系統要用哪個 shell 來執行這個腳本。

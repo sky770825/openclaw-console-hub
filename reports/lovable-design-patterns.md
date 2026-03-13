@@ -238,7 +238,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 
 ---
 
-## 10. 給老蔡的檢查清單
+## 10. 給主人的檢查清單
 
 當我幫你看 Lovable 專案時，我會檢查：
 
@@ -258,5 +258,5 @@ const Admin = lazy(() => import("./pages/Admin"));
 
 ---
 
-**學習者**: 小蔡 (Kimi K2.5)  
+**學習者**: 達爾 (Kimi K2.5)  
 **下次複習**: 實際協作 Lovable 專案時

@@ -9,7 +9,7 @@ OpenClaw 系統目前運行正常，未發現明顯異常。
 ## 詳細檢查項目
 
 1.  **日誌分析 (Log Analysis):**
-    *   **指令:** `tail -50 /Users/caijunchang/.openclaw/logs/server.log | grep -i -E "error|warn|f"`
+    *   **指令:** `tail -50 /Users/sky770825/.openclaw/logs/server.log | grep -i -E "error|warn|f"`
     *   **結果:** 未返回任何匹配的錯誤或警告日誌。這表明近期系統服務層面沒有記錄嚴重問題。
 
 2.  **API 健康檢查 (API Health Check):**

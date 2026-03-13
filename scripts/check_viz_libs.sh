@@ -1,6 +1,6 @@
 #!/bin/bash
 # Helper to check if visualization libraries are installed in the project
-LIB_PATH="/Users/caijunchang/openclaw任務面版設計"
+LIB_PATH="/Users/sky770825/openclaw任務面版設計"
 
 echo "Checking visualization libraries status in $LIB_PATH..."
 cd "$LIB_PATH" || exit 1

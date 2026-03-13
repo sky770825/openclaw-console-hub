@@ -32,8 +32,8 @@ TEST_CASES = [
     },
     {
         "name": "Agent 執行記錄",
-        "query": "小蔡執行",
-        "expected_keywords": ["小蔡", "執行"]
+        "query": "達爾執行",
+        "expected_keywords": ["達爾", "執行"]
     }
 ]
 

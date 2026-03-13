@@ -1,6 +1,6 @@
 /**
  * Enhanced Anti-Stuck Logic
- * Based on original file: /Users/caijunchang/openclaw任務面版設計/server/src/anti-stuck.ts
+ * Based on original file: /Users/sky770825/openclaw任務面版設計/server/src/anti-stuck.ts
  */
 
 // Added recovery logic from DB

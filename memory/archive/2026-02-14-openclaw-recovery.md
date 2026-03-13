@@ -17,10 +17,10 @@
 - `agents.defaults.sandbox.mode = off`
 - Docker 不需要啟動，避免先前「sandbox image inspect 失敗 / docker.sock 不存在」造成 cron error
 
-## 4) Telegram（小蔡 bot）
+## 4) Telegram（達爾 bot）
 - OpenClaw Telegram bot 已切回 **@xiaoji_cai_bot**
 - `channels.telegram.dmPolicy = allowlist`
-- `channels.telegram.allowFrom = ["5819565005"]`（只允許老蔡私訊，避免開放 DM 風險）
+- `channels.telegram.allowFrom = ["5819565005"]`（只允許主人私訊，避免開放 DM 風險）
 - Telegram channel 狀態：**OK**
 
 ## 5) Cron（最小可用自動化已啟用）
@@ -47,10 +47,10 @@
 ⚠️ **重要**：同一個 Telegram bot token 不要同時被兩個程式用 `getUpdates` 輪詢，否則會出現 **409 getUpdates conflict**
 
 ✅ **建議維持**：
-- 小蔡（OpenClaw gateway）→ @xiaoji_cai_bot
+- 達爾（OpenClaw gateway）→ @xiaoji_cai_bot
 - 小ollama（任務板通知）→ @ollama168bot
 
 兩個獨立 bot token，避免衝突。
 
 ---
-🐣 小蔡 | 2026-02-14 13:47
+🐣 達爾 | 2026-02-14 13:47

@@ -92,10 +92,10 @@ git log --graph         # 圖形化分支歷史
 
 ## OpenClaw 專案的 Git 規則
 
-- 老蔡的 remote 叫 `origin`（sky770825/openclaw-console-hub）
-- 小蔡的 mirror 叫 `xiaoji`（andy825lay-tech/openclaw-workspace）
+- 主人的 remote 叫 `origin`（sky770825/openclaw-console-hub）
+- 達爾的 mirror 叫 `xiaoji`（andy825lay-tech/openclaw-workspace）
 - **push 前必須先 pull**：`git pull origin main && git push origin main`
-- **push 到 origin main 前要問老蔡**（安全底線）
+- **push 到 origin main 前要問主人**（安全底線）
 - commit 訊息格式：`feat:` / `fix:` / `chore:` / `refactor:`
 
 ## 還不懂的

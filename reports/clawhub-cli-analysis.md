@@ -10,9 +10,9 @@
 
 ### 核心檔案大小排名
 ```
-    8860 /Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/plugin-sdk/index.d.ts
-    6214 /Users/caijunchang/openclaw任務面版設計/backups/snapshot-20260214-120224/files/server-src-index.ts
-    5432 /Users/caijunchang/openclaw任務面版設計/openclaw-main/ui/src/ui/views/usage.ts
+    8860 /Users/sky770825/openclaw任務面版設計/openclaw-main/dist/plugin-sdk/index.d.ts
+    6214 /Users/sky770825/openclaw任務面版設計/backups/snapshot-20260214-120224/files/server-src-index.ts
+    5432 /Users/sky770825/openclaw任務面版設計/openclaw-main/ui/src/ui/views/usage.ts
 ```
 
 ## 2. API 設計模式分析
@@ -21,11 +21,11 @@
 - **路由風格**: 採用 RESTful API 設計，大量使用路由中間件或裝飾器。
 - **典型定義範例**:
 ```
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:router.get('/members', async (req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:router.get('/members/:nodeId', async (req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:router.delete('/members/:nodeId', async (req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:router.post('/handshake/init', async (req, res) => {
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:router.post('/handshake/respond', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:router.get('/members', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:router.get('/members/:nodeId', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:router.delete('/members/:nodeId', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:router.post('/handshake/init', async (req, res) => {
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:router.post('/handshake/respond', async (req, res) => {
 ```
 - **觀察**: 後端採用 TypeScript 嚴格型別定義 Request Body 與 Response 結構，確保了 CLI 工具在調用時具備強大的型別提示（IntelliSense）。
 
@@ -39,11 +39,11 @@
 ## 4. 與後端註冊中心 (Registry) 的互動
 透過搜尋 "registry" 關鍵字，發現以下關鍵邏輯點：
 ```
-/Users/caijunchang/openclaw任務面版設計/server/src/utils/key-vault.ts:23:const KEY_REGISTRY: KeyEntry[] = [];
-/Users/caijunchang/openclaw任務面版設計/server/src/utils/key-vault.ts:46:function initRegistry(): void {
-/Users/caijunchang/openclaw任務面版設計/server/src/utils/key-vault.ts:47:  KEY_REGISTRY.length = 0;
-/Users/caijunchang/openclaw任務面版設計/server/src/utils/key-vault.ts:53:      KEY_REGISTRY.push({ name, value });
-/Users/caijunchang/openclaw任務面版設計/server/src/utils/key-vault.ts:67:            KEY_REGISTRY.push({ name: `${provName.toUpperCase()}_API_KEY`, value: apiKey.trim() });
+/Users/sky770825/openclaw任務面版設計/server/src/utils/key-vault.ts:23:const KEY_REGISTRY: KeyEntry[] = [];
+/Users/sky770825/openclaw任務面版設計/server/src/utils/key-vault.ts:46:function initRegistry(): void {
+/Users/sky770825/openclaw任務面版設計/server/src/utils/key-vault.ts:47:  KEY_REGISTRY.length = 0;
+/Users/sky770825/openclaw任務面版設計/server/src/utils/key-vault.ts:53:      KEY_REGISTRY.push({ name, value });
+/Users/sky770825/openclaw任務面版設計/server/src/utils/key-vault.ts:67:            KEY_REGISTRY.push({ name: `${provName.toUpperCase()}_API_KEY`, value: apiKey.trim() });
 ```
 - **互動模式**: CLI 工具作為 Client 端，透過 HTTP/HTTPS 向 Registry 服務發送註冊請求。
 - **身分驗證**: 觀察到在請求標頭中處理 Token 的機制，這是維持 CLI 持久化登入狀態的核心。

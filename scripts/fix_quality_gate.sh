@@ -2,11 +2,11 @@
 set -e
 
 # Path definitions
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 SERVER_DIR="$PROJECT_ROOT/server"
 TARGET_FILE="$SERVER_DIR/src/executor-agents.ts"
-REPORT_PATH="/Users/caijunchang/.openclaw/workspace/reports/quality_gate_fix_report.md"
-SCRIPT_PATH="/Users/caijunchang/.openclaw/workspace/scripts/fix_quality_gate.sh"
+REPORT_PATH="/Users/sky770825/.openclaw/workspace/reports/quality_gate_fix_report.md"
+SCRIPT_PATH="/Users/sky770825/.openclaw/workspace/scripts/fix_quality_gate.sh"
 
 echo "Starting QualityGate fix task..."
 

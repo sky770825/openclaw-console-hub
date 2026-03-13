@@ -1,6 +1,6 @@
 # 知識庫深度補完 — Cursor Agent 操作指令
 
-> 給小蔡：在 Cursor Agent Mode 裡按照這個流程執行
+> 給達爾：在 Cursor Agent Mode 裡按照這個流程執行
 > 不要在聊天模式裡執行，必須用 Cursor Agent Mode
 
 ---
@@ -79,7 +79,7 @@ cd ~/.openclaw/workspace/knowledge
 ./research.sh all
 ```
 
-應該全部顯示 ✅。截圖發給老蔡驗收。
+應該全部顯示 ✅。截圖發給主人驗收。
 
 ---
 

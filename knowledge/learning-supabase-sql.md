@@ -1,6 +1,6 @@
 # SQL / Supabase 基礎
 > 學習日期：2026-03-02
-> 讀的檔案：/Users/caijunchang/openclaw任務面版設計/server/src/openclawSupabase.ts
+> 讀的檔案：/Users/sky770825/openclaw任務面版設計/server/src/openclawSupabase.ts
 
 ## 我學到什麼
 1.  系統是透過 @supabase/supabase-js 的 createClient 函數來建立與資料庫的連線。

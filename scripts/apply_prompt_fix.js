@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const targetFile = "/Users/caijunchang/openclaw任務面版設計/server/src/telegram/xiaocai-think.ts";
+const targetFile = "/Users/sky770825/openclaw任務面版設計/server/src/telegram/dar-think.ts";
 const marker = "## 行動本能";
 const newRules = [
     "對話時優先自己做（read_file/run_script/write_file）",
@@ -34,7 +34,7 @@ try {
 
     // Attempt to write changes
     fs.writeFileSync(targetFile, updatedContent);
-    console.log("Status: Successfully updated system prompt in xiaocai-think.ts");
+    console.log("Status: Successfully updated system prompt in dar-think.ts");
 
 } catch (err) {
     console.error("Critical error while modifying the file:", err.message);

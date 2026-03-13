@@ -25,7 +25,7 @@ Key: 環境變數 SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
 | openclaw_projects | 專案管理 |
 | openclaw_project_phases | 專案階段 |
 | openclaw_audit_logs | 稽核日誌 |
-| xiaocai_ideas | 小蔡發想 |
+| dar_ideas | 達爾發想 |
 | fadp_members | FADP 聯盟成員 |
 | fadp_attack_events | 攻擊事件 |
 | fadp_blocklist | 封鎖名單 |
@@ -102,11 +102,11 @@ API Key: 環境變數 OPENCLAW_API_KEY
 
 | 用途 | 路徑 |
 |------|------|
-| Server 原始碼 | /Users/caijunchang/openclaw任務面版設計/server/src/ |
-| Telegram 模組 | /Users/caijunchang/openclaw任務面版設計/server/src/telegram/ |
-| 前端原始碼 | /Users/caijunchang/openclaw任務面版設計/src/ |
+| Server 原始碼 | /Users/sky770825/openclaw任務面版設計/server/src/ |
+| Telegram 模組 | /Users/sky770825/openclaw任務面版設計/server/src/telegram/ |
+| 前端原始碼 | /Users/sky770825/openclaw任務面版設計/src/ |
 | cookbook 手冊（29本）| ~/.openclaw/workspace/cookbook/ |
-| knowledge 知識庫 | /Users/caijunchang/openclaw任務面版設計/knowledge/ |
-| docs 文件 | /Users/caijunchang/openclaw任務面版設計/docs/ |
-| 腳本庫 | /Users/caijunchang/openclaw任務面版設計/scripts/ |
-| .env 環境變數 | /Users/caijunchang/openclaw任務面版設計/server/.env（禁止讀取）|
+| knowledge 知識庫 | /Users/sky770825/openclaw任務面版設計/knowledge/ |
+| docs 文件 | /Users/sky770825/openclaw任務面版設計/docs/ |
+| 腳本庫 | /Users/sky770825/openclaw任務面版設計/scripts/ |
+| .env 環境變數 | /Users/sky770825/openclaw任務面版設計/server/.env（禁止讀取）|

@@ -1,4 +1,4 @@
-# 小蔡星群營運儀表板 MVP 開發報告
+# 達爾星群營運儀表板 MVP 開發報告
 
 ## 專案概述
 根據 `knowledge/star-cluster-dashboard-plan.md`，已在沙盒環境中完成 MVP 版本的基礎開發。
@@ -25,5 +25,5 @@
 - 整合生產環境的自動化部署。
 
 ## 部署與運行
-專案目錄: `/Users/caijunchang/.openclaw/workspace/sandbox/star-cluster-dashboard-mvp`
+專案目錄: `/Users/sky770825/.openclaw/workspace/sandbox/star-cluster-dashboard-mvp`
 啟動指令: `npm install && npm run dev`

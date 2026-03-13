@@ -3,7 +3,7 @@
 任務內容: 提醒整理 Q2 客戶回饋
 截止日期: 2026-03-12 17:00
 執行動作:
-1. 建立了自動化腳本: /Users/caijunchang/.openclaw/workspace/scripts/remind_xiaocai_q2_feedback.sh
+1. 建立了自動化腳本: /Users/sky770825/.openclaw/workspace/scripts/remind_xiaocai_q2_feedback.sh
 2. 已透過 macOS osascript 發送桌面通知與對話框
-3. 紀錄存檔至: /Users/caijunchang/.openclaw/workspace/reports/reminder_log_20260308.txt
+3. 紀錄存檔至: /Users/sky770825/.openclaw/workspace/reports/reminder_log_20260308.txt
 狀態: 已完成

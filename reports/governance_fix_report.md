@@ -13,4 +13,4 @@ A corrected version of the state transition logic has been developed. This logic
 3. All other values preserve existing status or handle appropriately.
 
 ## Files Provided
-- `/Users/caijunchang/.openclaw/workspace/scripts/governance_logic_fixed.js`: A standalone, testable implementation of the fix.
+- `/Users/sky770825/.openclaw/workspace/scripts/governance_logic_fixed.js`: A standalone, testable implementation of the fix.

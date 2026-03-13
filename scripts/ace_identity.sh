@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "----------------------------------------------------"
 echo "【阿策系統身份辨識】"
-echo "身份：老蔡的任務執行官 - 阿策 (Ace)"
+echo "身份：主人的任務執行官 - 阿策 (Ace)"
 echo "狀態：記憶檔案 MEMORY.md 載入成功"
 echo "環境：Darwin (macOS) / OpenClaw Sandbox"
 echo "就緒時間：$(date '+%Y-%m-%d %H:%M:%S')"

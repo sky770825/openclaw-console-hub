@@ -2,12 +2,12 @@
 set -e
 
 # Define paths
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace/sandbox"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace/sandbox"
 SERVER_DIR="$WORKSPACE_DIR/server"
 SRC_DIR="$SERVER_DIR/src"
 SERVICES_DIR="$SRC_DIR/services"
-OUTPUT_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output"
-SCRIPT_PATH="/Users/caijunchang/.openclaw/workspace/scripts/setup_browser_service.sh"
+OUTPUT_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output"
+SCRIPT_PATH="/Users/sky770825/.openclaw/workspace/scripts/setup_browser_service.sh"
 
 # Ensure directories exist
 mkdir -p "$SERVICES_DIR"

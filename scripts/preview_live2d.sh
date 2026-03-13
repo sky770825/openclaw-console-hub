@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script to serve the Live2D Prototype
 PORT=8080
-PROTOTYPE_PATH="/Users/caijunchang/.openclaw/workspace/sandbox/live2d_prototype"
+PROTOTYPE_PATH="/Users/sky770825/.openclaw/workspace/sandbox/live2d_prototype"
 
 echo "Starting Technical Verification Server on http://localhost:$PORT"
 echo "Press Ctrl+C to stop."

@@ -8,7 +8,7 @@
 ## 內容
 這是用來測試 n8n Telegram 通知功能的測試任務。
 
-此檔案由子代理自動建立，用於驗證 n8n 是否能正確偵測任務完成並發送 Telegram 通知給老蔡。
+此檔案由子代理自動建立，用於驗證 n8n 是否能正確偵測任務完成並發送 Telegram 通知給主人。
 
 ---
 status: completed by subagent at 2026-02-16 11:51 GMT+8

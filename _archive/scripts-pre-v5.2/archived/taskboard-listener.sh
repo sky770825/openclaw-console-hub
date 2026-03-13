@@ -82,7 +82,7 @@ handle_cursor_completion() {
         local result="{\"agent\":\"cursor-agent\",\"summary\":\"${summary}\",\"changes\":\"${changes}\",\"project\":\"${project_dir}\"}"
         update_task_status "$task_id" "completed" "$result"
         
-        # 發送通知給老蔡
+        # 發送通知給主人
         echo -e "${GREEN}✅ 任務 ${task_id} 已標記完成${NC}"
     else
         echo -e "${YELLOW}⚠️ 無效的任務 ID，跳過更新${NC}"
@@ -155,7 +155,7 @@ process_message() {
             ;;
         blocker)
             echo -e "${YELLOW}🚨 收到阻礙通知！${NC}"
-            # 通知老蔡需要介入
+            # 通知主人需要介入
             ;;
         *)
             echo "未處理的訊息類型: $msg_type"

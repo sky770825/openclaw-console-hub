@@ -11,7 +11,7 @@
 - **User Profile**: 提供 `GET /me` 與 `PUT /me` API 供使用者維護資料。
 
 ## 3. 實作位置
-所有生成的程式碼位於 `/Users/caijunchang/.openclaw/workspace/scripts/auth_system/`。
+所有生成的程式碼位於 `/Users/sky770825/.openclaw/workspace/scripts/auth_system/`。
 由於 `server/src/` 受限無法直接修改，請手動將以上模組整合至專案中。
 
 ## 4. 整合建議

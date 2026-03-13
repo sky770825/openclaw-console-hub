@@ -13,4 +13,4 @@ Added a call to `upsertOpenClawTask` in the scoring failure branch to explicitly
 The fix was applied in the conditional block where the task score is evaluated against the minimum requirements.
 
 ## Patch Location
-- `/Users/caijunchang/.openclaw/workspace/proposals/fix_auto_executor_status_bug.patch`
+- `/Users/sky770825/.openclaw/workspace/proposals/fix_auto_executor_status_bug.patch`

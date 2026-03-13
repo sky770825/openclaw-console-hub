@@ -1,0 +1,10 @@
+[
+  {"id": 1, "product_category": "Electronics", "sales": 1500, "region": "North"},
+  {"id": 2, "product_category": "Books", "sales": 200, "region": "South"},
+  {"id": 3, "product_category": "Electronics", "sales": 2500, "region": "West"},
+  {"id": 4, "product_category": "Apparel", "sales": 500, "region": "East"},
+  {"id": 5, "product_category": "Books", "sales": 300, "region": "North"},
+  {"id": 6, "product_category": "Electronics", "sales": 1000, "region": "South"},
+  {"id": 7, "product_category": "Apparel", "sales": 700, "region": "West"},
+  {"id": 8, "product_category": "Books", "sales": 150, "region": "East"}
+]

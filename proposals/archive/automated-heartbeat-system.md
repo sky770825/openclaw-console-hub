@@ -13,7 +13,7 @@
 
 - 頻率： 每 5 分鐘執行一次。
 - 觸發條件： 當 health-check.sh 執行失敗（exit code 不為 0）時。
-- 執行動作： 立即透過 Telegram API 向統帥（老蔡）發送一條高優先級的警報訊息，內容應包含「🚨 系統心跳停止！OpenClaw Server 無回應！」
+- 執行動作： 立即透過 Telegram API 向統帥（主人）發送一條高優先級的警報訊息，內容應包含「🚨 系統心跳停止！OpenClaw Server 無回應！」
 
 ## 3. 預期效益
 

@@ -3,17 +3,17 @@
 **Context:** Analysis of current project state following OpenClaw development norms (AGENTS.md, etc.)
 
 ## 1. Project Overview
-The project is located at: `/Users/caijunchang/openclaw任務面版設計`
+The project is located at: `/Users/sky770825/openclaw任務面版設計`
 
 ## 2. Directory Structure (Summary)
-$(find "/Users/caijunchang/openclaw任務面版設計" -maxdepth 1 -not -path '*/.*')
+$(find "/Users/sky770825/openclaw任務面版設計" -maxdepth 1 -not -path '*/.*')
 
 ## 3. Key Components Found
 ### Frontend (src/)
-$(find "/Users/caijunchang/openclaw任務面版設計/src" -iname "*task*" -o -iname "*panel*" 2>/dev/null | head -n 15)
+$(find "/Users/sky770825/openclaw任務面版設計/src" -iname "*task*" -o -iname "*panel*" 2>/dev/null | head -n 15)
 
 ### Backend (server/src/)
-$(find "/Users/caijunchang/openclaw任務面版設計/server/src" -iname "*task*" 2>/dev/null | head -n 10)
+$(find "/Users/sky770825/openclaw任務面版設計/server/src" -iname "*task*" 2>/dev/null | head -n 10)
 
 ## 4. Documentation vs. Implementation
 While AGENTS.md and IDENTITY.md define the spirit of OpenClaw, the actual Task Panel logic appears to be structured within the `src/` and `server/` directories. 

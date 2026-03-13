@@ -30,7 +30,7 @@ priority: P1
 
 | Repo | URL | 用途 |
 |------|-----|------|
-| workspace | `https://github.com/andy825lay-tech/openclaw-workspace.git` | 小蔡的工作區 |
+| workspace | `https://github.com/andy825lay-tech/openclaw-workspace.git` | 達爾的工作區 |
 | console-hub | `git@github.com:sky770825/openclaw-console-hub.git` | 任務面版前後端 |
 
 ### 登入方式
@@ -158,7 +158,7 @@ Push 到 `main` 分支 → 自動觸發 `deploy-production.yml` → 部署到 Ve
 # 從 review-big-changes merge 到 main
 git checkout main
 git merge review-big-changes
-git push origin main  # 🔴 需老蔡批准
+git push origin main  # 🔴 需主人批准
 ```
 
 **方式 2: CLI 手動部署**
@@ -174,7 +174,7 @@ vercel login
 cd ~/openclaw任務面版設計
 vercel
 
-# Production 部署（🔴 需老蔡批准）
+# Production 部署（🔴 需主人批准）
 vercel --prod
 ```
 
@@ -247,7 +247,7 @@ Vercel：{🟢 已設定 / 🔴 未初始化}
 | 狀況 | 處理方式 |
 |------|----------|
 | `gh auth` 過期 | `gh auth login` 重新登入 |
-| Supabase key 無效 | 回報老蔡，去 Dashboard 重新產 key |
+| Supabase key 無效 | 回報主人，去 Dashboard 重新產 key |
 | Vercel 部署失敗 | 看 GitHub Actions log，回報錯誤 |
 | git push 被拒 | 檢查分支保護規則，可能需要 PR |
 | 環境變數遺失 | 對照 `.env.example` 補齊 |

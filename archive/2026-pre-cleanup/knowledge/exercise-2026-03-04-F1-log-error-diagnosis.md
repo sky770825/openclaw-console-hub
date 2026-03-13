@@ -1,7 +1,7 @@
 # 練習 F-1：日誌錯誤診斷與定位 (taskboard.log)
 
 ### 1. 錯誤發現
-透過 tail 指令查看 /Users/caijunchang/.openclaw/automation/logs/taskboard.log，發現最近的錯誤主要集中在任務執行逾時或 API Key 脫敏失敗。
+透過 tail 指令查看 /Users/sky770825/.openclaw/automation/logs/taskboard.log，發現最近的錯誤主要集中在任務執行逾時或 API Key 脫敏失敗。
 
 ### 2. 定位與分析
 使用 grep_project 搜尋 "ERROR"，定位到 server/src/executor-agents.ts 在處理大型腳本輸出時可能發生溢位。另外 server/src/utils/key-vault.ts 在某些邊界情況下無法正確識別特定格式的 token。

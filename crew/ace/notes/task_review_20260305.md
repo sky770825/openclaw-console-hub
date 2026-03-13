@@ -7,7 +7,7 @@
 - **品質評估**: B (83/100)
 - **異常點**: 報告品質評估結果為 'B'，且原因為 '未通過: ai_content_review'。這表示儘管任務已完成，但其產出的內容品質可能存在改進空間或未完全符合預期標準。
 - **建議行動**: 需要進一步分析 'ai_content_review' 未通過的具體原因。我將會：
-    1. 閱讀相關產出文件 (如 `/Users/caijunchang/.openclaw/workspace/reports/productivity_integration_report.md` 或 `sandbox/output/OpenClaw_Integration_Report.md`)，以了解內容細節。
+    1. 閱讀相關產出文件 (如 `/Users/sky770825/.openclaw/workspace/reports/productivity_integration_report.md` 或 `sandbox/output/OpenClaw_Integration_Report.md`)，以了解內容細節。
     2. 考慮與阿研協作，調研 'ai_content_review' 的評估標準，或請阿秘協助摘要相關評估機制。
     3. 若有必要，將會使用 `ask_ai` 對報告內容進行深度分析，找出具體不足之處並提出改進建議。
 

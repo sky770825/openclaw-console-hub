@@ -1,7 +1,7 @@
 #!/bin/bash
 # 此腳本用於同步 阿秘 的 MEMORY.md 到知識庫
-SOURCE="/Users/caijunchang/.openclaw/workspace/crew/ami/MEMORY.md"
-TARGET="/Users/caijunchang/.openclaw/workspace/knowledge/MEMORY.md"
+SOURCE="/Users/sky770825/.openclaw/workspace/crew/ami/MEMORY.md"
+TARGET="/Users/sky770825/.openclaw/workspace/knowledge/MEMORY.md"
 
 if [ -f "$SOURCE" ]; then
     cp "$SOURCE" "$TARGET"

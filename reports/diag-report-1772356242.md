@@ -18,4 +18,4 @@ No Google API 400 errors found in current log.
 ## 4. System Environment Context
 - OS: Darwin Mac 25.2.0 Darwin Kernel Version 25.2.0: Tue Nov 18 21:09:49 PST 2025; root:xnu-12377.61.12~1/RELEASE_ARM64_T8142 arm64
 - Node version: not found
-- Working Dir: /Users/caijunchang/.openclaw/workspace/sandbox
+- Working Dir: /Users/sky770825/.openclaw/workspace/sandbox

@@ -33,7 +33,7 @@ recommend_agent() {
     elif [[ "$subtask" =~ "報告"|"長文"|"撰寫" ]]; then
         echo "Ollama qwen2.5:14b (高品質產出)"
     else
-        echo "L1 小蔡 (指揮/日常)"
+        echo "L1 達爾 (指揮/日常)"
     fi
 }
 

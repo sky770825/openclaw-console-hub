@@ -53,7 +53,7 @@ archive/decisions/YYYY-MM-DD-<decision-name>.md
 
 | 日期 | 檔案 | 狀態 | 記錄者 |
 |------|------|------|--------|
-| 2026-02-15 | [tech-security-update](2026-02-15-tech-security-update.md) | ✅ | 小蔡 |
+| 2026-02-15 | [tech-security-update](2026-02-15-tech-security-update.md) | ✅ | 達爾 |
 | 2026-02-15 | [database-architecture](2026-02-15-database-architecture.md) | ✅ | Claude |
 | 2026-02-15 | [n8n-integration](2026-02-15-n8n-integration-architecture.md) | ✅ | Claude |
 | 2026-02-15 | [portable-backup](2026-02-15-portable-backup-system.md) | ✅ | Claude |
@@ -72,4 +72,4 @@ grep -r "關鍵詞" archive/decisions/
 ```
 
 ---
-**版本**: v1.0 | **建立時間**: 2026-02-15 | **維護者**: 小蔡
+**版本**: v1.0 | **建立時間**: 2026-02-15 | **維護者**: 達爾

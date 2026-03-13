@@ -3,7 +3,7 @@
 # 生成時間: 2026-02-14
 # 用途: 列出所有腳本並建立索引
 
-SCRIPTS_DIR="/Users/caijunchang/.openclaw/workspace/scripts"
+SCRIPTS_DIR="/Users/sky770825/.openclaw/workspace/scripts"
 OUTPUT="$SCRIPTS_DIR/README.md"
 
 cat > "$OUTPUT" << 'EOF'
@@ -349,7 +349,7 @@ export TASK_BOARD_API="http://localhost:3011"
 ---
 
 最後更新：2026-02-14 02:45 GMT+8
-維護者：小蔡（OpenClaw Agent）
+維護者：達爾（OpenClaw Agent）
 EOF
 
 echo "✅ 已生成 $OUTPUT"

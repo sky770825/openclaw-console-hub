@@ -6,7 +6,7 @@
 ### 第一階段：環境檢索 (Environment Audit)
 - 檢查當前工作目錄與目標目錄是否存在。
 - 確認工具鏈 (bash, curl, node, python3, jq) 是否可用。
-- 檢查權限：確認 `/Users/caijunchang/.openclaw/workspace/` 下的子目錄為可寫。
+- 檢查權限：確認 `/Users/sky770825/.openclaw/workspace/` 下的子目錄為可寫。
 
 ### 第二階段：邏輯溯源 (Logic Tracing)
 - 讀取 `$SRC_DIR` (唯讀區) 以理解系統架構。
@@ -19,7 +19,7 @@
 
 ### 第四階段：回報與固化 (Reporting & Persistence)
 - 若成功解決，將解決方案記錄於 `knowledge/` 或轉化為 `scripts/` 中的自動化工具。
-- 若仍卡關超過 15 分鐘，生成 `reports/` 診斷報告並提交給老蔡。
+- 若仍卡關超過 15 分鐘，生成 `reports/` 診斷報告並提交給主人。
 
 ## 禁止行為 (Restriction Zone)
 - 嚴禁觸碰 .env, *.json 等核心密鑰設定。

@@ -104,7 +104,7 @@ echo ""
 if [[ "$USE_CHECKPOINT" == true ]]; then
     echo -e "${BLUE}[STEP 1/3]${NC} 建立檢查點..."
     AUTO_CHECKPOINT=true "$CHECKPOINT_SCRIPT" create "$TASK_NAME" "$STEP_NAME"
-    CHECKPOINT_ID=$(cat "$HOME/Desktop/小蔡/檢查點/.current" 2>/dev/null)
+    CHECKPOINT_ID=$(cat "$HOME/Desktop/達爾/檢查點/.current" 2>/dev/null)
     echo -e "  ${GREEN}✓${NC} 檢查點: $CHECKPOINT_ID"
     echo ""
 else

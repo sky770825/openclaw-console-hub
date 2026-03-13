@@ -1,6 +1,6 @@
 #!/bin/bash
-# 老蔡專用：快速檢查當前 Workspace 的產出狀況
-WORKSPACE_BASE="/Users/caijunchang/.openclaw/workspace"
+# 主人專用：快速檢查當前 Workspace 的產出狀況
+WORKSPACE_BASE="/Users/sky770825/.openclaw/workspace"
 
 echo "=== OpenClaw Workspace Status ==="
 echo "Reports generated:"

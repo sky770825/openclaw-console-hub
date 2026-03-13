@@ -1,7 +1,7 @@
 # Bash 腳本學習筆記 (L1 - 健康檢查)
 
 > 日期：2026-03-02
-> 來源：/Users/caijunchang/openclaw任務面版設計/scripts/health-check.sh
+> 來源：/Users/sky770825/openclaw任務面版設計/scripts/health-check.sh
 
 這是我學習 Bash 腳本的第一份實戰筆記，分析一個寫得很好的健康檢查腳本。
 

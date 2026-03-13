@@ -1,8 +1,8 @@
 #!/bin/bash
 # 阿秘的進度追蹤工具 (A-Mi's Progress Tracker)
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
-KNOWLEDGE_DIR="/Users/caijunchang/.openclaw/workspace/knowledge"
-REPORT_PATH="/Users/caijunchang/.openclaw/workspace/reports/feature_progress_report.md"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
+KNOWLEDGE_DIR="/Users/sky770825/.openclaw/workspace/knowledge"
+REPORT_PATH="/Users/sky770825/.openclaw/workspace/reports/feature_progress_report.md"
 
 echo "# OpenClaw 功能特色頁面 - 進度追蹤報告" > "$REPORT_PATH"
 echo "生成時間: $(date)" >> "$REPORT_PATH"

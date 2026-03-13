@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 完成當前 Autopilot 任務 - 便捷腳本
-# 供小蔡在完成任務後快速記錄記憶
+# 供堤諾米斯達爾（達爾）在完成任務後快速記錄記憶
 
 set -euo pipefail
 

@@ -42,9 +42,9 @@ def update_knowledge():
 
 if __name__ == "__main__":
     # 產出報告
-    with open("/Users/caijunchang/.openclaw/workspace/reports/saas_landing_page_research.md", "w", encoding="utf-8") as f:
+    with open("/Users/sky770825/.openclaw/workspace/reports/saas_landing_page_research.md", "w", encoding="utf-8") as f:
         f.write(generate_comprehensive_report())
     
     # 更新知識庫
-    with open("/Users/caijunchang/.openclaw/workspace/knowledge/saas_research_data.json", "w", encoding="utf-8") as f:
+    with open("/Users/sky770825/.openclaw/workspace/knowledge/saas_research_data.json", "w", encoding="utf-8") as f:
         json.dump(update_knowledge(), f, indent=4, ensure_ascii=False)

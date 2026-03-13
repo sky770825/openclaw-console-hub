@@ -21,6 +21,6 @@ Security is enforced at the database level:
 - **Administrative Access**: Admin users have full CRUD permissions on the entire table.
 
 ## Deployment Instructions
-1. Execute the SQL script located at `/Users/caijunchang/.openclaw/workspace/scripts/setup_users_table.sql`.
+1. Execute the SQL script located at `/Users/sky770825/.openclaw/workspace/scripts/setup_users_table.sql`.
 2. Ensure the `auth.uid()` helper is available (standard in Supabase) or configure the session variable in standard PostgreSQL.
 

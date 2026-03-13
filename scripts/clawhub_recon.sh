@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-REPORT_FILE="/Users/caijunchang/.openclaw/workspace/reports/clawhub_report.md"
+REPORT_FILE="/Users/sky770825/.openclaw/workspace/reports/clawhub_report.md"
 SEARCH_TERMS=("commander" "orchestrator" "agent" "executor" "skill" "workflow")
 echo "# ClawHub Recon Update - $(date)" >> "$REPORT_FILE"
 for term in "${SEARCH_TERMS[@]}"; do

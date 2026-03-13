@@ -1,6 +1,6 @@
 #!/bin/bash
 # OpenClaw Task Status Scanner
-SRC_DIR="/Users/caijunchang/openclaw任務面版設計"
+SRC_DIR="/Users/sky770825/openclaw任務面版設計"
 echo "--- OpenClaw Project Health Report ($(date)) ---"
 echo "Location: $SRC_DIR"
 echo ""

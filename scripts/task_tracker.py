@@ -3,7 +3,7 @@ import sys
 import os
 from datetime import datetime
 
-DB_FILE = "/Users/caijunchang/.openclaw/workspace/reports/task_data.json"
+DB_FILE = "/Users/sky770825/.openclaw/workspace/reports/task_data.json"
 
 def init_db():
     if not os.path.exists(DB_FILE):
@@ -12,7 +12,7 @@ def init_db():
             {"id": 2, "task": "Feature Page: Progress Tracking Layout", "status": "In Progress", "owner": "阿秘", "progress": 60},
             {"id": 3, "task": "Task Management Component", "status": "Pending", "owner": "阿秘", "progress": 0},
             {"id": 4, "task": "Data Visualization (Charts)", "status": "Pending", "owner": "阿秘", "progress": 0},
-            {"id": 5, "task": "Backend API Integration", "status": "Restricted", "owner": "老蔡", "progress": 10}
+            {"id": 5, "task": "Backend API Integration", "status": "Restricted", "owner": "主人", "progress": 10}
         ]
         with open(DB_FILE, 'w', encoding='utf-8') as f:
             json.dump(initial_tasks, f, indent=4, ensure_ascii=False)
@@ -29,7 +29,7 @@ def generate_report():
     with open(DB_FILE, 'r', encoding='utf-8') as f:
         tasks = json.load(f)
     
-    report_path = "/Users/caijunchang/.openclaw/workspace/reports/progress_report.md"
+    report_path = "/Users/sky770825/.openclaw/workspace/reports/progress_report.md"
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write("# OpenClaw 專案進度追蹤報告\n\n")
         f.write(f"更新時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")

@@ -724,7 +724,7 @@ Generated on: Sun Mar  8 07:36:57 CST 2026
 ./cookbook/63-ERP進銷存系統設計指南.md
 ./cookbook/54-廣告投放與數據追蹤.md
 ./cookbook/64-CRM客戶管理系統設計指南.md
-./cookbook/19-小蔡協作指南.md
+./cookbook/19-達爾協作指南.md
 ./cookbook/10-會話與權限.md
 ./cookbook/58-POS收銀系統設計指南.md
 ./cookbook/08-協作與通訊.md
@@ -874,7 +874,7 @@ Generated on: Sun Mar  8 07:36:57 CST 2026
 ./docs/TELEGRAM-SETUP-GUIDE.md
 ./docs/OpenClaw-Copilot-顯示Not-Connected-排查.md
 ./docs/TASK-TEMPLATE.md
-./docs/小蔡用網頁版AI省Token-子代理與瀏覽器控制.md
+./docs/達爾用網頁版AI省Token-子代理與瀏覽器控制.md
 ./docs/日誌與快取清理建議.md
 ./docs/GITHUB_PAGES.md
 ./docs/大家經常遇到的OpenClaw問題.md
@@ -909,7 +909,7 @@ Generated on: Sun Mar  8 07:36:57 CST 2026
 ./docs/OpenClaw無法使用瀏覽器-解決步驟.md
 ./docs/Rotate-Key-驗證清單.md
 ./docs/OpenClaw-修復紀錄報告.md
-./docs/SOP-網站商家部署-OpenCart（小蔡指揮Codex+Cursor）.md
+./docs/SOP-網站商家部署-OpenCart（達爾指揮Codex+Cursor）.md
 ./docs/HANDOVER_CURSOR.md
 ./docs/任務板執行功能與Agent控制-透過瀏覽器使用AI省Token.md
 ./supabase

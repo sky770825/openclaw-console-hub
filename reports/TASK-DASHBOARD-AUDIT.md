@@ -1,6 +1,6 @@
 # 任務面板全面審計與改進策略
 
-> 審計日期：2026-02-13 | 審計人：小蔡（Opus 4.6）
+> 審計日期：2026-02-13 | 審計人：達爾（Opus 4.6）
 
 ---
 
@@ -162,7 +162,7 @@
    - 在 memory/autopilot-results/{task-id}.md 寫結果摘要
 ```
 
-### 對小蔡主會話（Kimi 調度用）：
+### 對達爾主會話（Kimi 調度用）：
 
 ```
 1. 讀取本文件 → 了解全局
@@ -180,8 +180,8 @@
 
 ## 六、專案路徑
 
-- **前端原始碼**：`/Users/caijunchang/openclaw任務面版設計/src/`
-- **後端原始碼**：`/Users/caijunchang/openclaw任務面版設計/server/src/`
+- **前端原始碼**：`/Users/sky770825/openclaw任務面版設計/src/`
+- **後端原始碼**：`/Users/sky770825/openclaw任務面版設計/server/src/`
 - **本文件**：`docs/TASK-DASHBOARD-AUDIT.md`
 - **任務面板 API**：`http://localhost:3011`
 
@@ -197,4 +197,4 @@ Kimi 收到此文件後，請依序：
 3. 按 Phase 1 建立 4 個任務（見第四節）
 4. 設定 priority 和 agent 標籤
 5. 每個任務的 description 要包含：具體檔案路徑、改動目標、驗收標準
-6. 建立完畢後回報老蔡
+6. 建立完畢後回報主人

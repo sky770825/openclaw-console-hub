@@ -13,7 +13,7 @@ async function runTest() {
         // Save output for verification
         const fs = require('fs');
         const path = require('path');
-        const outputPath = path.join('/Users/caijunchang/.openclaw/workspace/sandbox/output', 'test_result.txt');
+        const outputPath = path.join('/Users/sky770825/.openclaw/workspace/sandbox/output', 'test_result.txt');
         fs.writeFileSync(outputPath, text);
         console.log(`\nFull result saved to: ${outputPath}`);
 

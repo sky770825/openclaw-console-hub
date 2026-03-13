@@ -1,8 +1,8 @@
 # Diagnosis Report: Auto-Executor Dispatch API Failure
 
 ## 1. Route Analysis
-- **Route File**: `/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts`
-- **Registration**: Checked `/Users/caijunchang/openclaw任務面版設計/server/src/index.ts`. 
+- **Route File**: `/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts`
+- **Registration**: Checked `/Users/sky770825/openclaw任務面版設計/server/src/index.ts`. 
 - **Observations**: 
 No POST route found in file.
 

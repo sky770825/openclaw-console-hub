@@ -1,4 +1,4 @@
-# 小蔡心跳報告 - 2026-03-01
+# 達爾心跳報告 - 2026-03-01
 ---
 
 ## 🚀 系統狀態
@@ -24,7 +24,7 @@
 
 ## 🟢 系統狀態
 - **後端 Server (3011)**：✅ 在線
-- **小蔡工作目錄**：✅ /Users/caijunchang/Downloads/openclaw-console-hub-main
+- **達爾工作目錄**：✅ /Users/sky770825/Downloads/openclaw-console-hub-main
 - **Deputy 模式**：啟用 | 最後跑: 2026-02-19T02:00
 - **Auto-Executor**：運行中 | 最後執行: None
 - **FADP 聯盟協防**：成員:0 封鎖IP:0 封鎖Token:0
@@ -33,9 +33,9 @@
 總計 101 個任務｜done:93  ready:7  running:1
 
 ### 最近待處理任務（前5）
-- [ready] P2 P1: 建立小蔡主動心跳報告機制
-- [ready] P2 P1: 建立小蔡構想提案標準化漏斗
-- [ready] P2 小蔡對話優先親手做事 減少批量建任務
+- [ready] P2 P1: 建立達爾主動心跳報告機制
+- [ready] P2 P1: 建立達爾構想提案標準化漏斗
+- [ready] P2 達爾對話優先親手做事 減少批量建任務
 - [ready] P2 改進 ScriptGen prompt 要求產出落地真實路徑
 - [ready] P2 auto-executor 產出只在 sandbox 應標 needs_review
 
@@ -44,7 +44,7 @@
 
 ## 🔀 最新 Git Commits
   9e40fa17 fix: auto-executor 精簡限制 — 只保護核心資產，其餘放手做
-  309c9fc1 fix: auto-executor 權限分層 — 小蔡可改源碼但不能碰大腦和 key
+  309c9fc1 fix: auto-executor 權限分層 — 達爾可改源碼但不能碰大腦和 key
   fc5b7a18 fix: auto-executor 放開源碼修改權限 — 修復/修改類任務可改 server/src
 
 ## 🧠 NEUXA 動態
@@ -55,7 +55,7 @@
 - **NEUXA memory 目錄**：~/.openclaw/workspace/memory/（讀最新 .md 可銜接）
 
 ## 🤝 協作指引
-1. **小蔡（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
+1. **達爾（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
 2. **review/pending**：有待審文件就優先處理
 3. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
 4. **Server 重啟**：如果 Server 離線，用 launchctl stop/start com.openclaw.taskboard

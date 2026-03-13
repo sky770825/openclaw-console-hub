@@ -7,7 +7,7 @@
 根據原始碼分析，該工具通常涉及以下配置項：
 ```python
   BOT_TOKEN = "8316840422:AAH3jcMMGB552XQEdlhyU2j0BPNXVAn57hE"  # 群組即時通知Bot @HOMEeeee168bot
-  LOG_FILE_PATH = "/Users/caijunchang/.openclaw/workspace/reports/group_chat_log.md"
+  LOG_FILE_PATH = "/Users/sky770825/.openclaw/workspace/reports/group_chat_log.md"
           log_directory = os.path.dirname(LOG_FILE_PATH)
           with open(LOG_FILE_PATH, "a", encoding="utf-8") as f:
 ```
@@ -19,7 +19,7 @@
 
 ### 執行方式
 ```bash
-python3 /Users/caijunchang/.openclaw/workspace/scripts/telegram_logger_webhook.py
+python3 /Users/sky770825/.openclaw/workspace/scripts/telegram_logger_webhook.py
 ```
 
 ## 4. 使用說明 (Usage)
@@ -29,5 +29,5 @@ python3 /Users/caijunchang/.openclaw/workspace/scripts/telegram_logger_webhook.p
 
 ---
 ## 檔案資訊
-- **原始路徑**: `/Users/caijunchang/.openclaw/workspace/scripts/telegram_logger_webhook.py`
+- **原始路徑**: `/Users/sky770825/.openclaw/workspace/scripts/telegram_logger_webhook.py`
 - **建立日期**: 2026-03-04 12:30:01

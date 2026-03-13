@@ -9,7 +9,7 @@
 ```
 .
 ├── tasks.txt                    # 任務板主檔案（純文字格式）
-├── MEMORY.md                    # 老蔡記憶庫
+├── MEMORY.md                    # 主人記憶庫
 ├── task-queue.json              # JSON 格式任務備份
 ├── README-taskboard.md          # 本說明文件
 │

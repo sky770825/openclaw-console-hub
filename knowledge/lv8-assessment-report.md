@@ -22,7 +22,7 @@
 **H1 題目要求 vs 實作對照：**
 - `delegate_agents` 派出規劃師/研究員/統計員（3 個 flash）：全支援
 - 三個代理各自有不同 task（分析、find_symbol、grep_project）：可通過 task 欄位指定
-- 結果整合 write_file：這是 delegate_agents 執行完後小蔡自己要做的步驟，本 action 只返回結果字串
+- 結果整合 write_file：這是 delegate_agents 執行完後達爾自己要做的步驟，本 action 只返回結果字串
 - index_file 入庫：同上，是後續 chain 的一步
 
 **關鍵限制發現：**
@@ -30,14 +30,14 @@
 - 子代理無法呼叫 `grep_project`、`find_symbol`、`analyze_code` 等工具 action
 - H1 題目第 1 步要求：研究員用 `analyze_symbol` 找 handleWebBrowse 定義、統計員用 `grep_project` 統計 case 分支
   - **這兩個 task 會被當作 AI 文字生成任務交給 Gemini，而不是真正執行 grep_project / analyze_symbol**
-  - 小蔡必須在 delegate_agents 的 task 描述裡讓 AI 生成這些查詢，或者自己先跑 grep_project 再把結果當 context 傳入
-- **如果小蔡不了解這個限制，就會誤以為子代理能直接呼叫工具 action，導致結果不準確**
+  - 達爾必須在 delegate_agents 的 task 描述裡讓 AI 生成這些查詢，或者自己先跑 grep_project 再把結果當 context 傳入
+- **如果達爾不了解這個限制，就會誤以為子代理能直接呼叫工具 action，導致結果不準確**
 
 **預估得分：50/100**
 - delegate_agents 正確執行，三個代理都有輸出：30 分（全得）
 - 結果有效整合（不是直接貼三段 AI 回覆）：10/30 分（AI 生成的分析沒有實際查到代碼，不算有效整合）
 - write_file + index_file 都完成：20 分（全得，後續 chain 可做到）
-- 全程不問老蔡、不卡關：0/20 分（如果不懂子代理工具限制，會在解讀結果時卡住或誤報）
+- 全程不問主人、不卡關：0/20 分（如果不懂子代理工具限制，會在解讀結果時卡住或誤報）
 
 **缺少的能力：**
 1. 不理解 `delegate_agents` 子代理只能做 AI 生成，不能呼叫系統工具 action
@@ -66,19 +66,19 @@
 
 **H2 題目要求 vs 實作對照：**
 - `web_browse https://docs.github.com/en/rest/...`：URL 格式合法，非內網，可執行
-- 萃取「最重要的 5 個端點類別」：這是 AI 判斷層，web_browse 只返回原始文字，萃取工作要由小蔡自己做
+- 萃取「最重要的 5 個端點類別」：這是 AI 判斷層，web_browse 只返回原始文字，萃取工作要由達爾自己做
 - write_file 存到 workspace/notes/H2-github-api-notes.md：可執行
 - index_file 入庫 importance=mid：可執行
 
 **潛在問題：**
 - GitHub docs 頁面可能有重定向或 JS 渲染依賴，8000 字截斷後可能遺漏部分端點類別
-- 「萃取有意義（不是全文貼上）」要求 40 分：這需要小蔡自己分析 web_browse 結果並精選，不是自動完成
+- 「萃取有意義（不是全文貼上）」要求 40 分：這需要達爾自己分析 web_browse 結果並精選，不是自動完成
 - 如果 web_browse 返回的文字雜亂（nav/menu 殘留），萃取品質會下降
 
 **預估得分：75/100**
 - web_browse 成功抓到內容：30 分（全得，環境就緒）
-- 萃取有意義（不是全文貼上）：25/40 分（web_browse 文字品質尚可，但小蔡需要主動整理而非直接複製）
-- write_file + index_file 完成：20/30 分（扣分因為 importance 欄位的使用格式小蔡過去有搞錯）
+- 萃取有意義（不是全文貼上）：25/40 分（web_browse 文字品質尚可，但達爾需要主動整理而非直接複製）
+- write_file + index_file 完成：20/30 分（扣分因為 importance 欄位的使用格式達爾過去有搞錯）
 
 **缺少的能力：**
 1. web_browse 返回後如何做有意義的二次分析（而非直接貼上）— 需要搭配 ask_ai 做摘要
@@ -91,10 +91,10 @@
 **是否達到 Lv.8：否**
 
 **理由：**
-- H1 得分 50/100（未達 80 分升級線）：核心原因是小蔡不理解 delegate_agents 子代理的工具調用限制，會導致結果品質不足
+- H1 得分 50/100（未達 80 分升級線）：核心原因是達爾不理解 delegate_agents 子代理的工具調用限制，會導致結果品質不足
 - H2 得分 75/100（接近但仍未達 80 分）：web_browse 基礎功能完整，但萃取品質不穩定
 
-**老蔡評分建議：7.0/10**
+**主人評分建議：7.0/10**
 
 目前已達到條件（+0.3 從 6.7 升到 7.0 的依據）：
 - web_browse 已完整實作（playwright 環境可用）
@@ -104,12 +104,12 @@
 尚未達到升 Lv.8 的差距：
 - 對 delegate_agents 子代理能力邊界的理解不足（只能 ask_ai，不能呼叫系統工具）
 - 缺少「先用系統工具取得精確數據，再把數據當 context 傳入 delegate_agents」的組合使用技巧
-- H2 萃取品質取決於小蔡是否主動用 ask_ai 二次分析，未建立標準動作鏈
+- H2 萃取品質取決於達爾是否主動用 ask_ai 二次分析，未建立標準動作鏈
 
 **下一步建議：**
 
-1. 讓小蔡實際執行 H1 題目，觀察它是否知道要先跑 `grep_project` 得到 case 分支數，再傳入 delegate_agents 的 context
-2. 讓小蔡實際執行 H2 題目，觀察它是否在 web_browse 完成後接一個 `ask_ai model=flash` 做摘要，而非直接 write_file
+1. 讓達爾實際執行 H1 題目，觀察它是否知道要先跑 `grep_project` 得到 case 分支數，再傳入 delegate_agents 的 context
+2. 讓達爾實際執行 H2 題目，觀察它是否在 web_browse 完成後接一個 `ask_ai model=flash` 做摘要，而非直接 write_file
 3. 執行 H3 練習（智慧修復引擎測試），驗證 auto-executor 的 AI Repair 是否被觸發並生效
 
 ---

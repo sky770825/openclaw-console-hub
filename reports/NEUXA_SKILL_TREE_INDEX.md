@@ -2,7 +2,7 @@
 
 ## System Status
 - **Orchestrator**: NEUXA-Control-Agent
-- **Working Directory**: `/Users/caijunchang/.openclaw/workspace/sandbox`
+- **Working Directory**: `/Users/sky770825/.openclaw/workspace/sandbox`
 - **Last Refreshed**: Mon Mar  2 05:44:48 CST 2026
 
 ## Core Skill Tree Progress

@@ -66,7 +66,7 @@ ps aux | grep node
 ## 真實案例：端口衝突
 
 ```
-問題：小蔡的 create_task API 一直回 404
+問題：達爾的 create_task API 一直回 404
 根因：兩個 Node 進程同時聽 port 3011
   - PID 56466: OpenClaw server (IPv4)
   - PID 86625: NEUXAclaw server (IPv6)

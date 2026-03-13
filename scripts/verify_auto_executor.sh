@@ -1,5 +1,5 @@
 #!/bin/bash
-FILE="/Users/caijunchang/.openclaw/workspace/scripts/auto-executor.ts"
+FILE="/Users/sky770825/.openclaw/workspace/scripts/auto-executor.ts"
 if grep -q "upsertOpenClawTask" "$FILE" && grep -q "status: \"failed\"" "$FILE"; then
     echo "VERIFICATION SUCCESS: upsertOpenClawTask call found in failure branch."
     exit 0

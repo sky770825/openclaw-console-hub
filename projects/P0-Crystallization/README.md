@@ -16,7 +16,7 @@
 
 ### 3.1 技能結構
 
-每個技能都是一個目錄，存放於 /Users/caijunchang/.openclaw/workspace/skills/<技能名>/，包含：
+每個技能都是一個目錄，存放於 /Users/sky770825/.openclaw/workspace/skills/<技能名>/，包含：
 - skill.json: 技能清單檔，定義名稱、描述、參數、權限等。
 - run.sh: 技能執行檔，接收參數並執行主要邏輯。
 - README.md: 技能說明文件。

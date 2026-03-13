@@ -14,4 +14,4 @@
 - 目前實作為 Mock Log，可輕易擴充為 SendGrid 或 LINE Notify API。
 
 ## 4. 實作位置
-- 核心邏輯：`/Users/caijunchang/.openclaw/workspace/scripts/reservation_backend/index.js`
+- 核心邏輯：`/Users/sky770825/.openclaw/workspace/scripts/reservation_backend/index.js`

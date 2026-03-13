@@ -6,7 +6,7 @@ import os
 STATUS_FILE = os.path.join(os.environ.get('OUTPUT_DIR', '.'), 'status.json')
 
 AGENTS = [
-    {"id": "xiaocai", "name": "小蔡 (Xiao Cai)", "role": "Lead Orchestrator", "color": "#a855f7"},
+    {"id": "dar", "name": "達爾 (Dar)", "role": "Lead Orchestrator", "color": "#a855f7"},
     {"id": "executor", "name": "auto-executor", "role": "Task Runner", "color": "#22c55e"},
     {"id": "delegates", "name": "delegate_agents", "role": "Swarm Workers", "color": "#eab308"}
 ]
@@ -34,7 +34,7 @@ def generate_state():
     
     # Simulate data flow links
     if agents_data[0]["status"] != "idle":
-        links.append({"from": "xiaocai", "to": "executor", "active": True})
+        links.append({"from": "dar", "to": "executor", "active": True})
     if agents_data[1]["status"] == "executing":
         links.append({"from": "executor", "to": "delegates", "active": True})
 

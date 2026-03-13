@@ -2,7 +2,7 @@
 
 > 執行者：Cursor（訂閱制）
 > 優先級：P0
-> 工作目錄：/Users/caijunchang/.openclaw/workspace/scripts/
+> 工作目錄：/Users/sky770825/.openclaw/workspace/scripts/
 
 ## 目標
 建立 `automation-ctl.sh` 統一控制器 + `context-manager.sh` 合併腳本

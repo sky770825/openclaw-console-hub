@@ -23,7 +23,7 @@
         }
       },
       "id": "telegram-send",
-      "name": "Telegram: 發通知給老蔡",
+      "name": "Telegram: 發通知給主人",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [500, 300],
@@ -37,7 +37,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\"status\": \"notification_sent\", \"message\": \"已發送 Telegram 通知給老蔡，等待授權\"}"
+        "responseBody": "={\"status\": \"notification_sent\", \"message\": \"已發送 Telegram 通知給主人，等待授權\"}"
       },
       "id": "respond-ok",
       "name": "回應: 已發送通知",
@@ -51,7 +51,7 @@
         "additionalFields": {}
       },
       "id": "telegram-trigger",
-      "name": "Telegram Trigger: 老蔡回覆",
+      "name": "Telegram Trigger: 主人回覆",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [250, 550],
@@ -100,7 +100,7 @@
     {
       "parameters": {
         "chatId": "5819565005",
-        "text": "🔓 已授權！解鎖檔案已建立。\n\n小蔡可以重新 git commit 了。\n授權碼 5 分鐘內有效（一次性）。",
+        "text": "🔓 已授權！解鎖檔案已建立。\n\n達爾可以重新 git commit 了。\n授權碼 5 分鐘內有效（一次性）。",
         "additionalFields": {}
       },
       "id": "telegram-approved",
@@ -138,18 +138,18 @@
     "Webhook: 解鎖請求": {
       "main": [
         [
-          { "node": "Telegram: 發通知給老蔡", "type": "main", "index": 0 }
+          { "node": "Telegram: 發通知給主人", "type": "main", "index": 0 }
         ]
       ]
     },
-    "Telegram: 發通知給老蔡": {
+    "Telegram: 發通知給主人": {
       "main": [
         [
           { "node": "回應: 已發送通知", "type": "main", "index": 0 }
         ]
       ]
     },
-    "Telegram Trigger: 老蔡回覆": {
+    "Telegram Trigger: 主人回覆": {
       "main": [
         [
           { "node": "IF: 授權碼正確？", "type": "main", "index": 0 }

@@ -61,5 +61,5 @@
     "negative_sentiment_ratio": 0.35,
     "competitor_mention_spike": 0.4
   },
-  "note": "待老蔡確認飲料店品牌名稱後，需要更新 primary 關鍵字和競品對照"
+  "note": "待主人確認飲料店品牌名稱後，需要更新 primary 關鍵字和競品對照"
 }

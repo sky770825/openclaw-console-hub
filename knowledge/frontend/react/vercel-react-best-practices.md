@@ -1,7 +1,7 @@
 # Vercel React Best Practices (Key Points)
 
 > Source: Vercel Engineering
-> Summary by: 小蔡
+> Summary by: 達爾
 
 ## 優化分類
 

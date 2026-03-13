@@ -20,7 +20,7 @@
 - **執行輸出路徑**：`projects/<project>/runs/<YYYY-MM-DD>/<run_id>/`
 - **DoD**：每次執行必產出 `run_path/RESULT.md`（commands/acceptance/rollback/summary）
 - **回報分層**：Telegram 只回索引級（task_id/run_id/project_path/run_path + 短摘要/nextSteps），全量內容寫入 `RESULT.md` + `ARTIFACTS/`
-- **Telegram token**：同一 bot token 只能有一個 getUpdates poller；小蔡 bot 與小ollama bot 必須分離，避免 `409 getUpdates conflict`
+- **Telegram token**：同一 bot token 只能有一個 getUpdates poller；達爾 bot 與小ollama bot 必須分離，避免 `409 getUpdates conflict`
 
 ---
 
@@ -28,18 +28,18 @@
 
 ### 通用流程（Codex + Cursor）
 ```
-老蔡下指令 → 小蔡生成 task_id + run_id → 小蔡啟動 Subagent 
+主人下指令 → 達爾生成 task_id + run_id → 達爾啟動 Subagent 
     ↓
 Subagent 執行（檢查 idempotency_key = task_id:run_id）
     ↓
-Subagent 回報（【小蔡執行-TASK_NAME】task_id / run_id / status）
+Subagent 回報（【達爾執行-TASK_NAME】task_id / run_id / status）
     ↓
-老蔡 ACK（收到了/沒收到）
+主人 ACK（收到了/沒收到）
     ↑_________(自動升級機制：2x timeout 或 3x failed)_____↓
         若符合升級條件 → [ESCALATE_Codex/Cursor] 立即升級
 ```
 
-**小蔡角色：** 不參與內容回覆，只做調度/監控/升級/idempotency 檢查
+**達爾角色：** 不參與內容回覆，只做調度/監控/升級/idempotency 檢查
 
 ---
 
@@ -47,11 +47,11 @@ Subagent 回報（【小蔡執行-TASK_NAME】task_id / run_id / status）
 
 | 角色 | 職責 | 不做的 |
 |------|------|--------|
-| **小蔡** | 任務分派、task_id 生成、run_id 生成、狀態監控、異常升級、idempotency 檢查 | 不加工結果、不當回覆窗口 |
+| **達爾** | 任務分派、task_id 生成、run_id 生成、狀態監控、異常升級、idempotency 檢查 | 不加工結果、不當回覆窗口 |
 | **Codex** | 搜尋/查詢、多工具鏈整合、後端修復、大型多步驟任務、系統分析 | UI/前端微調 |
 | **Cursor** | 程式執行、修改、驗證、UI/前端微調、現有專案改碼、代碼審查 | 複雜系統故障排查 |
 | **小ollama** | 結果通知（成功/失敗/摘要） | 不執行複雜分析 |
-| **老蔡** | ACK 確認（收到了/沒收到）、決策、升級確認 | - |
+| **主人** | ACK 確認（收到了/沒收到）、決策、升級確認 | - |
 
 ---
 
@@ -59,16 +59,16 @@ Subagent 回報（【小蔡執行-TASK_NAME】task_id / run_id / status）
 
 ### 決策樹（帶 task_id + run_id 生成）
 ```
-老蔡下指令
+主人下指令
     ↓
-小蔡生成: TASK_ID=$(date +task_%s_name), RUN_ID=$RANDOM
+達爾生成: TASK_ID=$(date +task_%s_name), RUN_ID=$RANDOM
     ↓
 ├─ UI/前端微調、現有專案改碼 → Cursor Agent 優先
 ├─ 系統故障排查、後端修復 → Codex 優先
 ├─ 多工具鏈整合、搜尋/查詢 → Codex 優先
 ├─ 大型多步驟任務 → Codex 主導，Cursor 做子任務
 ├─ 定時監控報告 → Codex/Cursor（依任務類型）
-└─ < 30 秒能做完？ → 小蔡本地處理（省啟動費）
+└─ < 30 秒能做完？ → 達爾本地處理（省啟動費）
 ```
 
 ### Cursor Agent 專用規則
@@ -134,12 +134,12 @@ IDEMPOTENCY_KEY="${TASK_ID}:${RUN_ID}"
 
 ### 升級流程
 ```
-Subagent 失敗 → 小蔡記錄狀態（timeout/failed）
+Subagent 失敗 → 達爾記錄狀態（timeout/failed）
     ↓
 檢查連續失敗次數 (stored in ~/.openclaw/automation/task_failures.json)
     ↓
 ├─ 2x timeout / 3x failed → [ESCALATE_Codex] 發送給我
-└─ 其他情況 → 等待老蔡 ACK
+└─ 其他情況 → 等待主人 ACK
 ```
 
 ### 升級通知格式
@@ -182,8 +182,8 @@ action: 已停止重試，等待人工介入
 
 ### 正常流程
 1. Subagent 發送完成訊息（小ollama 身份）
-2. 老蔡回覆 **「收到了」** → 任務結束
-3. 老蔡靜默或回覆 **「沒收到」** → 進入補發
+2. 主人回覆 **「收到了」** → 任務結束
+3. 主人靜默或回覆 **「沒收到」** → 進入補發
 
 ### 補發規則
 ```
@@ -227,7 +227,7 @@ echo "${TASK_ID}:${RUN_ID}" >> /tmp/processed_tasks
 
 ### 成功格式
 ```
-【小蔡執行-${TASK_NAME}】
+【達爾執行-${TASK_NAME}】
 task_id: task_1771007460_external-intel
 run_id: run_2861
 status: success
@@ -241,7 +241,7 @@ summary: |
 
 ### 失敗格式
 ```
-【小蔡執行-${TASK_NAME}】
+【達爾執行-${TASK_NAME}】
 task_id: task_1771007460_external-intel
 run_id: run_2861
 status: failed|timeout
@@ -306,7 +306,7 @@ consecutive_failures: 1/2|1/3
 ### 省錢原則
 - ✅ 工具導向（Input 為主）→ 便宜
 - ❌ 生成導向（Output 多）→ 貴 3 倍
-- ✅ 老蔡主動 ACK → 小蔡不讀 transcript → 省 30-40%
+- ✅ 主人主動 ACK → 達爾不讀 transcript → 省 30-40%
 
 ---
 
@@ -314,7 +314,7 @@ consecutive_failures: 1/2|1/3
 
 ```bash
 #!/bin/bash
-# 【小蔡執行-${TASK_NAME}】
+# 【達爾執行-${TASK_NAME}】
 
 # === 設定區（環境變數）===
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
@@ -343,7 +343,7 @@ EXEC_ERROR=""
 
 # === 訊息組裝 (v2.1) ===
 if [ "$EXEC_STATUS" = "success" ]; then
-  MSG_TEXT="【小蔡執行-${TASK_NAME}】
+  MSG_TEXT="【達爾執行-${TASK_NAME}】
 task_id: ${TASK_ID}
 run_id: ${RUN_ID}
 status: success
@@ -360,7 +360,7 @@ else
   FAILURE_COUNT=$(grep "^${TASK_ID}" "${PROCESSED_LOG}" 2>/dev/null | grep -c "failed\|timeout" || echo "0")
   FAILURE_COUNT=$((FAILURE_COUNT + 1))
   
-  MSG_TEXT="【小蔡執行-${TASK_NAME}】
+  MSG_TEXT="【達爾執行-${TASK_NAME}】
 task_id: ${TASK_ID}
 run_id: ${RUN_ID}
 status: ${EXEC_STATUS:-failed}
@@ -429,5 +429,5 @@ fi
 
 ---
 
-🐣 小蔡 | 2026-02-14 建立
+🐣 達爾 | 2026-02-14 建立
 ✏️ 2026-02-14 02:31 更新（v2.1：Cursor 規則、Idempotency、自動升級）

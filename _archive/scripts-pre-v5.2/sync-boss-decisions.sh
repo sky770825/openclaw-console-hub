@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# NEUXA 老蔡決策同步引擎 (Boss Decision Sync)
+# NEUXA 主人決策同步引擎 (Boss Decision Sync)
 # 用法: ./sync-boss-decisions.sh "決策內容" "關聯任務ID" "狀態"
 
 CONTENT="$1"

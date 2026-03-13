@@ -1,9 +1,9 @@
 # M3 Ultra 遷移三階段計畫 (阿策)
 
 ## 第一階段：環境配置 (Day 1-2)
-- 初始化 /Users/caijunchang/.openclaw/workspace 下的 armory 與 skills。
+- 初始化 /Users/sky770825/.openclaw/workspace 下的 armory 與 skills。
 - 配置 Ollama 與本地模型庫。
-- 驗證 /Users/caijunchang/.openclaw/workspace/scripts/path_fixer.sh。
+- 驗證 /Users/sky770825/.openclaw/workspace/scripts/path_fixer.sh。
 
 ## 第二階段：模型遷移與測試 (Day 3-7)
 - 將原本依賴 API 的模塊切換至本地端點。

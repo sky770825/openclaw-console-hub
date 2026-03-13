@@ -1,7 +1,7 @@
 #!/bin/bash
 # 阿工執行腳本：建立商業價值導向的 Astro POC 結構
 set -e
-TARGET_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/astro-poc"
+TARGET_DIR="/Users/sky770825/.openclaw/workspace/sandbox/astro-poc"
 mkdir -p "${TARGET_DIR}/src/pages"
 mkdir -p "${TARGET_DIR}/src/components/business"
 

@@ -11,4 +11,4 @@
 ### 詳細資訊
 •   *任務名稱*：匯總生產力工具整合報告
 •   *描述*：匯總阿研、阿工、阿策、阿秘、阿商的調研結果，結合 Gemini-Pro 的架構分析，制定 OpenClaw 整合 Notion、LLM 及其他生產力工具的具體實施方案。
-•   *結果*：已完成分析和規劃，報告生成於 /Users/caijunchang/.openclaw/workspace/reports/productivity-tool-integration-report.md。
+•   *結果*：已完成分析和規劃，報告生成於 /Users/sky770825/.openclaw/workspace/reports/productivity-tool-integration-report.md。

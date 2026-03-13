@@ -1,6 +1,6 @@
 # platform_platform_platform_591 新物件監控工具 (realestate-monitor-platform_platform_platform_591)
 
-ClawHub 旗艦專案，用於自動監控 platform_platform_platform_591 網站上的新發布物件，並即時通知老蔡。
+ClawHub 旗艦專案，用於自動監控 platform_platform_platform_591 網站上的新發布物件，並即時通知主人。
 
 ## 功能
 

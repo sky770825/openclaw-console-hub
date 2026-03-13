@@ -4,7 +4,7 @@
 The static beauty-v2 project has been scaffolded into a modern Next.js 14 structure with App Router and TypeScript.
 
 ## Key Accomplishments
-1.  **Project Scaffolding**: Created a complete Next.js structure in `/Users/caijunchang/.openclaw/workspace/sandbox/output/beauty-v2-nextjs`.
+1.  **Project Scaffolding**: Created a complete Next.js structure in `/Users/sky770825/.openclaw/workspace/sandbox/output/beauty-v2-nextjs`.
 2.  **Tailwind CSS Integration**: Configured PostCSS and Tailwind for utility-first styling.
 3.  **Componentization**: 
     -   `Navbar.tsx`: Extracted global navigation.

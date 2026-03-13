@@ -16,6 +16,6 @@
 - **回歸測試**: 通過 (regression_test_w4.sh)
 
 ## 產出物
-- 技能定義：`/Users/caijunchang/.openclaw/workspace/skills/aegis_scanner.json`
-- 執行腳本：`/Users/caijunchang/.openclaw/workspace/scripts/run_aegis_scan.sh`
-- 回歸測試腳本：`/Users/caijunchang/.openclaw/workspace/scripts/regression_test_w4.sh`
+- 技能定義：`/Users/sky770825/.openclaw/workspace/skills/aegis_scanner.json`
+- 執行腳本：`/Users/sky770825/.openclaw/workspace/scripts/run_aegis_scan.sh`
+- 回歸測試腳本：`/Users/sky770825/.openclaw/workspace/scripts/regression_test_w4.sh`

@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 # This script applies the fix to a writable sandbox copy of the source code.
-SOURCE="/Users/caijunchang/openclaw任務面版設計/server/src"
-DEST="/Users/caijunchang/.openclaw/workspace/sandbox/fixed_server_src"
+SOURCE="/Users/sky770825/openclaw任務面版設計/server/src"
+DEST="/Users/sky770825/.openclaw/workspace/sandbox/fixed_server_src"
 
 echo "Creating writable copy in sandbox..."
 mkdir -p "$DEST"

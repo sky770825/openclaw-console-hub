@@ -3,7 +3,7 @@
 ## 同步架構
 
 ```
-L1 小蔡 (Kimi/OpenClaw) <---> 同步橋接 <---> L2 Claude (Claude Code)
+L1 達爾 (Kimi/OpenClaw) <---> 同步橋接 <---> L2 Claude (Claude Code)
          |                                        |
          +----> ~/.openclaw/workspace/.sync-bridge/ <----+
                                               |
@@ -36,7 +36,7 @@ L1 小蔡 (Kimi/OpenClaw) <---> 同步橋接 <---> L2 Claude (Claude Code)
 
 ### 3. Git 自動同步
 - **Hook**: post-commit 觸發通知
-- **Mirror**: 自動同步到小蔡 repo
+- **Mirror**: 自動同步到達爾 repo
 - **Backup**: 雙向備份
 
 ### 4. 記憶同步

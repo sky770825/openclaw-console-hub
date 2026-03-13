@@ -3,7 +3,7 @@
 > 執行者：Cursor（訂閱制）
 > 優先級：P1
 > 依賴：Phase 1 完成
-> 工作目錄：/Users/caijunchang/.openclaw/workspace/scripts/
+> 工作目錄：/Users/sky770825/.openclaw/workspace/scripts/
 
 ## 目標
 為所有自動化腳本加入熔斷器、預算看門狗、超時保護、緊急停止。

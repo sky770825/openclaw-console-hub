@@ -1,7 +1,7 @@
 # 任務板設計審查需求
 
 ## 專案路徑
-/Users/caijunchang/Downloads/openclaw-console-hub-main/server
+/Users/sky770825/Downloads/openclaw-console-hub-main/server
 
 ## 目前已實作功能
 1. **AutoExecutor** (src/auto-executor.ts) - 自動輪詢執行系統

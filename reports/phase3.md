@@ -3,7 +3,7 @@
 > 執行者：Cursor（訂閱制）
 > 優先級：P0（商業化）
 > 依賴：Phase 1 & 2 完成
-> 工作目錄：/Users/caijunchang/.openclaw/workspace/skills/contextguard/
+> 工作目錄：/Users/sky770825/.openclaw/workspace/skills/contextguard/
 
 ## 目標
 將我們的 Context 優化實踐打包成可銷售的 OpenClaw Skill，並準備商業化。

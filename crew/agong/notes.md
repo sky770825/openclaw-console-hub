@@ -1,4 +1,4 @@
-## 新電腦環境資訊更新 (來自老蔡指令)
+## 新電腦環境資訊更新 (來自主人指令)
 - 設備: Mac Studio / Apple M3 Ultra / 96GB / macOS 26.1
 - 用戶名: sky770825
 - 主機名: caideMac-Studio.local

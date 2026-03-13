@@ -1,4 +1,4 @@
-# 小蔡 Live2D Web 界面
+# 達爾 Live2D Web 界面
 
 ## 架構
 ``
@@ -8,7 +8,7 @@ Telegram → openclaw server → WebSocket → 瀏覽器 Live2D
 ## 啟動方式
 `bash
 # 直接用 Python 起靜態伺服器（測試用）
-cd /Users/caijunchang/.openclaw/workspace/projects/live2d-web
+cd /Users/sky770825/.openclaw/workspace/projects/live2d-web
 python3 -m http.server 8080
 # 開瀏覽器訪問 http://localhost:8080
 ``

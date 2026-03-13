@@ -61,10 +61,10 @@ This report identifies the affected files and provides the corrected content in 
 
 ## Resolution
 Fixed versions of the files listed above have been generated in:
-`/Users/caijunchang/.openclaw/workspace/sandbox/output/fixed_task_status`
+`/Users/sky770825/.openclaw/workspace/sandbox/output/fixed_task_status`
 
 An application script has been created at:
-`/Users/caijunchang/.openclaw/workspace/scripts/apply_status_fix.sh`
+`/Users/sky770825/.openclaw/workspace/scripts/apply_status_fix.sh`
 
 **Note:** Due to security restrictions, the original source files were not modified. 
 Please review the changes in the output directory and apply them using the provided script if they are correct.

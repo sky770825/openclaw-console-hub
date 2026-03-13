@@ -9,7 +9,7 @@ The search in source code indicates:
 - Database interface: Uses the `openclaw_runs` table.
 - LLM response: The current logic likely discards the `usage` object returned by the provider (OpenAI/Anthropic).
 
-## Implementation Plan (Recommended for 老蔡)
+## Implementation Plan (Recommended for 主人)
 
 ### Step 1: Modify Action Runner / LLM Service
 Capture the usage statistics from the AI completion response.

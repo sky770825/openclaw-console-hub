@@ -1,6 +1,6 @@
 #!/bin/bash
-TEST_DATA="/Users/caijunchang/.openclaw/workspace/sandbox/tasks.json"
-ARCHIVE_TOOL="/Users/caijunchang/.openclaw/workspace/scripts/task_archiver.js"
+TEST_DATA="/Users/sky770825/.openclaw/workspace/sandbox/tasks.json"
+ARCHIVE_TOOL="/Users/sky770825/.openclaw/workspace/scripts/task_archiver.js"
 
 echo "Creating mock task data..."
 cat << 'JSON' > "$TEST_DATA"

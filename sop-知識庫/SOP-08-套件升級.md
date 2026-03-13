@@ -26,10 +26,10 @@ priority: P1
 
 | 操作 | 燈號 | 規則 |
 |------|------|------|
-| 安裝新套件（npm install X） | 🟡 | 先跟老蔡說要裝什麼、為什麼 |
-| 升級 patch 版本（1.0.0 → 1.0.1） | 🟡 | 先跟老蔡說 |
-| 升級 minor 版本（1.0 → 1.1） | 🔴 | 必須看 changelog + 老蔡批准 |
-| 升級 major 版本（1.x → 2.x） | 🔴🔴 | 必須看 changelog + breaking changes + 老蔡批准 |
+| 安裝新套件（npm install X） | 🟡 | 先跟主人說要裝什麼、為什麼 |
+| 升級 patch 版本（1.0.0 → 1.0.1） | 🟡 | 先跟主人說 |
+| 升級 minor 版本（1.0 → 1.1） | 🔴 | 必須看 changelog + 主人批准 |
+| 升級 major 版本（1.x → 2.x） | 🔴🔴 | 必須看 changelog + breaking changes + 主人批准 |
 | `npm update`（全部升級） | 🔴🔴 | 絕對禁止未經批准 |
 
 ---
@@ -47,7 +47,7 @@ priority: P1
 替代方案：{有沒有其他選擇}
 ```
 
-### Step 2: 老蔡批准後安裝
+### Step 2: 主人批准後安裝
 
 ```bash
 npm install {package}@{version}
@@ -97,7 +97,7 @@ Breaking changes：{有/無}
 升級理由：{為什麼要升}
 ```
 
-### Step 3: 老蔡批准後升級
+### Step 3: 主人批准後升級
 
 ```bash
 npm install {package}@{version}
@@ -115,7 +115,7 @@ npm run build
 - ❌ Major version 升級不看 changelog
 - ❌ 刪除 package-lock.json 重新安裝
 - ❌ 安裝週下載數 <1,000 的套件（可能有安全風險）
-- ❌ 安裝時用 `--force` 或 `--legacy-peer-deps` 不跟老蔡說
+- ❌ 安裝時用 `--force` 或 `--legacy-peer-deps` 不跟主人說
 
 ---
 
@@ -124,8 +124,8 @@ npm run build
 | 狀況 | 處理方式 |
 |------|----------|
 | 安裝後測試失敗 | 回滾：`git checkout package.json package-lock.json && npm install` |
-| peer dependency 衝突 | 回報老蔡，不要用 --force |
-| 套件有安全漏洞 | `npm audit` 回報結果，等老蔡決定 |
+| peer dependency 衝突 | 回報主人，不要用 --force |
+| 套件有安全漏洞 | `npm audit` 回報結果，等主人決定 |
 | build 失敗 | 回滾，回報錯誤訊息 |
 
 ---

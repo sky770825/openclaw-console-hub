@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "description": "小蔡 Telegram 圖文選單設定 v2.0 (2026-02-16)",
+  "description": "達爾 Telegram 圖文選單設定 v2.0 (2026-02-16)",
   "menu": {
     "type": "inline_keyboard",
     "rows": [

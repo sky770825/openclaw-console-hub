@@ -4,7 +4,7 @@
 **版本**: v1.0 (Pro 級方案)  
 **日期**: 2026-02-26  
 **作者**: NEUXA L2 Research Subagent  
-**機密等級**: 老蔡授權
+**機密等級**: 主人授權
 
 ---
 
@@ -75,7 +75,7 @@
         "id": "task-uuid",
         "name": "設計記憶引擎",
         "progress_percent": 35,
-        "blockers": ["等待老蔡確認預算"],
+        "blockers": ["等待主人確認預算"],
         "next_action": "完成白皮書撰寫"
       },
       "cognitive_context": {

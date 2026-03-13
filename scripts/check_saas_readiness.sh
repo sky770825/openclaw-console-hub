@@ -1,7 +1,7 @@
 #!/bin/bash
 # 檢查 Landing Page 部署前的商業要素準備狀態
 
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'

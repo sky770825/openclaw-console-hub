@@ -15,7 +15,7 @@ const path = require('path');
  * @param {number} after - Context usage percentage after compression.
  */
 function notifyMemoryCompression(before, after) {
-    const scriptPath = '/Users/caijunchang/.openclaw/workspace/sandbox/armory/send-tg-notify.sh';
+    const scriptPath = '/Users/sky770825/.openclaw/workspace/sandbox/armory/send-tg-notify.sh';
     const message = `🚀 NEUXA 記憶體壓縮：${before}% -> ${after}%`;
     
     // Command execution

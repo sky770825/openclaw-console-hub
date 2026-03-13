@@ -9,10 +9,10 @@ The `web-monitor` has been upgraded to a "Commander's Scepter" automated dispatc
 - **run_commander_monitor.sh**: Entry point for system-level execution.
 
 ## Configuration
-- Location: `/Users/caijunchang/.openclaw/workspace/sandbox/web-monitor/config.json`
+- Location: `/Users/sky770825/.openclaw/workspace/sandbox/web-monitor/config.json`
 - Format: Add `"trigger_task": true` to any target to enable auto-task creation.
 
 ## Status
-- Deployment Directory: /Users/caijunchang/.openclaw/workspace/sandbox/web-monitor
-- Scripts: /Users/caijunchang/.openclaw/workspace/scripts/run_commander_monitor.sh
+- Deployment Directory: /Users/sky770825/.openclaw/workspace/sandbox/web-monitor
+- Scripts: /Users/sky770825/.openclaw/workspace/scripts/run_commander_monitor.sh
 - Test Run: Completed. See output/monitor_init.log

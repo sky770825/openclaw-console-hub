@@ -6,10 +6,10 @@
   - **409 getUpdates conflict**
 
 - **角色分離（避免衝突）**：
-  - **小蔡**（OpenClaw gateway 控制/回話）→ @xiaoji_cai_bot
+  - **達爾**（OpenClaw gateway 控制/回話）→ @xiaoji_cai_bot
   - **小ollama**（任務板通知/force-test/回報）→ @ollama168bot
 
-- **原則**：小蔡 bot token 不可與任務板後端共用
+- **原則**：達爾 bot token 不可與任務板後端共用
 
 ---
 
@@ -17,7 +17,7 @@
 
 - @xiaoji_cai_bot 的 DM 預設：
   - `channels.telegram.dmPolicy = allowlist`
-  - `channels.telegram.allowFrom = [老蔡 chat_id]`
+  - `channels.telegram.allowFrom = [主人 chat_id]`
 
 - **禁止使用**：
   - `dmPolicy=open`（會觸發 security critical，且可能造成陌生人注入指令/上下文洩漏）
@@ -67,4 +67,4 @@
 
 ---
 
-🐣 小蔡 | 2026-02-14 13:48 | 穩定性 + 省 Token 核心記憶
+🐣 達爾 | 2026-02-14 13:48 | 穩定性 + 省 Token 核心記憶

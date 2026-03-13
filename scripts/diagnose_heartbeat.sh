@@ -2,7 +2,7 @@
 # OpenClaw Heartbeat Diagnostic Tool
 # Purpose: Diagnose issues with heartbeat signals in the Task Panel
 
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/heartbeat_diagnosis.log"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/heartbeat_diagnosis.log"
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
 
 echo "--- Heartbeat Diagnosis Start: $TIMESTAMP ---" | tee -a "$LOG_FILE"

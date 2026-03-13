@@ -1,6 +1,6 @@
 # OpenClaw Telegram JSON 顯示問題分析報告
 
-針對老蔡（使用者）反映不希望在 Telegram 看到 JSON 代碼的問題，以下是基於 OpenClaw 架構的詳細分析與建議：
+針對主人（使用者）反映不希望在 Telegram 看到 JSON 代碼的問題，以下是基於 OpenClaw 架構的詳細分析與建議：
 
 ## 1. 根據 OpenClaw 架構，有沒有辦法讓這些 JSON 在顯示時隱藏？
 
@@ -47,10 +47,10 @@ text
   2. **OpenClaw 解析器** 偵測到 JSON。
   3. **OpenClaw 解析器** 執行 Action。
   4. **OpenClaw 解析器** 將 JSON 從文字中剝離。
-  5. **Telegram Bot** 將剝離後的文字發送給老蔡。
+  5. **Telegram Bot** 將剝離後的文字發送給主人。
 
 **結論：**
-老蔡不喜歡是因為他看到了「機械運作的內幕」。你需要做的是在 System Prompt 中規範化 JSON 的邊界（加標籤），並確保你的 OpenClaw 介面層（或是串接 Telegram 的中間件）有進行 **「提取並過濾」** 的動作。
+主人不喜歡是因為他看到了「機械運作的內幕」。你需要做的是在 System Prompt 中規範化 JSON 的邊界（加標籤），並確保你的 OpenClaw 介面層（或是串接 Telegram 的中間件）有進行 **「提取並過濾」** 的動作。
 
 ---
 *分析完成，建議修改 System Prompt 並檢查 OpenClaw 的 message handler 邏輯。*

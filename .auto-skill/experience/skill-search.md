@@ -28,7 +28,7 @@ qmd search "xxx" | mq extract
 ```
 
 ### Memory 召回優化
-**問題**: 小蔡找不到之前的討論
+**問題**: 達爾找不到之前的討論
 **解法**: 建立 MEMORY.md 索引 + 每日同步
 **關鍵參數**:
 - 關鍵決策寫入 MEMORY.md

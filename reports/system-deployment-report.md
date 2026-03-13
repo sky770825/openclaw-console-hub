@@ -11,8 +11,8 @@
 - `src/agentRouter.ts`: 處理訊息分發。
 - `src/botProfiles.ts`: 儲存阿研、阿建的角色設定。
 - `src/main.ts`: 指揮官邏輯核心。
-- `.env.template`: 提供老蔡填寫 Token 的範本。
+- `.env.template`: 提供主人填寫 Token 的範本。
 
 ## 3. 下一步行動
-- 請老蔡於 `.env` 填寫實際的 Telegram Token。
+- 請主人於 `.env` 填寫實際的 Telegram Token。
 - 將 `agentRouter.ts` 整合至 Express Server 中。

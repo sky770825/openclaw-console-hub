@@ -1,7 +1,7 @@
 # Telegram Bot 修復流程 | 2026-02-16
 
 > **修復時間**：2026-02-16 13:30-14:00
-> **修復者**：小蔡（Claude）
+> **修復者**：達爾（Claude）
 > **狀態**：✅ 完全修復
 
 ---
@@ -13,7 +13,7 @@
 2. @xiaoji_cai_bot - OpenClaw gateway 主控 bot
 
 **影響**：
-- 用戶無法透過 Telegram 與小蔡互動
+- 用戶無法透過 Telegram 與達爾互動
 - AI 客服功能中斷
 - 緊急通知無法送達
 
@@ -82,7 +82,7 @@ pm2 logs ai-bot --err --lines 20 --nostream
 
 #### Step 2：刪除舊程序
 ```bash
-cd /Users/caijunchang/.openclaw/workspace/skill-github-automation
+cd /Users/sky770825/.openclaw/workspace/skill-github-automation
 pm2 delete ai-bot
 ```
 
@@ -116,7 +116,7 @@ module.exports = {
   apps: [{
     name: 'ai-bot',
     script: './scripts/ollama-telegram-bot.js',
-    cwd: '/Users/caijunchang/.openclaw/workspace/skill-github-automation',
+    cwd: '/Users/sky770825/.openclaw/workspace/skill-github-automation',
     env: {
       SKILLFORGE_BOT_TOKEN: '8357299731:AAHrBnVCEGjGy6b0g-3JhBArMnM9kt__Ncg',
       ADMIN_CHAT_ID: '5819565005',
@@ -409,7 +409,7 @@ openclaw status  # 查看 Channels 區塊
 ## 🗺️ 系統架構圖
 
 ```
-小蔡 Telegram 生態系統
+達爾 Telegram 生態系統
 │
 ├── @caij_n8n_bot（Ollama 客服機器人）
 │   ├── 程序：PM2 ai-bot
@@ -419,7 +419,7 @@ openclaw status  # 查看 Channels 區塊
 │   ├── 模型：deepseek-r1:8b（本地 Ollama）
 │   └── 用途：SkillForge 產品客服
 │
-├── @xiaoji_cai_bot（小蔡主控）
+├── @xiaoji_cai_bot（達爾主控）
 │   ├── 程序：OpenClaw gateway
 │   ├── 服務：LaunchAgent (ai.openclaw.gateway)
 │   ├── 配置：~/.openclaw/openclaw.json
@@ -455,5 +455,5 @@ openclaw status  # 查看 Channels 區塊
 ---
 
 **建立時間**：2026-02-16 14:00
-**維護者**：小蔡（Claude）
+**維護者**：達爾（Claude）
 **版本**：v1.0

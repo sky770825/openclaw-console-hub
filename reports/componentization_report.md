@@ -1,7 +1,7 @@
 # Beauty-v2 元件化改寫報告
 
 ## 1. 專案現況分析
-- **原始碼路徑**: /Users/caijunchang/openclaw任務面版設計
+- **原始碼路徑**: /Users/sky770825/openclaw任務面版設計
 - **目標架構**: Next.js (App Router)
 - **當前進度**: 已完成基礎骨架建立、核心元件拆分、SEO 結構預設。
 

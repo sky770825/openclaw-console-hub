@@ -1,5 +1,5 @@
 #!/bin/bash
-TARGET_DIR="/Users/caijunchang/openclaw任務面版設計"
+TARGET_DIR="/Users/sky770825/openclaw任務面版設計"
 echo "--- Project Composition Analysis ---"
 echo "Timestamp: $(date)"
 echo ""

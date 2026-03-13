@@ -1,7 +1,7 @@
 # 【內部優化掃描】2026-02-14 01:49
 
 **時間**: 2026-02-14 01:49 AM (Saturday)  
-**掃描員**: 小蔡  
+**掃描員**: 達爾  
 **優先級**: Ready 補充 < 20 張，優先補任務
 
 ---
@@ -51,7 +51,7 @@
 | **acceptanceCriteria** | ✅ 7 個技能均有完整 README.md<br>✅ 包含最少 3 個實際用法範例<br>✅ SKILLS-CATALOG.md 更新完整 |
 | **riskLevel** | low |
 | **rollbackPlan** | 刪除新建 README；原有 SKILL.md 保留 |
-| **assignedAgent** | 小蔡 |
+| **assignedAgent** | 達爾 |
 | **source** | internal-optimization |
 | **status** | ready |
 
@@ -64,7 +64,7 @@
 | **acceptanceCriteria** | ✅ INDEX.md 覆蓋所有 175 個文件<br>✅ qmd search 命令 < 2s 返回結果<br>✅ 記憶文件遷移到 4 個子目錄（向後相容） |
 | **riskLevel** | low |
 | **rollbackPlan** | 備份 memory/；若分類有誤，恢復原始結構 |
-| **assignedAgent** | 小蔡 |
+| **assignedAgent** | 達爾 |
 | **source** | internal-optimization |
 | **status** | ready |
 
@@ -77,7 +77,7 @@
 | **acceptanceCriteria** | ✅ 新腳本支持 5+ 種監控視圖<br>✅ 效能 ≤5s 查詢完整狀態<br>✅ 所有原腳本正常工作（可轉向新版本） |
 | **riskLevel** | medium |
 | **rollbackPlan** | 保留原腳本；新腳本若故障，用戶可切回舊版 |
-| **assignedAgent** | 小蔡 |
+| **assignedAgent** | 達爾 |
 | **source** | internal-optimization |
 | **status** | ready |
 
@@ -100,4 +100,4 @@
 - [ ] Task #3 建立完畢
 - [ ] Ready 任務數達 20+ 張
 
-**下一步**: 執行 Task #1-#3 之一，或等待老蔡批准。
+**下一步**: 執行 Task #1-#3 之一，或等待主人批准。

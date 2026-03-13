@@ -39,44 +39,44 @@ The following animation-related libraries were detected in the project:
 Framer motion is often used for "Linear-like" smooth layout transitions.
 Key files using framer-motion:
 ```
-/Users/caijunchang/openclaw任務面版設計/node_modules/motion-dom/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/framer-motion/dist/types/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/vite.config.ts
-/Users/caijunchang/openclaw任務面版設計/src/components/starship/fx/MotionPanel.tsx
-/Users/caijunchang/openclaw任務面版設計/src/pages/Dashboard.tsx
-/Users/caijunchang/openclaw任務面版設計/src/pages/starship/ManufacturingRoadmap.tsx
-/Users/caijunchang/openclaw任務面版設計/src/pages/starship/FrameworksOverview.tsx
-/Users/caijunchang/openclaw任務面版設計/src/pages/CaseStudies.tsx
+/Users/sky770825/openclaw任務面版設計/node_modules/motion-dom/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/framer-motion/dist/types/index.d.ts
+/Users/sky770825/openclaw任務面版設計/vite.config.ts
+/Users/sky770825/openclaw任務面版設計/src/components/starship/fx/MotionPanel.tsx
+/Users/sky770825/openclaw任務面版設計/src/pages/Dashboard.tsx
+/Users/sky770825/openclaw任務面版設計/src/pages/starship/ManufacturingRoadmap.tsx
+/Users/sky770825/openclaw任務面版設計/src/pages/starship/FrameworksOverview.tsx
+/Users/sky770825/openclaw任務面版設計/src/pages/CaseStudies.tsx
 ```
 
 ### Tailwind CSS Animations
 Standard Vercel-style hover effects and transitions:
 ```
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/@types+aws-lambda@8.10.160/node_modules/@types/aws-lambda/trigger/codebuild-cloudwatch-state.d.ts:            "duration-in-seconds"?: number | undefined; // Not available for COMPLETED phase-type
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/postcss@8.5.6/node_modules/postcss/lib/list.d.ts:     * Safely splits comma-separated values (such as those for `transition-*`
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-behavior) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-delay) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-duration) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-property) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-timing-function) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/view-transition-class) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/view-transition-name) */
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:     * [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-delay)
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/@types+aws-lambda@8.10.160/node_modules/@types/aws-lambda/trigger/codebuild-cloudwatch-state.d.ts:            "duration-in-seconds"?: number | undefined; // Not available for COMPLETED phase-type
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/postcss@8.5.6/node_modules/postcss/lib/list.d.ts:     * Safely splits comma-separated values (such as those for `transition-*`
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-behavior) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-delay) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-duration) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-property) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-timing-function) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/view-transition-class) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:    /** [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/view-transition-name) */
+/Users/sky770825/openclaw任務面版設計/openclaw-main/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.dom.d.ts:     * [MDN Reference](https://developer.mozilla.org/docs/Web/CSS/transition-delay)
 ```
 
 ### Radix UI (Primitives)
 Often used for accessible, animated dialogs and menus:
 ```
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-menubar/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-tabs/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-progress/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-popper/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-focus-scope/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-portal/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-tooltip/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-radio-group/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-alert-dialog/dist/index.d.ts
-/Users/caijunchang/openclaw任務面版設計/node_modules/@radix-ui/react-alert-dialog/src/alert-dialog.tsx
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-menubar/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-tabs/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-progress/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-popper/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-focus-scope/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-portal/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-tooltip/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-radio-group/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-alert-dialog/dist/index.d.ts
+/Users/sky770825/openclaw任務面版設計/node_modules/@radix-ui/react-alert-dialog/src/alert-dialog.tsx
 ```
 
 ## 3. Recommended Implementation Strategy (Linear/Vercel Style)

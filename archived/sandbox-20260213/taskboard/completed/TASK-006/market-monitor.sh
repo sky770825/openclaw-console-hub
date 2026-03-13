@@ -1,6 +1,6 @@
 #!/bin/bash
 # 市場需求監控系統 - Market Demand Monitor
-# 監控老蔡三項業務的市場趨勢與競品動態
+# 監控主人三項業務的市場趨勢與競品動態
 
 set -e
 

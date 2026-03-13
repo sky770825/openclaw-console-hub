@@ -1,6 +1,6 @@
 # SLM 效能分析報告
 生成時間: Mon Mar  2 22:26:59 CST 2026
-數據來源: /Users/caijunchang/.openclaw/workspace/sandbox/output/slm_perf_results.json
+數據來源: /Users/sky770825/.openclaw/workspace/sandbox/output/slm_perf_results.json
 
 ## 1. 核心指標概覽
 - **平均首字延遲 (Avg TTFT):** 341.00 ms

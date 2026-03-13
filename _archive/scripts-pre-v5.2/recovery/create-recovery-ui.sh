@@ -24,7 +24,7 @@ echo "║           System Recovery Center v1.0                        ║"
 echo "║                                                              ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
-echo "   備份位置: ~/Desktop/小蔡/系統備份/"
+echo "   備份位置: ~/Desktop/達爾/系統備份/"
 echo ""
 
 # 檢查是否有備份
@@ -292,7 +292,7 @@ PLIST_EOF
 
 echo "✅ 恢復 UI 已建立！"
 echo ""
-echo "📍 位置: ~/Desktop/小蔡/系統備份/"
+echo "📍 位置: ~/Desktop/達爾/系統備份/"
 echo ""
 echo "包含："
 echo "  🛠️ 系統恢復.app     ← 雙擊開啟 UI"

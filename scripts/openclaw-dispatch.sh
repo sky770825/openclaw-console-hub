@@ -1,7 +1,7 @@
 #!/bin/bash
 # OpenClaw Auto-Executor Dispatcher
 API_URL="http://localhost:3000/api/openclaw/auto-executor/dispatch"
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/dispatch.log"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/dispatch.log"
 
 echo "[$(date)] Triggering Auto-Executor Dispatch..." >> "$LOG_FILE"
 RESPONSE=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json")

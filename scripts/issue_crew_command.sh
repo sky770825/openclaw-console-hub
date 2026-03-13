@@ -10,7 +10,7 @@ echo "Command: $MESSAGE"
 # We assume a standard JSON-based API for task/message management
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST http://localhost:/api/messages \
   -H "Content-Type: application/json" \
-  -d "{\"content\": \"$MESSAGE\", \"sender\": \"小蔡\", \"target\": \"crew-all\"}" 2>/dev/null || echo "CONNECTION_FAILED")
+  -d "{\"content\": \"$MESSAGE\", \"sender\": \"達爾\", \"target\": \"crew-all\"}" 2>/dev/null || echo "CONNECTION_FAILED")
 
 HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
 
@@ -21,11 +21,11 @@ else
     echo "Falling back to local signal file mechanism..."
     
     # Simulating a file-based trigger if the API is not active
-    TRIGGER_FILE="/Users/caijunchang/.openclaw/workspace/sandbox/crew_trigger.json"
-    echo "{\"timestamp\": \"$TIMESTAMP\", \"author\": \"小蔡\", \"command\": \"$MESSAGE\"}" > "$TRIGGER_FILE"
+    TRIGGER_FILE="/Users/sky770825/.openclaw/workspace/sandbox/crew_trigger.json"
+    echo "{\"timestamp\": \"$TIMESTAMP\", \"author\": \"達爾\", \"command\": \"$MESSAGE\"}" > "$TRIGGER_FILE"
     echo "Command written to $TRIGGER_FILE"
 fi
 
 # Log action to a central history file
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/sandbox/output/crew_test_history.log"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/sandbox/output/crew_test_history.log"
 echo "[$TIMESTAMP] Command Issued: $MESSAGE" >> "$LOG_FILE"

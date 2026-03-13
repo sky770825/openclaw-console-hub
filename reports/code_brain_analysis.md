@@ -15,8 +15,8 @@
 後端主要位於 `server/src`。根據檔案大小與命名慣例，專案採用了 Controller/Service 模式。
 **前三大檔案規模：**
    18877 total
-    4117 /Users/caijunchang/openclaw任務面版設計/server/src/index.ts
-    1893 /Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts
+    4117 /Users/sky770825/openclaw任務面版設計/server/src/index.ts
+    1893 /Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts
 
 這顯示核心邏輯高度集中在上述檔案中。其中控制器相關宣告出現了 12 次，代表 API 接口定義完整。
 
@@ -24,8 +24,8 @@
 前端基於 React 與 TypeScript 構建。
 **前三大檔案規模：**
    28825 total
-    2941 /Users/caijunchang/openclaw任務面版設計/src/pages/TaskBoard.tsx
-    1063 /Users/caijunchang/openclaw任務面版設計/src/pages/CommunicationDeck.tsx
+    2941 /Users/sky770825/openclaw任務面版設計/src/pages/TaskBoard.tsx
+    1063 /Users/sky770825/openclaw任務面版設計/src/pages/CommunicationDeck.tsx
 
 前端組件化程度較高，檢索到約 2 個導出的 React 組件，這有助於 UI 的重複使用。
 

@@ -15,6 +15,6 @@
 - **Benchmark**: Execution time reduced by approx 70% compared to sequential baseline (simulated).
 
 ## 4. Files Generated
-- Logic: `/Users/caijunchang/.openclaw/workspace/scripts/optimized_core_logic.js`
-- Config: `/Users/caijunchang/.openclaw/workspace/sandbox/output/optimized_runtime_config.json`
-- Log: `/Users/caijunchang/.openclaw/workspace/sandbox/output/verification_results.log`
+- Logic: `/Users/sky770825/.openclaw/workspace/scripts/optimized_core_logic.js`
+- Config: `/Users/sky770825/.openclaw/workspace/sandbox/output/optimized_runtime_config.json`
+- Log: `/Users/sky770825/.openclaw/workspace/sandbox/output/verification_results.log`

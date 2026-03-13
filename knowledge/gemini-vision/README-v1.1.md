@@ -209,7 +209,7 @@ const pipeline = async (imagePath) => {
 - [integration.md](./integration.md) - Code snippets
 - [PROMPTS.md](./PROMPTS.md) - Vision-specific prompts
 
-**更新**: v1.3 新增 Gemini 2.5 Pro/Flash (2025年5月)、Adaptive Thinking、Live API audio-visual、效率提升20-30%。2025-07 by 小蔡。
+**更新**: v1.3 新增 Gemini 2.5 Pro/Flash (2025年5月)、Adaptive Thinking、Live API audio-visual、效率提升20-30%。2025-07 by 達爾。
 
 **版本歷史**:
 - v1.2: 新增使用模式、場景矩陣、成本分析、限制表格、進階整合（2026-02-16）

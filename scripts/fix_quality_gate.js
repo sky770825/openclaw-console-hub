@@ -1,5 +1,5 @@
 const fs = require('fs');
-const path = '/Users/caijunchang/openclaw任務面版設計/server/src/governanceEngine.ts';
+const path = '/Users/sky770825/openclaw任務面版設計/server/src/governanceEngine.ts';
 
 let content = fs.readFileSync(path, 'utf8');
 

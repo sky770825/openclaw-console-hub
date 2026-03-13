@@ -4,7 +4,7 @@
 > **建立日期**: 2026-02-16
 > **建立者**: L2 Claude Code
 > **適用範圍**: 所有新 Case 的程式碼品質檢查與補強
-> **來源**: 老蔡任務面版設計專案完整盤點（80+ 個具體問題）
+> **來源**: 主人任務面版設計專案完整盤點（80+ 個具體問題）
 
 ---
 
@@ -458,7 +458,7 @@ export function formatRelativeTime(date: string): string { ... }
 ├── monitoring_engine.py
 ├── ollama_bot2.py            ← 47KB 的 Python 檔
 ├── openclaw-v4.jsx           ← 原型 JSX 跟正式 src/ 混在一起
-├── create_xiaocai_ideas_table.sql  ← SQL 散落
+├── create_dar_ideas_table.sql  ← SQL 散落
 ├── deploy-to-railway.sh      ← 部署腳本散落
 ├── nohup.out                 ← 日誌散落
 ├── package-lock.json         ← npm
@@ -498,7 +498,7 @@ export function formatRelativeTime(date: string): string { ... }
 ### 症狀
 ```typescript
 // ❌ 寫死的路徑（換機器就壞）
-const KB_ROOT = '/Users/caijunchang/Desktop/小蔡/知識庫/SOP-資訊庫';
+const KB_ROOT = '/Users/sky770825/Desktop/達爾/知識庫/SOP-資訊庫';
 
 // ❌ 寫死的超時時間
 const REQUEST_TIMEOUT_MS = 30000;

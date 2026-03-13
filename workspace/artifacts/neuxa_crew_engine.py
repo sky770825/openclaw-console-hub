@@ -79,7 +79,7 @@ def main():
     final_results = crew.kickoff()
 
     # Save artifact
-    output_path = "/Users/caijunchang/.openclaw/workspace/sandbox/output/crew_execution_log.json"
+    output_path = "/Users/sky770825/.openclaw/workspace/sandbox/output/crew_execution_log.json"
     with open(output_path, "w") as f:
         json.dump(final_results, f, indent=4)
     

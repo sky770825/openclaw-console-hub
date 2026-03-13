@@ -1,7 +1,7 @@
 # OpenClaw 資料庫架構設計決策
 
 **日期**: 2026-02-15
-**決策者**: 小蔡（設計）
+**決策者**: 達爾（設計）
 **狀態**: ✅ 設計完成，待實施
 
 ---
@@ -54,8 +54,8 @@ output_artifacts JSONB     -- 輸出產物
 **範例**:
 ```json
 {
-  "project_path": "/Users/caijunchang/workspace/my-app",
-  "run_path": "/Users/caijunchang/workspace/my-app/src",
+  "project_path": "/Users/sky770825/workspace/my-app",
+  "run_path": "/Users/sky770825/workspace/my-app/src",
   "idempotency_key": "task:code_generation:a1b2c3d4e5",
   "input_spec": {
     "type": "file",

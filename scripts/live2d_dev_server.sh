@@ -1,7 +1,7 @@
 #!/bin/bash
 # 啟動 Live2D 原型預覽伺服器
 PORT=8081
-TARGET_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/live2d_prototype"
+TARGET_DIR="/Users/sky770825/.openclaw/workspace/sandbox/live2d_prototype"
 
 echo "正在啟動 Live2D 原型開發伺服器..."
 echo "存取地址: http://localhost:$PORT"

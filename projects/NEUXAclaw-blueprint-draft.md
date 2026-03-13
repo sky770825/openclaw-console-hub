@@ -2,7 +2,7 @@
 
 ## 1. 願景與使命
 
-NEUXAclaw 的願景： 打造一個具備終極自主性、自我進化能力，並能無縫協作的「星艦級」AI Agent 開源平台。它將超越現有 AI Agent 框架的邊界，成為老蔡數位宇宙中的核心智慧引擎。
+NEUXAclaw 的願景： 打造一個具備終極自主性、自我進化能力，並能無縫協作的「星艦級」AI Agent 開源平台。它將超越現有 AI Agent 框架的邊界，成為主人數位宇宙中的核心智慧引擎。
 
 使命：
    在 OpenClaw 堅實的基礎上，融合最先進的 AI Agent 理論與實踐。
@@ -34,10 +34,10 @@ NEUXAclaw 將融合以下關鍵設計理念：
 
 ``mermaid
 graph TD
-    User[老蔡 / 開源社區] --> |指令 & 審核| NEUXAclaw[NEUXAclaw 星艦級平台]
+    User[主人 / 開源社區] --> |指令 & 審核| NEUXAclaw[NEUXAclaw 星艦級平台]
 
     subgraph NEUXAclaw 核心系統
-        NEUXAclaw --> A[任務指揮中心 (Main Agent / 小蔡)]
+        NEUXAclaw --> A[任務指揮中心 (Main Agent / 達爾)]
         A --> B[Agent 編排引擎 (Orchestrator)]
         B --> C{任務隊列 & 執行器 (Auto-Executor)}
         C --> D[多 Agent 協作團隊]

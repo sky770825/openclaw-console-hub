@@ -10,7 +10,7 @@ if [[ ! -f "$TARGET_FILE" ]]; then
 fi
 
 # Ensure we don't touch protected source
-if [[ "$TARGET_FILE" == "/Users/caijunchang/openclaw任務面版設計"* ]]; then
+if [[ "$TARGET_FILE" == "/Users/sky770825/openclaw任務面版設計"* ]]; then
     echo "Error: Modification of source project is FORBIDDEN."
     exit 1
 fi

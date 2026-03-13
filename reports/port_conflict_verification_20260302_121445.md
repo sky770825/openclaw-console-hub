@@ -69,52 +69,52 @@
 ## 修復邏輯驗證分析
 ### 程式碼層級檢索 (是否有錯誤捕獲機制):
 ```text
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/chrome-BNSd7Bie.js:		if (isErrno$1(err) && err.code === "EADDRINUSE") return "busy";
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/chrome-BNSd7Bie.js:		if (isErrno(err) && err.code === "EADDRINUSE") throw new PortInUseError(port, await describePortOwner(port));
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/chrome-BNSd7Bie.js:	if (err instanceof PortInUseError || isErrno(err) && err.code === "EADDRINUSE") {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/gateway-cli-CCRjIRWt.js:		if (isErrno(err) && err.code === "EADDRINUSE") localPort = await pickEphemeralPort();
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/gateway-cli-CCRjIRWt.js:const ADDRESS_IN_USE_RE = /address already in use|EADDRINUSE/i;
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/gateway-cli-CCRjIRWt.js:		if (err.code === "EADDRINUSE") throw new GatewayLockError(`another gateway instance is already listening on ws://${bindHost}:${port}`, err);
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/chrome-B3IuUad-.js:		if (isErrno$1(err) && err.code === "EADDRINUSE") return "busy";
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/chrome-B3IuUad-.js:		if (isErrno(err) && err.code === "EADDRINUSE") throw new PortInUseError(port, await describePortOwner(port));
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/index.js:	newYear: "New Year's Day: New year, new config—same old EADDRINUSE, but this time we resolve it like grown-ups.",
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/gateway-cli-Bh3UamKy.js:		if (isErrno(err) && err.code === "EADDRINUSE") localPort = await pickEphemeralPort();
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/gateway-cli-Bh3UamKy.js:const ADDRESS_IN_USE_RE = /address already in use|EADDRINUSE/i;
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/gateway-cli-Bh3UamKy.js:		if (err.code === "EADDRINUSE") throw new GatewayLockError(`another gateway instance is already listening on ws://${bindHost}:${port}`, err);
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/errors-CZ9opC6L.js:		if (isErrno$1(err) && err.code === "EADDRINUSE") return "busy";
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/errors-CZ9opC6L.js:		if (isErrno(err) && err.code === "EADDRINUSE") throw new PortInUseError(port, await describePortOwner(port));
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/dist/config-guard-D2tKd3wv.js:	newYear: "New Year's Day: New year, new config—same old EADDRINUSE, but this time we resolve it like grown-ups.",
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/docs/zh-CN/help/faq.md:OpenClaw 通过在启动时立即绑定 WebSocket 监听器来强制运行时锁（默认 `ws://127.0.0.1:18789`）。如果绑定因 `EADDRINUSE` 失败，它会抛出 `GatewayLockError` 表示另一个实例已在监听。
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/docs/zh-CN/gateway/gateway-lock.md:- 如果绑定因 `EADDRINUSE` 失败，启动会抛出 `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`。
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/docs/help/faq.md:OpenClaw enforces a runtime lock by binding the WebSocket listener immediately on startup (default `ws://127.0.0.1:18789`). If the bind fails with `EADDRINUSE`, it throws `GatewayLockError` indicating another instance is already listening.
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/docs/gateway/gateway-lock.md:- If the bind fails with `EADDRINUSE`, startup throws `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`.
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/extensions/google-gemini-cli-auth/oauth.ts:      (err.message.includes("EADDRINUSE") ||
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/test-utils/ports.ts: * can collide on derived ports and get flaky EADDRINUSE.
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ssh-tunnel.ts:    if (isErrno(err) && err.code === "EADDRINUSE") {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports.test.ts:  it("handlePortError exits nicely on EADDRINUSE", async () => {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports.test.ts:    await handlePortError({ code: "EADDRINUSE" }, 1234, "context", runtime).catch(() => {});
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:  // Detect EADDRINUSE early with a friendly message.
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:    if (isErrno(err) && err.code === "EADDRINUSE") {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:  // Uniform messaging for EADDRINUSE with optional owner details.
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:  if (err instanceof PortInUseError || (isErrno(err) && err.code === "EADDRINUSE")) {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/infra/ports-inspect.ts:    if (isErrno(err) && err.code === "EADDRINUSE") {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/cli/tagline.ts:    "New Year's Day: New year, new config—same old EADDRINUSE, but this time we resolve it like grown-ups.",
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/hooks/gmail-watcher.test.ts:    expect(isAddressInUseError("EADDRINUSE: address already in use")).toBe(true);
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/hooks/gmail-watcher.ts:const ADDRESS_IN_USE_RE = /address already in use|EADDRINUSE/i;
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/gateway/server/http-listen.ts:    if (code === "EADDRINUSE") {
-/Users/caijunchang/openclaw任務面版設計/openclaw-main/src/gateway/test-helpers.server.ts:      if (code !== "EADDRINUSE") {
-/Users/caijunchang/openclaw任務面版設計/logs/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
-/Users/caijunchang/openclaw任務面版設計/logs/server.log:  code: 'EADDRINUSE',
-/Users/caijunchang/openclaw任務面版設計/scripts/archived/openclaw-rescue.sh:    tail -n 260 "$LOG" | rg -n "(401|Unauthorized|rate_limit|cooldown|locked|timeout|EADDRINUSE|channel exited|error)" | tail -n 160 || true
-/Users/caijunchang/openclaw任務面版設計/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
-/Users/caijunchang/openclaw任務面版設計/server.log:  code: 'EADDRINUSE',
-/Users/caijunchang/openclaw任務面版設計/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
-/Users/caijunchang/openclaw任務面版設計/server.log:  code: 'EADDRINUSE',
-/Users/caijunchang/openclaw任務面版設計/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
-/Users/caijunchang/openclaw任務面版設計/server.log:  code: 'EADDRINUSE',
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/chrome-BNSd7Bie.js:		if (isErrno$1(err) && err.code === "EADDRINUSE") return "busy";
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/chrome-BNSd7Bie.js:		if (isErrno(err) && err.code === "EADDRINUSE") throw new PortInUseError(port, await describePortOwner(port));
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/chrome-BNSd7Bie.js:	if (err instanceof PortInUseError || isErrno(err) && err.code === "EADDRINUSE") {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/gateway-cli-CCRjIRWt.js:		if (isErrno(err) && err.code === "EADDRINUSE") localPort = await pickEphemeralPort();
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/gateway-cli-CCRjIRWt.js:const ADDRESS_IN_USE_RE = /address already in use|EADDRINUSE/i;
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/gateway-cli-CCRjIRWt.js:		if (err.code === "EADDRINUSE") throw new GatewayLockError(`another gateway instance is already listening on ws://${bindHost}:${port}`, err);
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/chrome-B3IuUad-.js:		if (isErrno$1(err) && err.code === "EADDRINUSE") return "busy";
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/chrome-B3IuUad-.js:		if (isErrno(err) && err.code === "EADDRINUSE") throw new PortInUseError(port, await describePortOwner(port));
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/index.js:	newYear: "New Year's Day: New year, new config—same old EADDRINUSE, but this time we resolve it like grown-ups.",
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/gateway-cli-Bh3UamKy.js:		if (isErrno(err) && err.code === "EADDRINUSE") localPort = await pickEphemeralPort();
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/gateway-cli-Bh3UamKy.js:const ADDRESS_IN_USE_RE = /address already in use|EADDRINUSE/i;
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/gateway-cli-Bh3UamKy.js:		if (err.code === "EADDRINUSE") throw new GatewayLockError(`another gateway instance is already listening on ws://${bindHost}:${port}`, err);
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/errors-CZ9opC6L.js:		if (isErrno$1(err) && err.code === "EADDRINUSE") return "busy";
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/errors-CZ9opC6L.js:		if (isErrno(err) && err.code === "EADDRINUSE") throw new PortInUseError(port, await describePortOwner(port));
+/Users/sky770825/openclaw任務面版設計/openclaw-main/dist/config-guard-D2tKd3wv.js:	newYear: "New Year's Day: New year, new config—same old EADDRINUSE, but this time we resolve it like grown-ups.",
+/Users/sky770825/openclaw任務面版設計/openclaw-main/docs/zh-CN/help/faq.md:OpenClaw 通过在启动时立即绑定 WebSocket 监听器来强制运行时锁（默认 `ws://127.0.0.1:18789`）。如果绑定因 `EADDRINUSE` 失败，它会抛出 `GatewayLockError` 表示另一个实例已在监听。
+/Users/sky770825/openclaw任務面版設計/openclaw-main/docs/zh-CN/gateway/gateway-lock.md:- 如果绑定因 `EADDRINUSE` 失败，启动会抛出 `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`。
+/Users/sky770825/openclaw任務面版設計/openclaw-main/docs/help/faq.md:OpenClaw enforces a runtime lock by binding the WebSocket listener immediately on startup (default `ws://127.0.0.1:18789`). If the bind fails with `EADDRINUSE`, it throws `GatewayLockError` indicating another instance is already listening.
+/Users/sky770825/openclaw任務面版設計/openclaw-main/docs/gateway/gateway-lock.md:- If the bind fails with `EADDRINUSE`, startup throws `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`.
+/Users/sky770825/openclaw任務面版設計/openclaw-main/extensions/google-gemini-cli-auth/oauth.ts:      (err.message.includes("EADDRINUSE") ||
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/test-utils/ports.ts: * can collide on derived ports and get flaky EADDRINUSE.
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ssh-tunnel.ts:    if (isErrno(err) && err.code === "EADDRINUSE") {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports.test.ts:  it("handlePortError exits nicely on EADDRINUSE", async () => {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports.test.ts:    await handlePortError({ code: "EADDRINUSE" }, 1234, "context", runtime).catch(() => {});
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:  // Detect EADDRINUSE early with a friendly message.
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:    if (isErrno(err) && err.code === "EADDRINUSE") {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:  // Uniform messaging for EADDRINUSE with optional owner details.
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports.ts:  if (err instanceof PortInUseError || (isErrno(err) && err.code === "EADDRINUSE")) {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/infra/ports-inspect.ts:    if (isErrno(err) && err.code === "EADDRINUSE") {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/cli/tagline.ts:    "New Year's Day: New year, new config—same old EADDRINUSE, but this time we resolve it like grown-ups.",
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/hooks/gmail-watcher.test.ts:    expect(isAddressInUseError("EADDRINUSE: address already in use")).toBe(true);
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/hooks/gmail-watcher.ts:const ADDRESS_IN_USE_RE = /address already in use|EADDRINUSE/i;
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/gateway/server/http-listen.ts:    if (code === "EADDRINUSE") {
+/Users/sky770825/openclaw任務面版設計/openclaw-main/src/gateway/test-helpers.server.ts:      if (code !== "EADDRINUSE") {
+/Users/sky770825/openclaw任務面版設計/logs/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
+/Users/sky770825/openclaw任務面版設計/logs/server.log:  code: 'EADDRINUSE',
+/Users/sky770825/openclaw任務面版設計/scripts/archived/openclaw-rescue.sh:    tail -n 260 "$LOG" | rg -n "(401|Unauthorized|rate_limit|cooldown|locked|timeout|EADDRINUSE|channel exited|error)" | tail -n 160 || true
+/Users/sky770825/openclaw任務面版設計/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
+/Users/sky770825/openclaw任務面版設計/server.log:  code: 'EADDRINUSE',
+/Users/sky770825/openclaw任務面版設計/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
+/Users/sky770825/openclaw任務面版設計/server.log:  code: 'EADDRINUSE',
+/Users/sky770825/openclaw任務面版設計/server.log:Error: listen EADDRINUSE: address already in use 127.0.0.1:3011
+/Users/sky770825/openclaw任務面版設計/server.log:  code: 'EADDRINUSE',
 ```
 
 ## 結論與建議
-1. 驗證工具已部署至: `/Users/caijunchang/.openclaw/workspace/scripts/port_manager.sh`
-2. 若遇到開發啟動失敗，請執行 `bash /Users/caijunchang/.openclaw/workspace/scripts/port_manager.sh kill <PORT>` 釋放資源。
+1. 驗證工具已部署至: `/Users/sky770825/.openclaw/workspace/scripts/port_manager.sh`
+2. 若遇到開發啟動失敗，請執行 `bash /Users/sky770825/.openclaw/workspace/scripts/port_manager.sh kill <PORT>` 釋放資源。
 3. 建議在 `server/src/index.ts` (或對應入口) 加入動態端口尋找邏輯以徹底修復衝突。

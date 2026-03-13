@@ -13,7 +13,7 @@
 
 ### 2. 檢查伺服器日誌
 
-- **方法**: 使用 `tail -50 /Users/caijunchang/.openclaw/logs/server.log | grep -i -E "error|warn|f"` 命令，檢查日誌文件末尾是否存在錯誤 (error)、警告 (warn) 或失敗 (fail/fatal) 的記錄。
+- **方法**: 使用 `tail -50 /Users/sky770825/.openclaw/logs/server.log | grep -i -E "error|warn|f"` 命令，檢查日誌文件末尾是否存在錯誤 (error)、警告 (warn) 或失敗 (fail/fatal) 的記錄。
 - **結果**: 命令執行成功，未返回任何匹配的日誌條目。這表明在最近的伺服器活動中，沒有記錄到任何錯誤或警告級別的問題。
 
 ## 結論

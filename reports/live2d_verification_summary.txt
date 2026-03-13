@@ -1,9 +1,9 @@
 TASK: Live2D 概念與技術驗證 (星艦忙活主題)
 STATUS: COMPLETED
 DELIVERABLES:
-1. Concept Definition: /Users/caijunchang/.openclaw/workspace/reports/live2d_starship_busy_concept.md
-2. Technical PoC HTML: /Users/caijunchang/.openclaw/workspace/sandbox/output/live2d_verification.html
-3. Launch Script: /Users/caijunchang/.openclaw/workspace/scripts/start_live2d_demo.sh
+1. Concept Definition: /Users/sky770825/.openclaw/workspace/reports/live2d_starship_busy_concept.md
+2. Technical PoC HTML: /Users/sky770825/.openclaw/workspace/sandbox/output/live2d_verification.html
+3. Launch Script: /Users/sky770825/.openclaw/workspace/scripts/start_live2d_demo.sh
 
 FINDINGS:
 - Current environment does not have Live2D libraries in the main project package.json yet.

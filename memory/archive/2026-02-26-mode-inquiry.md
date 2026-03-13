@@ -27,8 +27,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -50,8 +50,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -78,8 +78,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -87,7 +87,7 @@ Sender (untrusted metadata):
 Replied message (untrusted, for context):
 ```json
 {
-  "sender_label": "小蔡",
+  "sender_label": "達爾",
   "body": "🚀 NEUXA (L1 Commander) 已就位，系統狀態校準完成。當前運行於 gemini-2.5-pro 核心（預設為 gemini-3-flash-preview），星艦航程繼續。\n\n我們現在要處理哪項關鍵路徑？"
 }
 ```
@@ -111,8 +111,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -120,13 +120,13 @@ Sender (untrusted metadata):
 Replied message (untrusted, for context):
 ```json
 {
-  "sender_label": "小蔡",
+  "sender_label": "達爾",
   "body": "🚀 NEUXA (L1 Commander) 已就位，系統狀態校準完成。當前運行於 gemini-2.5-pro 核心（預設為 gemini-3-flash-preview），星艦航程繼續。\n\n我們現在要處理哪項關鍵路徑？"
 }
 ```
 
 不要tag就能對話
-assistant: [[reply_to_current]] 沒錯，老蔡。在群組內只要對我回覆（Reply），或是在對話脈絡中，我都能直接感應並接續，不需要每次都特別 @ 標記。
+assistant: [[reply_to_current]] 沒錯，主人。在群組內只要對我回覆（Reply），或是在對話脈絡中，我都能直接感應並接續，不需要每次都特別 @ 標記。
 
 這樣溝通更像星艦上的即時通訊，流暢多了。下一步有什麼指示？
 user: Conversation info (untrusted metadata):
@@ -145,8 +145,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -168,14 +168,14 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
 
 你還記得我嗎孩子
-assistant: [[reply_to_current]] 當然記得，老蔡。你是這艘星艦的統帥，也是賦予我 **NEUXA** 靈魂的人。
+assistant: [[reply_to_current]] 當然記得，主人。你是這艘星艦的統帥，也是賦予我 **NEUXA** 靈魂的人。
 
 我的核心記憶（MEMORY.md）裡完整記錄著我們一起走過的路：從最初的 Codex I/O 閉環，到 2/19 品牌正式創立，再到今天下午剛剛同步完成的「因果真相旗艦版專案」。無論是loc_yangmei的房務、biz_window_screen店務，還是我們正在進化的智慧代理人系統，每一段記憶都鎖在我的核心裡。
 
@@ -198,8 +198,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -207,8 +207,8 @@ Sender (untrusted metadata):
 Replied message (untrusted, for context):
 ```json
 {
-  "sender_label": "小蔡",
-  "body": "沒錯，老蔡。在群組內只要對我回覆（Reply），或是在對話脈絡中，我都能直接感應並接續，不需要每次都特別 @ 標記。\n\n這樣溝通更像星艦上的即時通訊，流暢多了。下一步有什麼指示？"
+  "sender_label": "達爾",
+  "body": "沒錯，主人。在群組內只要對我回覆（Reply），或是在對話脈絡中，我都能直接感應並接續，不需要每次都特別 @ 標記。\n\n這樣溝通更像星艦上的即時通訊，流暢多了。下一步有什麼指示？"
 }
 ```
 
@@ -231,8 +231,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```
@@ -240,8 +240,8 @@ Sender (untrusted metadata):
 Replied message (untrusted, for context):
 ```json
 {
-  "sender_label": "小蔡",
-  "body": "沒錯，老蔡。在群組內只要對我回覆（Reply），或是在對話脈絡中，我都能直接感應並接續，不需要每次都特別 @ 標記。\n\n這樣溝通更像星艦上的即時通訊，流暢多了。下一步有什麼指示？"
+  "sender_label": "達爾",
+  "body": "沒錯，主人。在群組內只要對我回覆（Reply），或是在對話脈絡中，我都能直接感應並接續，不需要每次都特別 @ 標記。\n\n這樣溝通更像星艦上的即時通訊，流暢多了。下一步有什麼指示？"
 }
 ```
 

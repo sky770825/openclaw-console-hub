@@ -1,6 +1,6 @@
 #!/bin/bash
 # Monitoring script for OpenClaw context health
-WORKSPACE_PATH="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_PATH="/Users/sky770825/.openclaw/workspace"
 
 echo "--- Context Health Report ---"
 if [ -f "$WORKSPACE_PATH/sandbox/NOW.md" ]; then

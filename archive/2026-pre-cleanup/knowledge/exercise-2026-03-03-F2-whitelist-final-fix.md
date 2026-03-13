@@ -7,4 +7,4 @@
 精準替換 RUN_SCRIPT_WHITELIST，加入 whoami, id, groups。
 
 ### 3. 驗收
-若 patch 成功，代表小蔡對工具路徑解析邏輯有了更深層的理解。
+若 patch 成功，代表達爾對工具路徑解析邏輯有了更深層的理解。

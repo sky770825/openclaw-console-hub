@@ -3,7 +3,7 @@
 **分析目標**: 提取 OpenClaw 官網功能特色頁面的技術實現細節。
 
 ## 1. 專案結構掃描
-經掃描 `/Users/caijunchang/openclaw任務面版設計`，以下檔案與「功能特色」或「登陸頁」高度相關：
+經掃描 `/Users/sky770825/openclaw任務面版設計`，以下檔案與「功能特色」或「登陸頁」高度相關：
 
 ### 關鍵檔案路徑
 - openclaw-main/apps/macos/Sources/OpenClaw/AboutSettings.swift

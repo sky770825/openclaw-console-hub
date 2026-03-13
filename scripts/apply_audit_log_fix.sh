@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script applies audit logging to the DELETE route if missing.
-TARGET_FILE="/Users/caijunchang/openclaw任務面版設計/server/src/routes/openclaw-tasks.ts"
+TARGET_FILE="/Users/sky770825/openclaw任務面版設計/server/src/routes/openclaw-tasks.ts"
 
 if grep -q "router.delete" "$TARGET_FILE" && ! grep -A 15 "router.delete" "$TARGET_FILE" | grep -q "AuditLog"; then
     echo "Patching $TARGET_FILE to include audit logging..."

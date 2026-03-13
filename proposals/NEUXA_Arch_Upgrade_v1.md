@@ -1,8 +1,8 @@
 # NEUXA 星群架構升級提案 v1.0
 
 > *日期*：2026-03-04
-> *提案人*：指揮官小蔡 (NEUXA Commander)
-> *審核人*：老蔡 (Caijun Chang)
+> *提案人*：指揮官達爾 (NEUXA Commander)
+> *審核人*：主人 (Caijun Chang)
 > *目標*：透過「技能掛載 (Skill Mounting)」與「矩陣式協作」，將現有 6 個 Crew Bots 升級為全端特種部隊。
 
 ---
@@ -12,7 +12,7 @@
 目前的 NEUXA 系統雖然具備自動執行能力，但在處理複雜任務（如全端開發、大規模數據清洗、風險評估）時，缺乏精細的分工與專業深度。本提案不新增 Bot，而是透過 *技能掛載*，讓現有 Bot 具備垂直領域的專業能力。
 
 *核心理念*：
-- *指揮官中樞*：小蔡負責戰略拆解與派工。
+- *指揮官中樞*：達爾負責戰略拆解與派工。
 - *矩陣式管理*：任務由 Domain (職能) 與 Tech (技術棧) 雙重定義。
 - *靈魂不滅*：所有經驗與 SOP 寫入檔案系統，越戰越強。
 
@@ -96,7 +96,7 @@ export interface Task {
 
 ## 5. 派工邏輯 (Dispatch Logic)
 
-指揮官小蔡 (Dispatcher) 將採用以下邏輯進行自動派工：
+指揮官達爾 (Dispatcher) 將採用以下邏輯進行自動派工：
 
 1. *解析 (Parse)*：讀取 domain 鎖定主要負責人（如 Engineering -> 阿工）。
 2. *匹配 (Match)*：檢查 tech 標籤。
@@ -116,7 +116,7 @@ export interface Task {
 
 ### A. 衝突解決 (Conflict Resolution)
 - *痛點*：Bot 之間（如阿工修不好，阿策一直退件）陷入無限迴圈。
-- *NEUXA 解法*：設定 max_retries (預設 3)。超過次數強制暫停 (status: blocked)，由指揮官小蔡介入裁決或呼叫老蔡。
+- *NEUXA 解法*：設定 max_retries (預設 3)。超過次數強制暫停 (status: blocked)，由指揮官達爾介入裁決或呼叫主人。
 
 ### B. 動態 SOP 注入 (Dynamic SOP Injection)
 - *痛點*：每次執行標準不一。

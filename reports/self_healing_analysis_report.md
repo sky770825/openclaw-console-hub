@@ -8,9 +8,9 @@
 - **Schema 定義狀態**: 未發現 Prisma Schema
 
 ### 關鍵檔案分析:
-- `/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts` (1024 lines): 包含 openclaw_tasks 邏輯處理
-- `/Users/caijunchang/openclaw任務面版設計/server/src/routes/openclaw-tasks.ts` (301 lines): 包含 openclaw_tasks 邏輯處理
-- `/Users/caijunchang/openclaw任務面版設計/server/src/routes/proxy.ts` (232 lines): 包含 openclaw_tasks 邏輯處理
+- `/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts` (1024 lines): 包含 openclaw_tasks 邏輯處理
+- `/Users/sky770825/openclaw任務面版設計/server/src/routes/openclaw-tasks.ts` (301 lines): 包含 openclaw_tasks 邏輯處理
+- `/Users/sky770825/openclaw任務面版設計/server/src/routes/proxy.ts` (232 lines): 包含 openclaw_tasks 邏輯處理
 
 ## 2. Self-Healing v1 實作邏輯建議
 當監測到 `openclaw_tasks.status === 'failed'` 時，應啟動以下流程：

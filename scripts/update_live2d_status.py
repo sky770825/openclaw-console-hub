@@ -4,7 +4,7 @@ import sys
 import os
 from datetime import datetime
 
-DB_PATH = "/Users/caijunchang/.openclaw/workspace/knowledge/live2d_starship_project.json"
+DB_PATH = "/Users/sky770825/.openclaw/workspace/knowledge/live2d_starship_project.json"
 
 def update_status(stage_name, completion_pct, overall_status=None):
     if not os.path.exists(DB_PATH):

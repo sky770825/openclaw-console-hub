@@ -1,6 +1,6 @@
 #!/bin/bash
 # Helper to extract specific animation code blocks
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
 PATTERN=$1
 
 if [ -z "$PATTERN" ]; then

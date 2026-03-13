@@ -6,7 +6,7 @@ import { SkillCompiler } from '../core/engine.mjs';
 const router = express.Router();
 const compiler = new SkillCompiler();
 
-// 確保 skills 目錄存在 (根據 AGENTS.md, workspace 在 /Users/caijunchang/.openclaw/workspace)
+// 確保 skills 目錄存在 (根據 AGENTS.md, workspace 在 /Users/sky770825/.openclaw/workspace)
 const SKILLS_DIR = path.resolve(process.cwd(), 'skills');
 
 /**

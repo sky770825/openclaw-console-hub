@@ -27,12 +27,12 @@ priority: P0
 | 操作 | 燈號 | 規則 |
 |------|------|------|
 | SELECT / 查詢 | 🟢 | 直接做 |
-| INSERT / 新增 | 🟡 | 先跟老蔡說要插什麼 |
-| UPDATE / 修改 | 🔴 | 必須老蔡批准 |
-| DELETE / 刪除 | 🔴 | 必須老蔡批准 |
-| CREATE TABLE | 🔴 | 必須老蔡批准 |
-| DROP TABLE | 🔴🔴 | 絕對禁止，除非老蔡親口說 |
-| ALTER TABLE | 🔴 | 必須老蔡批准 |
+| INSERT / 新增 | 🟡 | 先跟主人說要插什麼 |
+| UPDATE / 修改 | 🔴 | 必須主人批准 |
+| DELETE / 刪除 | 🔴 | 必須主人批准 |
+| CREATE TABLE | 🔴 | 必須主人批准 |
+| DROP TABLE | 🔴🔴 | 絕對禁止，除非主人親口說 |
+| ALTER TABLE | 🔴 | 必須主人批准 |
 
 ---
 
@@ -70,7 +70,7 @@ pg_dump -t {table_name} > backup-{table}-$(date +%Y%m%d).sql
 cp {db_file} {db_file}.backup-$(date +%Y%m%d)
 ```
 
-### Step 4: 執行（老蔡批准後）
+### Step 4: 執行（主人批准後）
 
 執行 SQL，記錄結果。
 
@@ -98,7 +98,7 @@ SELECT * FROM {table} WHERE {condition} LIMIT 10;
 ## 絕對禁止
 
 - ❌ 沒有 WHERE 的 UPDATE / DELETE
-- ❌ DROP TABLE（除非老蔡親口說）
+- ❌ DROP TABLE（除非主人親口說）
 - ❌ 未經批准的 schema 變更
 - ❌ 直接在 production DB 做實驗性操作
 - ❌ 不備份就修改超過 50 筆資料
@@ -123,6 +123,6 @@ SELECT * FROM {table} WHERE {condition} LIMIT 10;
 | 狀況 | 處理方式 |
 |------|----------|
 | SQL 執行錯誤 | 停止，回報錯誤訊息，不要重試 |
-| 影響筆數比預期多 | 立即停止，回報老蔡 |
+| 影響筆數比預期多 | 立即停止，回報主人 |
 | 備份失敗 | 不要繼續操作，先修備份問題 |
-| 需要回滾 | 用備份恢復，回報老蔡 |
+| 需要回滾 | 用備份恢復，回報主人 |

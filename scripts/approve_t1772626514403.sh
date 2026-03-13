@@ -1,7 +1,7 @@
 #!/bin/bash
 # 這是用於批准任務 t1772626514403 的快捷腳本
 
-STATUS_FILE="/Users/caijunchang/.openclaw/workspace/reports/task_t1772626514403_status.json"
+STATUS_FILE="/Users/sky770825/.openclaw/workspace/reports/task_t1772626514403_status.json"
 
 if [ ! -f "$STATUS_FILE" ]; then
     echo "錯誤：找不到任務狀態文件。"

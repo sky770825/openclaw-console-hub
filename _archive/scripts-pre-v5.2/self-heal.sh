@@ -229,7 +229,7 @@ check_cr6() {
   if [ $failed -eq 0 ]; then
     log_ok "CR-6: 核心服務正常"
   else
-    log_fail "CR-6: ${failed} 個服務異常 — P0 回報老蔡"
+    log_fail "CR-6: ${failed} 個服務異常 — P0 回報主人"
   fi
 }
 
@@ -342,7 +342,7 @@ check_cr7() {
   local found=0
   local trash_dir="$WORKSPACE/archive/orphaned/$(date +%Y%m%d)"
 
-  # 1. 掃描 .pid 檔案（排除老蔡授權的）
+  # 1. 掃描 .pid 檔案（排除主人授權的）
   local PID_WHITELIST=".telegram-panel.pid"
   for f in "$WORKSPACE"/.*.pid "$WORKSPACE"/*.pid; do
     [ -f "$f" ] || continue
@@ -357,7 +357,7 @@ check_cr7() {
     found=1
 
     if [ -n "$pid_val" ] && ps -p "$pid_val" > /dev/null 2>&1; then
-      log_fail "未授權 process 在跑! $base (PID: $pid_val) → 🔴 需老蔡批准才能 kill"
+      log_fail "未授權 process 在跑! $base (PID: $pid_val) → 🔴 需主人批准才能 kill"
     else
       log_warn "發現 .pid 檔: $base (PID: $pid_val, 已停止)"
       if [ "$MODE" = "fix" ]; then
@@ -601,7 +601,7 @@ fi
 
 if [ "$ISSUES" -gt 0 ]; then
   echo ""
-  echo "${RED}⚠️  發現問題，請回報老蔡或執行 '$0 fix' 自動修復綠燈項目${NC}"
+  echo "${RED}⚠️  發現問題，請回報主人或執行 '$0 fix' 自動修復綠燈項目${NC}"
   exit 1
 else
   echo ""

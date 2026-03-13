@@ -1,7 +1,7 @@
 # Vercel Web Interface Guidelines (Key Points)
 
 > Source: Vercel Engineering
-> Summary by: 小蔡
+> Summary by: 達爾
 
 ## 核心原則
 

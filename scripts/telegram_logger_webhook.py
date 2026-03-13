@@ -12,8 +12,8 @@ from datetime import datetime
 BOT_TOKEN = "8316840422:AAH3jcMMGB552XQEdlhyU2j0BPNXVAn57hE"  # 群組即時通知Bot @HOMEeeee168bot
 LISTENER_BOT_ID = 8316840422             # @HOMEeeee168bot 的 Bot ID
 
-# 固定的日誌檔案路徑，根據老蔡的要求
-LOG_FILE_PATH = "/Users/caijunchang/.openclaw/workspace/reports/group_chat_log.md"
+# 固定的日誌檔案路徑，根據主人的要求
+LOG_FILE_PATH = "/Users/sky770825/.openclaw/workspace/reports/group_chat_log.md"
 
 # --- FastAPI 應用程式實例 ---
 app = FastAPI()

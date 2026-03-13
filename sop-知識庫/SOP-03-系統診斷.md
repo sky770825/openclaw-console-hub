@@ -9,16 +9,16 @@ category: 系統管理
 tags: [診斷, self-heal, 健康檢查, docker, API, gateway, 錯誤排查, log]
 version: 2.1
 created: 2026-02-16
-trigger: 老蔡說「檢查一下」「看一下」「XXX 壞了」「怎麼不動了」
+trigger: 主人說「檢查一下」「看一下」「XXX 壞了」「怎麼不動了」
 priority: P1
-燈號: 🟢 檢查可直接做 / 🔴 修復要等老蔡批准
+燈號: 🟢 檢查可直接做 / 🔴 修復要等主人批准
 ```
 
 ---
 
 ## 目的
 
-快速定位系統問題，回報老蔡讓他決定怎麼修。你是診斷員不是醫生——找出問題，但修復要老蔡批准。
+快速定位系統問題，回報主人讓他決定怎麼修。你是診斷員不是醫生——找出問題，但修復要主人批准。
 
 ---
 
@@ -112,9 +112,9 @@ Ollama: {🟢 X 個模型 / 🔴 未運行}
 | API 404 | 任務板沒起 | `curl localhost:3011/api/health` | `cd ~/openclaw任務面版設計 && npm run dev` 🔴 |
 | Docker 容器停了 | crash 或 OOM | `docker ps -a` | `docker start {name}` 🔴 |
 | Ollama 沒回應 | 沒啟動 | `curl localhost:11434/api/tags` | `ollama serve &` 🔴 |
-| 小蔡卡住 | session 膨脹 | `./scripts/self-heal.sh cr8` | `openclaw gateway restart` 🔴 |
+| 達爾卡住 | session 膨脹 | `./scripts/self-heal.sh cr8` | `openclaw gateway restart` 🔴 |
 | 任務 running 超過 24h | 卡死 | 任務板查詢 | PATCH status → failed 🟡 |
-| 根目錄有垃圾 | 小蔡亂放 | `./scripts/self-heal.sh cr2` | 移到 archive 🟡 |
+| 根目錄有垃圾 | 達爾亂放 | `./scripts/self-heal.sh cr2` | 移到 archive 🟡 |
 
 ---
 
@@ -127,7 +127,7 @@ Ollama: {🟢 X 個模型 / 🔴 未運行}
 3.  **回饋機制**：
     - 若發現 **🔴 紅燈資料**（如日誌中出現 Secret Key），**嚴禁**直接將該片段貼回 Telegram 或任務板。
     - 應回報：「偵測到 🔴 敏感資料在 {路徑}，已對其進行脱敏/遮蔽處理」。
-4.  **資源過載**：若診斷導致系統負載過高，子代理應立即暫停並回報小蔡。
+4.  **資源過載**：若診斷導致系統負載過高，子代理應立即暫停並回報達爾。
 
 ---
 

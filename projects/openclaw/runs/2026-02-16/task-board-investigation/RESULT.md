@@ -2,7 +2,7 @@
 手動調查任務板中控台問題，發現舊任務因缺少新必填欄位被自動降級為 draft + noncompliant。建立批次修復腳本。
 
 ## 執行者
-小蔡（主會話手動調查）
+達爾（主會話手動調查）
 
 ## 根因分析
 1. **驗證邏輯變嚴格**：`taskCompliance.ts` 的 `validateTaskForGate()` 要求 10 個必填欄位（projectPath, agent.type, riskLevel, rollbackPlan, acceptanceCriteria, deliverables, runCommands, modelPolicy, executionProvider, allowPaid）

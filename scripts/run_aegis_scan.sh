@@ -6,7 +6,7 @@ set -e
 
 TARGET_PATH=$1
 MODE=${2:-fast}
-OUTPUT_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output"
+OUTPUT_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output"
 
 # Fix for Defect 3: Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"

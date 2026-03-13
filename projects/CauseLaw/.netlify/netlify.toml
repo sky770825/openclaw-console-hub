@@ -7,10 +7,10 @@ redirects = []
 [functions."*"]
 
 [build]
-publish = "/Users/caijunchang/.openclaw/workspace/projects/CauseLaw/dist"
+publish = "/Users/sky770825/.openclaw/workspace/projects/CauseLaw/dist"
 publishOrigin = "ui"
 commandOrigin = "ui"
-base = "/Users/caijunchang/.openclaw/workspace/projects/CauseLaw"
+base = "/Users/sky770825/.openclaw/workspace/projects/CauseLaw"
 command = "pnpm run build"
 
 [build.environment]

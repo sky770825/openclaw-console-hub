@@ -6,15 +6,15 @@
 - **當前階段**: 需求分析與環境掃描
 
 ## 2. 源碼掃描發現 (Source Code Analysis)
-基於對 `/Users/caijunchang/openclaw任務面版設計` 的掃描，發現以下可能的整合點：
+基於對 `/Users/sky770825/openclaw任務面版設計` 的掃描，發現以下可能的整合點：
 ```text
-/Users/caijunchang/openclaw任務面版設計/monitoring_engine.py:                models = data.get("models", [])
-/Users/caijunchang/openclaw任務面版設計/monitoring_engine.py:                model_count = len(models)
-/Users/caijunchang/openclaw任務面版設計/monitoring_engine.py:                return True, f"✅ Ollama 運行中 ({model_count} 個模型)"
-/Users/caijunchang/openclaw任務面版設計/runtime-checkpoints/task-index/TASK-INDEX.md:- [done] t1771053066853 住商不動產楊梅店 - 數位leads生成系統  (tags: business-model)
-/Users/caijunchang/openclaw任務面版設計/runtime-checkpoints/task-index/TASK-INDEX.md:- [done] t1771053068378 飲料店 - 外送平台整合與會員忠誠系統  (tags: business-model)
-/Users/caijunchang/openclaw任務面版設計/runtime-checkpoints/task-index/TASK-INDEX.md:- [done] t1771053069784 普特斯防霾紗窗 - 電商平台與供應鏈預測  (tags: business-model)
-/Users/caijunchang/openclaw任務面版設計/runtime-checkpoints/task-index/task-index.jsonl:{"taskId":"t1771053066853","name":"住商不動產楊梅店 - 數位leads生成系統","status":"done","tags":["business-model"],"updatedAt":"2026-02-16T17:01:48.368Z"}
+/Users/sky770825/openclaw任務面版設計/monitoring_engine.py:                models = data.get("models", [])
+/Users/sky770825/openclaw任務面版設計/monitoring_engine.py:                model_count = len(models)
+/Users/sky770825/openclaw任務面版設計/monitoring_engine.py:                return True, f"✅ Ollama 運行中 ({model_count} 個模型)"
+/Users/sky770825/openclaw任務面版設計/runtime-checkpoints/task-index/TASK-INDEX.md:- [done] t1771053066853 住商不動產楊梅店 - 數位leads生成系統  (tags: business-model)
+/Users/sky770825/openclaw任務面版設計/runtime-checkpoints/task-index/TASK-INDEX.md:- [done] t1771053068378 飲料店 - 外送平台整合與會員忠誠系統  (tags: business-model)
+/Users/sky770825/openclaw任務面版設計/runtime-checkpoints/task-index/TASK-INDEX.md:- [done] t1771053069784 普特斯防霾紗窗 - 電商平台與供應鏈預測  (tags: business-model)
+/Users/sky770825/openclaw任務面版設計/runtime-checkpoints/task-index/task-index.jsonl:{"taskId":"t1771053066853","name":"住商不動產楊梅店 - 數位leads生成系統","status":"done","tags":["business-model"],"updatedAt":"2026-02-16T17:01:48.368Z"}
 /Users/caiju
 ```
 
@@ -23,7 +23,7 @@
 - **資源分配**: 
     - 腳本開發: 50% (負責處理狀態解析與模型動作切換)
     - 資產管理: 30% (確保星艦主題貼圖與模型包完整)
-    - 整合測試: 20% (確保不影響老蔡的核心 Server 運作)
+    - 整合測試: 20% (確保不影響主人的核心 Server 運作)
 
 ## 4. 落地執行步驟 (Execution Roadmap)
 1. **[Scripts]** 建立模型狀態控制器，根據任務看板 API 切換參數。

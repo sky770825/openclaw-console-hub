@@ -5,7 +5,7 @@
 
 ## 2. 核心組件開發
 ### 2.1 管理後台 UI (React SPA)
-- **位置**: `/Users/caijunchang/.openclaw/workspace/sandbox/admin-dashboard/index.html`
+- **位置**: `/Users/sky770825/.openclaw/workspace/sandbox/admin-dashboard/index.html`
 - **技術棧**: React 18, Tailwind CSS, FontAwesome.
 - **功能模組**:
     - **使用者管理**: 管理平台所有用戶及權限。
@@ -15,12 +15,12 @@
 - **設計理念**: 採用側邊導航欄 + 響應式數據表格，強調操作的直觀性。
 
 ### 2.2 管理員 CLI 工具 (Python)
-- **位置**: `/Users/caijunchang/.openclaw/workspace/scripts/admin_management_tool.py`
+- **位置**: `/Users/sky770825/.openclaw/workspace/scripts/admin_management_tool.py`
 - **功能**: 通過命令行直接調用後端 API 執行 CRUD，方便開發與系統維護。
 - **支持資源**: users, shops, services, appointments.
 
 ## 3. 資料模型映射 (根據原始碼分析)
-根據對 `/Users/caijunchang/openclaw任務面版設計` 的掃描，系統主要圍繞以下實體構建：
+根據對 `/Users/sky770825/openclaw任務面版設計` 的掃描，系統主要圍繞以下實體構建：
 - **User**: 包含 Email, Password, Role (Admin/ShopAdmin/Customer).
 - **Shop**: 店家基礎資訊及關聯管理員。
 - **Service**: 服務類別及定價。

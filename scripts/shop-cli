@@ -1,3 +1,3 @@
 #!/bin/bash
-export DB_FILE="/Users/caijunchang/.openclaw/workspace/sandbox/shop_management_db.json"
-node "/Users/caijunchang/.openclaw/workspace/scripts/shop_manager.js" "$@"
+export DB_FILE="/Users/sky770825/.openclaw/workspace/sandbox/shop_management_db.json"
+node "/Users/sky770825/.openclaw/workspace/scripts/shop_manager.js" "$@"

@@ -60,6 +60,6 @@ async function connectToMCPServer(command, args) {
 3. [ ] 接入一個測試用 MCP Server (如 `filesystem`) 並驗證。
 
 ---
-**執行者**: 小蔡 (L1) & L2 指引
+**執行者**: 達爾 (L1) & L2 指引
 **日期**: 2026-02-19
 **狀態**: 原型設計完成，準備進入開發。

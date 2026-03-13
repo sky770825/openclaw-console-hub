@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-# 做法二：用 Cursor CLI 問 Cursor，回覆會直接回傳給小蔡（可多輪、最後再回報老蔡）
+# 做法二：用 Cursor CLI 問 Cursor，回覆會直接回傳給堤諾米斯達爾（達爾）（可多輪、最後再回報主人）
 # 需先安裝 Cursor CLI：curl https://cursor.com/install -fsS | bash，並登入
 #
 # 用法: ./scripts/ask-cursor-cli.sh "問題描述" "路徑"

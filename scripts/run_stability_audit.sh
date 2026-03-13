@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 REPORT_PATH=$1
 
 echo "## OpenClaw 官網功能特色頁面：穩定度分析報告" > "$REPORT_PATH"

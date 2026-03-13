@@ -1,7 +1,7 @@
 # 阿研錯誤報告摘要 - 2026-03-05
 
 ## 來源
-/Users/caijunchang/.openclaw/workspace/reports/ar_error_report_temp.md 的前 50 筆原始錯誤日誌。
+/Users/sky770825/.openclaw/workspace/reports/ar_error_report_temp.md 的前 50 筆原始錯誤日誌。
 
 ## 主要發現
 

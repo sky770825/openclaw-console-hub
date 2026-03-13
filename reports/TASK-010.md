@@ -18,5 +18,5 @@ description: |
   4. 生成 3 條即時策略建議
   
   輸出：簡短報告（3-5 個 bullet points）
-  通知：完成後 @ollama168bot 發送給老蔡
+  通知：完成後 @ollama168bot 發送給主人
 ---

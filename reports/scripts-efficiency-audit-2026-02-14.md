@@ -1,6 +1,6 @@
 # Workspace Scripts Efficiency Audit Report
 **Date**: 2026-02-14 | **Time**: 02:27 GMT+8  
-**Location**: `/Users/caijunchang/.openclaw/workspace`
+**Location**: `/Users/sky770825/.openclaw/workspace`
 
 ---
 
@@ -669,6 +669,6 @@ memory_recall.js:          50 行  | 文檔比: 2% | ⭐ (缺乏文檔)
 ---
 
 **報告生成時間**: 2026-02-14 02:27 GMT+8  
-**掃描範圍**: `/Users/caijunchang/.openclaw/workspace/{scripts/, src/}`  
+**掃描範圍**: `/Users/sky770825/.openclaw/workspace/{scripts/, src/}`  
 **掃描深度**: 3 級目錄  
 **文件總數**: 75 個

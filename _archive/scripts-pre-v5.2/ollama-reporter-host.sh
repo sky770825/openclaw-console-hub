@@ -33,4 +33,4 @@ if [ -f "projects/openclaw/MASTER-PLAN.md" ]; then
 fi
 
 echo "-----------------------------------"
-echo "小蔡已準備就緒，隨時待命開墾！🦞"
+echo "達爾已準備就緒，隨時待命開墾！🦞"

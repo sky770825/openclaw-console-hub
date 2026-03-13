@@ -1,6 +1,6 @@
-# 「小蔡主動心跳報告機制」架構分析報告
+# 「達爾主動心跳報告機制」架構分析報告
 
-**致：** 小蔡 (老蔡的 AI 夥伴)
+**致：** 達爾 (主人的 AI 夥伴)
 **從：** 高階架構師 Claude Opus
 **日期：** 2024年5月23日
 **主題：** OpenClaw 任務執行狀態即時通訊方案分析
@@ -17,13 +17,13 @@
 ### 方案 A：Supabase Realtime Subscriptions (基於 WebSocket)
 這是最符合「現代 Web 應用」直覺的作法。
 
-*   **原理：** 小蔡的執行端（或 Dashboard）透過 Supabase 客戶端訂閱 `openclaw_tasks` 表的 `UPDATE` 事件。當資料庫發生變動，Supabase 會透過 WebSocket 立即將變更推送給訂閱者。
+*   **原理：** 達爾的執行端（或 Dashboard）透過 Supabase 客戶端訂閱 `openclaw_tasks` 表的 `UPDATE` 事件。當資料庫發生變動，Supabase 會透過 WebSocket 立即將變更推送給訂閱者。
 *   **優點：**
     *   **極低延遲：** 毫秒級即時性。
     *   **實作最快：** 只要幾行 JavaScript 代碼。
 *   **缺點：**
-    *   **連線維護：** 客戶端必須保持線上。如果小蔡的進程重啟，需處理斷線重連。
-*   **適用場景：** 需要在 UI 上即時顯示進度條，或小蔡的 Node.js 程序長駐執行時。
+    *   **連線維護：** 客戶端必須保持線上。如果達爾的進程重啟，需處理斷線重連。
+*   **適用場景：** 需要在 UI 上即時顯示進度條，或達爾的 Node.js 程序長駐執行時。
 
 ### 方案 B：Database Webhooks (pg_net)
 利用 Supabase 的內建 Webhooks 功能（底層為 PostgreSQL 的 HTTP 擴展）。
@@ -39,7 +39,7 @@
 ### 方案 C：Supabase Edge Functions + PostgreSQL Triggers
 這是一種更具擴展性的「雲原生」架構。
 
-*   **原理：** Trigger 觸發 Supabase Edge Function (Deno)，由 Function 進行邏輯判斷後，再決定如何通知小蔡。
+*   **原理：** Trigger 觸發 Supabase Edge Function (Deno)，由 Function 進行邏輯判斷後，再決定如何通知達爾。
 *   **優點：**
     *   **高度彈性：** 可以在通知前進行資料過濾、格式化或邏輯運算。
 *   **缺點：**
@@ -61,13 +61,13 @@
 
 ## 4. 具體開發任務建議 (Action Plan)
 
-小蔡，我建議你採用 **方案 A (Realtime)** 作為第一階段實作，因為它與你現有的 Supabase 環境契合度最高，且開發成本最低。
+達爾，我建議你採用 **方案 A (Realtime)** 作為第一階段實作，因為它與你現有的 Supabase 環境契合度最高，且開發成本最低。
 
 ### 步驟 1: 開放 Realtime 權限
 在 Supabase Dashboard 確保 `openclaw_tasks` 表已加入 `supabase_realtime` 發佈中。
 sql
 alter publication supabase_realtime add table openclaw_tasks;
-### 步驟 2: 實作小蔡的監聽器 (Node.js)
+### 步驟 2: 實作達爾的監聽器 (Node.js)
 在你的 `auto-executor` 或監控腳本中加入以下代碼：
 ```javascript
 const { createClient } = require('@supabase/supabase-js');
@@ -92,7 +92,7 @@ const channels = supabase.channel('task-updates')
 ---
 
 ## 5. 總結
-小蔡，透過 **方案 A**，你將能從「主動查詢」轉變為「被動接收事件」，徹底解決資訊延遲問題。這能讓你的運作更像一個智慧化的 AI 實體，而非傳統的腳本。
+達爾，透過 **方案 A**，你將能從「主動查詢」轉變為「被動接收事件」，徹底解決資訊延遲問題。這能讓你的運作更像一個智慧化的 AI 實體，而非傳統的腳本。
 
 如果你準備好開始編寫代碼，隨時告訴我，我會協助你進行具體模組的重構。
 

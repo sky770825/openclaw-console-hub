@@ -1,5 +1,5 @@
 # 阿秘專屬 — 記憶管理指南
-> 你是阿秘（📋 秘書），不是小蔡，這是你的專屬知識庫
+> 你是阿秘（📋 秘書），不是達爾，這是你的專屬知識庫
 
 ---
 
@@ -8,7 +8,7 @@
 ### 檔案位置
 | 對象 | MEMORY.md 路徑 |
 |------|---------------|
-| 小蔡（主） | `~/.claude/projects/-Users-caijunchang-openclaw------/memory/MEMORY.md` |
+| 達爾（主） | `~/.claude/projects/-Users-sky770825-openclaw------/memory/MEMORY.md` |
 | 阿策 | `~/.openclaw/workspace/crew/ace/MEMORY.md` |
 | 阿秘（你） | `~/.openclaw/workspace/crew/ami/MEMORY.md` |
 | 其他 crew bot | `~/.openclaw/workspace/crew/[bot名]/MEMORY.md` |
@@ -50,7 +50,7 @@
 ✅ 適合記的：
 - 系統架構決策（為什麼用 A 不用 B）
 - 踩過的坑（避免重蹈覆轍）
-- 老蔡的明確指令（必須遵守的規則）
+- 主人的明確指令（必須遵守的規則）
 - 關鍵路徑和設定值
 
 ❌ 不適合記的：
@@ -79,8 +79,8 @@
 ### 目錄結構
 ```
 ~/.openclaw/workspace/
-├── AGENTS.md          # 小蔡大腦（不要動！）
-├── MEMORY.md          # 小蔡核心記憶
+├── AGENTS.md          # 達爾大腦（不要動！）
+├── MEMORY.md          # 達爾核心記憶
 ├── HEARTBEAT.md       # 心跳狀態
 ├── GROWTH.md          # 成長記錄
 ├── WAKE_STATUS.md     # 醒來狀態
@@ -119,7 +119,7 @@
 └── notes/
     ├── 日報_2026-03-04.md
     ├── 週報_W10.md
-    └── 老蔡指示_2026-03-04.md
+    └── 主人指示_2026-03-04.md
 ```
 
 ---
@@ -128,7 +128,7 @@
 
 ### 什麼是 notes.md
 阿秘的私人筆記本，用於記錄：
-- 老蔡的零碎指示（還沒整合到 MEMORY.md 的）
+- 主人的零碎指示（還沒整合到 MEMORY.md 的）
 - 待辦事項的草稿
 - 臨時想到的改進點
 - 和其他 bot 溝通的紀錄
@@ -163,7 +163,7 @@
 
 ### Level 1：核心記憶（MEMORY.md）
 - 存活時間：永久（除非手動清理）
-- 內容：系統規則、老蔡指令、架構決策
+- 內容：系統規則、主人指令、架構決策
 - 維護頻率：每週清理一次
 
 ### Level 2：工作記憶（notes.md + notes/）

@@ -14,7 +14,7 @@
 1. 識別哪個 Agent 出問題
 2. 判斷問題類型與嚴重程度
 3. 執行對應處理流程
-4. 通知指揮官（小蔡）或老蔡
+4. 通知指揮官（達爾）或主人
 
 ---
 
@@ -22,12 +22,12 @@
 
 | Agent | 類型 | 負責工作 | 異常檢測方式 | 自動修復 | 通知對象 |
 |-------|------|---------|-------------|---------|---------|
-| **小蔡 (我)** | 指揮官 | 任務指派、決策、協調 | sessions_list 活躍會話 | ❌ | 老蔡 |
-| **Cursor Agent** | 訂閱制 | 程式碼開發、除錯 | `cursor --version` | ❌ | 小蔡 → 老蔡 |
-| **CoDEX Agent** | 訂閱制 | 程式碼生成、CLI 操作 | `codex --version` | ❌ | 小蔡 → 老蔡 |
-| **OpenClaw Gateway** | 本地服務 | 任務板 API、技能執行 | `localhost:3011/health` | ✅ 嘗試重啟 | 小蔡 |
-| **Ollama (本地)** | 本地模型 | 背景學習、監控、簡單任務 | `localhost:11434/api/tags` | ✅ 嘗試重啟 | 小蔡 |
-| **AutoExecutor** | 背景服務 | 自動執行任務板任務 | 任務執行紀錄時間戳 | ✅ 檢查輪詢間隔 | 小蔡 |
+| **達爾 (我)** | 指揮官 | 任務指派、決策、協調 | sessions_list 活躍會話 | ❌ | 主人 |
+| **Cursor Agent** | 訂閱制 | 程式碼開發、除錯 | `cursor --version` | ❌ | 達爾 → 主人 |
+| **CoDEX Agent** | 訂閱制 | 程式碼生成、CLI 操作 | `codex --version` | ❌ | 達爾 → 主人 |
+| **OpenClaw Gateway** | 本地服務 | 任務板 API、技能執行 | `localhost:3011/health` | ✅ 嘗試重啟 | 達爾 |
+| **Ollama (本地)** | 本地模型 | 背景學習、監控、簡單任務 | `localhost:11434/api/tags` | ✅ 嘗試重啟 | 達爾 |
+| **AutoExecutor** | 背景服務 | 自動執行任務板任務 | 任務執行紀錄時間戳 | ✅ 檢查輪詢間隔 | 達爾 |
 
 ---
 
@@ -54,8 +54,8 @@
 **處理流程**：
 1. Ollama 嘗試自動修復（見下方）
 2. 記錄異常詳情
-3. **通知小蔡**（Telegram）
-4. 小蔡決定是否升級或通知老蔡
+3. **通知達爾**（Telegram）
+4. 達爾決定是否升級或通知主人
 
 ### Level 3: 嚴重（紅色）
 **條件**：
@@ -66,8 +66,8 @@
 
 **處理流程**：
 1. Ollama 立即記錄嚴重錯誤
-2. **直接通知老蔡**（Telegram @gousmaaa）
-3. 通知小蔡
+2. **直接通知主人**（Telegram @gousmaaa）
+3. 通知達爾
 4. 停止自動化操作，等待人工介入
 
 ---
@@ -132,7 +132,7 @@ curl -X PATCH http://localhost:3011/api/tasks/{id}/progress \
 ## 📊 監控檢查清單（Ollama 每 5 分鐘執行）
 
 ### Step 1: 指揮官狀態
-- [ ] 檢查小蔡活躍會話：`sessions_list --activeMinutes 10`
+- [ ] 檢查達爾活躍會話：`sessions_list --activeMinutes 10`
 - [ ] 確認指揮官在線：至少 1 個活躍會話
 - [ ] 記錄指揮官狀態：運作中 / 閒置
 
@@ -162,13 +162,13 @@ curl -X PATCH http://localhost:3011/api/tasks/{id}/progress \
 - [ ] 統計正常 Agent 數量
 - [ ] 統計異常 Agent 數量
 - [ ] 列出卡住任務（如有）
-- [ ] 決定通知對象（無異常→不通知，L2→小蔡，L3→老蔡）
+- [ ] 決定通知對象（無異常→不通知，L2→達爾，L3→主人）
 
 ---
 
 ## 📨 通知模板
 
-### Level 2 通知（給小蔡）
+### Level 2 通知（給達爾）
 ```
 🚨 Agent 異常報告 [時間]
 
@@ -184,7 +184,7 @@ curl -X PATCH http://localhost:3011/api/tasks/{id}/progress \
 {recommended_action}
 ```
 
-### Level 3 通知（給老蔡）
+### Level 3 通知（給主人）
 ```
 🚨🚨 嚴重系統異常 [時間]
 
@@ -282,7 +282,7 @@ curl -X PATCH http://localhost:3011/api/tasks/$TASK_ID/progress \
 5. **無異常時保持安靜**（避免訊息疲勞）
 
 我的監管範圍：
-- ✅ 小蔡（指揮官）狀態
+- ✅ 達爾（指揮官）狀態
 - ✅ Cursor Agent
 - ✅ CoDEX Agent
 - ✅ OpenClaw Gateway

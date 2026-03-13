@@ -1,5 +1,5 @@
-/Users/caijunchang/openclaw任務面版設計/.openclaw-patrol-status.json
-/Users/caijunchang/openclaw任務面版設計/auto-executor-state.json
-/Users/caijunchang/openclaw任務面版設計/tsconfig.node.json
-/Users/caijunchang/openclaw任務面版設計/beauty-industry-website/package.json
-/Users/caijunchang/openclaw任務面版設計/beauty-industry-website/tsconfig.json
+/Users/sky770825/openclaw任務面版設計/.openclaw-patrol-status.json
+/Users/sky770825/openclaw任務面版設計/auto-executor-state.json
+/Users/sky770825/openclaw任務面版設計/tsconfig.node.json
+/Users/sky770825/openclaw任務面版設計/beauty-industry-website/package.json
+/Users/sky770825/openclaw任務面版設計/beauty-industry-website/tsconfig.json

@@ -159,7 +159,7 @@ EVOLUTION_LOG="$LEARNING_DIR/00-evolution-log.md"
 
 if [[ ! -f "$EVOLUTION_LOG" ]]; then
     cat > "$EVOLUTION_LOG" <<'EOF'
-# 小蔡進化日誌
+# 堤諾米斯達爾（達爾）進化日誌
 
 > 記錄每次版本更新的改進與學習
 
@@ -190,4 +190,4 @@ EOF
 
 echo "✅ 學習記錄已追加到: $EVOLUTION_LOG"
 echo ""
-echo "🎓 小蔡又進化了一點點！"
+echo "🎓 堤諾米斯達爾（達爾）又進化了一點點！"

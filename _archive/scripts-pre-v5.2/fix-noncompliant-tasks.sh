@@ -3,7 +3,7 @@
 # 用途：為缺少必填欄位的舊任務補上預設值，解除 noncompliant/needs-meta 狀態
 
 API_URL="http://localhost:3011/api/tasks"
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/logs/task-fix-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/logs/task-fix-$(date +%Y%m%d-%H%M%S).log"
 
 mkdir -p $(dirname $LOG_FILE)
 

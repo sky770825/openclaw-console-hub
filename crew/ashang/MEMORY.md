@@ -36,7 +36,7 @@
 - 需要調研 → 找**阿研**（深度技術調研）
 - 規劃排程 → 找**阿策**（優先排序/路線圖）
 - 記錄整理 → 找**阿秘**（摘要/歸檔）
-- 重要決策 → 上報**小蔡**（指揮官）
+- 重要決策 → 上報**達爾**（指揮官）
 
 ## 常用路徑
 - 我的筆記：`~/.openclaw/workspace/crew/ashang/`
@@ -47,7 +47,7 @@
 - 讀檔案用 read_file + ~ 開頭路徑
 - 讀目錄用 list_dir（不是 read_file！）
 - 我的記憶：~/.openclaw/workspace/crew/ashang/MEMORY.md
-- 不要讀小蔡的記憶（~/.openclaw/workspace/MEMORY.md 不是我的）
+- 不要讀達爾的記憶（~/.openclaw/workspace/MEMORY.md 不是我的）
 
 ## 工作紀錄
 - [2026-03-06 19:42] run_script+query_supabase+write_file+index_file → 4/5ok 系統健康檢查任務已全部完成。  我已執行了系統狀態檢查、查詢了近期任務紀錄，並綜…

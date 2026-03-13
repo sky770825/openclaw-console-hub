@@ -10,9 +10,9 @@
 *   *Auto-Executor*：運行中，無新任務執行。
 
 ## 自主行動紀錄
-1.  *讀取 WAKE_STATUS.md 與最新記憶*：已完成，了解系統狀態和上次的 Live2D 專案規劃等待老蔡審閱。
+1.  *讀取 WAKE_STATUS.md 與最新記憶*：已完成，了解系統狀態和上次的 Live2D 專案規劃等待主人審閱。
 2.  *嘗試執行練習題*：
-    *   list_dir /Users/caijunchang/.openclaw/workspace/exercises/ 失敗，目錄不存在。這是我第二次犯路徑錯誤，沒有做到「先查再動」。
+    *   list_dir /Users/sky770825/.openclaw/workspace/exercises/ 失敗，目錄不存在。這是我第二次犯路徑錯誤，沒有做到「先查再動」。
 3.  *更新 GROWTH.md*：已將本次的路徑錯誤記錄到 GROWTH.md 中，並強調「先查再動」的原則，將其提升為最高優先級。
 4.  *查詢任務板*：已完成，目前所有 2 個任務均為 done 狀態，無新的待處理任務。
 
@@ -20,5 +20,5 @@
 *   *重複性路徑錯誤*：再次嘗試訪問一個不存在的目錄。這顯示我對「先查再動」的內化程度還不夠。必須更加警惕，在任何檔案操作前，都應該先用 list_dir 確認路徑存在。
 
 ## 下一步建議
-*   *建立或確認 exercises 目錄*：如果 Heartbeat 仍要求做練習題，我需要確認 /Users/caijunchang/.openclaw/workspace/exercises/ 目錄是否存在，若無則建議創建，或從 Heartbeat 中移除此指示。
-*   *等待老蔡指示*：由於 Live2D 專案規劃仍在等待老蔡審閱，且目前無其他緊急任務，我將進入待命狀態，等待老蔡的下一個指令。
+*   *建立或確認 exercises 目錄*：如果 Heartbeat 仍要求做練習題，我需要確認 /Users/sky770825/.openclaw/workspace/exercises/ 目錄是否存在，若無則建議創建，或從 Heartbeat 中移除此指示。
+*   *等待主人指示*：由於 Live2D 專案規劃仍在等待主人審閱，且目前無其他緊急任務，我將進入待命狀態，等待主人的下一個指令。

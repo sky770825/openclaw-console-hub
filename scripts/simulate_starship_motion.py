@@ -49,7 +49,7 @@ def generate_motion_json(duration_sec=2.0, fps=30):
         motion_data["Curves"][1]["Segments"].extend([t, hand])
         motion_data["Curves"][2]["Segments"].extend([t, glow])
 
-    output_path = "/Users/caijunchang/.openclaw/workspace/sandbox/output/starship_busy.motion3.json"
+    output_path = "/Users/sky770825/.openclaw/workspace/sandbox/output/starship_busy.motion3.json"
     with open(output_path, "w") as f:
         json.dump(motion_data, f, indent=2)
     

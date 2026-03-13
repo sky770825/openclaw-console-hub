@@ -1,13 +1,13 @@
 Executing Test Suite at Mon Mar  2 13:24:59 CST 2026
 ------------------------------------------
 Starting auto-skill-v2 Test Suite...
-Target: /Users/caijunchang/openclaw任務面版設計/scripts/auto-skill-v2.sh
+Target: /Users/sky770825/openclaw任務面版設計/scripts/auto-skill-v2.sh
 ------------------------------------
 Running: test_fingerprint_extraction
   [PASS] Fingerprint should not be empty
 Running: test_experience_read_write
-  [INFO] Checking fallback directory /Users/caijunchang/.openclaw/workspace/sandbox/test_skills
-  [PASS] File exists: /Users/caijunchang/.openclaw/workspace/sandbox/test_skills/test_cmd_123.json
+  [INFO] Checking fallback directory /Users/sky770825/.openclaw/workspace/sandbox/test_skills
+  [PASS] File exists: /Users/sky770825/.openclaw/workspace/sandbox/test_skills/test_cmd_123.json
 Running: test_boundary_empty_input
   [PASS] Handled empty input with exit code 1
 ------------------------------------

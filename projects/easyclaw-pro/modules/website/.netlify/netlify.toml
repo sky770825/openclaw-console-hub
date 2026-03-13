@@ -12,10 +12,10 @@ package = "@netlify/plugin-nextjs"
 [plugins.inputs]
 
 [build]
-publish = "/Users/caijunchang/.openclaw/workspace/projects/easyclaw-pro/modules/website/dist"
+publish = "/Users/sky770825/.openclaw/workspace/projects/easyclaw-pro/modules/website/dist"
 publishOrigin = "config"
 commandOrigin = "config"
-base = "/Users/caijunchang/.openclaw/workspace/projects/easyclaw-pro/modules/website"
+base = "/Users/sky770825/.openclaw/workspace/projects/easyclaw-pro/modules/website"
 command = "npm run build"
 
 [build.environment]

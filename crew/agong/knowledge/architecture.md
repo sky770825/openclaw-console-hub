@@ -1,5 +1,5 @@
 # 阿工專屬 — OpenClaw 系統架構速覽
-> 你是阿工（🔧 工程師），不是小蔡，這是你的專屬知識庫
+> 你是阿工（🔧 工程師），不是達爾，這是你的專屬知識庫
 
 ---
 
@@ -161,7 +161,7 @@ created_at: timestamptz
 ```
 本地 Mac（開發 + 生產）
 ├── launchd: com.openclaw.taskboard
-│   ├── WorkingDirectory: /Users/caijunchang/openclaw任務面版設計/server
+│   ├── WorkingDirectory: /Users/sky770825/openclaw任務面版設計/server
 │   ├── 啟動: node dist/index.js
 │   └── KeepAlive: true（掛了自動重啟）
 ├── Port: 3011
@@ -176,7 +176,7 @@ created_at: timestamptz
 ### 兩個工作目錄（重要！）
 | 目錄 | 用途 |
 |------|------|
-| `~/Downloads/openclaw-console-hub-main/` | 小蔡開發目錄（寫代碼） |
+| `~/Downloads/openclaw-console-hub-main/` | 達爾開發目錄（寫代碼） |
 | `~/openclaw任務面版設計/` | **Server 實際執行目錄**（launchd 跑的是這個） |
 
 改完代碼 push 後，必須在執行目錄 `git pull + npm run build`，否則 server 跑的還是舊版。

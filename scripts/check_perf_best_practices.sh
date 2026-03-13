@@ -1,6 +1,6 @@
 #!/bin/bash
 # 檢測專案中是否符合 Linear/Vercel 的開發規範
-PROJECT_DIR="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_DIR="/Users/sky770825/openclaw任務面版設計"
 
 echo "--- 效能最佳實踐檢測器 ---"
 

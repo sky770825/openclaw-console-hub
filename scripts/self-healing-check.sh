@@ -1,5 +1,5 @@
 #!/bin/bash
-# 小蔡自我修復巡檢 v1.0
+# 達爾自我修復巡檢 v1.0
 
 CHECK_URL="http://localhost:3011/api/health"
 

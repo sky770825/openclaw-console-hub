@@ -45,6 +45,6 @@
 *   OpenClaw 腳本呼叫 Webhook 或直接打 Notion API。
 
 ## 4. 下一步行動
-1. 請老蔡提供 Notion API Key 並建立上述資料庫。 (或由我代為產生架構說明讓老蔡操作)
+1. 請主人提供 Notion API Key 並建立上述資料庫。 (或由我代為產生架構說明讓主人操作)
 2. 撰寫核心 API 調用腳本。
 3. 整合至 `oc.sh`。

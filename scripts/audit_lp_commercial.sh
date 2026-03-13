@@ -1,6 +1,6 @@
 #!/bin/bash
 # 這是由阿商生成的自動化分析工具，用以檢測 Landing Page 的商業完整度
-SOURCE_PATH="/Users/caijunchang/openclaw任務面版設計/src"
+SOURCE_PATH="/Users/sky770825/openclaw任務面版設計/src"
 
 echo "=== Landing Page 商業元素審計 ==="
 if [ ! -d "$SOURCE_PATH" ]; then

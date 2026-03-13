@@ -45,7 +45,7 @@ def process_files(workspace_path):
     return processed_count, report
 
 if __name__ == "__main__":
-    workspace = "/Users/caijunchang/.openclaw/workspace"
+    workspace = "/Users/sky770825/.openclaw/workspace"
     count, logs = process_files(workspace)
     print(f"Total files modified: {count}")
     for entry in logs:

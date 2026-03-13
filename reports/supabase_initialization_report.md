@@ -1,7 +1,7 @@
 # Supabase Project Initialization Report
 
 ## Local Environment Status
-- **Supabase CLI**: Initialized in /Users/caijunchang/.openclaw/workspace/sandbox
+- **Supabase CLI**: Initialized in /Users/sky770825/.openclaw/workspace/sandbox
 - **Migration Created**: `supabase/migrations/20231027000000_setup_public_schema.sql`
 - **Public Schema Check**: Script generated to verify public schema accessibility once remote project is live.
 
@@ -12,5 +12,5 @@
 4. **Database Password**: Set and stored securely.
 
 ## Verification Tool
-- A verification script has been placed at: `/Users/caijunchang/.openclaw/workspace/scripts/verify_supabase_connection.sh`
+- A verification script has been placed at: `/Users/sky770825/.openclaw/workspace/scripts/verify_supabase_connection.sh`
 - Run it with your Project Reference and Anon Key to confirm connectivity.

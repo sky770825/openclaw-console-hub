@@ -8,7 +8,7 @@
       "feature": "進度追蹤與管理頁面",
       "status": "In Progress",
       "description": "建立專案進度追蹤機制",
-      "components": ["/Users/caijunchang/openclaw任務面版設計/src/components/openclaw/TaskExecutionDialog.tsx","/Users/caijunchang/openclaw任務面版設計/src/components/starship/MDCIProgressBars.tsx","/Users/caijunchang/openclaw任務面版設計/src/hooks/useTaskExecution.ts","/Users/caijunchang/openclaw任務面版設計/src/data/seedTasks.ts","/Users/caijunchang/openclaw任務面版設計/src/pages/Dashboard.tsx","/Users/caijunchang/openclaw任務面版設計/src/pages/starship/MDCIDashboard.tsx","/Users/caijunchang/openclaw任務面版設計/src/pages/TaskList.tsx","/Users/caijunchang/openclaw任務面版設計/src/pages/TaskBoard.tsx"]
+      "components": ["/Users/sky770825/openclaw任務面版設計/src/components/openclaw/TaskExecutionDialog.tsx","/Users/sky770825/openclaw任務面版設計/src/components/starship/MDCIProgressBars.tsx","/Users/sky770825/openclaw任務面版設計/src/hooks/useTaskExecution.ts","/Users/sky770825/openclaw任務面版設計/src/data/seedTasks.ts","/Users/sky770825/openclaw任務面版設計/src/pages/Dashboard.tsx","/Users/sky770825/openclaw任務面版設計/src/pages/starship/MDCIDashboard.tsx","/Users/sky770825/openclaw任務面版設計/src/pages/TaskList.tsx","/Users/sky770825/openclaw任務面版設計/src/pages/TaskBoard.tsx"]
     }
   ],
   "system_scan": {

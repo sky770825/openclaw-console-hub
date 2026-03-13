@@ -8,14 +8,14 @@
 
 ## Proposed Changes
 1. **Types Update**: Added `archived` to `TaskStatus` in `server/src/types.ts`.
-   - Proposal: `/Users/caijunchang/.openclaw/workspace/proposals/types.ts.proposal`
+   - Proposal: `/Users/sky770825/.openclaw/workspace/proposals/types.ts.proposal`
 2. **Auto-Executor Logic**: Implemented `archiveOldTasks` loop logic.
-   - Proposal: `/Users/caijunchang/.openclaw/workspace/proposals/auto-executor.ts.proposal`
+   - Proposal: `/Users/sky770825/.openclaw/workspace/proposals/auto-executor.ts.proposal`
 
 ## Standalone Utility
 A standalone archiver script has been created for manual or cron execution:
-- Location: `/Users/caijunchang/.openclaw/workspace/scripts/task_archiver.cjs`
-- Usage: `node /Users/caijunchang/.openclaw/workspace/scripts/task_archiver.cjs path/to/tasks.json`
+- Location: `/Users/sky770825/.openclaw/workspace/scripts/task_archiver.cjs`
+- Usage: `node /Users/sky770825/.openclaw/workspace/scripts/task_archiver.cjs path/to/tasks.json`
 
 ## Logic Details
 - **Threshold**: 24 hours (86,400,000ms).

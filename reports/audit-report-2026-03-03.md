@@ -2,7 +2,7 @@
 
 ## 1. 發現：全綠看板幻覺
 - server/src/routes/openclaw-tasks.ts 中，failed、cancelled、timeout 被硬編碼映射為 done。
-- 導致老蔡在前端看到 162 個任務完成，實則包含大量失敗與逾時任務。
+- 導致主人在前端看到 162 個任務完成，實則包含大量失敗與逾時任務。
 
 ## 2. 發現：基建遺失
 - BrowserService 在 server/src 目錄下完全不存在。

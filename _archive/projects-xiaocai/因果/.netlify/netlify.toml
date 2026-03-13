@@ -1,0 +1,28 @@
+plugins = []
+headers = []
+redirects = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "/Users/sky770825/.openclaw/workspace/projects/小蔡/因果/dist"
+publishOrigin = "ui"
+commandOrigin = "ui"
+base = "/Users/sky770825/.openclaw/workspace/projects/小蔡/因果"
+command = "pnpm run build"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]

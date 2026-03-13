@@ -13,4 +13,4 @@ Skills are triggered automatically by the AI when a task requires specific funct
 
 ## Troubleshooting
 If a skill fails, use the health check script:
-`bash /Users/caijunchang/.openclaw/workspace/scripts/skill_health_check.sh`
+`bash /Users/sky770825/.openclaw/workspace/scripts/skill_health_check.sh`

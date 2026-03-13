@@ -1,12 +1,12 @@
 #!/bin/bash
-# 小蔡發想審核中心 - 一鍵新增發想腳本
+# 堤諾米斯達爾（達爾）發想審核中心 - 一鍵新增發想腳本
 # 使用方式: ./add-xiaocai-idea.sh "標題" "摘要" "標籤1,標籤2"
 
 set -e
 
 API_BASE="${OPENCLAW_TASKBOARD_URL:-http://localhost:3011}"
 
-echo "📝 新增發想到小蔡的發想審核中心..."
+echo "📝 新增發想到堤諾米斯達爾（達爾）的發想審核中心..."
 
 # 參數
 title="${1:-}"
@@ -49,7 +49,7 @@ if echo "$response" | grep -q '"id"'; then
 
 **編號**: $(echo "$response" | jq -r '.number // "待定"')  
 **狀態**: 🟡 待審核  
-**提出者**: 小蔡  
+**提出者**: 堤諾米斯達爾（達爾）  
 **標籤**: ${tags}  
 **建立時間**: $(date '+%Y-%m-%d %H:%M:%S')
 

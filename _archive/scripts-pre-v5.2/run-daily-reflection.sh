@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # --- 配置 ---
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 SCRIPTS_DIR="${WORKSPACE}/scripts"
 MEMORY_DIR="${WORKSPACE}/memory"
 OLLAMA_URL="http://localhost:11434"

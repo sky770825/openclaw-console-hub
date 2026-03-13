@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 記憶記錄 HTTP 服務器
-供 n8n 工作流程記錄任務完成狀態到小蔡記憶系統
+供 n8n 工作流程記錄任務完成狀態到達爾記憶系統
 """
 
 import json
@@ -227,7 +227,7 @@ class MemoryRecordHandler(BaseHTTPRequestHandler):
     <h2>端點</h2>
 
     <h3><span class="method">POST</span> <span class="endpoint">/record</span></h3>
-    <p>記錄任務完成狀態到小蔡記憶系統</p>
+    <p>記錄任務完成狀態到達爾記憶系統</p>
 
     <h4>請求格式：</h4>
     <pre>{{
@@ -261,7 +261,7 @@ class MemoryRecordHandler(BaseHTTPRequestHandler):
     "taskName": "🧪 Autopilot 流程測試",
     "status": "完成",
     "summary": "任務拉取機制驗證完成\\n記錄系統正常寫入\\nTelegram 通知鏈路暢通",
-    "assignee": "小蔡指派(指揮)",
+    "assignee": "達爾指派(指揮)",
     "subagentModel": "Gemini 2.5 Flash",
     "taskDetails": [
       {{"done": true, "msg": "從任務板成功拉取任務"}},

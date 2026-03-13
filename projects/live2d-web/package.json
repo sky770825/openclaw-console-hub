@@ -1,7 +1,7 @@
 {
-  "name": "xiaocai-live2d",
+  "name": "tls-live2d",
   "version": "1.0.0",
-  "description": "小蔡 Live2D Web 界面",
+  "description": "達爾 Live2D Web 界面",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

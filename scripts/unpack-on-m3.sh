@@ -8,7 +8,7 @@ TARGET_DIR="$HOME/.openclaw"
 
 if [ -z "$BACKUP_FILE" ]; then
     echo "❌ 用法: ./unpack-on-m3.sh <備份檔案路徑>"
-    echo "例如: ./unpack-on-m3.sh /Users/caijunchang/Desktop/openclaw-m3-migration_xxxx.tar.gz"
+    echo "例如: ./unpack-on-m3.sh /Users/sky770825/Desktop/openclaw-m3-migration_xxxx.tar.gz"
     exit 1
 fi
 
@@ -32,7 +32,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "🎉 恭喜！你的 AI 夥伴已在 M3 復活。"
     echo "接下來請執行："
-    echo "1. cd /Users/caijunchang/.openclaw/workspace"
+    echo "1. cd /Users/sky770825/.openclaw/workspace"
     echo "2. npm install (重新安裝依賴)"
     echo "3. 檢查 .env 設定"
 else

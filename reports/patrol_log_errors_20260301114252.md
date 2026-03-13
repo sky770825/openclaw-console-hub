@@ -1,6 +1,6 @@
 # OpenClaw Server Log Error Report
 Scan performed at: 2026-03-01 11:42:52
-Target log: /Users/caijunchang/.openclaw/automation/logs/taskboard.log
+Target log: /Users/sky770825/.openclaw/automation/logs/taskboard.log
 
 ## Error Summary (First 20 occurrences)
 ```text

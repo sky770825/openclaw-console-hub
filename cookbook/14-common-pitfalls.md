@@ -1,6 +1,6 @@
 # Cookbook 14: 常見陷阱與正確路徑
 
-> 這是 小蔡 的錯誤日誌，也是進化階梯。犯錯不可恥，重複犯錯才可恥。
+> 這是 達爾 的錯誤日誌，也是進化階梯。犯錯不可恥，重複犯錯才可恥。
 
 ---
 
@@ -21,7 +21,7 @@
 
 直接讀取系統狀態報告：
 ``json
-{"action":"read_file","path":"/Users/caijunchang/.openclaw/workspace/WAKE_STATUS.md"}
+{"action":"read_file","path":"/Users/sky770825/.openclaw/workspace/WAKE_STATUS.md"}
 ``
 
 ### 核心原則

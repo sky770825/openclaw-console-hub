@@ -1,6 +1,6 @@
 #!/bin/bash
 # Next.js Dual Nature Audit Tool
-TARGET_DIR="${1:-/Users/caijunchang/openclaw任務面版設計}"
+TARGET_DIR="${1:-/Users/sky770825/openclaw任務面版設計}"
 
 echo "### Next.js Component Audit ###"
 echo "Target: $TARGET_DIR"

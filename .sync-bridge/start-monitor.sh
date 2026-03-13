@@ -1,7 +1,7 @@
 #!/bin/bash
 # 簡易同步監測啟動腳本
 
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 SYNC_DIR="$WORKSPACE/.sync-bridge"
 
 echo "🚀 啟動 NEUXA L1-L2 即時同步監測"

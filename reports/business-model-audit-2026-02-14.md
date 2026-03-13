@@ -1,7 +1,7 @@
-# 老蔡事業商業模式盤點報告
+# 主人事業商業模式盤點報告
 
 **分析日期**：2026-02-14  
-**對象**：老蔡三項事業（住商biz_realestate、biz_drinks、普特斯防霾biz_window_screen）  
+**對象**：主人三項事業（住商biz_realestate、biz_drinks、普特斯防霾biz_window_screen）  
 **目標**：識別轉換漏斗阻塞點，設計可變現的 AI/自動化任務
 
 ---

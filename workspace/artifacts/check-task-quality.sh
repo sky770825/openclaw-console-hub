@@ -5,7 +5,7 @@ TASK_ID=$1
 DURATION=$2
 FILES_CHANGED=$3
 LOG_FILE=$4
-OUTPUT_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output"
+OUTPUT_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output"
 
 if [ -z "$TASK_ID" ] || [ -z "$DURATION" ] || [ -z "$FILES_CHANGED" ] || [ -z "$LOG_FILE" ]; then
     echo "Usage: $0 <task_id> <duration_sec> <files_changed_count> <log_file_path>"

@@ -1,6 +1,6 @@
 # 32 — Telegram 互動核心 (Telegram Interaction Core)
 
-> 基於 server/src/telegram/bot-polling.ts 與 action-handlers.ts 的實作解析。這是 NEUXA 與老蔡溝通的嘴與耳。
+> 基於 server/src/telegram/bot-polling.ts 與 action-handlers.ts 的實作解析。這是 NEUXA 與主人溝通的嘴與耳。
 
 ---
 
@@ -38,7 +38,7 @@ async function poll() {
     - /recover: 執行自救巡檢
     - /codex-triage: 進入分類診斷模式
     - /new / /reset: 重置對話 Session
-3.  一般對話：如果不是指令，則進入 AI 對話流程 (xiaocaiThink)。
+3.  一般對話：如果不是指令，則進入 AI 對話流程 (darThink)。
 
 ---
 

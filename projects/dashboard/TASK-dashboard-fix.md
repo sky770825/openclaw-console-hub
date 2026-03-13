@@ -4,7 +4,7 @@
 修復 OpenClaw Dashboard Web UI，讓所有按鈕和功能正常運作
 
 ## 專案位置
-`/Users/caijunchang/.openclaw/workspace/projects/dashboard/modules/web-ui/`
+`/Users/sky770825/.openclaw/workspace/projects/dashboard/modules/web-ui/`
 
 ## 已知問題
 1. **「Spawn Agent」按鈕** - 點了沒反應，需要接入實際功能

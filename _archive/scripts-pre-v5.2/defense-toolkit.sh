@@ -1,5 +1,5 @@
 #!/bin/zsh
-# defense-toolkit.sh — 小蔡高階防身工具箱 v1.0
+# defense-toolkit.sh — 堤諾米斯達爾（達爾）高階防身工具箱 v1.0
 # ═══════════════════════════════════════════════════
 # 7 道防線，全方位保護 OpenClaw 系統
 #
@@ -369,7 +369,7 @@ lockdown_activate() {
 config/ 目錄已鎖定
 scripts/ 目錄已鎖定
 
-需要老蔡手動解除：
+需要主人手動解除：
   ./scripts/defense-toolkit.sh shield-down" "critical"
 
   echo -e "${RED}🔒 鎖定完成：${NC}"

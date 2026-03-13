@@ -6,7 +6,7 @@
 
 ## 分析過程
 
-1.  **檢查日誌**：執行 `tail -50 /Users/caijunchang/.openclaw/logs/server.log` 來觀察最新的日誌。
+1.  **檢查日誌**：執行 `tail -50 /Users/sky770825/.openclaw/logs/server.log` 來觀察最新的日誌。
 2.  **發現錯誤**：日誌中反覆出現關鍵錯誤訊息：`Error: 409 Conflict: terminated by another getUpdates request`。
 
 ## 結論

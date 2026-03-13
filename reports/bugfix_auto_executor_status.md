@@ -19,8 +19,8 @@ to:
 ```
 
 ## Files Generated
-1. **Fixed Source**: `/Users/caijunchang/.openclaw/workspace/sandbox/output/auto-executor.ts` (Ready for deployment by authorized personnel)
-2. **Analysis Report**: `/Users/caijunchang/.openclaw/workspace/reports/bugfix_auto_executor_status.md`
+1. **Fixed Source**: `/Users/sky770825/.openclaw/workspace/sandbox/output/auto-executor.ts` (Ready for deployment by authorized personnel)
+2. **Analysis Report**: `/Users/sky770825/.openclaw/workspace/reports/bugfix_auto_executor_status.md`
 
 ## Verification Script
-A verification script has been created at `/Users/caijunchang/.openclaw/workspace/scripts/verify_fix.sh`.
+A verification script has been created at `/Users/sky770825/.openclaw/workspace/scripts/verify_fix.sh`.

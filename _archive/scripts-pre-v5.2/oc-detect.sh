@@ -7,7 +7,7 @@ set -u
 # --- 配置 ---
 LOG_DIR="logs"
 TASKBOARD_API_URL="http://localhost:3011"
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace"
 
 # 燈號定義
 GREEN="🟢"

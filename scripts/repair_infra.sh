@@ -6,7 +6,7 @@ set -e
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
 
 # Ensure we are in the writable sandbox directory
-cd /Users/caijunchang/.openclaw/workspace/sandbox
+cd /Users/sky770825/.openclaw/workspace/sandbox
 
 # Determine the correct npm path
 NPM_EXEC=$(which npm || echo "/usr/local/bin/npm")
@@ -19,9 +19,9 @@ mkdir -p server
 
 # If package.json doesn't exist in sandbox/server, copy from project source or initialize
 if [ ! -f "server/package.json" ]; then
-    if [ -f "/Users/caijunchang/openclaw任務面版設計/server/package.json" ]; then
+    if [ -f "/Users/sky770825/openclaw任務面版設計/server/package.json" ]; then
         echo "Copying package.json from project source to sandbox..."
-        cp "/Users/caijunchang/openclaw任務面版設計/server/package.json" "server/package.json"
+        cp "/Users/sky770825/openclaw任務面版設計/server/package.json" "server/package.json"
     else
         echo "Initializing new package.json..."
         echo '{"name": "server-infra", "version": "1.0.0"}' > server/package.json
@@ -46,7 +46,7 @@ DB_FILE=$(find . -name "*.db" -o -name "*.sqlite" | head -n 1)
 
 if [ -z "$DB_FILE" ]; then
     # Look in the project source for existing databases
-    SRC_DB=$(find "/Users/caijunchang/openclaw任務面版設計" -name "*.db" -o -name "*.sqlite" | head -n 1)
+    SRC_DB=$(find "/Users/sky770825/openclaw任務面版設計" -name "*.db" -o -name "*.sqlite" | head -n 1)
     if [ -n "$SRC_DB" ]; then
         echo "Found database in source: $SRC_DB. Creating a writable copy in sandbox."
         cp "$SRC_DB" "server_repair.db"
@@ -67,7 +67,7 @@ fi
 
 # --- 4. Permission Verification ---
 echo "--- [3/3] Permission Check: server/src/ ---"
-TARGET_SRC="/Users/caijunchang/openclaw任務面版設計/server/src"
+TARGET_SRC="/Users/sky770825/openclaw任務面版設計/server/src"
 if [ -d "$TARGET_SRC" ]; then
     echo "Directory exists: $TARGET_SRC"
     echo "Permissions details:"
@@ -79,7 +79,7 @@ else
 fi
 
 # --- 5. Generate Report ---
-REPORT_PATH="/Users/caijunchang/.openclaw/workspace/reports/repair_report_$(date +%Y%m%d).log"
+REPORT_PATH="/Users/sky770825/.openclaw/workspace/reports/repair_report_$(date +%Y%m%d).log"
 {
     echo "Repair Task Execution Log"
     echo "Timestamp: $(date)"
@@ -89,7 +89,7 @@ REPORT_PATH="/Users/caijunchang/.openclaw/workspace/reports/repair_report_$(date
 } > "$REPORT_PATH"
 
 # Save the script itself to the scripts directory for record
-cp "$0" "/Users/caijunchang/.openclaw/workspace/scripts/repair_infra.sh" 2>/dev/null || true
+cp "$0" "/Users/sky770825/.openclaw/workspace/scripts/repair_infra.sh" 2>/dev/null || true
 
 echo "TASK_COMPLETE: Infrastructure updated, database cleanup attempted, and permissions verified."
 exit 0

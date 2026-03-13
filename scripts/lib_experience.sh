@@ -7,7 +7,7 @@
 # Usage: exp_init <db_name>
 exp_init() {
     local db_name=$1
-    local db_dir="/Users/caijunchang/.openclaw/workspace/knowledge/experience_db"
+    local db_dir="/Users/sky770825/.openclaw/workspace/knowledge/experience_db"
     mkdir -p "$db_dir"
     EXP_DB_FILE="${db_dir}/${db_name}.json"
     

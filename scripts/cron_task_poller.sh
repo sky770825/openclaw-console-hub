@@ -1,7 +1,7 @@
 #!/bin/bash
 # OpenClaw Task Poller Cron Script
 # Checks for 'ready' tasks and triggers the executor
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/cron_poller.log"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/cron_poller.log"
 echo "[$(date)] Polling for ready tasks..." >> "$LOG_FILE"
 
 # Trigger dispatch via API

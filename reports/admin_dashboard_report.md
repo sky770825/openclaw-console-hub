@@ -15,6 +15,6 @@
 - `/scripts/launch_admin_dashboard.sh`: 啟動腳本。
 
 ## 限制說明
-- 本專案作為獨立的管理模組開發，遵循不修改 `/Users/caijunchang/openclaw任務面版設計/src/` 下核心代碼的限制。
+- 本專案作為獨立的管理模組開發，遵循不修改 `/Users/sky770825/openclaw任務面版設計/src/` 下核心代碼的限制。
 - 介面邏輯目前使用 Mock Data 進行展示，已預留 API 串接邏輯。
 

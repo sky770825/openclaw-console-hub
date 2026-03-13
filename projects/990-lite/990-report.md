@@ -1,7 +1,7 @@
 # 990 Lite 安全掃描報告
 
 - **掃描時間**：2026-03-03 11:27:12
-- **掃描目錄**：`/Users/caijunchang/.openclaw/workspace/projects/990-lite`
+- **掃描目錄**：`/Users/sky770825/.openclaw/workspace/projects/990-lite`
 - **總發現數**：7（HIGH=2  MED=5  LOW=0）
 
 ## 各引擎發現數量摘要

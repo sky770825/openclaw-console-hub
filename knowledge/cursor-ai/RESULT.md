@@ -1,8 +1,8 @@
 ## Summary
-小蔡擴充 cursor-ai 知識庫：新增 PROMPTS.md (best agent prompts)、INTEGRATION.md (OpenClaw spawn 指南)，補滿溝通/使用缺口。基於 web_search cursor.com/forum (2026 最新)。
+達爾擴充 cursor-ai 知識庫：新增 PROMPTS.md (best agent prompts)、INTEGRATION.md (OpenClaw spawn 指南)，補滿溝通/使用缺口。基於 web_search cursor.com/forum (2026 最新)。
 
 ## 執行者
-小蔡 (主會話)
+達爾 (主會話)
 
 ## 模型
 kimi/kimi-k2.5 + gemini flash (status)

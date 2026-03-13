@@ -1,8 +1,8 @@
 # Security Fix & Architecture Optimization Report
 
 ## 1. Security Analysis (Static Scan)
-- **Findings**: Scanned /Users/caijunchang/openclaw任務面版設計 for injection points and hardcoded secrets.
-- **Log Location**: /Users/caijunchang/.openclaw/workspace/sandbox/output/security_scan_20260303.log
+- **Findings**: Scanned /Users/sky770825/openclaw任務面版設計 for injection points and hardcoded secrets.
+- **Log Location**: /Users/sky770825/.openclaw/workspace/sandbox/output/security_scan_20260303.log
 - **Virtual Patching**: Implemented `clawhub_security_gateway.py` to provide a runtime validation layer for skill inputs without modifying core server source.
 
 ## 2. Architecture Optimizations

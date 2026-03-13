@@ -17,7 +17,7 @@ brew install docker
 echo "基礎環境準備完成。"
 
 # --- 待決策區塊 ---
-echo "等待小蔡確認技術路線 (MLX or Ollama)..."
+echo "等待達爾確認技術路線 (MLX or Ollama)..."
 
 # TODO: 根據決策，取消註解以下其中一段
 

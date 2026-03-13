@@ -1,6 +1,6 @@
 # 十八層地獄全境實錄 - AI 算圖 Prompt
 
-> by NEUXA for 老蔡
+> by NEUXA for 主人
 
 ## 通用風格指令 (加在每個 Prompt 前面或後面)
 

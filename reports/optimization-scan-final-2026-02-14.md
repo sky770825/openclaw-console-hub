@@ -1,7 +1,7 @@
 # 【內部優化掃描】最終報告 — 2026-02-14 01:50
 
 **執行時間**: 2026-02-14 01:50 AM (Saturday, 01:50)  
-**掃描員**: 小蔡（內部 cron 任務）  
+**掃描員**: 達爾（內部 cron 任務）  
 **狀態**: ✅ 完成 — 3 張新任務卡已建立
 
 ---
@@ -24,7 +24,7 @@
 id: 22
 name: 補齊 7 個技能的 README 文檔
 status: ready
-assignee: 小蔡
+assignee: 達爾
 riskLevel: low
 ```
 **詳情**:
@@ -44,7 +44,7 @@ riskLevel: low
 id: 23
 name: 建立記憶庫索引與分類系統（175 個文件）
 status: ready
-assignee: 小蔡
+assignee: 達爾
 riskLevel: low
 ```
 **詳情**:
@@ -73,7 +73,7 @@ riskLevel: low
 id: 24
 name: 統一監控工具：monitor-unified.sh（8 個腳本→1 個）
 status: ready
-assignee: 小蔡
+assignee: 達爾
 riskLevel: medium
 ```
 **詳情**:
@@ -176,7 +176,7 @@ riskLevel: medium
 - Task #15 (Cron 清理) — 獨立任務，不影響其他流程
 
 ### 資源分配
-- **小蔡**: Task #22, #23, #24 (主責)
+- **達爾**: Task #22, #23, #24 (主責)
 - **Cursor** (可選): Task #22 技能 README 自動生成器、Task #24 腳本整合
 - **自動化**: Task #15 (Cron 清理可完全自動化)
 
@@ -189,7 +189,7 @@ riskLevel: medium
 - [x] 任務卡建立 (3 張，ID: 22, 23, 24)
 - [x] Ready 狀態任務補充 (6 → 9 張)
 - [x] 詳細報告生成
-- [ ] 等待老蔡批准執行
+- [ ] 等待主人批准執行
 - [ ] Task #22-24 執行追蹤
 
 ---

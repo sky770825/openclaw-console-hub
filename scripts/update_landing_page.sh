@@ -3,4 +3,4 @@
 echo "Syncing Features Design Specs..."
 # (In a real scenario, this would involve copying files to the src directory if authorized)
 # But since restricted, we output the sync manifest.
-echo "Manifest: /Users/caijunchang/.openclaw/workspace/sandbox/output/OpenClawFeatures.tsx -> target path"
+echo "Manifest: /Users/sky770825/.openclaw/workspace/sandbox/output/OpenClawFeatures.tsx -> target path"

@@ -26,5 +26,5 @@
 - 所有檔案皆包含日期標記、結構化標籤 (H1-H3)、代碼塊以及明確的使用建議。
 
 ## Next Steps
-- 建議老蔡在實際執行安全掃描時測試 `knowledge/trivy/sample-scan.sh`。
+- 建議主人在實際執行安全掃描時測試 `knowledge/trivy/sample-scan.sh`。
 - 後續可將 `MODEL-DECISION-MATRIX.md` 內容整合進 `AGENTS.md` 的派工參考中。

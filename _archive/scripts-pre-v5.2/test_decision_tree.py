@@ -29,7 +29,7 @@ class TestDecisionTree(unittest.TestCase):
         md = self.manager.generate_markdown(d_id)
         self.assertIn("Test Task", md)
         self.assertIn("Opt A", md)
-        self.assertIn("等待老蔡介入", md)
+        self.assertIn("等待主人介入", md)
 
     def test_intervention_approve(self):
         d_id = self.manager.log_decision(

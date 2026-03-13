@@ -2,7 +2,7 @@
 
 > **版本**: v1.0
 > **建立日期**: 2026-02-16
-> **用途**: 小蔡和所有 Agent 搜尋知識庫的工具
+> **用途**: 達爾和所有 Agent 搜尋知識庫的工具
 
 ---
 
@@ -34,7 +34,7 @@ Embedding 模型: embeddinggemma（QMD 內建，本地 GGUF）
 | Collection | 路徑 | 檔案數 | 用途 |
 |-----------|------|--------|------|
 | sop | `~/.openclaw/workspace/sop-知識庫/` | 19 | SOP 規範 |
-| instruction | `~/.openclaw/workspace/xiaocai-指令集/` | 12 | 小蔡指令集 |
+| instruction | `~/.openclaw/workspace/dar-指令集/` | 12 | 達爾指令集 |
 | knowledge | `~/.openclaw/workspace/knowledge/` | 54 | 知識文件 |
 | docs | （原有） | 48 | 文件 |
 | memory | （原有） | 137 | 記憶檔案 |

@@ -251,7 +251,7 @@ df -h / | tail -1 | awk '{print "Used: "$5, "Available: "$4}'
 | 部署後 | 必要 — 確認部署沒壞東西 |
 | 每天早上 | 建議 — 日常巡檢 |
 | 系統異常時 | 必要 — 定位問題 |
-| 老蔡說「檢查一下」 | 必要 |
+| 主人說「檢查一下」 | 必要 |
 | 重啟服務後 | 必要 — 確認恢復正常 |
 
 ---
@@ -262,7 +262,7 @@ df -h / | tail -1 | awk '{print "Used: "$5, "Available: "$4}'
 |------|--------|----------|
 | Docker 容器停止 | P0 | SOP-11 n8n 運維 或 `docker compose up -d` |
 | API 無回應 | P0 | 檢查 server 是否在跑，看 log |
-| Supabase key 過期 | P1 | 回報老蔡，去 Dashboard 更新 |
+| Supabase key 過期 | P1 | 回報主人，去 Dashboard 更新 |
 | Telegram 發不出去 | P2 | 檢查 bot token，見 SOP-11 |
-| 磁碟 >90% | P1 | 回報老蔡，docker system prune 需批准 |
+| 磁碟 >90% | P1 | 回報主人，docker system prune 需批准 |
 | Ollama 沒跑 | P3 | `ollama serve &` |

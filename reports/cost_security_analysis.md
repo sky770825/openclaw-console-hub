@@ -6,7 +6,7 @@
 - **投資報酬率 (ROI)**: 預計在運作 4-6 個月後達成損益平衡。
 
 ## 2. 安全優勢
-- **數據不出戶**: 敏感數據完全在本地 /Users/caijunchang/.openclaw/workspace 處理。
+- **數據不出戶**: 敏感數據完全在本地 /Users/sky770825/.openclaw/workspace 處理。
 - **網路隔離**: 支持完全離線推論。
 - **權限控制**: 符合 .openclaw 安全架構。
 

@@ -5,4 +5,4 @@ if [ -z "$KEYWORD" ]; then
     echo "Usage: $0 <keyword>"
     exit 1
 fi
-grep -rnE "$KEYWORD" /Users/caijunchang/openclaw任務面版設計 --exclude-dir=node_modules --exclude-dir=.git
+grep -rnE "$KEYWORD" /Users/sky770825/openclaw任務面版設計 --exclude-dir=node_modules --exclude-dir=.git

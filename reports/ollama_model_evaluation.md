@@ -1,7 +1,7 @@
 # Ollama 模型評估報告 (Ollama Model Evaluation)
 
 ## 1. 專案現狀分析
-經掃描 `/Users/caijunchang/openclaw任務面版設計`，初步分析結果如下：
+經掃描 `/Users/sky770825/openclaw任務面版設計`，初步分析結果如下：
 - **模型調用情況**:
 未在代碼中發現明顯的 Ollama 或 Hardcoded 模型配置，可能使用環境變數或第三方 SDK。
 

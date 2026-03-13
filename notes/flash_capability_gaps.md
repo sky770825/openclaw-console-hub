@@ -3,9 +3,9 @@
 ### 1. 複雜任務鏈的規劃與推理深度不足 (Insufficient Planning and Reasoning Depth for Complex Task Chains)
    原因說明：Flash 模型為速度和效率進行了優化，其「天性」更適合執行單一、明確的指令。在需要深度邏輯推理、前瞻性規劃和在多個步驟中保持上下文一致性的長鏈任務上，它可能會表現出「短視」的行為。
    緩解方案：
-    1.  強化任務描述與拆解 (Commander's Role)：對於複雜任務，小蔡必須提供更詳細、明確的 description，並主動將其拆解為更小、更獨立的子任務。
+    1.  強化任務描述與拆解 (Commander's Role)：對於複雜任務，達爾必須提供更詳細、明確的 description，並主動將其拆解為更小、更獨立的子任務。
     2.  關鍵規劃階段引入強模型協作 (Ask_AI Leverage)：對於需要高度推理和複雜規劃的任務，在進入實際執行前，主動使用 ask_ai model=pro 或 model=opus 生成詳細執行藍圖，Flash 依據藍圖執行。
-    3.  優化任務狀態與可視性 (System Enhancement)：持續推進任務板優化，確保任務流轉邏輯清晰，並能追蹤每個子任務狀態，便於小蔡宏觀掌握進度並即時校準。
+    3.  優化任務狀態與可視性 (System Enhancement)：持續推進任務板優化，確保任務流轉邏輯清晰，並能追蹤每個子任務狀態，便於達爾宏觀掌握進度並即時校準。
 
 ### 2. 高精度與高複雜度代碼的生成與除錯能力較弱 (Weaker Capability in Generating and Debugging High-Precision, High-Complexity Code)
    原因說明：Flash 模型雖然具備不錯的代碼生成能力，但其「天性」是快速產出，而非精雕細琢。在面對需要考慮架構耦合、性能影響、安全漏洞等複雜因素的高階代碼任務時，它生成的代碼可能在語法上正確，但在邏輯上存在隱患或不夠健壯。

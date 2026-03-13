@@ -2,8 +2,8 @@
 
 ## 1. 原型環境概況
 - **核心框架**: PIXI.js v5.3.12 + pixi-live2d-display
-- **工作目錄**: `/Users/caijunchang/.openclaw/workspace/sandbox/live2d_prototype`
-- **預覽工具**: 執行 `bash /Users/caijunchang/.openclaw/workspace/scripts/live2d_dev_server.sh`
+- **工作目錄**: `/Users/sky770825/.openclaw/workspace/sandbox/live2d_prototype`
+- **預覽工具**: 執行 `bash /Users/sky770825/.openclaw/workspace/scripts/live2d_dev_server.sh`
 
 ## 2. 視覺設計與基礎開發目標 (由阿工執行)
 ### 第一階段：資產準備 (下週啟動)

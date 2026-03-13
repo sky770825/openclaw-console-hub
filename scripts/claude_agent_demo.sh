@@ -5,13 +5,13 @@ echo "Starting parallel analysis of workspace..."
 # 任務 A: 檢查報告
 {
     echo "[Agent-Task-A] Checking reports..."
-    ls -l /Users/caijunchang/.openclaw/workspace/reports/
+    ls -l /Users/sky770825/.openclaw/workspace/reports/
 } &
 
 # 任務 B: 檢查腳本
 {
     echo "[Agent-Task-B] Checking scripts..."
-    ls -l /Users/caijunchang/.openclaw/workspace/scripts/
+    ls -l /Users/sky770825/.openclaw/workspace/scripts/
 } &
 
 wait

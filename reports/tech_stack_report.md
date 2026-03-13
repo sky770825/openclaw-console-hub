@@ -66,6 +66,6 @@ Found root package.json. Extracting dependencies...
   "zod": "^3.25.76"
 }
 Summary of creation:
-- Project Skeleton at /Users/caijunchang/.openclaw/workspace/sandbox/output/beauty-web-skeleton
-- Dev Setup Script at /Users/caijunchang/.openclaw/workspace/scripts/beauty_setup.sh
-- CI/CD Foundation at /Users/caijunchang/.openclaw/workspace/sandbox/output/beauty-web-skeleton/.github/workflows/main.yml
+- Project Skeleton at /Users/sky770825/.openclaw/workspace/sandbox/output/beauty-web-skeleton
+- Dev Setup Script at /Users/sky770825/.openclaw/workspace/scripts/beauty_setup.sh
+- CI/CD Foundation at /Users/sky770825/.openclaw/workspace/sandbox/output/beauty-web-skeleton/.github/workflows/main.yml

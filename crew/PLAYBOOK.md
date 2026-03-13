@@ -55,7 +55,7 @@
 | 3 | 阿研 | index_file 入庫 → reindex_knowledge | index_file, reindex_knowledge |
 | 4 | 阿數 | 統計知識庫覆蓋率 | query_supabase, run_script |
 
-## 情境 6：老蔡/小蔡直接指令
+## 情境 6：主人/達爾直接指令
 
 不管什麼指令，**被點名的 bot 最優先**。沒被點名就按上面情境判斷。
 指揮官的指令 > 所有其他任務。

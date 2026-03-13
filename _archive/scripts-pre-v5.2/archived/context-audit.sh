@@ -4,7 +4,7 @@ set -e
 # context-audit.sh - 計算會話啟動 Context 大小
 # 用法: ./scripts/context-audit.sh
 
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 TOKEN_RATIO=1.3  # 1 word ≈ 1.3 tokens for 中英混合
 
 echo "=========================================="

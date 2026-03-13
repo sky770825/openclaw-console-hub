@@ -1,6 +1,6 @@
-指揮官小蔡指示：
+指揮官達爾指示：
 
-PWA 戰役啟動。老蔡指示優先優化客戶端體驗，暫緩 Docker，改走 PWA 路線。
+PWA 戰役啟動。主人指示優先優化客戶端體驗，暫緩 Docker，改走 PWA 路線。
 
 任務：
 1. 檢查 vite.config.ts 的 VitePWA 設定。

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Skill Health Check Tool
-SKILLS_DIR="/Users/caijunchang/.openclaw/workspace/skills"
+SKILLS_DIR="/Users/sky770825/.openclaw/workspace/skills"
 echo "--- Clawhub Skill Health Check ---"
 if [ ! -d "$SKILLS_DIR" ]; then
     echo "[ERROR] Skills directory not found: $SKILLS_DIR"

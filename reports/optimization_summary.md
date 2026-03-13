@@ -15,6 +15,6 @@
 - **Benefit**: Even if the in-memory monitoring state is lost, the system can rebuild its watch-list from the database state.
 
 ## Files Generated
-- `/Users/caijunchang/.openclaw/workspace/scripts/AutoExecutor.optimized.ts`
-- `/Users/caijunchang/.openclaw/workspace/scripts/clear-zombies.ts`
-- `/Users/caijunchang/.openclaw/workspace/scripts/anti-stuck.enhanced.ts`
+- `/Users/sky770825/.openclaw/workspace/scripts/AutoExecutor.optimized.ts`
+- `/Users/sky770825/.openclaw/workspace/scripts/clear-zombies.ts`
+- `/Users/sky770825/.openclaw/workspace/scripts/anti-stuck.enhanced.ts`

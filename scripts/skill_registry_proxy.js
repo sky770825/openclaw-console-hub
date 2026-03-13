@@ -26,5 +26,5 @@ class SkillRegistryProxy {
     }
 }
 
-const proxy = new SkillRegistryProxy('/Users/caijunchang/.openclaw/workspace');
+const proxy = new SkillRegistryProxy('/Users/sky770825/.openclaw/workspace');
 proxy.loadRegistry();

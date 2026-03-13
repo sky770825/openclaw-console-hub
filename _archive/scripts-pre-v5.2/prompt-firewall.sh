@@ -140,7 +140,7 @@ scan_text() {
       echo "${RED}🚨 CRITICAL: 偵測到 prompt injection 攻擊${NC}"
       echo -e "$findings"
       echo ""
-      echo "${RED}建議：立即停止處理此內容，回報老蔡${NC}"
+      echo "${RED}建議：立即停止處理此內容，回報主人${NC}"
       return 3
       ;;
     2)
@@ -190,7 +190,7 @@ $(echo -e "$findings" | sed 's/\[/\\[/g' | sed 's/\]/\\]/g')
 $preview
 \`\`\`
 
-_請檢查小蔡的操作_"
+_請檢查達爾的操作_"
 
   curl -sf -X POST \
     "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \

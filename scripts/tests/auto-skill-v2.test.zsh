@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # Mock environment setup
-export SKILLS_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/test_skills"
+export SKILLS_DIR="/Users/sky770825/.openclaw/workspace/sandbox/test_skills"
 mkdir -p "$SKILLS_DIR"
 
 # Source the target script (assuming it's sourceable or we test by execution)

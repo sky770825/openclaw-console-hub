@@ -7,8 +7,8 @@
 🔹 任務進度
 | 任務 | 狀態 | 負責人 |
 |------|------|--------|
-| 匯總生產力工具整合報告 | done | 小蔡 |
-| System_Health_Check_Ping | done | 小蔡 |
+| 匯總生產力工具整合報告 | done | 達爾 |
+| System_Health_Check_Ping | done | 達爾 |
 
 🔹 待辦
 - [ ] 目前無新增待辦事項。

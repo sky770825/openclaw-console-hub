@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const WORKSPACE_DIR = '/Users/caijunchang/.openclaw/workspace';
+const WORKSPACE_DIR = '/Users/sky770825/.openclaw/workspace';
 const CORE_FILES = [
   'OMEGA_LOG.md',
   'AGENTS.md',

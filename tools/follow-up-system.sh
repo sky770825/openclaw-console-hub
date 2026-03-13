@@ -38,7 +38,7 @@ check_followups() {
                 // 提供建議話術
                 let script = '';
                 if (c.stage === 'Day1-感謝') {
-                    script = '「' + c.name + '您好，我是住商老蔡，今天感謝您抽空看屋，這邊把一些補充資料傳給您...」';
+                    script = '「' + c.name + '您好，我是住商主人，今天感謝您抽空看屋，這邊把一些補充資料傳給您...」';
                 } else if (c.stage === 'Day3-詢問意向') {
                     script = '「' + c.name + '您好，請問前天看的房子您這邊覺得如何？有什麼問題我可以幫您解答...」';
                 } else if (c.stage === 'Day7-推薦新物件') {

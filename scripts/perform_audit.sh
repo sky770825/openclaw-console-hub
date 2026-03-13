@@ -1,5 +1,5 @@
 #!/bin/bash
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
 REPORT_FILE=$1
 
 echo "# 任務面版系統檢查報告 (Task Board Audit Report)" > "$REPORT_FILE"

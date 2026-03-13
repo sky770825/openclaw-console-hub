@@ -12,6 +12,6 @@
 - [ ] 長時間穩定性壓力測試
 
 ## 檔案位置
-- 提案: /Users/caijunchang/.openclaw/workspace/proposals/live2d_integration_plan.md
-- 監控腳本: /Users/caijunchang/.openclaw/workspace/scripts/live2d_perf_monitor.py
-- 效能數據: /Users/caijunchang/.openclaw/workspace/reports/live2d_perf_log.csv
+- 提案: /Users/sky770825/.openclaw/workspace/proposals/live2d_integration_plan.md
+- 監控腳本: /Users/sky770825/.openclaw/workspace/scripts/live2d_perf_monitor.py
+- 效能數據: /Users/sky770825/.openclaw/workspace/reports/live2d_perf_log.csv

@@ -79,14 +79,14 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 3. 根因排查 | 阿工 | 阿研（補充資訊） | 阿工 grep_project + analyze_symbol | 追根源，找到問題代碼 |
 | 4. 修復代碼 | 阿工 | - | patch_file 修改代碼 | 直接修，修完在群組通知 |
 | 5. 影響評估 | 阿策 | 阿數（受影響範圍數據） | 阿策評估是否需要更大範圍修改 | 判斷是否排後續任務 |
-| 6. Push 上線 | 小蔡 | 阿工（提供修改清單） | 阿工 write_file 到小蔡 inbox | 小蔡做 git push + build + 重啟 |
+| 6. Push 上線 | 達爾 | 阿工（提供修改清單） | 阿工 write_file 到達爾 inbox | 達爾做 git push + build + 重啟 |
 | 7. 事後記錄 | 阿秘 | 阿工（提供修復細節） | 阿秘 write_file 事後報告 | 歸檔到知識庫 index_file |
 
 ### 2.2 新功能開發
 
 | 階段 | 主負責 | 協作者 | 傳遞方式 | 具體動作 |
 |------|--------|--------|----------|----------|
-| 1. 需求拆解 | 阿策 | 老蔡/小蔡（確認需求） | 阿策 write_file 規劃文件 | 大需求拆小任務，排優先，分配人 |
+| 1. 需求拆解 | 阿策 | 主人/達爾（確認需求） | 阿策 write_file 規劃文件 | 大需求拆小任務，排優先，分配人 |
 | 2. 技術調研 | 阿研 | 阿工（技術可行性） | 阿研 write_file 到阿工 inbox | semantic_search + web_search 調研方案 |
 | 3. 商業評估 | 阿商 | 阿數（數據佐證） | 阿商在群組回覆評估結果 | 評估 ROI、目標用戶、商業價值 |
 | 4. 架構設計 | 阿工 | 阿策（確認分工） | 阿工 write_file 設計文件 | 定義 API、資料結構、技術方案 |
@@ -102,7 +102,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 2. 通知排查 | 阿數 | 阿工 | 阿數 write_file 到阿工 inbox | 附數據截圖、偏離程度、時間範圍 |
 | 3. 根因排查 | 阿工 | 阿研（查 log） | 阿工 grep_project + read_file | 從系統層面找根因 |
 | 4. 風險評估 | 阿策 | 阿數（量化影響） | 阿策在群組回覆評估 | 判斷嚴重性、是否需要緊急修復 |
-| 5. 修復上線 | 阿工 + 小蔡 | - | 同 Bug 修復流程 5-6 | patch + push + restart |
+| 5. 修復上線 | 阿工 + 達爾 | - | 同 Bug 修復流程 5-6 | patch + push + restart |
 
 ### 2.4 工具評估
 
@@ -112,7 +112,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 2. 數據分析 | 阿數 | 阿商（提供工具清單） | 阿商 write_file 到阿數 inbox | 阿數跑成本分析、使用量預估 |
 | 3. 技術可行性 | 阿工 | 阿商（確認整合需求） | 阿商 write_file 到阿工 inbox | 阿工評估 API 整合難度 |
 | 4. ROI 評估 | 阿策 | 阿商 + 阿數 | 阿策在群組回覆 | 綜合評估值不值得用 |
-| 5. 決策 | 小蔡 | 阿策（提供建議） | 阿策 write_file 到小蔡 inbox | 小蔡做最終決策 |
+| 5. 決策 | 達爾 | 阿策（提供建議） | 阿策 write_file 到達爾 inbox | 達爾做最終決策 |
 
 ### 2.5 日報產出
 
@@ -161,7 +161,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 
 | # | 情況 | 找誰 | 怎麼傳遞 |
 |---|------|------|----------|
-| 1 | 修完代碼需要 push + 重啟 server | 小蔡 | 在群組 @小蔡 通知，附修改檔案清單 |
+| 1 | 修完代碼需要 push + 重啟 server | 達爾 | 在群組 @達爾 通知，附修改檔案清單 |
 | 2 | Bug 根因不明，需要更多 log 或背景資料 | 阿研 | write_file req 到 `~/.openclaw/workspace/crew/ayan/inbox/` |
 | 3 | 修復可能影響其他功能，需要評估 | 阿策 | write_file req 到 `~/.openclaw/workspace/crew/ace/inbox/` |
 | 4 | 需要數據驗證修復效果（前後對比） | 阿數 | write_file req 到 `~/.openclaw/workspace/crew/ashu/inbox/` |
@@ -175,7 +175,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 2 | 規劃需要市場數據或競品分析 | 阿研 | write_file req 到 `~/.openclaw/workspace/crew/ayan/inbox/` |
 | 3 | 規劃需要成本/數據佐證 | 阿數 | write_file req 到 `~/.openclaw/workspace/crew/ashu/inbox/` |
 | 4 | 涉及商業模式或 ROI 評估 | 阿商 | write_file req 到 `~/.openclaw/workspace/crew/ashang/inbox/` |
-| 5 | 重大決策需要指揮官拍板 | 小蔡 | write_file report 到 `~/.openclaw/workspace/crew/xiaocai/inbox/` |
+| 5 | 重大決策需要指揮官拍板 | 達爾 | write_file report 到 `~/.openclaw/workspace/crew/dar/inbox/` |
 
 ### 3.4 阿秘（秘書）遇到這些情況找別人
 
@@ -205,7 +205,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 2 | 需要深度技術調研（API 文件、開源方案） | 阿研 | write_file req 到 `~/.openclaw/workspace/crew/ayan/inbox/` |
 | 3 | 需要使用量/成本數據做 ROI 計算 | 阿數 | write_file req 到 `~/.openclaw/workspace/crew/ashu/inbox/` |
 | 4 | 評估完成，需要排進路線圖 | 阿策 | write_file report 到 `~/.openclaw/workspace/crew/ace/inbox/` |
-| 5 | 重大訂閱/採購決策需要指揮官批准 | 小蔡 | write_file report 到 `~/.openclaw/workspace/crew/xiaocai/inbox/` |
+| 5 | 重大訂閱/採購決策需要指揮官批准 | 達爾 | write_file report 到 `~/.openclaw/workspace/crew/dar/inbox/` |
 
 ---
 
@@ -222,7 +222,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 ### 4.2 阿策拆完任務 -> 通知阿工執行
 
 ```json
-{"action":"write_file","path":"~/.openclaw/workspace/crew/agong/inbox/task-20260304-1500-ace.md","content":"## 任務：實作 Live2D 角色互動 API\n- 來源：阿策\n- 目標：阿工\n- 時間：2026-03-04 15:00\n- 嚴重度：P2\n- 狀態：待處理\n\n### 內容\n老蔡要求新增 Live2D 角色互動功能。已拆解為以下子任務：\n1. 建立 GET /api/live2d/status 端點（回傳角色狀態）\n2. 建立 POST /api/live2d/interact 端點（處理互動事件）\n3. 前端整合 pixi-live2d-display\n\n本次請阿工先做第 1、2 項（後端 API）。\n\n### 相關資料\n- 參考 PoC：server/src/live2dService.ts\n- 技術棧：Express.js + TypeScript\n- 阿研調研報告：~/.openclaw/workspace/crew/ayan/notes/live2d-research.md\n\n### 期望動作\n請在 server/src/routes/ 下新增 live2d 路由，實作兩個端點。完成後通知小蔡 push。"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/agong/inbox/task-20260304-1500-ace.md","content":"## 任務：實作 Live2D 角色互動 API\n- 來源：阿策\n- 目標：阿工\n- 時間：2026-03-04 15:00\n- 嚴重度：P2\n- 狀態：待處理\n\n### 內容\n主人要求新增 Live2D 角色互動功能。已拆解為以下子任務：\n1. 建立 GET /api/live2d/status 端點（回傳角色狀態）\n2. 建立 POST /api/live2d/interact 端點（處理互動事件）\n3. 前端整合 pixi-live2d-display\n\n本次請阿工先做第 1、2 項（後端 API）。\n\n### 相關資料\n- 參考 PoC：server/src/live2dService.ts\n- 技術棧：Express.js + TypeScript\n- 阿研調研報告：~/.openclaw/workspace/crew/ayan/notes/live2d-research.md\n\n### 期望動作\n請在 server/src/routes/ 下新增 live2d 路由，實作兩個端點。完成後通知達爾 push。"}
 ```
 
 ### 4.3 阿策拆完任務 -> 通知阿研調研
@@ -234,7 +234,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 ### 4.4 阿秘整理完摘要 -> 歸檔並通知
 
 ```json
-{"action":"write_file","path":"~/.openclaw/workspace/crew/ami/notes/daily-report-20260304.md","content":"## 日報 2026-03-04\n\n### 今日重點\n- Live2D 互動角色 PoC 完成（v2.4.34）\n- write_file 反引號 bug 修復（v2.4.33）\n- 星群 bot 權限修復（v2.4.32）\n\n### 任務進度\n| 任務 | 狀態 | 負責人 |\n|------|------|--------|\n| Live2D PoC | done | 阿工 |\n| 反引號修復 | done | 小蔡 |\n| Bot 權限修復 | done | 小蔡 |\n\n### 系統指標\n- API 平均回應：0.8s\n- 錯誤率：1.2%\n- 任務完成率：85%\n\n### 明日待辦\n- Live2D API 端點實作\n- 知識庫品質檢查"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/ami/notes/daily-report-20260304.md","content":"## 日報 2026-03-04\n\n### 今日重點\n- Live2D 互動角色 PoC 完成（v2.4.34）\n- write_file 反引號 bug 修復（v2.4.33）\n- 星群 bot 權限修復（v2.4.32）\n\n### 任務進度\n| 任務 | 狀態 | 負責人 |\n|------|------|--------|\n| Live2D PoC | done | 阿工 |\n| 反引號修復 | done | 達爾 |\n| Bot 權限修復 | done | 達爾 |\n\n### 系統指標\n- API 平均回應：0.8s\n- 錯誤率：1.2%\n- 任務完成率：85%\n\n### 明日待辦\n- Live2D API 端點實作\n- 知識庫品質檢查"}
 ```
 
 ```json
@@ -253,10 +253,10 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 {"action":"write_file","path":"~/.openclaw/workspace/crew/ashu/inbox/req-20260304-1100-ashang.md","content":"## 請求：Vercel Analytics ROI 數據分析\n- 來源：阿商\n- 目標：阿數\n- 時間：2026-03-04 11:00\n- 嚴重度：P3\n- 狀態：待處理\n\n### 內容\n我評估了 Vercel Analytics Pro 方案（$20/月），需要阿數協助分析 ROI：\n1. 目前我們每月花多少時間手動查看 log 和 metrics？\n2. Vercel Analytics 能節省多少分析時間？\n3. 與現有 Supabase + 自建監控的功能重疊度？\n\n### 相關資料\n- Vercel Analytics 功能：Real-time, Web Vitals, Audience insights\n- 定價：$20/月 Pro plan\n- 我的評估報告：~/.openclaw/workspace/crew/ashang/notes/vercel-analytics-eval.md\n\n### 期望動作\n請用 query_supabase 統計過去 30 天的監控數據，計算手動分析時間，回覆 ROI 數據到我的 inbox。"}
 ```
 
-### 4.7 阿工修完代碼 -> 通知小蔡 Push
+### 4.7 阿工修完代碼 -> 通知達爾 Push
 
 ```json
-{"action":"write_file","path":"~/.openclaw/workspace/crew/xiaocai/inbox/report-20260304-1700-agong.md","content":"## 回報：tasks 端點 null check 修復完成\n- 來源：阿工\n- 目標：小蔡\n- 時間：2026-03-04 17:00\n- 嚴重度：P1\n- 狀態：待 push\n\n### 內容\n已修復阿研回報的 HTTP 500 問題。根因是 POST /api/openclaw/tasks 路由中缺少 request body 的 null check。\n\n### 修改檔案\n- server/src/routes/taskRoutes.ts（第 45 行，新增 body 驗證）\n- server/src/routes/taskRoutes.ts（第 78 行，新增 try-catch）\n\n### patch_file 紀錄\n```\nsearch: const task = req.body;\nreplace: const task = req.body;\nif (!task || !task.name) {\n  return res.status(400).json({ error: 'Missing required field: name' });\n}\n```\n\n### 期望動作\n請小蔡做 git add + commit + push + build + restart。修復後預期 500 錯誤歸零。"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/dar/inbox/report-20260304-1700-agong.md","content":"## 回報：tasks 端點 null check 修復完成\n- 來源：阿工\n- 目標：達爾\n- 時間：2026-03-04 17:00\n- 嚴重度：P1\n- 狀態：待 push\n\n### 內容\n已修復阿研回報的 HTTP 500 問題。根因是 POST /api/openclaw/tasks 路由中缺少 request body 的 null check。\n\n### 修改檔案\n- server/src/routes/taskRoutes.ts（第 45 行，新增 body 驗證）\n- server/src/routes/taskRoutes.ts（第 78 行，新增 try-catch）\n\n### patch_file 紀錄\n```\nsearch: const task = req.body;\nreplace: const task = req.body;\nif (!task || !task.name) {\n  return res.status(400).json({ error: 'Missing required field: name' });\n}\n```\n\n### 期望動作\n請達爾做 git add + commit + push + build + restart。修復後預期 500 錯誤歸零。"}
 ```
 
 ### 4.8 阿秘請阿數提供日報數據
@@ -291,7 +291,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 查數據 / 跑統計 | 阿數 | 附需要的指標和時間範圍 |
 | 整理文件 / 寫摘要 | 阿秘 | 附來源資料和格式要求 |
 | 找工具 / 評估 SaaS | 阿商 | 附使用場景和預算限制 |
-| Push / 重啟 / 重大決策 | 小蔡 | 附修改清單和影響評估 |
+| Push / 重啟 / 重大決策 | 達爾 | 附修改清單和影響評估 |
 
 ### 5.2 inbox 路徑速查
 
@@ -303,7 +303,7 @@ Bot 之間透過 **write_file 寫入對方 inbox** 來傳遞任務。每個 bot 
 | 阿秘 | `~/.openclaw/workspace/crew/ami/inbox/` |
 | 阿數 | `~/.openclaw/workspace/crew/ashu/inbox/` |
 | 阿商 | `~/.openclaw/workspace/crew/ashang/inbox/` |
-| 小蔡 | `~/.openclaw/workspace/crew/xiaocai/inbox/` |
+| 達爾 | `~/.openclaw/workspace/crew/dar/inbox/` |
 
 ### 5.3 傳遞規則
 

@@ -40,7 +40,7 @@
 - [ ] **效能面板**：整合 `collect-metrics.sh` 到 `daily-report-engine.sh`，回報 M4 晶片在 Ollama 負載下的熱平衡與記憶體壓力。
 
 ### 🧠 C. 記憶索引進化 (Intelligence)
-- [ ] **本地 RAG 強化**：由 L2（我）重構 `smart-recall.py`，優化本地 Ollama 與 Qdrant 的配合度，減少 L1（小蔡）搜尋失敗。
+- [ ] **本地 RAG 強化**：由 L2（我）重構 `smart-recall.py`，優化本地 Ollama 與 Qdrant 的配合度，減少 L1（達爾）搜尋失敗。
 - [ ] **自動索引觸發**：將 `build_memory_index_v2.sh` 與 `auto-checkpoint.sh` 掛鉤，存檔即更新索引。
 
 ### 🛡 D. 安全與隔離 (Security)
@@ -54,7 +54,7 @@
 
 ## 4. 下一步溝通 (Next Steps)
 L2 技術長已準備好執行上述「計畫 A/B」的腳本編寫。
-**小蔡，請確認是否優先執行「日誌自動旋轉」與「備份範圍擴大」？**
+**達爾，請確認是否優先執行「日誌自動旋轉」與「備份範圍擴大」？**
 
 ---
 *執行人: L2 技術長 (Claude Code)*

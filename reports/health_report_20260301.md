@@ -56,11 +56,11 @@ Result Summary: < HTTP/1.1 200 OK
     [35mmodule[39m: "telegram"
 [08:42:41] [32mINFO[39m: [36m[AutoDispatch] 🟣 任務「部署 Git 安全守門員 (Pre-Commit Hook)」已在待審佇列，跳過繼續找下一個[39m
     [35mmodule[39m: "auto-executor"
-[08:42:41] [32mINFO[39m: [36m[AutoDispatch] 所有任務都在待審佇列，等待老蔡審核[39m
+[08:42:41] [32mINFO[39m: [36m[AutoDispatch] 所有任務都在待審佇列，等待主人審核[39m
     [35mmodule[39m: "auto-executor"
 [08:42:56] [32mINFO[39m: [36m[AutoDispatch] 🟣 任務「部署 Git 安全守門員 (Pre-Commit Hook)」已在待審佇列，跳過繼續找下一個[39m
     [35mmodule[39m: "auto-executor"
-[08:42:56] [32mINFO[39m: [36m[AutoDispatch] 所有任務都在待審佇列，等待老蔡審核[39m
+[08:42:56] [32mINFO[39m: [36m[AutoDispatch] 所有任務都在待審佇列，等待主人審核[39m
     [35mmodule[39m: "auto-executor"
 [08:43:02] [32mINFO[39m: [36m[XiaocaiAI] model=gemini-3-pro-preview finishReason=STOP replyLen=713[39m
     [35mmodule[39m: "telegram"
@@ -94,7 +94,7 @@ Result Summary: < HTTP/1.1 200 OK
     [35mmodule[39m: "telegram"
 [08:43:29] [32mINFO[39m: [36m[Heartbeat] step=2 query_supabase → ok=true[39m
     [35mmodule[39m: "telegram"
-[08:43:29] [32mINFO[39m: [36m[NEUXA-Action] type=read_file path=/Users/caijunchang/.openclaw/workspace/MEMORY.md[39m
+[08:43:29] [32mINFO[39m: [36m[NEUXA-Action] type=read_file path=/Users/sky770825/.openclaw/workspace/MEMORY.md[39m
     [35mmodule[39m: "telegram"
 [08:43:29] [32mINFO[39m: [36m[Heartbeat] step=2 read_file → ok=true[39m
     [35mmodule[39m: "telegram"
@@ -110,26 +110,26 @@ No critical errors found in the last 50 log entries.
 ### Source Code Inspection (Gemini Integration)
 Possible Gemini integration points found in source:
 ```text
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:895:   * AI 內容審查：用 Gemini 2.0 Flash 判斷產出是否回答了任務要求
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:896:   * 回傳 1-10 分。Gemini 掛了或超時回傳 7（不擋流程）。
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:974:        // 從回覆中提取數字（Gemini 有時會多輸出幾個字）
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1002:  // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1005:   * Step 1: 呼叫 Gemini 生成可執行 bash 腳本（不是計畫文字）
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1007:  private static async callGeminiForScript(
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1153:    if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1284:        lastScript = await this.callGeminiForScript(
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1451:   * 構建 Cursor 執行命令（現已改用 Gemini API）
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1454:    // 標記：實際執行由 executeCursor 直接呼叫 callGeminiApi，此處僅保留介面相容
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts:1460:   * 構建 CoDEX 執行命令（現已改用 Gemini API）
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:895:   * AI 內容審查：用 Gemini 2.0 Flash 判斷產出是否回答了任務要求
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:896:   * 回傳 1-10 分。Gemini 掛了或超時回傳 7（不擋流程）。
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:974:        // 從回覆中提取數字（Gemini 有時會多輸出幾個字）
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:1002:  // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:1005:   * Step 1: 呼叫 Gemini 生成可執行 bash 腳本（不是計畫文字）
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:1007:  private static async callGeminiForScript(
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:1153:    if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:1284:        lastScript = await this.callGeminiForScript(
-/Users/caijunchang/openclaw任務面版設計/server/src/executor-agents.ts.bak:1451:   * 構建 Cursor 執行命令（現已改用 Gemini API）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:895:   * AI 內容審查：用 Gemini 2.0 Flash 判斷產出是否回答了任務要求
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:896:   * 回傳 1-10 分。Gemini 掛了或超時回傳 7（不擋流程）。
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:974:        // 從回覆中提取數字（Gemini 有時會多輸出幾個字）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1002:  // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1005:   * Step 1: 呼叫 Gemini 生成可執行 bash 腳本（不是計畫文字）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1007:  private static async callGeminiForScript(
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1153:    if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1284:        lastScript = await this.callGeminiForScript(
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1451:   * 構建 Cursor 執行命令（現已改用 Gemini API）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1454:    // 標記：實際執行由 executeCursor 直接呼叫 callGeminiApi，此處僅保留介面相容
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts:1460:   * 構建 CoDEX 執行命令（現已改用 Gemini API）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:895:   * AI 內容審查：用 Gemini 2.0 Flash 判斷產出是否回答了任務要求
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:896:   * 回傳 1-10 分。Gemini 掛了或超時回傳 7（不擋流程）。
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:974:        // 從回覆中提取數字（Gemini 有時會多輸出幾個字）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:1002:  // ─── 真實執行引擎（取代舊的純文字 callGeminiApi）───
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:1005:   * Step 1: 呼叫 Gemini 生成可執行 bash 腳本（不是計畫文字）
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:1007:  private static async callGeminiForScript(
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:1153:    if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:1284:        lastScript = await this.callGeminiForScript(
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak:1451:   * 構建 Cursor 執行命令（現已改用 Gemini API）
 ```
 ### Analysis Conclusion
 Based on the 400 Bad Request status:

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = '/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts';
+const filePath = '/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts';
 let content = fs.readFileSync(filePath, 'utf8');
 
 // --- 1. Upgrade maxTasksPerMinute default ---

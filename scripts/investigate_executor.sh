@@ -1,6 +1,6 @@
 #!/bin/bash
-SOURCE_FILE="/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts"
-REPORT="/Users/caijunchang/.openclaw/workspace/reports/investigation_report_t17723484249.md"
+SOURCE_FILE="/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts"
+REPORT="/Users/sky770825/.openclaw/workspace/reports/investigation_report_t17723484249.md"
 
 echo "# Investigation Report: P0 Auto-Executor Dispatch Failures" > "$REPORT"
 echo "## Task ID: t17723484249" >> "$REPORT"
@@ -43,7 +43,7 @@ echo '```' >> "$REPORT"
 # Search wider project if not in file
 if ! grep -q "openclaw_runs" "$SOURCE_FILE"; then
     echo "Searching entire server directory for openclaw_runs schema..." >> "$REPORT"
-    grep -r "openclaw_runs" "/Users/caijunchang/openclaw任務面版設計/server/src" | head -n 10 >> "$REPORT"
+    grep -r "openclaw_runs" "/Users/sky770825/openclaw任務面版設計/server/src" | head -n 10 >> "$REPORT"
 fi
 
 echo "## 5. Recommendations for Improvement" >> "$REPORT"

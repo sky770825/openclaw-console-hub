@@ -10,4 +10,4 @@
 
 ## Status:
 - Logic injected successfully.
-- Backup created at `/Users/caijunchang/.openclaw/workspace/sandbox/backup/auto-executor.ts.bak`.
+- Backup created at `/Users/sky770825/.openclaw/workspace/sandbox/backup/auto-executor.ts.bak`.

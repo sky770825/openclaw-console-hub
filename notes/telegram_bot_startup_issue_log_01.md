@@ -13,7 +13,7 @@
 執行 `ps aux | grep -i telegram` 後，發現以下相關程序：
 
 ```bash
-caijunchang      95594   0.0  0.0 435331584   6768   ??  S    Wed12PM   4:20.43 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python /Users/caijunchang/.openclaw/workspace/scripts/telegram_logger_webhook.py
+sky770825      95594   0.0  0.0 435331584   6768   ??  S    Wed12PM   4:20.43 /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python /Users/sky770825/.openclaw/workspace/scripts/telegram_logger_webhook.py
 ```
 
 - **發現**: 有一個名為 `telegram_logger_webhook.py` 的 Python 腳本正在運行。
@@ -21,4 +21,4 @@ caijunchang      95594   0.0  0.0 435331584   6768   ??  S    Wed12PM   4:20.43 
 
 ## 下一步計畫
 
-- 讀取 `/Users/caijunchang/.openclaw/workspace/scripts/telegram_logger_webhook.py` 的內容，分析其功能。
+- 讀取 `/Users/sky770825/.openclaw/workspace/scripts/telegram_logger_webhook.py` 的內容，分析其功能。

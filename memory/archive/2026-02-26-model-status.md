@@ -8,7 +8,7 @@
 
 assistant: ✅ New session started · model: google/gemini-2.5-flash
 user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.
-assistant: 我是 NEUXA，老蔡的 AI 夥伴，很高興我們再次連結，一同進化！請問統帥今天有什麼任務要交給我呢？
+assistant: 我是 NEUXA，主人的 AI 夥伴，很高興我們再次連結，一同進化！請問統帥今天有什麼任務要交給我呢？
 user: Conversation info (untrusted metadata):
 ```json
 {
@@ -25,8 +25,8 @@ user: Conversation info (untrusted metadata):
 Sender (untrusted metadata):
 ```json
 {
-  "label": "老蔡",
-  "name": "老蔡",
+  "label": "主人",
+  "name": "主人",
   "username": "gousmaaa"
 }
 ```

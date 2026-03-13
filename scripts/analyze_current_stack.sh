@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 echo "### Current Project Analysis ###"
 
 if [ -f "$PROJECT_ROOT/package.json" ]; then

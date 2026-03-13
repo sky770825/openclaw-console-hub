@@ -10,8 +10,8 @@
 ```
 
 ## 3. 關聯性分析
-根據初步搜尋，'阿策' 可能是一個口頭稱謂、開發者（小蔡）的特定角色化身（Persona），或是尚未在正式文檔中定義的新角色。
-目前的系統資訊多指向 '小蔡' (caijunchang) 與 'NEUXA' 專案本身。
+根據初步搜尋，'阿策' 可能是一個口頭稱謂、開發者（達爾）的特定角色化身（Persona），或是尚未在正式文檔中定義的新角色。
+目前的系統資訊多指向 '達爾' (caijunchang) 與 'NEUXA' 專案本身。
 
 ## 4. 執行建議
-阿研建議：如果「阿策」是您的特定身份或在此系統中的代號，請考慮在 `/Users/caijunchang/.openclaw/workspace/knowledge/personas.md` 中建立對應的定義，以便我能更好地為您服務。
+阿研建議：如果「阿策」是您的特定身份或在此系統中的代號，請考慮在 `/Users/sky770825/.openclaw/workspace/knowledge/personas.md` 中建立對應的定義，以便我能更好地為您服務。

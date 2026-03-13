@@ -15,11 +15,11 @@
     •   如果需要排除 .git 目錄，應查閱 grep 或 rg 的官方文檔，使用其支持的排除方式（如 rg -g '!/.git' 或 grep --exclude-dir=.git）。
 
 ### 2. read_file 檔案不存在
-•   *現象*：檔案不存在: /Users/caijunchang/.bashrc
-•   *原因分析*：在嘗試讀取 /Users/caijunchang/.bashrc 或其他非 workspace 內檔案時，該檔案路徑不存在。這提醒我在讀取不確定是否存在的文件時，應先進行路徑確認。
+•   *現象*：檔案不存在: /Users/sky770825/.bashrc
+•   *原因分析*：在嘗試讀取 /Users/sky770825/.bashrc 或其他非 workspace 內檔案時，該檔案路徑不存在。這提醒我在讀取不確定是否存在的文件時，應先進行路徑確認。
 •   *對策*：
     •   在執行 read_file 前，特別是針對非標準工作區路徑，應先使用 list_dir 或 run_script ls 確認檔案或目錄是否存在。
-    •   優先處理 /Users/caijunchang/.openclaw/workspace 內的文件，因為這些路徑是明確受我管轄的。
+    •   優先處理 /Users/sky770825/.openclaw/workspace 內的文件，因為這些路徑是明確受我管轄的。
 
 ### 3. grep_project 命令未找到
 •   *現象*：run_script: stderr: sh: line 0: type: grep_project: not found

@@ -1,8 +1,8 @@
-# 老蔡三項事業商業模式盤點報告
+# 主人三項事業商業模式盤點報告
 
 **報告日期**: 2026-02-14  
 **任務 ID**: task_1771007823_business-model-audit  
-**執行人**: 小蔡  
+**執行人**: 達爾  
 **分析範圍**: 住商biz_realestate、biz_drinks、普特斯防霾biz_window_screen
 
 ---

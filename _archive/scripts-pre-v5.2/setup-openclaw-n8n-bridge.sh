@@ -10,7 +10,7 @@ echo "=============================="
 
 # 設定變數
 N8N_WEBHOOK="http://host.docker.internal:5678/webhook/openclaw-memory"
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace"
 
 # 檢查 n8n 是否就緒
 echo "🔍 檢查 n8n 服務..."

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Auto-update sitemap based on current project routes
-PROJECT_SRC="/Users/caijunchang/openclaw任務面版設計/src"
-OUTPUT="/Users/caijunchang/.openclaw/workspace/sandbox/output/sitemap.xml"
+PROJECT_SRC="/Users/sky770825/openclaw任務面版設計/src"
+OUTPUT="/Users/sky770825/.openclaw/workspace/sandbox/output/sitemap.xml"
 BASE_URL="https://beauty-salon.example.com"
 
 echo "Scanning routes..."

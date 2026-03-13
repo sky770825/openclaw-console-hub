@@ -23,8 +23,8 @@
 1450:    // 標記：實際執行由 executeCursor 直接呼叫 callGeminiApi，此處僅保留介面相容
 ## Analysis of Dispatch Mechanism
 ## Final Action Summary
-- Source Code Analysis: Completed (See /Users/caijunchang/.openclaw/workspace/reports/executor_investigation_20260301_084851.md)
+- Source Code Analysis: Completed (See /Users/sky770825/.openclaw/workspace/reports/executor_investigation_20260301_084851.md)
 - Reconstructed Scripts: auto_dispatch_trigger.sh, task_status_guard.sh, cron_health_check.sh
-- Cron Jobs: Reconfigured to point to /Users/caijunchang/.openclaw/workspace/scripts
+- Cron Jobs: Reconfigured to point to /Users/sky770825/.openclaw/workspace/scripts
 - API Dispatch Test: API Unreachable
 - Permission Test: Update failed

@@ -2,7 +2,7 @@
 import os
 
 def analyze():
-    cookbook_dir = os.path.expanduser("/Users/caijunchang/.openclaw/workspace/cookbook/")
+    cookbook_dir = os.path.expanduser("/Users/sky770825/.openclaw/workspace/cookbook/")
     files = sorted([f for f in os.listdir(cookbook_dir) if f.endswith(".md")])
 
     report = [

@@ -1,6 +1,6 @@
 # 知識庫 Reindex 方案
 
-> 日期：2026-03-03 | 作者：小蔡（Claude Opus 副手）
+> 日期：2026-03-03 | 作者：達爾（Claude Opus 副手）
 
 ---
 
@@ -37,7 +37,7 @@ const embedText = `[${docTitle}] [${cat}] [${secTitle}] ${section.slice(0, 800)}
 
 ### mode=rebuild（完整重建）
 1. **先清空**：`DELETE FROM openclaw_embeddings WHERE id >= 0`（刪除全部）
-2. **掃描目錄**：`cookbook, memory, docs, reports, knowledge, notes, proposals, projects, learning, sop-知識庫, xiaocai-指令集, extensions, core, anchors`（共 14 個目錄）+ workspace 根目錄 .md
+2. **掃描目錄**：`cookbook, memory, docs, reports, knowledge, notes, proposals, projects, learning, sop-知識庫, dar-指令集, extensions, core, anchors`（共 14 個目錄）+ workspace 根目錄 .md
 3. **逐檔處理**：
    - 讀取 .md 內容
    - 用 `## ` 切分 sections（過濾掉 < 50 chars 的）
@@ -89,13 +89,13 @@ curl http://localhost:3011/api/health
 ```
 
 ### 步驟 2：低峰時段執行
-建議在老蔡不活躍的時段執行（如凌晨），因為：
+建議在主人不活躍的時段執行（如凌晨），因為：
 - rebuild 會先清空所有 embeddings
 - 重建期間 semantic_search 功能降級
 - 大量 API 呼叫可能觸發 rate limit
 
 ### 步驟 3：觸發 rebuild
-小蔡在 Telegram 發送：
+達爾在 Telegram 發送：
 ```json
 {"action":"reindex_knowledge","mode":"rebuild"}
 ```

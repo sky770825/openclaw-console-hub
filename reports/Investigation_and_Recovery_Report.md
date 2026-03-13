@@ -7,7 +7,7 @@
 - Results of probe: 
 
 ## 2. Script Restoration
-Reconstructed three missing scripts in `/Users/caijunchang/.openclaw/workspace/scripts`:
+Reconstructed three missing scripts in `/Users/sky770825/.openclaw/workspace/scripts`:
 - `monitor_and_move.sh`: Handles file management from sandbox to output.
 - `auto-checkpoint.sh`: Fixed the tar recursion bug by ensuring the archive is created in a sibling directory (`../backups`).
 - `docker-n8n-recovery.sh`: logic to check and start n8n docker containers.
@@ -17,6 +17,6 @@ Reconstructed three missing scripts in `/Users/caijunchang/.openclaw/workspace/s
 - Diagnosis: The auto-executor likely reports a successful "trigger" of the task but does not await or verify the actual completion status before the API returns, leading to a false 'done' state in the task manager.
 
 ## 4. Next Steps
-- Verify Cron jobs point to `/Users/caijunchang/.openclaw/workspace/scripts`.
+- Verify Cron jobs point to `/Users/sky770825/.openclaw/workspace/scripts`.
 - Manual verification of reconstructed scripts.
 - Adjust Server route mounting if access to server source becomes available.

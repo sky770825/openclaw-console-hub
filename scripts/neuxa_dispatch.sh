@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-INBOX_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/neuxa_inbox"
+INBOX_DIR="/Users/sky770825/.openclaw/workspace/sandbox/neuxa_inbox"
 TASK_ID=$(date +%s)
 RECEIVER=$1
 QUERY=$2

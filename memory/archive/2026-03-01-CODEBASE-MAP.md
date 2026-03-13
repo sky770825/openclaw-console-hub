@@ -2,7 +2,7 @@
 
 > NEUXA 用：不要猜，查這份索引。收到任何指令，先比對關鍵字找到對應檔案。
 
-專案位置：/Users/caijunchang/openclaw任務面版設計/
+專案位置：/Users/sky770825/openclaw任務面版設計/
 技術棧：React + TypeScript + Vite + Express.js + Supabase
 Server: localhost:3011 | GitHub: sky770825/openclaw-console-hub
 
@@ -67,7 +67,7 @@ Server: localhost:3011 | GitHub: sky770825/openclaw-console-hub
 | searchOpenClawMemory(query, opts?) | 搜尋知識庫 |
 | upsertOpenClawMemory(mem) | 寫入知識庫 |
 | fetchOpenClawProjects() | 取專案 |
-| fetchXiaoCaiIdeas() | 取小蔡想法 |
+| fetchXiaoCaiIdeas() | 取達爾想法 |
 
 ### routes/auto-executor.ts（自動執行調度）
 
@@ -78,7 +78,7 @@ Server: localhost:3011 | GitHub: sky770825/openclaw-console-hub
 | POST /auto-executor/stop | 停止 |
 | GET /dispatch/status | 派工模式狀態 + 待審任務 |
 | POST /dispatch/toggle | 開關派工模式 |
-| POST /dispatch/review/:taskId | 老蔡審核（approved/rejected） |
+| POST /dispatch/review/:taskId | 主人審核（approved/rejected） |
 | startAutoExecutor(interval?, maxTpm?) | 啟動執行迴圈 |
 | stopAutoExecutor() | 停止 |
 
@@ -138,7 +138,7 @@ Server: localhost:3011 | GitHub: sky770825/openclaw-console-hub
 | openclaw_evolution_log | 演化記錄 |
 | openclaw_projects | id, name, phases[] | 專案 |
 | openclaw_audit_logs | 稽核日誌 |
-| xiaocai_ideas | 小蔡發想 |
+| xiaocai_ideas | 達爾發想 |
 | fadp_members | FADP 成員 |
 | fadp_attack_events | 攻擊事件 |
 | fadp_blocklist | 封鎖名單 |
@@ -190,7 +190,7 @@ Server: localhost:3011 | GitHub: sky770825/openclaw-console-hub
 1. 建立任務 → openclaw_tasks 寫入（status: pending/ready）
 2. AutoExecutor 每 10 秒掃描 status=ready
 3. 撿到 → 標記 in_progress → riskClassifier 評估風險
-4. critical → 放入待審佇列 → Telegram 通知老蔡 → 等批准
+4. critical → 放入待審佇列 → Telegram 通知主人 → 等批准
 5. 其他 → AgentSelector.selectAgent() 選 agent
 6. AgentExecutor.execute() → generateAndExecute()
 7. callGeminiForScript() → Gemini 2.5 Flash 生成 bash 腳本

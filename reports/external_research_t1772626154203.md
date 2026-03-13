@@ -17,5 +17,5 @@
 
 ## 3. 阿研的改進建議 (Research Recommendations)
 1. **引入狀態流轉視覺化**: 參考 Linear 的設計，強化任務 ID 772626154203 的狀態轉換顯示。
-2. **外部集成能力**: 建議在 /Users/caijunchang/openclaw任務面版設計/src 中考慮加入 Webhook 接口，以便與外部 Agent 溝通。
+2. **外部集成能力**: 建議在 /Users/sky770825/openclaw任務面版設計/src 中考慮加入 Webhook 接口，以便與外部 Agent 溝通。
 3. **影子執行模式**: 在正式上線前，允許 Agent 在沙盒環境執行任務，並將日誌回傳至面板。

@@ -13,7 +13,7 @@ The `security-scanner` is designed to perform local security audits on project d
 Run the scanner by providing a target directory and an output path:
 
 ```bash
-/Users/caijunchang/.openclaw/workspace/sandbox/output/security-scanner.sh <target_path> <output_report_path>
+/Users/sky770825/.openclaw/workspace/sandbox/output/security-scanner.sh <target_path> <output_report_path>
 ```
 
 ## Requirements

@@ -9,7 +9,7 @@ echo "🚀 n8n 100% 全自動化部署 - 最終方案"
 echo "======================================"
 echo ""
 
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace"
 OPENAI_KEY="${OPENAI_API_KEY:-}"
 
 if [ -z "$OPENAI_KEY" ]; then

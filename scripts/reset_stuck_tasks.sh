@@ -1,7 +1,7 @@
 #!/bin/bash
 # Manual reset script for stuck tasks
 TARGET_IDS=("t1772427226902" "t1772429067794" "t1772437041072")
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 
 for ID in "${TARGET_IDS[@]}"; do
     FILE=$(find "$WORKSPACE" -name "${ID}.json" -maxdepth 4 2>/dev/null | head -n 1)

@@ -7,7 +7,7 @@ STATUS=$3
 MESSAGE=$4
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
 
-REPORTS_DIR="/Users/caijunchang/.openclaw/workspace/reports"
+REPORTS_DIR="/Users/sky770825/.openclaw/workspace/reports"
 STATUS_LOG="$REPORTS_DIR/crew_tasks_status.json"
 DASHBOARD_MD="$REPORTS_DIR/CREW_DASHBOARD.md"
 
@@ -28,7 +28,7 @@ jq --arg bot "$BOT_NAME" \
    "$STATUS_LOG" > "$TMP_JSON"
 mv "$TMP_JSON" "$STATUS_LOG"
 
-# 重新生成 Markdown 儀表板供小蔡閱讀
+# 重新生成 Markdown 儀表板供達爾閱讀
 echo "# 🤖 Crew Bots 任務進度追蹤面版" > "$DASHBOARD_MD"
 echo "最後更新時間: $TIMESTAMP" >> "$DASHBOARD_MD"
 echo "" >> "$DASHBOARD_MD"

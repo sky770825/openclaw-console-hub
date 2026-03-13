@@ -3,4 +3,4 @@ Quality Guard Audit Summary
 Test Case 001 (Empty Task): PASSED
 Test Case 002 (Real Task): PASSED
 
-Audit script path: /Users/caijunchang/.openclaw/workspace/sandbox/output/check-task-quality.sh
+Audit script path: /Users/sky770825/.openclaw/workspace/sandbox/output/check-task-quality.sh

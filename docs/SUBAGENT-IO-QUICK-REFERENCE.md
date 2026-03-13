@@ -8,7 +8,7 @@
 ## 🎯 核心流程
 
 ```
-老蔡指令 → 小蔡生成(task_id + run_id) → Subagent 執行 → 回報 → 老蔡 ACK
+主人指令 → 達爾生成(task_id + run_id) → Subagent 執行 → 回報 → 主人 ACK
 ```
 
 ---
@@ -78,7 +78,7 @@ echo "${IDEMPOTENCY_KEY}|success|$(date '+%Y-%m-%d %H:%M:%S')" >> \
 ## 📝 標準回報範本
 
 ```
-【小蔡執行-TASK_NAME】
+【達爾執行-TASK_NAME】
 task_id: task_1771007460_external-intel
 run_id: run_2861
 status: success
@@ -115,4 +115,4 @@ consecutive_failures: 0
 
 ---
 
-🐣 小蔡 | v2.1 快速參考 | 2026-02-14 02:31
+🐣 達爾 | v2.1 快速參考 | 2026-02-14 02:31

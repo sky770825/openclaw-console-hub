@@ -28,7 +28,7 @@
 
 | 等級 | 定義 | 觸發關鍵字範例 | 審核機制 |
 |---|---|---|---|
-| Critical | 最高風險 | deploy, billing, secret, key, production | 必須老蔡親審 |
+| Critical | 最高風險 | deploy, billing, secret, key, production | 必須主人親審 |
 | Medium | 中度風險 | delete, remove, drop, auth, rollback | Claude 審慎執行 |
 | Low | 一般風險 | (不含上述關鍵字的一般任務) | Claude 自動審核 |
 | None | 無風險 | health, report, list, read, test | 自動通過 |

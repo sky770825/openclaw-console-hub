@@ -7,8 +7,8 @@
     "existing_calls_count": "1"
   },
   "outputs": {
-    "sop_proposal": "/Users/caijunchang/.openclaw/workspace/proposals/openclaw_feature_page_kpi_sop.md",
-    "verification_tool": "/Users/caijunchang/.openclaw/workspace/scripts/verify_tracking_events.sh"
+    "sop_proposal": "/Users/sky770825/.openclaw/workspace/proposals/openclaw_feature_page_kpi_sop.md",
+    "verification_tool": "/Users/sky770825/.openclaw/workspace/scripts/verify_tracking_events.sh"
   },
   "status": "READY_FOR_IMPLEMENTATION"
 }

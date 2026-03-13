@@ -2,8 +2,8 @@
 set -e
 
 # Configuration
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
-WORKSPACE="/Users/caijunchang/.openclaw/workspace"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
+WORKSPACE="/Users/sky770825/.openclaw/workspace"
 SCRIPTS_DIR="$WORKSPACE/scripts"
 OUTPUT_DIR="$WORKSPACE/sandbox/output"
 mkdir -p "$SCRIPTS_DIR"
@@ -16,8 +16,8 @@ API_BASE="http://localhost:$PORT/api"
 
 # Locate the indexing tools
 # We search in common bin directories and the project structure
-INDEX_FILE_BIN=$(find /Users/caijunchang/.openclaw/bin "$PROJECT_ROOT" -name index_file -type f -executable 2>/dev/null | head -n 1 || which index_file 2>/dev/null || echo "")
-SEMANTIC_SEARCH_BIN=$(find /Users/caijunchang/.openclaw/bin "$PROJECT_ROOT" -name semantic_search -type f -executable 2>/dev/null | head -n 1 || which semantic_search 2>/dev/null || echo "")
+INDEX_FILE_BIN=$(find /Users/sky770825/.openclaw/bin "$PROJECT_ROOT" -name index_file -type f -executable 2>/dev/null | head -n 1 || which index_file 2>/dev/null || echo "")
+SEMANTIC_SEARCH_BIN=$(find /Users/sky770825/.openclaw/bin "$PROJECT_ROOT" -name semantic_search -type f -executable 2>/dev/null | head -n 1 || which semantic_search 2>/dev/null || echo "")
 
 # Define indexing function with fallback logic
 index_item() {
@@ -65,19 +65,19 @@ search_verify() {
 }
 
 # 1. Index Wave8 Summary
-index_item "/Users/caijunchang/.openclaw/workspace/knowledge/skills-wave8-summary.md" "knowledge" "high"
+index_item "/Users/sky770825/.openclaw/workspace/knowledge/skills-wave8-summary.md" "knowledge" "high"
 
 # 2. Index Bug Fixing Skill
-index_item "/Users/caijunchang/.openclaw/workspace/skills/bug-fixing/SKILL.md" "skills" "high"
+index_item "/Users/sky770825/.openclaw/workspace/skills/bug-fixing/SKILL.md" "skills" "high"
 
 # 3. Index Memory Master Skill
-index_item "/Users/caijunchang/.openclaw/workspace/skills/memory-master/SKILL.md" "skills" ""
+index_item "/Users/sky770825/.openclaw/workspace/skills/memory-master/SKILL.md" "skills" ""
 
 # 4. Index Memory Organizer Skill
-index_item "/Users/caijunchang/.openclaw/workspace/skills/memory-organizer/SKILL.md" "skills" ""
+index_item "/Users/sky770825/.openclaw/workspace/skills/memory-organizer/SKILL.md" "skills" ""
 
 # 5. Index Macro Pipeline Skill
-index_item "/Users/caijunchang/.openclaw/workspace/skills/macro-pipeline/SKILL.md" "skills" ""
+index_item "/Users/sky770825/.openclaw/workspace/skills/macro-pipeline/SKILL.md" "skills" ""
 
 echo "--------------------------------------------------"
 echo "All files submitted for indexing."

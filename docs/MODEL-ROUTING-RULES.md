@@ -41,7 +41,7 @@
 
 ---
 
-## 小蔡（Gateway）Fallback 鏈
+## 達爾（Gateway）Fallback 鏈
 
 ```
 主力: google/gemini-3-flash-preview
@@ -74,7 +74,7 @@ Fallback 4: anthropic/claude-haiku-4-5-20251001
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  L1 🐣  小蔡（Gateway）                                  │
+│  L1 🐣  達爾（Gateway）                                  │
 │     模型：Gemini 3 Flash（主力）                          │
 │     用途：日常對話、派工、Telegram 應答                     │
 │     成本：次數制，數千次/天，不用擔心 token                 │
@@ -127,7 +127,7 @@ Fallback 4: anthropic/claude-haiku-4-5-20251001
 | Gemini 3 Pro | 250次/天 | 用完轉 Grok |
 | Kimi | Token 收費，注意用量 | 轉 Grok/Haiku |
 | Grok | Token 收費，便宜 | 轉 Haiku |
-| Opus API | **完全禁用** | 除非老蔡明確批准 |
+| Opus API | **完全禁用** | 除非主人明確批准 |
 
 ---
 
@@ -135,7 +135,7 @@ Fallback 4: anthropic/claude-haiku-4-5-20251001
 
 | 檔案 | 用途 | 誰管 |
 |------|------|------|
-| `~/.openclaw/openclaw.json` | **主設定檔**（模型、API Key、Fallback） | 老蔡/Claude Code |
+| `~/.openclaw/openclaw.json` | **主設定檔**（模型、API Key、Fallback） | 主人/Claude Code |
 | `~/.openclaw/agents/main/agent/models.json` | Gateway runtime 快取（自動生成，不要手改） | Gateway 自動管理 |
 
 **重要：`models.json` 是 gateway 啟動時自動生成的，不要手動修改它。所有模型配置以 `openclaw.json` 為準。**
@@ -158,7 +158,7 @@ Fallback 4: anthropic/claude-haiku-4-5-20251001
 | ➕ 新增 | 次數制 vs Token 制說明 |
 | ➕ 新增 | 設定檔位置說明（openclaw.json vs models.json） |
 
-**驗證狀態**: ✅ 老蔡確認通過，正式定版
+**驗證狀態**: ✅ 主人確認通過，正式定版
 
 ### v2.2 (2026-02-15) - 定版
 四層 Agent 備援架構、Claude 代理機制、決策歸檔流程
@@ -168,4 +168,4 @@ Fallback 4: anthropic/claude-haiku-4-5-20251001
 
 ---
 
-🐣 小蔡 | 模型路由規則 v2.3 | 2026-02-16 定版
+🐣 達爾 | 模型路由規則 v2.3 | 2026-02-16 定版

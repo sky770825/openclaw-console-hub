@@ -1,6 +1,6 @@
 #!/bin/bash
 # OpenClaw New Device Setup Script
-# Generated for Old Cai (老蔡)
+# Generated for Old Cai (主人)
 set -e
 
 echo "--- Starting OpenClaw Environment Setup ---"
@@ -21,7 +21,7 @@ done
 
 echo "--- Environment Structure Prepared ---"
 echo "Next Steps:"
-echo "1. Clone the project source: git clone <repo_url> /Users/caijunchang/openclaw任務面版設計"
+echo "1. Clone the project source: git clone <repo_url> /Users/sky770825/openclaw任務面版設計"
 echo "2. Extract the migration package to $TARGET_BASE"
 echo "3. Re-install Node.js and Python dependencies if needed."
 echo "Setup Complete."

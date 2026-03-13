@@ -9,12 +9,12 @@ echo ""
 osascript << 'APPLESCRIPT'
 tell application "Terminal"
     activate
-    do script "\"$HOME/Desktop/小蔡/中控台/🎛️中控台.command\""
+    do script "\"$HOME/Desktop/達爾/中控台/🎛️中控台.command\""
 end tell
 APPLESCRIPT
 
 echo "✅ 中控台已啟動"
 echo ""
 echo "同時開啟網頁版..."
-open "$HOME/Desktop/小蔡/中控台/中控台.html" 2>/dev/null
+open "$HOME/Desktop/達爾/中控台/中控台.html" 2>/dev/null
 

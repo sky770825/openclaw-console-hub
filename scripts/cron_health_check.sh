@@ -10,5 +10,5 @@ echo "Auto-Executor Status: $IS_RUNNING, Last Executed: $LAST_EXEC"
 
 if [ "$IS_RUNNING" = "true" ] && [ "$LAST_EXEC" = "null" ]; then
     echo "CRITICAL: Executor is running but idle. Forcing dispatch..."
-    /Users/caijunchang/.openclaw/workspace/scripts/auto_dispatch_trigger.sh
+    /Users/sky770825/.openclaw/workspace/scripts/auto_dispatch_trigger.sh
 fi

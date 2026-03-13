@@ -1,5 +1,5 @@
 #!/bin/bash
-DB_FILE="/Users/caijunchang/.openclaw/workspace/sandbox/menu_system.db"
+DB_FILE="/Users/sky770825/.openclaw/workspace/sandbox/menu_system.db"
 
 function list_categories() {
     sqlite3 -header -column "$DB_FILE" "SELECT * FROM categories;"

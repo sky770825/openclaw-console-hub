@@ -1,2 +1,2 @@
 #!/bin/bash
-cat /Users/caijunchang/.openclaw/workspace/sandbox/MEMORY.md
+cat /Users/sky770825/.openclaw/workspace/sandbox/MEMORY.md

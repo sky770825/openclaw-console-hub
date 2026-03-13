@@ -23,7 +23,7 @@ def audit_file(filepath):
     return issues
 
 def main():
-    skills_dir = "/Users/caijunchang/.openclaw/workspace/skills"
+    skills_dir = "/Users/sky770825/.openclaw/workspace/skills"
     print(f"--- Starting Security Audit on {skills_dir} ---")
     total_issues = 0
     for root, dirs, files in os.walk(skills_dir):

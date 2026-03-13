@@ -675,10 +675,10 @@ A: [檢查流程]
 ## 📝 參考資料
 
 **相關文件**：
-- 當前 MEMORY.md：/Users/caijunchang/.openclaw/workspace/MEMORY.md
-- 當前 AGENTS.md：/Users/caijunchang/.openclaw/workspace/AGENTS.md
-- NOW.md 示例：/Users/caijunchang/.openclaw/workspace/NOW.md
-- memory_recall.js：/Users/caijunchang/.openclaw/workspace/scripts/memory_recall.js
+- 當前 MEMORY.md：/Users/sky770825/.openclaw/workspace/MEMORY.md
+- 當前 AGENTS.md：/Users/sky770825/.openclaw/workspace/AGENTS.md
+- NOW.md 示例：/Users/sky770825/.openclaw/workspace/NOW.md
+- memory_recall.js：/Users/sky770825/.openclaw/workspace/scripts/memory_recall.js
 
 **技術文檔**：
 - SeekDB 文件：已安裝在本地

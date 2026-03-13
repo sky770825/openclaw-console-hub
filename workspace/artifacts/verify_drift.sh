@@ -1,6 +1,6 @@
 #!/bin/bash
 # NEUXA Knowledge Drift Verification Tool
-WORKSPACE="/Users/caijunchang/.openclaw/workspace/sandbox"
+WORKSPACE="/Users/sky770825/.openclaw/workspace/sandbox"
 echo "Checking for knowledge drift..."
 FILES_TO_CHECK=("SYSTEM-RESOURCES.md" "CODEBASE-INDEX.md" "TOOLS.md")
 

@@ -1,7 +1,7 @@
 #!/bin/bash
-# 指揮官小蔡建立的會員系統快速啟動腳本
+# 指揮官達爾建立的會員系統快速啟動腳本
 
-TARGET_DIR="/Users/caijunchang/Desktop/小蔡資料夾/會員資料夾/basic-auth-system"
+TARGET_DIR="/Users/sky770825/Desktop/達爾資料夾/會員資料夾/basic-auth-system"
 
 cd "$TARGET_DIR"
 

@@ -1,11 +1,11 @@
 #!/bin/bash
-# 小蔡指令系統：自主排解、拒絕卡關診斷工具
+# 達爾指令系統：自主排解、拒絕卡關診斷工具
 
-REPORT_PATH="/Users/caijunchang/.openclaw/workspace/reports/diagnosis_$(date +%Y%m%d_%H%M%S).report"
-SRC="/Users/caijunchang/openclaw任務面版設計"
+REPORT_PATH="/Users/sky770825/.openclaw/workspace/reports/diagnosis_$(date +%Y%m%d_%H%M%S).report"
+SRC="/Users/sky770825/openclaw任務面版設計"
 
 echo "==========================================" | tee -a "$REPORT_PATH"
-echo "  [阿秘] 執行老蔡核心指令：自主排解診斷" | tee -a "$REPORT_PATH"
+echo "  [阿秘] 執行主人核心指令：自主排解診斷" | tee -a "$REPORT_PATH"
 echo "  時間: $(date)" | tee -a "$REPORT_PATH"
 echo "==========================================" | tee -a "$REPORT_PATH"
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Utility to explore the openclaw任務面版設計 project
-PROJECT_ROOT="/Users/caijunchang/openclaw任務面版設計"
+PROJECT_ROOT="/Users/sky770825/openclaw任務面版設計"
 
 usage() {
     echo "Usage: $0 [tree|grep <pattern>|find <name>]"

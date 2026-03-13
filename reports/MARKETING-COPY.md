@@ -125,5 +125,5 @@ AI Agent, 自動化監控, 系統日誌分析, Ollama, Telegram 通知, 本地 A
 
 ---
 
-*文案由 Ollama (qwen3:8b) 自動生成，小蔡指揮調度*  
+*文案由 Ollama (qwen3:8b) 自動生成，達爾指揮調度*  
 *任務板 ID: t1770897857619*

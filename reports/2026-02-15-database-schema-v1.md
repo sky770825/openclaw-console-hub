@@ -517,8 +517,8 @@ CREATE TRIGGER update_tasks_updated_at
 ```json
 {
   "id": "task_abc123",
-  "project_path": "/Users/caijunchang/workspace/my-app",
-  "run_path": "/Users/caijunchang/workspace/my-app/src",
+  "project_path": "/Users/sky770825/workspace/my-app",
+  "run_path": "/Users/sky770825/workspace/my-app/src",
   "idempotency_key": "task:code_generation:a1b2c3d4e5",
   "task_type": "code_generation",
   "prompt": "Generate a React component for user profile...",

@@ -67,7 +67,7 @@ def patch_governance_engine(file_path):
     return True
 
 if __name__ == "__main__":
-    target = "/Users/caijunchang/openclaw任務面版設計/server/src/governanceEngine.ts"
+    target = "/Users/sky770825/openclaw任務面版設計/server/src/governanceEngine.ts"
     success = patch_governance_engine(target)
     if not success:
         sys.exit(1)

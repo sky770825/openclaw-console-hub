@@ -1,9 +1,9 @@
 BrowserService Deployment Report
 ===============================
 Date: Mon Mar  2 22:35:01 CST 2026
-Target Directory: /Users/caijunchang/.openclaw/workspace/sandbox/server/src/services
+Target Directory: /Users/sky770825/.openclaw/workspace/sandbox/server/src/services
 Deployment Status: Created fallback BrowserService implementation.
 Permissions: 755
-Verification Script: /Users/caijunchang/.openclaw/workspace/scripts/verify_browser_service.sh
+Verification Script: /Users/sky770825/.openclaw/workspace/scripts/verify_browser_service.sh
 Files in services:
 BrowserService.ts*

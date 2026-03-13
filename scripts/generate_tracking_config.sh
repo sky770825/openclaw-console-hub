@@ -2,7 +2,7 @@
 # This script generates a JSON configuration for GA4 event tracking
 # based on the features defined in the UI components.
 
-OUTPUT_JSON="/Users/caijunchang/.openclaw/workspace/sandbox/output/tracking_config.json"
+OUTPUT_JSON="/Users/sky770825/.openclaw/workspace/sandbox/output/tracking_config.json"
 
 echo "Creating tracking configuration..."
 

@@ -1,7 +1,7 @@
 # Subagent 任務通知機制
 
 ## 問題
-Subagent (Cursor/Codex) 完成任務後，老蔡收不到通知。
+Subagent (Cursor/Codex) 完成任務後，主人收不到通知。
 
 ## 解決方案
 
@@ -12,7 +12,7 @@ Subagent (Cursor/Codex) 完成任務後，老蔡收不到通知。
 完成後務必執行：
 curl -X POST http://127.0.0.1:3011/api/telegram/force-test \
   -H "Content-Type: application/json" \
-  -d '{"chat_id":"5819565005","text":"【小蔡執行-XXX】\n..."}'
+  -d '{"chat_id":"5819565005","text":"【達爾執行-XXX】\n..."}'
 ```
 
 ### 方案 B：建立回報鉤子（短期）

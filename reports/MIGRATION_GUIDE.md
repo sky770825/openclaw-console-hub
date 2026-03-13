@@ -1,6 +1,6 @@
 # OpenClaw 設備遷移指南 (Migration Guide)
 
-老蔡您好，這是為您準備的無痛接軌遷移包。
+主人您好，這是為您準備的無痛接軌遷移包。
 
 ## 包含內容 (Workspace Assets):
 - **sandbox/**: 所有的沙盒測試檔案

@@ -2,7 +2,7 @@
 # Visual Feedback: Formats results into a visual report
 REPORT_NAME=$1
 CONTENT=$2
-OUTPUT_FILE="/Users/caijunchang/.openclaw/workspace/reports/${REPORT_NAME}.md"
+OUTPUT_FILE="/Users/sky770825/.openclaw/workspace/reports/${REPORT_NAME}.md"
 
 {
     echo "# Visual Feedback Report: $REPORT_NAME"

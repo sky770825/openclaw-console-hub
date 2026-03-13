@@ -263,7 +263,7 @@ spawn per-issue：read issue → clone repo → edit → test。
 
 ---
 
-**更新**: v1.2 新增 2025年度性能回顧（4倍速度、2倍效率、67% PR合併率、$73M ARR）、Goldman Sachs案例、.NET遷移案例。2025 by 小蔡。
+**更新**: v1.2 新增 2025年度性能回顧（4倍速度、2倍效率、67% PR合併率、$73M ARR）、Goldman Sachs案例、.NET遷移案例。2025 by 達爾。
 
 **版本歷史**:
 - v1.1: 初始完整版（2026-02-16）

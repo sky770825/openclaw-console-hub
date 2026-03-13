@@ -26,4 +26,4 @@ console.log(result);
 (已排除 Done Task)
 
 ---
-小蔡心跳自主練習記錄
+達爾心跳自主練習記錄

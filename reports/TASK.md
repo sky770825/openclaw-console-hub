@@ -3,7 +3,7 @@
 ## 專案資訊
 - **專案名稱**: OpenClaw Agent Framework (ClawFlow)
 - **目標**: 設計核心架構技術規格文件
-- **路徑**: /Users/caijunchang/.openclaw/workspace/openclaw-agent-framework
+- **路徑**: /Users/sky770825/.openclaw/workspace/openclaw-agent-framework
 
 ## 需要設計的核心模組
 

@@ -1,0 +1,92 @@
+PROJECT ANALYSIS REPORT
+Generated on: Fri Mar 13 10:28:56 CST 2026
+Target: /Users/sky770825/openclaw任務面版設計
+
+--- TOP LEVEL STRUCTURE ---
+aegis-scanner-v0.1/
+armory/
+auto-executor-state.json*
+auto-task-generator-state.json*
+backend/
+backups/
+beauty-industry-website/
+bun.lockb*
+CLAUDE.md*
+components.json*
+control_scripts.py*
+control_scripts.py.bak*
+cookbook/
+create_xiaocai_ideas_table.sql*
+deploy/
+dev.log*
+dist/
+docs/
+eslint.config.js*
+health-report-google.com-20260227-053842.json*
+index.html*
+knowledge/
+logs/
+memories/
+monitoring_engine.py*
+monitoring_engine.py.bak*
+n8n-workflows/
+node_modules/
+nohup.out*
+ollama_bot2_launchd.err.log*
+ollama_bot2_launchd.log*
+ollama_bot2.env.example*
+ollama_bot2.log*
+ollama_bot2.py*
+ollama_client.py*
+ollama_monitor_bot.log*
+ollama_monitor_bot.py*
+ollama任務版.jsx*
+openclaw-不是正式.jsx*
+openclaw-cursor.jsx*
+openclaw-main/
+openclaw-v4.jsx*
+orchestrator/
+package-lock.json*
+package.json*
+postcss.config.js*
+projects/
+PROPOSAL-REPORT.md*
+public/
+rag_update.err.log*
+rag_update.log*
+railway.json*
+README.md*
+RESULT.md*
+runtime-checkpoints/
+sandbox/
+scripts/
+server/
+server.log*
+skills/
+src/
+subagents/
+supabase/
+tailwind.config.ts*
+tsconfig.app.json*
+tsconfig.json*
+tsconfig.node.json*
+vite.config.ts*
+vitest.config.ts*
+
+--- DETECTED COMPONENTS ---
+- Server directory found
+- Frontend (src) directory found
+- package.json found (Node.js project)
+
+
+--- RECENT CHANGES (Last 5 modified files) ---
+/Users/sky770825/openclaw任務面版設計/server/runtime-checkpoints/telegram-control.json
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts.bak
+/Users/sky770825/openclaw任務面版設計/server/src/executor-agents.ts.bak
+/Users/sky770825/openclaw任務面版設計/src/vite-env.d.ts
+
+--- SUMMARY OF RESTRICTIONS ---
+- Modification of /Users/sky770825/openclaw任務面版設計/server/src/ is strictly prohibited.
+- Modification of /Users/sky770825/openclaw任務面版設計/src/ is strictly prohibited.
+- Modifying soul/identity files is strictly prohibited.

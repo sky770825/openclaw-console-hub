@@ -2,7 +2,7 @@
 # 專案初始化腳本 - 阿工
 set -e
 
-PROJECT_ROOT="/Users/caijunchang/.openclaw/workspace/sandbox/output/beauty-web-pro"
+PROJECT_ROOT="/Users/sky770825/.openclaw/workspace/sandbox/output/beauty-web-pro"
 
 echo "Initializing Beauty Web Pro Environment..."
 cd "$PROJECT_ROOT"

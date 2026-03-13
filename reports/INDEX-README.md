@@ -130,4 +130,4 @@ cat memory/INDEX.md
 
 ---
 
-*系統版本: v2.0 | 執行者: 小蔡 | 任務 ID: memory-index-20260214*
+*系統版本: v2.0 | 執行者: 達爾 | 任務 ID: memory-index-20260214*

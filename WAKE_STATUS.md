@@ -19,7 +19,7 @@
 
 ## 🟢 系統狀態
 - **後端 Server (3011)**：✅ 在線
-- **小蔡工作目錄**：✅ /Users/caijunchang/openclaw任務面版設計
+- **達爾工作目錄**：✅ /Users/sky770825/openclaw任務面版設計
 - **Deputy 模式**：啟用 | 最後跑: 2026-02-19T02:00
 - **Auto-Executor**：運行中 | 最後執行: 2026-03-08T04:42 | 今日: 14
 - **FADP 聯盟協防**：成員:0 封鎖IP:0 封鎖Token:0
@@ -33,7 +33,7 @@
 ## 🔀 最新 Git Commits
   e1b54b90 chore: 星群模型重整 — 阿工阿研改 Flash + Claude CLI 排隊升級 (v2.5.28)
   e7ea0656 chore: daily version bump 2.5.27 → 2.5.28 [2026-03-08]
-  c05b02f6 feat: 星群閉環回傳 — crew bots 回覆自動彙整發回老蔡私訊 (v2.5.27)
+  c05b02f6 feat: 星群閉環回傳 — crew bots 回覆自動彙整發回主人私訊 (v2.5.27)
 
 ## 🧠 NEUXA 動態
 - **最新對話: 2026-03-08.md (18:01)**
@@ -42,7 +42,7 @@
 - **NEUXA memory 目錄**：~/.openclaw/workspace/memory/（讀最新 .md 可銜接）
 
 ## 🤝 協作指引
-1. **小蔡（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
+1. **達爾（NEUXA）** 的 Telegram bot 在運行中，記憶在 ~/.openclaw/workspace/memory/
 2. **review/pending**：有待審文件就優先處理
 3. **任務優先**：先看上面的「待處理任務」，有 running 的先跟進
 4. **Server 重啟**：如果 Server 離線，用 launchctl stop/start com.openclaw.taskboard

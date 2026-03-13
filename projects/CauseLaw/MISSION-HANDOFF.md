@@ -7,7 +7,7 @@
 將《因果真相》專案升級為全模組化的寫實旗艦版。
 
 ## 📍 關鍵路徑 (Key Paths)
-- Workspace: `/Users/caijunchang/.openclaw/workspace/projects/小蔡/因果/`
+- Workspace: `/Users/sky770825/.openclaw/workspace/projects/達爾/因果/`
 - 主檔案: `index.html` (2869行全細節版)
 - 視覺模組: `styles.css`
 - 特效模組: `particles.js`
@@ -23,4 +23,4 @@
 2. **地獄地圖**: 協助繪製真實的「垂直維度模擬地圖」。
 
 ---
-*指揮官老蔡已授權，請各級代理立即執行！*
+*指揮官主人已授權，請各級代理立即執行！*

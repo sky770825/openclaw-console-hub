@@ -14,7 +14,7 @@
 ### 🎬 下架決策
 - 商業盤點：全部封存（無任務卡）
 - 報告位置：/workspace/reports/business-model-audit-*
-- 狀態：HOLD（待老蔡後續決策）
+- 狀態：HOLD（待主人後續決策）
 
 ### 📊 任務池狀態
 - Ready: 30 個（目標 20+）✅
@@ -51,4 +51,4 @@ Ready 任務: 30 個（足夠）
 
 ---
 
-🐣 小蔡 | Final Handoff | 2026-02-14 02:58 GMT+8
+🐣 達爾 | Final Handoff | 2026-02-14 02:58 GMT+8

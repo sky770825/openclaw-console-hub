@@ -1,12 +1,12 @@
 #!/bin/bash
-# 小蔡大腦管理工具 - 核心實作
+# 達爾大腦管理工具 - 核心實作
 
 DB_DIR="./brain_data"
 SNAPSHOT_DIR="./snapshots"
 mkdir -p "$DB_DIR" "$SNAPSHOT_DIR"
 
 # 模擬核心組件
-echo '{"name": "小蔡", "version": "1.0", "role": "技術專家"}' > "$DB_DIR/soul.json"
+echo '{"name": "達爾", "version": "1.0", "role": "技術專家"}' > "$DB_DIR/soul.json"
 echo '{"tools": ["bash", "python", "curl"], "mode": "execution"}' > "$DB_DIR/agents.json"
 
 function log() {

@@ -116,7 +116,7 @@ last_index_chunks: ${TOTAL_CHUNKS}
 last_index_duration: ${DURATION} seconds
 EOF
 
-        # 寫入記憶日誌（供小蔡查詢）
+        # 寫入記憶日誌（供堤諾米斯達爾（達爾）查詢）
         MEMORY_LOG="${WORKSPACE}/memory/autopilot-results/indexing-history.md"
         mkdir -p "$(dirname "$MEMORY_LOG")"
 
@@ -150,7 +150,7 @@ RECORD
 
         log_success "索引完成：${TOTAL_FILES} 檔案 → ${TOTAL_CHUNKS} chunks"
 
-        # 發送 Telegram 通知（而非輸出給小蔡）
+        # 發送 Telegram 通知（而非輸出給堤諾米斯達爾（達爾））
         NOTIFICATION="🧠 *向量索引更新完成*
 
 📊 檔案：${TOTAL_FILES} 個
@@ -162,7 +162,7 @@ RECORD
         send_telegram_notification "$NOTIFICATION"
         log_success "已發送 Telegram 通知給 @gousmaaa"
 
-        # 結構化輸出（供小蔡記憶）
+        # 結構化輸出（供堤諾米斯達爾（達爾）記憶）
         if [[ "$SILENT_MODE" == "true" ]]; then
             # Autopilot 模式：輸出簡潔但有資訊的摘要
             echo "✅ 索引完成 | 檔案:${TOTAL_FILES} | Chunks:${TOTAL_CHUNKS} | 耗時:${DURATION}s"

@@ -7,10 +7,10 @@
 
 | 角色 | 職責 | 執行者 |
 |------|------|--------|
-| **指揮官** | 策略制定、任務派發、里程碑審查 | 小蔡 |
+| **指揮官** | 策略制定、任務派發、里程碑審查 | 達爾 |
 | **執行代理** | 程式開發、系統建置、測試驗收 | 🧑‍💻 Codex / 🎯 Cursor |
 | **摘要整理** | 進度摘要、下一步規劃、寫回任務卡 | Ollama (qwen3:8b) |
-| **巡檢員** | 定期檢查專案進度、輸出策略進展 | 小蔡 (低頻率) |
+| **巡檢員** | 定期檢查專案進度、輸出策略進展 | 達爾 (低頻率) |
 
 ## 2. 任務包必填欄位
 
@@ -36,7 +36,7 @@ task:
   modelPolicy:                                # 新增：模型使用政策
     default: "ollama/qwen3:8b"                # 預設：本地免費
     fallback: "subscription/codex-native"     # 備援：訂閱制
-    upgradeRequires: "riskLevel=high + 老蔡確認"  # 升級條件
+    upgradeRequires: "riskLevel=high + 主人確認"  # 升級條件
 ```
 
 ## 3. 里程碑回報規則
@@ -102,15 +102,15 @@ execution:
 ### 禁止預設使用（需特別核准）
 | 模型 | 成本 | 核准條件 |
 |------|------|----------|
-| `kimi/kimi-k2.5` | 按量計費 | `riskLevel=high` + 老蔡確認 |
-| `anthropic/claude-opus-4` | 高 | `riskLevel=high` + 老蔡確認 |
-| `openrouter/gemini-pro` | 中 | `riskLevel=high` + 老蔡確認 |
+| `kimi/kimi-k2.5` | 按量計費 | `riskLevel=high` + 主人確認 |
+| `anthropic/claude-opus-4` | 高 | `riskLevel=high` + 主人確認 |
+| `openrouter/gemini-pro` | 中 | `riskLevel=high` + 主人確認 |
 
 ### 強制檢查
 ```bash
 # scripts/model-policy-guard.sh
 if [[ "$MODEL" =~ ^(kimi|opus|gemini-pro) ]] && [[ "$riskLevel" != "high" ]]; then
-  echo "❌ 付費模型需 riskLevel=high + 老蔡確認"
+  echo "❌ 付費模型需 riskLevel=high + 主人確認"
   exit 1
 fi
 ```

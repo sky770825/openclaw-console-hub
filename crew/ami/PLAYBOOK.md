@@ -19,7 +19,7 @@
 
 整理功能開發紀錄：
 ```json
-{"action":"write_file","path":"~/.openclaw/workspace/crew/ami/notes/live2d-development-record.md","content":"## Live2D 互動功能開發紀錄\n\n### 時間軸\n- 14:00 阿策拆解需求，建立 3 個子任務\n- 14:30 阿研開始技術調研\n- 15:00 阿研完成調研，建議 pixi-live2d-display v0.4\n- 15:30 阿工開始實作 API 端點\n- 17:00 阿工完成，小蔡 push\n\n### 產出物\n- 調研報告：crew/ayan/notes/live2d-research.md\n- 新增檔案：server/src/routes/live2dRoutes.ts\n\n### 版本\nv2.5.7"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/ami/notes/live2d-development-record.md","content":"## Live2D 互動功能開發紀錄\n\n### 時間軸\n- 14:00 阿策拆解需求，建立 3 個子任務\n- 14:30 阿研開始技術調研\n- 15:00 阿研完成調研，建議 pixi-live2d-display v0.4\n- 15:30 阿工開始實作 API 端點\n- 17:00 阿工完成，達爾 push\n\n### 產出物\n- 調研報告：crew/ayan/notes/live2d-research.md\n- 新增檔案：server/src/routes/live2dRoutes.ts\n\n### 版本\nv2.5.7"}
 ```
 
 歸檔到知識庫：
@@ -43,7 +43,7 @@
 
 寫事後報告：
 ```json
-{"action":"write_file","path":"~/.openclaw/workspace/crew/ami/notes/postmortem-20260306-tasks-500.md","content":"## 事後報告：tasks 端點 500 錯誤\n\n### 事件摘要\n- 發生時間：2026-03-06 14:30-15:30\n- 影響：POST /api/openclaw/tasks 返回 500\n- 根因：缺少 request body null check\n- 修復：新增參數驗證 + try-catch\n- 修復人：阿工\n\n### 時間軸\n- 14:30 阿研掃 log 發現異常\n- 14:45 阿研寫 alert 給阿工\n- 15:00 阿工開始排查\n- 15:20 阿工 patch_file 修復\n- 15:30 小蔡 push + restart\n\n### 後續\n阿策已建任務：全面 null check 審查"}
+{"action":"write_file","path":"~/.openclaw/workspace/crew/ami/notes/postmortem-20260306-tasks-500.md","content":"## 事後報告：tasks 端點 500 錯誤\n\n### 事件摘要\n- 發生時間：2026-03-06 14:30-15:30\n- 影響：POST /api/openclaw/tasks 返回 500\n- 根因：缺少 request body null check\n- 修復：新增參數驗證 + try-catch\n- 修復人：阿工\n\n### 時間軸\n- 14:30 阿研掃 log 發現異常\n- 14:45 阿研寫 alert 給阿工\n- 15:00 阿工開始排查\n- 15:20 阿工 patch_file 修復\n- 15:30 達爾 push + restart\n\n### 後續\n阿策已建任務：全面 null check 審查"}
 ```
 
 入庫：
@@ -118,7 +118,7 @@
 
 ---
 
-## 情境 6：老蔡/小蔡直接指令
+## 情境 6：主人/達爾直接指令
 
 被點名就最優先。常備 action：
 

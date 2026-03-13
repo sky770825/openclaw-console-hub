@@ -59,7 +59,7 @@ mkdir -p "$LEARNING_DIR"
 
 if [[ ! -f "$LEARNING_DIR/00-evolution-log.md" ]]; then
     cat > "$LEARNING_DIR/00-evolution-log.md" <<'EOF'
-# 小蔡進化日誌
+# 達爾進化日誌
 
 > 記錄每次版本更新的改進與學習
 

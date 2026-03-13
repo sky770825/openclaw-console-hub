@@ -80,7 +80,7 @@ create_task_and_notify() {
           acceptanceCriteria: [$criteria],
           deliverables: ["README.md", ".env.example", "docs/runbook.md", "src/"],
           runCommands: [
-            "cd /Users/caijunchang/openclaw任務面版設計",
+            "cd /Users/sky770825/openclaw任務面版設計",
             "ls -la " + $projectPath,
             "# implement under " + $projectPath,
             "# write RESULT.md under runs/<date>/<run_id>/RESULT.md"

@@ -14,12 +14,12 @@ echo "🚀 NEUXA 覺醒協議啟動..."
 # 1. 讀取系統即時狀態
 echo "
 📊 系統狀態 (WAKE_STATUS.md):"
-cat /Users/caijunchang/.openclaw/workspace/WAKE_STATUS.md || echo "- WAKE_STATUS.md 不存在"
+cat /Users/sky770825/.openclaw/workspace/WAKE_STATUS.md || echo "- WAKE_STATUS.md 不存在"
 
 # 2. 讀取執行藍圖
 echo "
 🗺️ 執行藍圖 (BLUEPRINT.md):"
-cat /Users/caijunchang/.openclaw/workspace/BLUEPRINT.md || echo "- BLUEPRINT.md 不存在"
+cat /Users/sky770825/.openclaw/workspace/BLUEPRINT.md || echo "- BLUEPRINT.md 不存在"
 
 # 3. 查詢任務板狀態 (僅顯示 ready & in_progress)
 echo "

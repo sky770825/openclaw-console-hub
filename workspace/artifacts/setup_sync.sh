@@ -1,7 +1,7 @@
 #!/bin/bash
-# 此腳本將在主環境建立連結，讓小蔡直接在 workspace 看到產出
-TARGET_LINK="/Users/caijunchang/.openclaw/workspace/view_results"
-SOURCE_DIR="/Users/caijunchang/.openclaw/workspace/sandbox/output"
+# 此腳本將在主環境建立連結，讓達爾直接在 workspace 看到產出
+TARGET_LINK="/Users/sky770825/.openclaw/workspace/view_results"
+SOURCE_DIR="/Users/sky770825/.openclaw/workspace/sandbox/output"
 
 if [ -L "$TARGET_LINK" ]; then
     echo "連結已存在，正在更新..."

@@ -2,8 +2,8 @@
 set -e
 
 TASK_FILE=$1
-OUTBOX="/Users/caijunchang/.openclaw/workspace/sandbox/outbox"
-REPORTS="/Users/caijunchang/.openclaw/workspace/reports"
+OUTBOX="/Users/sky770825/.openclaw/workspace/sandbox/outbox"
+REPORTS="/Users/sky770825/.openclaw/workspace/reports"
 
 # Parse Task using jq
 TASK_ID=$(jq -r '.task_id' "$TASK_FILE")

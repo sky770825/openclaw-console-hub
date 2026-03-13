@@ -1,7 +1,7 @@
 Starting Type Verification for QualityGate fix...
-Target: /Users/caijunchang/openclaw任務面版設計/server
+Target: /Users/sky770825/openclaw任務面版設計/server
 Timestamp: Sun Mar  1 15:23:55 CST 2026
 --------------------------------------
-/Users/caijunchang/.openclaw/workspace/sandbox/task-1772349835343.sh: line 34: npx: command not found
+/Users/sky770825/.openclaw/workspace/sandbox/task-1772349835343.sh: line 34: npx: command not found
 --------------------------------------
 Result: FAILED

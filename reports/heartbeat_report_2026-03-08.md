@@ -2,7 +2,7 @@
 # 心跳報告：2026-03-08
 
 ## 系統健康狀況
-•   環境檢查腳本 ami_env_check.sh 執行成功，所有關鍵目錄（sandbox, scripts, reports）寫入權限正常，專案源碼 /Users/caijunchang/openclaw任務面版設計 可讀取。
+•   環境檢查腳本 ami_env_check.sh 執行成功，所有關鍵目錄（sandbox, scripts, reports）寫入權限正常，專案源碼 /Users/sky770825/openclaw任務面版設計 可讀取。
 •   系統穩定，未偵測到異常狀況。
 
 ## 任務板狀態
@@ -13,4 +13,4 @@
 •   相關執行記錄已更新至 GROWTH.md 並完成索引。
 
 ## 總結
-系統運行狀況良好，小蔡已完成例行心跳檢查及自主練習。
+系統運行狀況良好，達爾已完成例行心跳檢查及自主練習。

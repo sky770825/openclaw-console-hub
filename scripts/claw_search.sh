@@ -1,6 +1,6 @@
 #!/bin/bash
 # Helper script to search project source safely
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
 SEARCH_TERM=$1
 
 if [ -z "$SEARCH_TERM" ]; then

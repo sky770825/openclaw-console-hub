@@ -100,7 +100,7 @@ openclaw sessions cleanup --max-tokens 100000 --older-than 24h
 設定 cron job：
 ```cron
 # 每 6 小時檢查一次
-0 */6 * * * /Users/caijunchang/.openclaw/scripts/token-cleanup.sh
+0 */6 * * * /Users/sky770825/.openclaw/scripts/token-cleanup.sh
 ```
 
 ---
@@ -165,4 +165,4 @@ openclaw doctor
 ---
 
 *建立時間: 2026-02-12 21:20*
-*負責人: 小蔡*
+*負責人: 達爾*

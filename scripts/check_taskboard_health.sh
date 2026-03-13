@@ -19,7 +19,7 @@ NODE_VER=$(node -v 2>/dev/null || echo "未安裝")
 echo "Node 版本: $NODE_VER"
 
 # 3. 檢查必要目錄
-SOURCE_DIR="/Users/caijunchang/openclaw任務面版設計"
+SOURCE_DIR="/Users/sky770825/openclaw任務面版設計"
 echo "[3/3] 檢查原始碼目錄..."
 if [ -d "$SOURCE_DIR" ]; then
     echo "✅ 原始碼目錄存在"

@@ -10,5 +10,5 @@
 3. 建立 `reactionMap` 將後端事件映射至模型 Motion ID。
 
 ## 檔案位置清單
-- 規劃書: /Users/caijunchang/.openclaw/workspace/proposals/live2d_ecosystem_v1.md
-- 模擬器: /Users/caijunchang/.openclaw/workspace/scripts/live2d_state_simulator.py
+- 規劃書: /Users/sky770825/.openclaw/workspace/proposals/live2d_ecosystem_v1.md
+- 模擬器: /Users/sky770825/.openclaw/workspace/scripts/live2d_state_simulator.py

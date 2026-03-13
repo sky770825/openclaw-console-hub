@@ -1,4 +1,4 @@
-# 【小蔡執行-AUDIT_FORCE_TEST_CONFIG】調查報告
+# 【達爾執行-AUDIT_FORCE_TEST_CONFIG】調查報告
 
 ## 執行時間
 2026-02-14 17:55:00
@@ -7,7 +7,7 @@
 
 ### 來源確認
 **FORCE TEST 訊息來源已確認：**
-- **檔案位置**: `/Users/caijunchang/openclaw任務面版設計/server/src/index.ts`
+- **檔案位置**: `/Users/sky770825/openclaw任務面版設計/server/src/index.ts`
 - **API Endpoint**: `/api/telegram/force-test` (第 2832 行)
 - **伺服器**: OpenClaw TaskBoard Server (port 3011)
 

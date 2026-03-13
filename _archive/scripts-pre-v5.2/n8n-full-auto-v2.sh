@@ -11,7 +11,7 @@ echo ""
 
 # 設定變數
 N8N_URL="http://localhost:5678"
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace"
 N8N_CONTAINER="n8n-production-n8n-1"
 POSTGRES_CONTAINER="n8n-production-postgres-1"
 OPENAI_KEY="${OPENAI_API_KEY:-}"

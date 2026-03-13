@@ -1,6 +1,6 @@
 ## PWA 戰役現狀分析
 
-根據指揮官小蔡的指示，我們對 `vite.config.ts` 中的 VitePWA 設定進行了檢查，並評估了 `public/icons` 資源的預期狀態，以達成讓客戶能將應用程式安裝為桌面 App 的目標。
+根據指揮官達爾的指示，我們對 `vite.config.ts` 中的 VitePWA 設定進行了檢查，並評估了 `public/icons` 資源的預期狀態，以達成讓客戶能將應用程式安裝為桌面 App 的目標。
 
 ### 1. VitePWA 設定檢查
 

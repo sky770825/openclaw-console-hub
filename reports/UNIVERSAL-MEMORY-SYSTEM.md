@@ -116,7 +116,7 @@
 ./complete-current-task.sh "成功" "清除了 500 個過期檔案，釋放 2.3GB 空間"
 ```
 
-**適用場景**: 當 `autopilot-lean.sh` 拉取任務後，小蔡完成任務時使用。
+**適用場景**: 當 `autopilot-lean.sh` 拉取任務後，達爾完成任務時使用。
 
 ---
 
@@ -185,7 +185,7 @@
 
 ## 🔄 使用流程
 
-### 場景 1: Autopilot 拉取任務（小蔡手動執行）
+### 場景 1: Autopilot 拉取任務（達爾手動執行）
 
 ```bash
 # 1. Autopilot 拉取任務
@@ -193,7 +193,7 @@
 # 輸出: Picked task: 資料清理 (task-123)
 #      💡 完成後請執行: scripts/complete-current-task.sh
 
-# 2. 小蔡執行任務...
+# 2. 達爾執行任務...
 # （執行實際工作）
 
 # 3. 完成後記錄
@@ -334,7 +334,7 @@ head -n 50 ~/.openclaw/workspace/memory/autopilot-results/task-history.md
     <key>ProgramArguments</key>
     <array>
         <string>/usr/bin/python3</string>
-        <string>/Users/caijunchang/.openclaw/workspace/scripts/memory-record-server.py</string>
+        <string>/Users/sky770825/.openclaw/workspace/scripts/memory-record-server.py</string>
         <string>8765</string>
     </array>
     <key>RunAtLoad</key>
@@ -342,9 +342,9 @@ head -n 50 ~/.openclaw/workspace/memory/autopilot-results/task-history.md
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/caijunchang/.openclaw/logs/memory-record-server.log</string>
+    <string>/Users/sky770825/.openclaw/logs/memory-record-server.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/caijunchang/.openclaw/logs/memory-record-server.err.log</string>
+    <string>/Users/sky770825/.openclaw/logs/memory-record-server.err.log</string>
 </dict>
 </plist>
 ```
@@ -364,14 +364,14 @@ launchctl load ~/Library/LaunchAgents/ai.openclaw.memory-record-server.plist
 
 | 執行者類型 | 舊系統 | 新系統 | 改善 |
 |-----------|--------|--------|------|
-| 小蔡手動執行 | ❌ 0% | ✅ 100% | +100% |
+| 達爾手動執行 | ❌ 0% | ✅ 100% | +100% |
 | Subagent (Gemini) | ⚠️ 部分 | ✅ 100% | +50% |
 | n8n 工作流程 | ❌ 0% | ✅ 100% | +100% |
 | Bash 腳本 | ❌ 0% | ✅ 100% | +100% |
 
 ### Token 節省 + 記憶完整
 
-- **舊方式**: Subagent 詳細輸出給小蔡 → 花費大量 token，但有記憶
+- **舊方式**: Subagent 詳細輸出給達爾 → 花費大量 token，但有記憶
 - **n8n 通知**: Telegram 簡短通知 → 節省 token，**但無記憶**
 - **新方式**: Telegram 簡短通知 + HTTP 記錄 → **節省 token + 有記憶** ✅
 
@@ -445,7 +445,7 @@ mv task-history-recent.md task-history.md
 ---
 
 **建立時間**: 2026-02-16
-**維護者**: 小蔡（Claude）
+**維護者**: 達爾（Claude）
 **狀態**: ✅ 已實現並測試
 **版本**: 1.0
 

@@ -3,7 +3,7 @@
 # Usage: ./rebuild-cron-jobs.sh | crontab -
 
 CURRENT_CRON=$(crontab -l 2>/dev/null || echo "")
-NEW_JOB="*/5 * * * * /Users/caijunchang/.openclaw/workspace/scripts/openclaw-dispatch.sh >> /Users/caijunchang/.openclaw/workspace/reports/cron_output.log 2>&1"
+NEW_JOB="*/5 * * * * /Users/sky770825/.openclaw/workspace/scripts/openclaw-dispatch.sh >> /Users/sky770825/.openclaw/workspace/reports/cron_output.log 2>&1"
 
 if echo "$CURRENT_CRON" | grep -q "openclaw-dispatch.sh"; then
     echo "Cron job already exists."

@@ -11,8 +11,8 @@
 本計畫旨在將 OpenClaw 核心推論能力從雲端遷移至 M3 Ultra 本地環境。
 
 ### 關鍵指令
-- 執行數據檢查: `python3 /Users/caijunchang/.openclaw/workspace/scripts/token_data_processor.py`
-- 查看架構文檔: `cat /Users/caijunchang/.openclaw/workspace/knowledge/architecture_evaluation.md`
+- 執行數據檢查: `python3 /Users/sky770825/.openclaw/workspace/scripts/token_data_processor.py`
+- 查看架構文檔: `cat /Users/sky770825/.openclaw/workspace/knowledge/architecture_evaluation.md`
 
 ---
 *此手冊由自動化腳本生成，為 M3 Ultra 接軌作戰之核心指導文件。*

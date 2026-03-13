@@ -1,4 +1,4 @@
-# 小蔡 (Xiao Cai) 大腦除霜機制 (Memory Cleanup & Snapshots) 
+# 達爾 (Xiao Cai) 大腦除霜機制 (Memory Cleanup & Snapshots) 
 
 ## 1. 核心記憶保護機制 (Core Memory Protection)
 - **SOUL (核心人格)**: 儲存在 `soul.json`，包含價值觀、語氣、核心目標。此部分在 Context 組裝時優先級最高，不可被清理。

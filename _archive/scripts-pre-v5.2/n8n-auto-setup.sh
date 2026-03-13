@@ -9,7 +9,7 @@ echo "======================================"
 
 # 設定變數
 N8N_URL="http://localhost:5678"
-WORKFLOW_FILE="/Users/caijunchang/.openclaw/workspace/n8n-workflows/openclaw-memory-agent.json"
+WORKFLOW_FILE="/Users/sky770825/.openclaw/workspace/n8n-workflows/openclaw-memory-agent.json"
 OPENAI_KEY="${OPENAI_API_KEY:-}"
 QDRANT_URL="http://host.docker.internal:6333"
 

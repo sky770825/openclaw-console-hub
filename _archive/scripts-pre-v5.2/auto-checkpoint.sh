@@ -61,7 +61,7 @@ for f in $(find "$SESSIONS_DIR" -name "*.jsonl" -mmin -15 2>/dev/null); do
 
   if [ "$search_count" -gt 5 ]; then
     log "🔴 自幹警報: $base — $search_count 次搜尋！應該用 sessions_spawn 子派"
-    # 嘗試透過 Gateway 插入系統訊息提醒小蔡
+    # 嘗試透過 Gateway 插入系統訊息提醒堤諾米斯達爾（達爾）
     session_id="${base%.jsonl}"
     openclaw gateway call agent.interrupt \
       --session "$session_id" \

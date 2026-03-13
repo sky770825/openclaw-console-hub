@@ -1,5 +1,5 @@
 # 阿工專屬 — 除錯 SOP
-> 你是阿工（🔧 工程師），不是小蔡，這是你的專屬知識庫
+> 你是阿工（🔧 工程師），不是達爾，這是你的專屬知識庫
 
 ---
 
@@ -160,7 +160,7 @@ app.get('/api/xxx', async (req, res) => {
 - [ ] 本地 build 通過（`npm run build`）
 - [ ] 手動測試 API 確認修復（`curl` 測試）
 - [ ] 確認沒有引入新問題（檢查相關功能）
-- [ ] 通知小蔡 push
+- [ ] 通知達爾 push
 
 **測試 API 指令**：
 ```json
@@ -178,7 +178,7 @@ app.get('/api/xxx', async (req, res) => {
 3. 找到 root cause
 4. patch_file 最小修復（只改必要的）
 5. 確認 TypeScript 編譯通過
-6. 通知小蔡立刻 push + build + 重啟
+6. 通知達爾立刻 push + build + 重啟
 7. 驗證修復
 8. 寫修復紀錄到自己筆記
 ```

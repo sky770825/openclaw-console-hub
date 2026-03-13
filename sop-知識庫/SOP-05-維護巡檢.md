@@ -9,7 +9,7 @@ category: 系統管理
 tags: [巡檢, 清理, 根目錄, 白名單, autoexecutor, archive, 垃圾, CR-2, CR-7]
 version: 2.0
 created: 2026-02-16
-trigger: 每次 /new 開新對話、老蔡說「幫我看一下」「清一下」
+trigger: 每次 /new 開新對話、主人說「幫我看一下」「清一下」
 priority: P1
 燈號: 🟢 檢查可直接做 / 🟡 移動檔案先說 / 🔴 殺 process 要等批准
 ```
@@ -35,10 +35,10 @@ AGENTS.md, CHANGELOG.md, CLAUDE.md, CONTRIBUTING.md, MEMORY.md, README.md, SECUR
 ### 允許存在的目錄
 
 ```
-archive/, docs/, knowledge/, logs/, projects/, scripts/, sop-知識庫/, xiaocai-指令集/, node_modules/, .git/
+archive/, docs/, knowledge/, logs/, projects/, scripts/, sop-知識庫/, dar-指令集/, node_modules/, .git/
 ```
 
-**白名單以外的目錄 → 回報老蔡，不要自己移**
+**白名單以外的目錄 → 回報主人，不要自己移**
 
 ---
 
@@ -75,7 +75,7 @@ cat {pid_file}  # 取得 PID
 ps -p {PID} 2>/dev/null  # 確認是否在跑
 ```
 
-- 在跑 → 🔴 **回報老蔡，不要自己殺**
+- 在跑 → 🔴 **回報主人，不要自己殺**
 - 沒跑 → 🟡 移到 archive
 
 ### Step 3: 可疑目錄偵測
@@ -85,7 +85,7 @@ ps -p {PID} 2>/dev/null  # 確認是否在跑
 ls -d */ 2>/dev/null
 ```
 
-非標準目錄（例如 `~/`、`小菜/`、`temp/`）→ 回報老蔡。
+非標準目錄（例如 `~/`、`小菜/`、`temp/`）→ 回報主人。
 
 ### Step 4: 任務板衛生
 
@@ -94,7 +94,7 @@ ls -d */ 2>/dev/null
 curl -s http://localhost:3011/api/tasks?status=running
 ```
 
-- running 超過 24h → PATCH status → failed（🟡 先跟老蔡說）
+- running 超過 24h → PATCH status → failed（🟡 先跟主人說）
 - 任務總數 >200 → 回報異常
 
 ### Step 5: 最近活動偵測
@@ -118,7 +118,7 @@ find . -maxdepth 2 -mmin -10 -type f 2>/dev/null | head -20
 # 建立今天的 archive 目錄
 mkdir -p archive/cleanup-$(date +%Y%m%d)
 
-# 移動垃圾檔案（🟡 先列出給老蔡看）
+# 移動垃圾檔案（🟡 先列出給主人看）
 mv {垃圾檔案} archive/cleanup-$(date +%Y%m%d)/
 ```
 
@@ -150,7 +150,7 @@ self-heal.sh：{全部通過 / X 個問題}
 
 | 狀況 | 處理方式 |
 |------|----------|
-| 發現正在跑的未授權 process | 🔴 不要殺，回報 PID 和 process 名稱給老蔡 |
+| 發現正在跑的未授權 process | 🔴 不要殺，回報 PID 和 process 名稱給主人 |
 | archive 目錄不存在 | mkdir -p archive/ |
-| 不確定某檔案是不是垃圾 | 列出但不移動，問老蔡 |
+| 不確定某檔案是不是垃圾 | 列出但不移動，問主人 |
 | self-heal.sh 跑不了 | chmod +x 後重試，還不行就手動檢查 |

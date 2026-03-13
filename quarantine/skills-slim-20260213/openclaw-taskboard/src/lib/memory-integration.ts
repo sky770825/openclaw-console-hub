@@ -55,7 +55,7 @@ class SeekDBMemoryClient {
     try {
       // 動態導入 SeekDB 模組
       const seekdbPath = process.env.SEEKDB_MODULE_PATH || 
-        '/Users/caijunchang/.openclaw/workspace/seekdb-memory-integration/src/config/database.js';
+        '/Users/sky770825/.openclaw/workspace/seekdb-memory-integration/src/config/database.js';
       
       const { createClient, createEmbeddingFunction } = await import(seekdbPath);
       

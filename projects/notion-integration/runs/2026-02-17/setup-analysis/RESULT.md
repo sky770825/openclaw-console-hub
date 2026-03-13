@@ -1,7 +1,7 @@
 # RESULT.md - Notion 深度整合任務
 
 ## 1. 任務總結
-成功建立 OpenClaw 與 Notion 的深度整合系統。此系統將 OpenClaw 的內部事件、任務進度、常用連結以及 Notebook LM 的 AI 產出自動同步至 Notion，提供老蔡一個視覺化、結構化的管理平台。
+成功建立 OpenClaw 與 Notion 的深度整合系統。此系統將 OpenClaw 的內部事件、任務進度、常用連結以及 Notebook LM 的 AI 產出自動同步至 Notion，提供主人一個視覺化、結構化的管理平台。
 
 ## 2. 執行者 / 模型
 *   執行者: L2 Claude Code (via OpenClaw Subagent)
@@ -33,8 +33,8 @@
     *   **搜尋連結**: `oc notion search "Notion"`
     *   **發布 AI 摘要**: `oc notion insight "深度學習研究" "內容摘要..." "Research"`
 
-### 自然語言支援 (小蔡模式)
-直接對小蔡說：
+### 自然語言支援 (達爾模式)
+直接對達爾說：
 *   「幫我把這個連結儲存到 Notion: [網址]」
 *   「查一下 Notion 裡關於 [關鍵字] 的連結」
 *   「把今天的每日反思同步到 Notion 行程」

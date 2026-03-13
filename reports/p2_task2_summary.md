@@ -19,6 +19,6 @@
 - 通過多筆預約邏輯測試。
 
 ## 檔案位置
-- 邏輯組件: `/Users/caijunchang/.openclaw/workspace/scripts/appointment_system/appointment-engine.js`
-- 測試指令碼: `/Users/caijunchang/.openclaw/workspace/scripts/appointment_system/test-backend.js`
-- 詳細報告: `/Users/caijunchang/.openclaw/workspace/reports/appointment_test_report.json`
+- 邏輯組件: `/Users/sky770825/.openclaw/workspace/scripts/appointment_system/appointment-engine.js`
+- 測試指令碼: `/Users/sky770825/.openclaw/workspace/scripts/appointment_system/test-backend.js`
+- 詳細報告: `/Users/sky770825/.openclaw/workspace/reports/appointment_test_report.json`

@@ -19,11 +19,11 @@ When a malicious skill is suspected or detected, the following information will 
 
 Once the necessary information is gathered:
 
-1.  **Structured Message:** I will compose a structured message to 老蔡, including all gathered information.
-2.  **Task Creation:** I will create a task in the task board (if the API is available for this) for 老蔡 to review the flagged skill, assigning it a high priority.
-3.  **Immediate Action (if applicable):** If a skill is confirmed as actively malicious and poses an immediate threat, I will flag it for immediate disabling and alert 老蔡.
+1.  **Structured Message:** I will compose a structured message to 主人, including all gathered information.
+2.  **Task Creation:** I will create a task in the task board (if the API is available for this) for 主人 to review the flagged skill, assigning it a high priority.
+3.  **Immediate Action (if applicable):** If a skill is confirmed as actively malicious and poses an immediate threat, I will flag it for immediate disabling and alert 主人.
 
 ## 4. Escalation:
 
-*   All reports will be directed to 老蔡 for final review and decision-making regarding the skill's status (e.g., disabling, banning from ClawHub if applicable).
-*   The process will be iterated upon based on 老蔡's feedback and evolving security threats.
+*   All reports will be directed to 主人 for final review and decision-making regarding the skill's status (e.g., disabling, banning from ClawHub if applicable).
+*   The process will be iterated upon based on 主人's feedback and evolving security threats.

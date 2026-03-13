@@ -61,5 +61,5 @@ console.log(JSON.stringify(result, null, 2));
 | `Array.sort(fn)` | 原地排序 | `b - a` 降序，`a - b` 升序 |
 | 链式调用 | `.filter().sort()` 一气呵成 | filter 回传新数组，不影响原始 tasks |
 
-**小蔡笔记**：实际系统中 `/api/openclaw/tasks` 回传的资料也是类似结构，
+**達爾笔记**：实际系统中 `/api/openclaw/tasks` 回传的资料也是类似结构，
 用 filter + sort 就能在本地做任务筛选，不需要每次都打 API 带 query 参数。

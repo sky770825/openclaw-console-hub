@@ -2,7 +2,7 @@
 set -e
 export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-SANDBOX_DIR="/Users/caijunchang/.openclaw/workspace/sandbox"
+SANDBOX_DIR="/Users/sky770825/.openclaw/workspace/sandbox"
 SERVER_DIR="$SANDBOX_DIR/server"
 
 echo "Checking dependencies..."

@@ -16,7 +16,7 @@
 - 任務看板: TaskBoard.tsx (核心操作台)
 - 自動化甲板: AutomationDeck.tsx (Auto-Executor)
 
-## 🤖 小蔡 (Xiao Cai) 協作模式
+## 🤖 達爾 (Xiao Cai) 協作模式
 - 我負責: 全局判斷、下達任務 (create_task)、執行腳本 (run_script)、驗證結果。
 - Cursor 負責: 代碼精確編輯、UI 刻畫、複雜邏輯重構。
-- 聯動方式: 老蔡讓小蔡建任務 -> Cursor 讀取任務描述 -> Cursor 改代碼 -> 小蔡跑測試驗收。
+- 聯動方式: 主人讓達爾建任務 -> Cursor 讀取任務描述 -> Cursor 改代碼 -> 達爾跑測試驗收。

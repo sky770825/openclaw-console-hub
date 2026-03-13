@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-# 小蔡中控台 — 輕量 HTTP Server + Task Board API
+# 堤諾米斯達爾（達爾）中控台 — 輕量 HTTP Server + Task Board API
 # 用法: ./dashboard-server.sh [start|stop|status]
 # 預設 port: 3011
 

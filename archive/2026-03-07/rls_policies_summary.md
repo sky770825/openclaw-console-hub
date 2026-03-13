@@ -4,7 +4,7 @@
 
 **產出檔案**
 
-*   **檔案路徑:** `/Users/caijunchang/.openclaw/workspace/rls_policies.sql`
+*   **檔案路徑:** `/Users/sky770825/.openclaw/workspace/rls_policies.sql`
 *   **內容:** 包含了 `profiles`, `teams`, `projects`, `tasks`, `task_assignees`, `invitations` 等資料表的 `SELECT`, `INSERT`, `UPDATE`, `DELETE` 權限設定。
 
 **後續步驟**

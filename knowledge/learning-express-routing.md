@@ -1,6 +1,6 @@
 # Express.js 路由與中間件基礎
 > 學習日期：2026-03-02
-> 讀的檔案：/Users/caijunchang/openclaw任務面版設計/server/src/routes/openclaw-tasks.ts
+> 讀的檔案：/Users/sky770825/openclaw任務面版設計/server/src/routes/openclaw-tasks.ts
 
 ## 我學到什麼
 1.  模組化路由: 使用 Router() 可以建立獨立的路由模組，讓主程式 index.ts 保持乾淨，只需用 app.use() 掛載即可。

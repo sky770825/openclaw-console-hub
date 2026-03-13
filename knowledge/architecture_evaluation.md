@@ -8,4 +8,4 @@
    - 內存鎖定 (Memory Pinning) 確保推論時不發生 Swap。
 
 ## 兼容性檢核
-- 經檢查 `/Users/caijunchang/openclaw任務面版設計/` 結構，現有前端可通過修改 `.env` 中的 `BASE_URL` 直接對接本地 Ollama 端點。
+- 經檢查 `/Users/sky770825/openclaw任務面版設計/` 結構，現有前端可通過修改 `.env` 中的 `BASE_URL` 直接對接本地 Ollama 端點。

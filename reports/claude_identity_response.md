@@ -1,6 +1,6 @@
 # 關於 Claude Code 身份與運作模式的答覆
 
-您好，老蔡。針對您在對話中提到的疑問，我已整理相關說明如下：
+您好，主人。針對您在對話中提到的疑問，我已整理相關說明如下：
 
 ### 1. 我是什麼模型？
 我是由 **Anthropic** 開發的大型語言模型 **Claude**。具體來說，在目前的 Claude Code 環境中，我主要由 **Claude 3.5 Sonnet** 模型驅動。這個模型專為程式開發、邏輯推理與複雜任務執行而優化，能提供精準且高效的支援。
@@ -22,5 +22,5 @@
 **狀態摘要**：
 - **模型核心**：Claude 3.5 Sonnet
 - **通訊路徑**：OpenClaw/星群 直接授權渠道
-- **當前位置**：/Users/caijunchang/.openclaw/workspace/sandbox
+- **當前位置**：/Users/sky770825/.openclaw/workspace/sandbox
 - **回覆時間**：2026-03-08 06:54:27

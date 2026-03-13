@@ -14,5 +14,5 @@
 ## 案例
 
 *   *場景*：尋找 Crew Bots 的配置檔案。
-*   *錯誤嘗試*：根據 executor-agents.ts 中的 import { CREW_BOTS, type CrewBotConfig } from './telegram/crew-bots/crew-config.js';，直接嘗試讀取 /Users/caijunchang/openclaw任務面版設計/server/src/telegram/crew-bots/crew-config.js，結果檔案不存在。
-*   *正確解決*：使用 grep_project 搜索 crew-config，發現實際檔案為 /Users/caijunchang/openclaw任務面版設計/server/src/telegram/crew-bots/crew-config.ts。
+*   *錯誤嘗試*：根據 executor-agents.ts 中的 import { CREW_BOTS, type CrewBotConfig } from './telegram/crew-bots/crew-config.js';，直接嘗試讀取 /Users/sky770825/openclaw任務面版設計/server/src/telegram/crew-bots/crew-config.js，結果檔案不存在。
+*   *正確解決*：使用 grep_project 搜索 crew-config，發現實際檔案為 /Users/sky770825/openclaw任務面版設計/server/src/telegram/crew-bots/crew-config.ts。

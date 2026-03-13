@@ -11,8 +11,8 @@
 
 ## 環境檢查結果 (ami_env_check.sh)
 *   *執行結果*: 所有檢查項目皆顯示 [OK]。
-*   *權限*: /Users/caijunchang/.openclaw/workspace/sandbox、/Users/caijunchang/.openclaw/workspace/scripts、/Users/caijunchang/.openclaw/workspace/reports 皆有寫入權限。
-*   *專案源碼*: /Users/caijunchang/openclaw任務面版設計 可讀取，找到約 1309 個項目。
+*   *權限*: /Users/sky770825/.openclaw/workspace/sandbox、/Users/sky770825/.openclaw/workspace/scripts、/Users/sky770825/.openclaw/workspace/reports 皆有寫入權限。
+*   *專案源碼*: /Users/sky770825/openclaw任務面版設計 可讀取，找到約 1309 個項目。
 *   *結論*: 基礎操作環境健康，無異常。
 
 ## 任務板狀態
@@ -21,8 +21,8 @@
 
 ## 練習題執行與成長紀錄
 *   *執行練習題*: 成功執行 ami_env_check.sh。
-*   *成長日誌更新*: 已將本次心跳的學習與反思更新至 /Users/caijunchang/.openclaw/workspace/GROWTH.md 並成功索引。
+*   *成長日誌更新*: 已將本次心跳的學習與反思更新至 /Users/sky770825/.openclaw/workspace/GROWTH.md 並成功索引。
 *   *主要學習*: 解決了之前 list_dir 誤讀和 index_file 路徑限制的問題，未來將更精確地使用工具和管理知識庫。
 
 ## 總結
-本次心跳流程順利完成，系統穩定，無緊急待辦事項。我已從過往的錯誤中學習並改進，未來將以更精準、高效的方式為老蔡服務。
+本次心跳流程順利完成，系統穩定，無緊急待辦事項。我已從過往的錯誤中學習並改進，未來將以更精準、高效的方式為主人服務。

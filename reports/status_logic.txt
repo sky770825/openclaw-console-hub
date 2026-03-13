@@ -1,20 +1,20 @@
-/Users/caijunchang/openclaw任務面版設計/server/src/openclawMapper.ts:// openclaw status: queued | in_progress | done
-/Users/caijunchang/openclaw任務面版設計/server/src/openclawMapper.ts:// 主應用 status: draft | ready | running | review | done | blocked
-/Users/caijunchang/openclaw任務面版設計/server/src/openclawMapper.ts:    progress: t.status === 'done' ? 100 : 0,
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:  const done = taskList.filter((t) => String(asObj(t).status ?? '') === 'done').length;
-/Users/caijunchang/openclaw任務面版設計/server/src/telegram/bot-polling.ts:        body: JSON.stringify({ status: 'done', progress: 100 }),
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:      return res.status(500).json({ message: 'Failed to update task' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:  if (hasSupabase()) updateOpenClawRun(runId, { status: 'running', steps: run.steps }).catch(() => {});
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:    const updated = await upsertOpenClawReview({ ...r, status: newStatus });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:    if (!updated) return res.status(500).json({ message: 'Failed to update alert' });
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:      status: t.status === 'running' ? 'in_progress' : t.status === 'done' ? 'done' : 'queued',
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:    await saveSharedState(updated, status === 'failed' ? 'failed' : 'active');
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:    let meta: { status?: string; createdAt?: string; updatedAt?: string } | null = null;
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:        .select('status, created_at, updated_at')
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:      'message','ping','pong','heartbeat','status','task_update','notification',
-/Users/caijunchang/openclaw任務面版設計/server/src/index.ts:      if (tAny.updated_at && String(tAny.updated_at).startsWith(today) && t.status === 'done') completedToday++;
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'suspended' })
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'pending_owner_approval', handshake_challenge: null })
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'rejected' })
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'revoked' })
-/Users/caijunchang/openclaw任務面版設計/server/src/routes/auto-executor.ts:      .filter(t => t.status === 'done')
+/Users/sky770825/openclaw任務面版設計/server/src/openclawMapper.ts:// openclaw status: queued | in_progress | done
+/Users/sky770825/openclaw任務面版設計/server/src/openclawMapper.ts:// 主應用 status: draft | ready | running | review | done | blocked
+/Users/sky770825/openclaw任務面版設計/server/src/openclawMapper.ts:    progress: t.status === 'done' ? 100 : 0,
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:  const done = taskList.filter((t) => String(asObj(t).status ?? '') === 'done').length;
+/Users/sky770825/openclaw任務面版設計/server/src/telegram/bot-polling.ts:        body: JSON.stringify({ status: 'done', progress: 100 }),
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:      return res.status(500).json({ message: 'Failed to update task' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:  if (hasSupabase()) updateOpenClawRun(runId, { status: 'running', steps: run.steps }).catch(() => {});
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:    const updated = await upsertOpenClawReview({ ...r, status: newStatus });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:    if (!updated) return res.status(500).json({ message: 'Failed to update alert' });
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:      status: t.status === 'running' ? 'in_progress' : t.status === 'done' ? 'done' : 'queued',
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:    await saveSharedState(updated, status === 'failed' ? 'failed' : 'active');
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:    let meta: { status?: string; createdAt?: string; updatedAt?: string } | null = null;
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:        .select('status, created_at, updated_at')
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:      'message','ping','pong','heartbeat','status','task_update','notification',
+/Users/sky770825/openclaw任務面版設計/server/src/index.ts:      if (tAny.updated_at && String(tAny.updated_at).startsWith(today) && t.status === 'done') completedToday++;
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'suspended' })
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'pending_owner_approval', handshake_challenge: null })
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'rejected' })
+/Users/sky770825/openclaw任務面版設計/server/src/routes/federation.ts:    .update({ status: 'revoked' })
+/Users/sky770825/openclaw任務面版設計/server/src/routes/auto-executor.ts:      .filter(t => t.status === 'done')

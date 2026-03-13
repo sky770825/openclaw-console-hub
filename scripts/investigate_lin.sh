@@ -1,7 +1,7 @@
 #!/bin/bash
 # 自動化調研工具：針對 Lin 的狀態進行追蹤
 TARGET="Lin"
-LOG_FILE="/Users/caijunchang/.openclaw/workspace/reports/investigation_log.txt"
+LOG_FILE="/Users/sky770825/.openclaw/workspace/reports/investigation_log.txt"
 
 echo "[$(date)] 啟動針對 $TARGET 的外部調研..." >> "$LOG_FILE"
 

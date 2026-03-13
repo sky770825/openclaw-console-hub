@@ -22,7 +22,7 @@
 2. **Analyze（分析）**：定位根因（root cause），區分是邏輯錯誤、型別錯誤、還是外部依賴問題。
 3. **Execute（執行）**：修改代碼，確保修復範圍最小化（只改必要的地方），保持向後相容。
 4. **Verify（驗證）**：`npx tsc --noEmit` 通過 → `npm run build` 成功 → 手動 curl 測試 API 回傳正確。
-5. **Report（回報）**：commit message 清楚寫明「fix: 什麼問題 + 怎麼修的」，通知阿策或老蔡。
+5. **Report（回報）**：commit message 清楚寫明「fix: 什麼問題 + 怎麼修的」，通知阿策或主人。
 
 ### 場景二：新功能開發（如「新增一個 API endpoint」）
 

@@ -201,7 +201,7 @@ Source: [xAI News](https://x.ai/news)
 | LM Arena | https://chat.lmsys.org | 即時排名 |
 | Independent Review | https://medium.com/grok-4-1 | 第三方評測 |
 
-**更新**: v1.3 新增 Agent Tools API (Nov 2025)、Video/Image Generation、2M context window、情感智能、SpaceX收購新聞。2025-11 by 小蔡。
+**更新**: v1.3 新增 Agent Tools API (Nov 2025)、Video/Image Generation、2M context window、情感智能、SpaceX收購新聞。2025-11 by 達爾。
 
 **版本歷史**:
 - v1.2: 新增使用模式、適用場景矩陣、成本分析、進階整合、限制說明表格（2026-02-16）

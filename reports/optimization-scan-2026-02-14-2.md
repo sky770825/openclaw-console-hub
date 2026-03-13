@@ -1,7 +1,7 @@
 # 【內部優化掃描】2026-02-14 01:52
 
 **時間**: 2026-02-14 01:52 AM (Saturday)  
-**掃描員**: 小蔡  
+**掃描員**: 達爾  
 **狀態**: ✅ 完成 — 3 張新任務卡已建立
 
 ---
@@ -24,7 +24,7 @@
 id: 25
 name: 腳本錯誤處理強化（20 個腳本缺 set -e）
 status: ready
-assignee: 小蔡
+assignee: 達爾
 riskLevel: low
 source: internal-optimization
 ```
@@ -46,7 +46,7 @@ source: internal-optimization
 id: 26
 name: 技能文檔自動生成器（7 個技能缺 README）
 status: ready
-assignee: 小蔡
+assignee: 達爾
 riskLevel: low
 source: internal-optimization
 ```
@@ -69,7 +69,7 @@ source: internal-optimization
 id: 27
 name: 記憶庫索引系統（178 個文件無索引）
 status: ready
-assignee: 小蔡
+assignee: 達爾
 riskLevel: low
 source: internal-optimization
 ```
@@ -178,7 +178,7 @@ source: internal-optimization
 - [x] 任務卡建立 (3 張，ID: 25-27)
 - [x] Ready 任務數補充 (9 → 12 張)
 - [x] 詳細報告生成
-- [ ] 等待老蔡批准執行
+- [ ] 等待主人批准執行
 - [ ] Task #25-27 執行追蹤
 
 ---

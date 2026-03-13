@@ -83,7 +83,7 @@ head -n 100 ~/.openclaw/workspace/memory/autopilot-results/task-history.md
 |------|------|--------|
 | `log-autopilot-task.sh` | 基礎記憶記錄 | 所有 |
 | `task-completion-handler.sh` | 增強記憶記錄 | Subagent、腳本 |
-| `complete-current-task.sh` | 便捷完成腳本 | 小蔡手動 |
+| `complete-current-task.sh` | 便捷完成腳本 | 達爾手動 |
 | `memory-record-server.py` | HTTP 接口 | n8n |
 | `memory-record-ctl.sh` | 服務器管理 | 維護 |
 
@@ -112,7 +112,7 @@ head -n 100 ~/.openclaw/workspace/memory/autopilot-results/task-history.md
 
 看到這個提示時記得執行:
 ```
-📝 任務已拉取，請小蔡執行
+📝 任務已拉取，請達爾執行
 💡 完成後請執行: scripts/complete-current-task.sh
 ```
 
@@ -126,6 +126,6 @@ head -n 100 ~/.openclaw/workspace/memory/autopilot-results/task-history.md
 ---
 
 **建立時間**: 2026-02-16
-**維護者**: 小蔡（Claude）
+**維護者**: 達爾（Claude）
 
 🦞 **OpenClaw Powered**
