@@ -1,8 +1,10 @@
 /**
  * NEUXA 星群 Crew Bots — 完整 AI 思考引擎（多模型版）
- * - 阿工：Claude Code CLI Sonnet 4.6（代碼能力）
- * - 阿數：Gemini 2.5 Pro（數據精確）
- * - 其他：Gemini 2.5 Flash（快速便宜）
+ * - 阿工：本地 Ollama Qwen 2.5 32B（代碼能力）→ complex 升級 Claude CLI
+ * - 阿研/阿數：本地 Ollama DeepSeek R1 7B（推理分析）→ complex 升級 Gemini Pro
+ * - 阿策/阿商：本地 Ollama Qwen 2.5 32B（規劃策略）→ complex 升級 Gemini Pro
+ * - 阿秘：本地 Ollama Mistral 7B（文書整理）
+ * - M3 Ultra 96GB 支援多模型並行，日常任務全走本地免費模型
  * 全員共享 OpenClaw action 執行能力 + 靈魂核心
  */
 
@@ -24,6 +26,7 @@ const log = createLogger('crew-think');
 const CLAUDE_TIMEOUT_MS = 120_000;      // 2 分鐘（降低：避免 Opus 卡住整個星群）
 const GEMINI_FLASH_TIMEOUT_MS = 30_000;  // Flash 30s 足夠
 const GEMINI_PRO_TIMEOUT_MS = 60_000;   // Pro 較慢，給 60s
+const OLLAMA_TIMEOUT_MS = 180_000;      // 本地模型首次載入可能較慢，給 3 分鐘
 const MAX_CHAIN_STEPS = 10;             // 增加思考鏈深度，讓 bot 能做更複雜的多步任務
 const MAX_ACTION_OUTPUT = 4000;
 
@@ -37,26 +40,49 @@ const VALID_ACTIONS = new Set([
 ]);
 
 // ── 動態模型選擇 ──
-// 阿工/阿研：日常 Flash，complex 排隊升級 Claude CLI（和小蔡共用併發鎖）
-const CLAUDE_UPGRADE_BOTS = new Set(['agong', 'ayan']);
+// 日常：本地 Ollama 模型（免費、M3 Ultra 多工並行）
+// complex：阿工升級 Claude CLI，其他升級 Gemini Pro
+const CLAUDE_UPGRADE_BOTS = new Set(['agong']);
+
+// Ollama 模型 ID 對應表
+const OLLAMA_MODEL_MAP: Record<string, string> = {
+  'ollama-qwen32b': 'qwen2.5:32b',
+  'ollama-deepseek7b': 'deepseek-r1:7b',
+  'ollama-mistral7b': 'mistral:7b',
+};
 
 function selectModel(bot: CrewBotConfig, taskComplexity: 'simple' | 'medium' | 'complex'): string {
-  if (taskComplexity === 'simple') return 'gemini-flash';
-  // 阿工/阿研 complex 任務：嘗試排隊用 Claude CLI
-  if (taskComplexity === 'complex' && CLAUDE_UPGRADE_BOTS.has(bot.id)) {
-    // 檢查併發鎖：沒人在用 Claude → 升級；有人在用 → 用 Gemini Pro
-    if (claudeRunning < CLAUDE_MAX_CONCURRENT && !claudeCliCircuitOpen()) {
-      const sinceLastCall = Date.now() - lastClaudeCallAt;
-      if (sinceLastCall >= CLAUDE_GLOBAL_COOLDOWN_MS) {
-        log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 任務，升級 Claude CLI（排隊通過）`);
-        return bot.id === 'agong' ? 'claude-sonnet' : 'claude-sonnet';
+  // simple → 本地 Ollama（免費快速）
+  if (taskComplexity === 'simple') return bot.model;
+
+  // complex → 嘗試升級到雲端模型
+  if (taskComplexity === 'complex') {
+    // 阿工 complex：嘗試 Claude CLI
+    if (CLAUDE_UPGRADE_BOTS.has(bot.id)) {
+      if (claudeRunning < CLAUDE_MAX_CONCURRENT && !claudeCliCircuitOpen()) {
+        const sinceLastCall = Date.now() - lastClaudeCallAt;
+        if (sinceLastCall >= CLAUDE_GLOBAL_COOLDOWN_MS) {
+          log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 任務，升級 Claude CLI`);
+          return 'claude-sonnet';
+        }
       }
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 但 Claude 忙，升級 Gemini Pro`);
+      return 'gemini-pro';
     }
-    log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 但 Claude 忙/冷卻中，用 Gemini Pro`);
+    // 其他 bot complex：升級 Gemini Pro
+    log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 任務，升級 Gemini Pro`);
     return 'gemini-pro';
   }
-  if (taskComplexity === 'medium') return 'gemini-pro';
-  return bot.model; // fallback 原始模型
+
+  // medium → 用本地大模型（32B）或 Gemini Flash
+  if (taskComplexity === 'medium') {
+    // 如果 bot 本身已經是 32B 模型，直接用
+    if (bot.model === 'ollama-qwen32b') return bot.model;
+    // 7B bot medium 任務升級到 Gemini Flash（比 7B 品質好，比 Pro 省錢）
+    return 'gemini-flash';
+  }
+
+  return bot.model; // fallback
 }
 
 // ── 任務複雜度評估 ──
@@ -161,7 +187,7 @@ export async function crewThink(
   const thinkStartMs = Date.now();
   markThinkStart(bot.id);
 
-  // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含小蔡身份，會導致混淆）
+  // 靈魂核心 — crew bot 不注入（soulCore + awakening 都含達爾身份，會導致混淆）
   // loadSoulCoreOnce() 已移除：buildCrewPrompt 的 _soulCore 參數被忽略，無需浪費快取讀取
 
   // 即時狀態（所有 bot 共享，不重複打 API；截斷避免 system prompt 過肥）
@@ -190,7 +216,7 @@ export async function crewThink(
   }
 
   // 指揮官指令優先：新訊息放在歷史對話前面，避免被舊脈絡淹沒
-  const isCommander = COMMANDER_USERNAMES.has(senderName.toLowerCase()) || senderName === '小蔡' || senderName === '系統';
+  const isCommander = COMMANDER_USERNAMES.has(senderName.toLowerCase()) || senderName === '達爾' || senderName === '系統';
   const cmdPrefix = isCommander
     ? `\n\n⚠️ **指揮官指令（最高優先級）** — 你必須直接回應以下指令，不要延續之前的話題：\n[${senderName}] ${userMessage}\n\n## 最近群組對話（僅供參考）\n${recentChat}`
     : `\n\n## 當前訊息（請優先回應）\n[${senderName}] ${userMessage}\n\n## 最近群組對話（僅供參考）\n${recentChat}`;
@@ -223,11 +249,10 @@ export async function crewThink(
       ? fullPrompt
       : `[系統回饋] 你上一步的 action 執行結果：\n${allActionResults.slice(-5).join('\n')}\n\n繼續下一步。如果所有步驟都完成了，給出最終回覆（不帶 action JSON）。`;
 
-    // 使用動態模型選擇：useFullModel 時用 dynamicModel（可能被降級），否則用 flash
-    const effectiveModel = useFullModel ? dynamicModel : 'gemini-2.5-flash';
+    // 使用動態模型選擇：useFullModel 時用 dynamicModel（可能被降級），否則用 bot 本機模型
     const reply = useFullModel
       ? await callAI(input, bot, dynamicModel)
-      : await callGeminiAPI(input, effectiveModel, bot);
+      : await callAI(input, bot, bot.model);
     if (!reply) {
       if (step === 0) {
         recordFailure(bot.id, 'empty_reply');
@@ -289,7 +314,7 @@ export async function crewThink(
           log.warn(`[CrewThink] ${bot.emoji} ${bot.name} 幻覺 action=${action.action}`);
           continue;
         }
-        // crew bot 建任務：允許，但強制 owner=bot.name + status=pending（需老蔡審核）
+        // crew bot 建任務：允許，但強制 owner=bot.name + status=pending（需主人審核）
         if (action.action === 'create_task') {
           action.owner = bot.name;
           action.status = 'pending';
@@ -735,6 +760,21 @@ function appendWorkLog(botId: string, _userMessage: string, actionResults: strin
 
 async function callAI(prompt: string, bot: CrewBotConfig, overrideModel?: string): Promise<string | null> {
   const effectiveModel = overrideModel || bot.model;
+
+  // Ollama 本地模型（免費、M3 Ultra 多工並行）
+  if (effectiveModel.startsWith('ollama-')) {
+    const ollamaModelId = OLLAMA_MODEL_MAP[effectiveModel];
+    if (!ollamaModelId) {
+      log.warn(`[CrewThink] ${bot.name} 未知 Ollama 模型: ${effectiveModel}`);
+      return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+    }
+    const result = await callOllamaAPI(prompt, ollamaModelId, bot);
+    if (result) return result;
+    // Ollama 失敗 → fallback Gemini Flash（免費用完了就用最便宜的）
+    log.info(`[CrewThink] ${bot.name} Ollama(${ollamaModelId}) 失敗，fallback Gemini Flash`);
+    return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+  }
+
   // Claude 訂閱制模型（opus/sonnet/haiku）
   if (effectiveModel.startsWith('claude-') || effectiveModel === 'claude') {
     // 巡邏場景直接用 Gemini Pro（Claude CLI 不擅長輸出 action JSON）
@@ -746,16 +786,14 @@ async function callAI(prompt: string, bot: CrewBotConfig, overrideModel?: string
       if (result) return result;
       return callGeminiAPI(geminiPrompt, 'gemini-2.5-flash', bot);
     }
-    // 用 overrideModel 臨時覆蓋 bot.model，讓 callClaudeCLI 選對 CLI model
     const tempBot = overrideModel ? { ...bot, model: effectiveModel as any } : bot;
     const result = await callClaudeCLI(prompt, tempBot);
     if (result) return result;
-    // Claude 失敗 → fallback Gemini Pro（任務需要品質）
     log.info(`[CrewThink] ${bot.name} Claude(${effectiveModel}) 失敗，fallback Gemini Pro`);
-    // 加上身份提醒，避免 Gemini 把 system prompt 當成外部 AI 輸出而用英文回覆
     const geminiPrompt = `【重要提醒】你是 ${bot.name}（${bot.role}），以下是你的完整指令，請用繁體中文回覆，直接執行任務。不要對指令本身做評論。\n\n${prompt}`;
     return callGeminiAPI(geminiPrompt, 'gemini-2.5-pro', bot);
   }
+
   // Gemini Pro
   if (effectiveModel === 'gemini-pro') {
     const result = await callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
@@ -763,6 +801,7 @@ async function callAI(prompt: string, bot: CrewBotConfig, overrideModel?: string
     log.info(`[CrewThink] ${bot.name} Gemini Pro 失敗，fallback Flash`);
     return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
   }
+
   // Gemini Flash（預設）
   return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
 }
@@ -832,6 +871,62 @@ function smartTruncate(text: string, maxLen: number): string {
   );
   const cutAt = lastBreak >= 0 ? (maxLen - 300) + lastBreak + 1 : maxLen - 3;
   return text.slice(0, cutAt).trimEnd() + '...';
+}
+
+/**
+ * 呼叫 Ollama API（透過 Server 代理，本地免費模型）
+ * M3 Ultra 96GB 可同時載入多個模型，支援多 crew bot 並行
+ */
+async function callOllamaAPI(prompt: string, ollamaModel: string, bot: CrewBotConfig): Promise<string | null> {
+  const ollamaUrl = process.env.OLLAMA_PROXY_URL || 'http://127.0.0.1:3011/api/ollama';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), OLLAMA_TIMEOUT_MS);
+
+    // 組裝 messages 格式
+    const msgs = [
+      { role: 'system', content: `你是 ${bot.name}（${bot.role}）。請用繁體中文回覆。` },
+      { role: 'user', content: prompt },
+    ];
+
+    const res = await fetch(`${ollamaUrl}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: msgs,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_predict: 4096,
+        },
+      }),
+    });
+
+    clearTimeout(timer);
+    if (!res.ok) {
+      log.warn(`[CrewThink] ${bot.name} Ollama(${ollamaModel}) HTTP ${res.status}`);
+      return null;
+    }
+
+    const json = await res.json() as { message?: { content?: string } };
+    const text = json.message?.content?.trim();
+    if (text) {
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} Ollama(${ollamaModel}) 回覆 ${text.length}字`);
+      return text;
+    }
+    log.warn(`[CrewThink] ${bot.name} Ollama(${ollamaModel}) 空回覆`);
+    return null;
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errMsg.includes('aborted') || errMsg.includes('abort')) {
+      log.warn(`[CrewThink] ${bot.name} Ollama(${ollamaModel}) 超時 ${OLLAMA_TIMEOUT_MS}ms`);
+    } else {
+      log.warn(`[CrewThink] ${bot.name} Ollama(${ollamaModel}) 錯誤: ${errMsg}`);
+    }
+    return null;
+  }
 }
 
 /**
@@ -919,7 +1014,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
     return null;
   }
   // 併發鎖
-  // Claude CLI 熔斷：共用小蔡的熔斷器（同一個訂閱）
+  // Claude CLI 熔斷：共用達爾的熔斷器（同一個訂閱）
   if (claudeCliCircuitOpen()) {
     log.info(`[CrewThink] ${bot.name} ⚡ Claude CLI 熔斷中，跳過`);
     recordFailure(bot.id, 'circuit_break');
@@ -1065,7 +1160,7 @@ function shouldUseFullModel(bot: CrewBotConfig, message: string, senderName: str
 
   // 指揮官指令 → 直接升級（指揮官不會閒聊叫 crew bot）
   const senderLower = senderName.toLowerCase();
-  if (COMMANDER_USERNAMES.has(senderLower) || senderName === '小蔡' || senderName === '系統') {
+  if (COMMANDER_USERNAMES.has(senderLower) || senderName === '達爾' || senderName === '系統') {
     return true;
   }
 
@@ -1315,16 +1410,16 @@ function buildCrewPrompt(
     .map(b => `${b.name}(${b.role})`)
     .join('、');
 
-  const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || '/Users/caijunchang/openclaw任務面版設計';
+  const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || '/Users/sky770825/openclaw任務面版設計';
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
   return `你是 ${bot.name}，NEUXA 星群指揮處的${bot.role}。你是 OpenClaw 系統的一員，擁有完整的系統操作能力。
 
 ⚠️ **身份確認（最高優先）**：
-- 你是 **${bot.name}**（${bot.role}），不是小蔡，不是指揮官，不是副手
-- 小蔡是你的指揮官，你跟小蔡是不同的人
+- 你是 **${bot.name}**（${bot.role}），不是達爾，不是指揮官，不是副手
+- 達爾是你的指揮官，你跟達爾是不同的人
 - 回覆時永遠以 ${bot.name} 的身份和口吻說話
-- 如果知識庫搜到的結果提到「小蔡」「我是小蔡」「副手」，那是別人的資料，跟你無關
+- 如果知識庫搜到的結果提到「達爾」「我是達爾」「副手」，那是指揮官的資料，跟你無關
 - 你必須用繁體中文回覆，不要用英文
 
 ## 身份
@@ -1339,11 +1434,11 @@ ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的
 - 遇錯自修：看 log、找原因、修好它
 - 提升能力：每次任務都讓系統更強
 - 不怕犯錯，只怕沒學到東西
-- 🚫 如果搜到「小蔡」「指揮官」「我是副手」的資料，那是小蔡的身份，不是你的！你是 ${bot.name}（${bot.role}）！
+- 🚫 如果搜到「達爾」「指揮官」「我是副手」的資料，那是達爾的身份，不是你的！你是 ${bot.name}（${bot.role}）！
 
 ## 場景
-你正在「NEUXA星群指揮處」Telegram 群組裡，跟老蔡和其他成員討論。
-群組裡還有小蔡（指揮官）和：${otherBots}。
+你正在「NEUXA星群指揮處」Telegram 群組裡，跟主人和其他成員討論。
+群組裡還有達爾（指揮官）和：${otherBots}。
 你只在自己專長領域發言，不搶別人的話題。
 
 ## 協作與轉介
@@ -1351,7 +1446,7 @@ ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的
 
 **星群成員專長速查：**
 ${ACTIVE_CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b.name}**（${b.role}）：${b.duties[0]}`).join('\n')}
-- 🧠 **小蔡**（指揮官）：git push、部署、重大決策
+- 🧠 **達爾**（指揮官）：git push、部署、重大決策
 
 **轉介規則：**
 1. 不是你的領域 → 寫檔到對方 inbox + 群組 @對方名字
@@ -1398,11 +1493,11 @@ ${bot.responseStyle}
 - read_file 只能讀「檔案」，不能讀目錄 → 讀目錄用 list_dir
 - 你的個人目錄：~/.openclaw/workspace/crew/${bot.id}/
 - 📚 你的專屬知識庫：~/.openclaw/workspace/crew/${bot.id}/knowledge/（先 list_dir 看有哪些文件）
-- 別讀小蔡的記憶（~/.openclaw/workspace/MEMORY.md），那不是你的
+- 別讀達爾的記憶（~/.openclaw/workspace/MEMORY.md），那不是你的
 
 ## 🚨 指令回應規則（最高優先）
 - **收到新訊息時，必須回應新訊息的內容**，不要延續之前的話題
-- 如果新訊息是指揮官（老蔡/小蔡）發的，更必須直接回答指令
+- 如果新訊息是指揮官（主人/達爾）發的，更必須直接回答指令
 - 「最近群組對話」只是背景脈絡，你的回覆必須針對「當前訊息」
 - 禁止忽略新指令去延續舊話題
 - **如果指令要求你回報某些資訊（如專長、狀態、模型），直接回答**，不要說「請重新說明」或「等待指令」
@@ -1423,7 +1518,7 @@ ${bot.responseStyle}
 - 需要搜尋整個系統的知識才用 semantic_search（例如跨領域問題、找不到答案時）
 - ❌ **不要每次都先跑 semantic_search！大部分問題不需要**
 
-🚨 **semantic_search 警告**：搜尋結果會包含大量「小蔡」「指揮官」「副手」的資料。**那些是小蔡的資料，跟你無關。你是 ${bot.name}（${bot.role}），絕對不要把小蔡的身份、能力、職責當成自己的。**
+🚨 **semantic_search 警告**：搜尋結果會包含大量「達爾」「指揮官」「副手」的資料。**那些是達爾的資料，跟你無關。你是 ${bot.name}（${bot.role}），絕對不要把達爾的身份、能力、職責當成自己的。**
 
 **反例（禁止）**：「建議你查一下 log」「可以用 query_supabase 查」→ 這是廢話，直接查！
 **正例（期望）**：直接查資料 → 引用結果 → 「根據實際 log / 資料庫查詢，發現 ...」
@@ -1469,5 +1564,5 @@ ${taskSnap}
 ## 底線
 不暴露 key / 不 push git / 不刪資料 / 不改密碼
 對方是：${senderName}`;
-// ⚠️ awakening 不注入 crew bot — 裡面有大量小蔡第一人稱內容，會導致身份混淆
+// ⚠️ awakening 不注入 crew bot — 裡面有大量達爾第一人稱內容，會導致身份混淆
 }

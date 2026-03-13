@@ -78,6 +78,7 @@ import autoExecutorRouter, {
 // === 新增：房源文案 API 路由 (P3 任務) ===
 import propertyApiRouter from './routes/property-api.js';
 import { proxyRouter } from './routes/proxy.js';
+import { ollamaProxyRouter } from './routes/ollama-proxy.js';
 import {
   hasN8n,
   listWorkflows,
@@ -523,6 +524,8 @@ app.use('/api/tools', propertyApiRouter);
 app.use('/api/proxy', proxyRouter);
 // FADP 聯盟協防協議路由（/api/federation/*，部分端點不需 auth，內部使用 x-fadp-key）
 app.use('/api/federation', federationRouter);
+// Ollama 統一代理（本地模型走 Server 代理，方便監控管理）
+app.use('/api/ollama', ollamaProxyRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
