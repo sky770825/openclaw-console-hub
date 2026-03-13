@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stardust Project - 整合星群智慧，點亮專案未來</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            /* 色彩 — 商務/CRM/ERP */
+            --primary: #6366f1;      /* 主色（indigo 系列） */
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --accent: #f59e0b;       /* 強調色 */
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            /* 中性色 */
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            /* 背景/文字 */
+            --bg: #ffffff; --bg-secondary: var(--gray-50); --text: var(--gray-900); --text-secondary: var(--gray-500);
+            /* 間距 — 8px 網格 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            /* 字型 */
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            /* 圓角 */
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            /* 陰影（5 級） */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            /* 動畫 */
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a; --bg-secondary: #1e293b;
+                --text: #f1f5f9; --text-secondary: #94a3b8;
+                --gray-50: #1e293b; --gray-100: #334155; --gray-200: #475569;
+                --gray-300: #64748b; --gray-800: #e2e8f0; --gray-900: #f8fafc;
+                --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+                --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+                --shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+                --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.3);
+                --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.3);
+            }
+        }
+
+        /* Global Styles */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 700; line-height: 1.2; }
+        p { margin: 0; }
+        a { color: var(--primary); text-decoration: none; transition: all var(--duration) var(--ease); }
+        a:hover { color: var(--primary-dark); }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-6);
+        }
+        .section { padding: var(--space-20) 0; }
+        .section-title {
+            font-size: var(--text-3xl);
+            text-align: center;
+            margin-bottom: var(--space-4);
+        }
+        .section-subtitle {
+            font-size: var(--text-lg);
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto var(--space-12);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.8s var(--ease) both;
+        }
+
+        /* Header */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: var(--space-4) 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            transition: all var(--duration) var(--ease);
+            border-bottom: 1px solid transparent;
+        }
+        @media (prefers-color-scheme: dark) {
+            .main-header {
+                background-color: rgba(15, 23, 42, 0.8);
+            }
+        }
+        .main-header.scrolled {
+            background-color: var(--bg);
+            box-shadow: var(--shadow-sm);
+            border-bottom-color: var(--gray-200);
+        }
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: var(--text-xl); font-weight: 700; display: flex; align-items: center; gap: var(--space-2); }
+        .logo i { color: var(--primary); }
+        .main-nav a {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-left: var(--space-8);
+        }
+        .main-nav a:hover { color: var(--primary); }
+
+        /* Hero Section */
+        .hero {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            padding-top: var(--space-20);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: moveGrid 60s linear infinite;
+        }
+        @keyframes moveGrid {
+            from { transform: translate(0, 0); }
+            to { transform: translate(-500px, 500px); }
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero h1 { font-size: var(--text-5xl); margin-bottom: var(--space-6); }
+        .hero p { font-size: var(--text-xl); color: rgba(255,255,255,0.8); max-width: 700px; margin: 0 auto var(--space-8); }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all var(--duration) var(--ease);
+            text-align: center;
+            font-size: var(--text-base);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            border: 1px solid var(--gray-200);
+        }
+        .btn-secondary:hover { background-color: var(--gray-100); }
+        .btn-lg { padding: var(--space-4) var(--space-8); font-size: var(--text-lg); }
+        .btn-full { width: 100%; }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-8);
+            transition: all var(--duration) var(--ease);
+            height: 100%;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+        
+        /* Features Section */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-8);
+        }
+        .feature-card { text-align: center; }
+        .feature-icon {
+            font-size: var(--text-3xl);
+            width: 72px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary-light);
+            color: white;
+            border-radius: var(--radius-xl);
+            margin: 0 auto var(--space-6);
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        }
+        .feature-card h3 { font-size: var(--text-xl); margin-bottom: var(--space-2); }
+        .feature-card p { color: var(--text-secondary); }
+        
+        /* Stagger animation for cards */
+        .features-grid .card { animation: fadeInUp 0.5s var(--ease) both; }
+        .features-grid .card:nth-child(1) { animation-delay: 0.1s; }
+        .features-grid .card:nth-child(2) { animation-delay: 0.2s; }
+        .features-grid .card:nth-child(3) { animation-delay: 0.3s; }
+        .features-grid .card:nth-child(4) { animation-delay: 0.4s; }
+        .features-grid .card:nth-child(5) { animation-delay: 0.5s; }
+        .features-grid .card:nth-child(6) { animation-delay: 0.6s; }
+
+        /* Pricing Section */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-8);
+            align-items: center;
+        }
+        .pricing-card {
+            text-align: center;
+            border: 1px solid var(--gray-200);
+        }
+        .pricing-card.highlight {
+            border: 2px solid var(--primary);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+        .pricing-card h3 { font-size: var(--text-lg); color: var(--primary); }
+        .price { font-size: var(--text-4xl); font-weight: 700; margin: var(--space-4) 0; }
+        .price span { font-size: var(--text-base); font-weight: 400; color: var(--text-secondary); }
+        .feature-list { list-style: none; padding: 0; margin: var(--space-8) 0; }
+        .feature-list li { margin-bottom: var(--space-4); display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+        .feature-list i { color: var(--success); }
+
+        /* Contact Form Section */
+        #contact { background-color: var(--bg-secondary); }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg);
+            padding: var(--space-10);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+        }
+        .form-group { margin-bottom: var(--space-6); }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: var(--space-2);
+        }
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-base);
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            transition: all var(--duration) var(--ease);
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        textarea.form-control { resize: vertical; min-height: 120px; }
+
+        /* Footer */
+        .main-footer {
+            background-color: var(--gray-800);
+            color: var(--gray-300);
+            padding: var(--space-12) 0;
+            text-align: center;
+        }
+        @media (prefers-color-scheme: dark) {
+            .main-footer { background-color: #020617; }
+        }
+        .footer-logo { font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4); color: white; display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+        .footer-logo i { color: var(--primary-light); }
+        .social-links a {
+            color: var(--gray-400);
+            font-size: var(--text-xl);
+            margin: 0 var(--space-3);
+        }
+        .social-links a:hover { color: white; }
+        .copyright { margin-top: var(--space-6); font-size: var(--text-sm); }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: var(--space-6);
+            right: var(--space-6);
+            background-color: var(--gray-800);
+            color: white;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all var(--duration-slow) var(--ease);
+            visibility: hidden;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--error); }
+    </style>
+</head>
+<body>
+
+    <header class="main-header" id="mainHeader">
+        <div class="container">
+            <a href="#" class="logo"><i class="fa-solid fa-star-of-life"></i> Stardust</a>
+            <nav class="main-nav">
+                <a href="#features">核心功能</a>
+                <a href="#pricing">價格方案</a>
+                <a href="#contact">聯絡我們</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content fade-in-up">
+                    <h1>整合星群智慧<br>點亮專案未來</h1>
+                    <p>Stardust Project 是一款為現代化團隊打造的 AI 協作平台，匯集夥伴們的集體智慧，將複雜的專案化繁為簡，讓您的團隊發揮最大潛能。</p>
+                    <a href="#contact" class="btn btn-secondary btn-lg">索取產品簡報</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="section">
+            <div class="container">
+                <h2 class="section-title">為卓越而生的核心功能</h2>
+                <p class="section-subtitle">我們整合了星群夥伴們的建議，打造出最貼近團隊需求的強大功能，讓協作變得前所未有的簡單高效。</p>
+                <div class="features-grid">
+                    <div class="card feature-card">
+                        <div class="feature-icon"><i class="fa-solid fa-robot"></i></div>
+                        <h3>AI 智能助理</h3>
+                        <p>內建 AI 夥伴「達爾」，自動化分配任務、追蹤進度、生成報告，成為您最可靠的專案參謀長。</p>
+                    </div>
+                    <div class="card feature-card">
+                        <div class="feature-icon"><i class="fa-solid fa-users"></i></div>
+                        <h3>無縫跨團隊協作</h3>
+                        <p>打破部門壁壘，讓所有夥伴在同一個平台上即時溝通、共享文件、同步進度，資訊零時差。</p>
+                    </div>
+                    <div class="card feature-card">
+                        <div class="feature-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                        <h3>視覺化數據儀表板</h3>
+                        <p>將複雜的專案數據轉化為直觀的圖表，從宏觀到細節，一切進度與瓶頸都一目了然。</p>
+                    </div>
+                    <div class="card feature-card">
+                        <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <h3>自動化工作流程</h3>
+                        <p>自訂觸發條件與動作，讓重複性工作自動完成，釋放團隊時間，專注於更有價值創造。</p>
+                    </div>
+                    <div class="card feature-card">
+                        <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h3>企業級安全防護</h3>
+                        <p>採用端對端加密與多重身份驗證，確保您的專案數據與智慧財產得到最嚴密保護。</p>
+                    </div>
+                    <div class="card feature-card">
+                        <div class="feature-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                        <h3>全平台即時同步</h3>
+                        <p>無論在桌面、網頁還是行動裝置，所有資訊保持即時同步，讓您隨時隨地掌握專案動態。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="section" style="background-color: var(--bg-secondary);">
+            <div class="container">
+                <h2 class="section-title">選擇最適合您的方案</h2>
+                <p class="section-subtitle">無論您的團隊規模如何，我們都有靈活的方案滿足您的需求。立即開始，無需綁定信用卡。</p>
+                <div class="pricing-grid">
+                    <div class="card pricing-card fade-in-up" style="animation-delay: 0.1s;">
+                        <h3>星火版</h3>
+                        <p class="price">$0 <span>/ 永久</span></p>
+                        <p class="text-secondary">適合個人或剛起步的小型團隊，體驗核心功能。</p>
+                        <ul class="feature-list">
+                            <li><i class="fa-solid fa-check"></i> 3 個專案</li>
+                            <li><i class="fa-solid fa-check"></i> 5 位團隊成員</li>
+                            <li><i class="fa-solid fa-check"></i> 基礎 AI 助理</li>
+                            <li><i class="fa-solid fa-check"></i> 社群支援</li>
+                        </ul>
+                        <a href="#" class="btn btn-secondary btn-full">免費開始</a>
+                    </div>
+                    <div class="card pricing-card highlight fade-in-up" style="animation-delay: 0.2s;">
+                        <h3>星雲版 <span style="background: var(--accent); color: white; font-size: 12px; padding: 2px 8px; border-radius: var(--radius-full); vertical-align: middle;">最受歡迎</span></h3>
+                        <p class="price">$49 <span>/ 每月每位成員</span></p>
+                        <p class="text-secondary">適合快速成長的企業，解鎖所有協作與自動化工具。</p>
+                        <ul class="feature-list">
+                            <li><i class="fa-solid fa-check"></i> 無限專案</li>
+                            <li><i class="fa-solid fa-check"></i> 無限團隊成員</li>
+                            <li><i class="fa-solid fa-check"></i> 進階 AI 助理</li>
+                            <li><i class="fa-solid fa-check"></i> 優先郵件支援</li>
+                        </ul>
+                        <a href="#" class="btn btn-primary btn-full">選擇星雲版</a>
+                    </div>
+                    <div class="card pricing-card fade-in-up" style="animation-delay: 0.3s;">
+                        <h3>星系版</h3>
+                        <p class="price">客製化</p>
+                        <p class="text-secondary">為大型組織量身打造，提供專屬部署與頂級支援。</p>
+                        <ul class="feature-list">
+                            <li><i class="fa-solid fa-check"></i> 星雲版所有功能</li>
+                            <li><i class="fa-solid fa-check"></i> 私有雲或本地部署</li>
+                            <li><i class="fa-solid fa-check"></i> 專屬客戶成功經理</li>
+                            <li><i class="fa-solid fa-check"></i> 24/7 電話支援</li>
+                        </ul>
+                        <a href="#contact" class="btn btn-secondary btn-full">洽詢報價</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="section">
+            <div class="container">
+                <h2 class="section-title">準備好提升您的團隊戰力了嗎？</h2>
+                <p class="section-subtitle">這份簡報是我們整合了星群夥伴們建議後的成果。請留下您的資訊，我們將提供完整的產品介紹，並為您安排一對一的深度演示。</p>
+                <div class="form-container fade-in-up">
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <label for="name">姓名</label>
+                            <input type="text" id="name" name="name" class="form-control" placeholder="請輸入您的姓名" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company">公司名稱</label>
+                            <input type="text" id="company" name="company" class="form-control" placeholder="請輸入您的公司名稱" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">電子郵件</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="請輸入您的電子郵件" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">您的需求</label>
+                            <textarea id="message" name="message" class="form-control" placeholder="可以簡述您目前遇到的專案管理挑戰"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full btn-lg">立即索取產品簡報</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <a href="#" class="footer-logo"><i class="fa-solid fa-star-of-life"></i> Stardust Project</a>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+            <p class="copyright">&copy; 2024 Stardust Technologies Inc. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast">
+        <i id="toast-icon" class="fa-solid fa-check-circle"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Header scroll effect
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // Contact form submission
+            const contactForm = document.getElementById('contactForm');
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Frontend validation
+                const name = document.getElementById('name').value.trim();
+                const company = document.getElementById('company').value.trim();
+                const email = document.getElementById('email').value.trim();
+
+                if (!name || !company || !email) {
+                    showToast('請填寫所有必填欄位！', 'error');
+                    return;
+                }
+                
+                if (!/^\S+@\S+\.\S+$/.test(email)) {
+                    showToast('請輸入有效的電子郵件地址！', 'error');
+                    return;
+                }
+
+                // Simulate saving data to localStorage
+                try {
+                    const submission = {
+                        name,
+                        company,
+                        email,
+                        message: document.getElementById('message').value.trim(),
+                        timestamp: new Date().toISOString()
+                    };
+                    let submissions = JSON.parse(localStorage.getItem('stardust_submissions')) || [];
+                    submissions.push(submission);
+                    localStorage.setItem('stardust_submissions', JSON.stringify(submissions));
+
+                    // Show success toast and reset form
+                    showToast('提交成功！我們將盡快與您聯繫。', 'success');
+                    contactForm.reset();
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                    showToast('提交失敗，請稍後再試。', 'error');
+                }
+            });
+
+            // Toast notification handler
+            function showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const toastIcon = document.getElementById('toast-icon');
+                const toastMessage = document.getElementById('toast-message');
+
+                toastMessage.textContent = message;
+                toast.className = 'toast show';
+                toastIcon.className = '';
+
+                if (type === 'success') {
+                    toast.classList.add('success');
+                    toastIcon.classList.add('fa-solid', 'fa-check-circle');
+                } else {
+                    toast.classList.add('error');
+                    toastIcon.classList.add('fa-solid', 'fa-times-circle');
+                }
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+
+</body>
+</html>

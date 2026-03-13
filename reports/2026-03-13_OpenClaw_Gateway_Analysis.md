@@ -1,7 +1,7 @@
 # OpenClaw Gateway 故障分析報告 - 2026-03-13
 
 ## 問題回顧
-老蔡報告：Gateway 自動重啟失敗！需要手動處理。Port: 18789
+主人報告：Gateway 自動重啟失敗！需要手動處理。Port: 18789
 
 ## 診斷過程
 1.  嘗試執行 which openclaw → 失敗，指令找不到。

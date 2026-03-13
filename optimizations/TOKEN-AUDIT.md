@@ -137,7 +137,7 @@ logger.info({ module: 'executor-agents', inputTokens: usage.input, outputTokens:
 
 | 日誌標記 | 分類 | 說明 |
 |----------|------|------|
-| `[XiaocaiAI] model=...` | conversation / heartbeat | 小蔡 AI 回覆 |
+| `[XiaocaiAI] model=...` | conversation / heartbeat | 達爾 AI 回覆 |
 | `[Heartbeat] 心跳觸發` | heartbeat | 定時心跳自主思考 |
 | `[QualityGate-AI]` | sub-agent | 品質審查 AI |
 | `[ScriptGen]` | sub-agent | 腳本生成 AI |

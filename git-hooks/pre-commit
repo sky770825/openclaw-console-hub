@@ -71,10 +71,10 @@ if [ -n "$PROTECTED_HIT" ]; then
       echo "  🔒 $f"
     done
     echo ""
-    echo "這些檔案只有 L2 Claude Code + 老蔡能改。"
+    echo "這些檔案只有 L2 Claude Code + 主人能改。"
     echo ""
     echo "解鎖方式："
-    echo "  1. 請老蔡授權（Telegram 會收到通知）"
+    echo "  1. 請主人授權（Telegram 會收到通知）"
     echo "  2. 或手動解鎖："
     echo "     echo 'openclaw-unlock-$(date '+%Y%m%d')' > $UNLOCK_FILE"
     echo "  3. 然後重新 git commit"

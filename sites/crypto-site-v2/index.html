@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaXchange - 新世代數位資產交易所</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* 科技/Dashboard 預設為暗色主題 */
+            --primary: #3b82f6;      /* 主色 (blue 系列) */
+            --primary-light: #60a5fa;
+            --primary-dark: #2563eb;
+            --accent: #f59e0b;       /* 強調色 */
+            --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+
+            /* 背景/文字 (暗色模式) */
+            --bg: #0f172a; 
+            --bg-secondary: #1e293b;
+            --text: #f1f5f9; 
+            --text-secondary: #94a3b8;
+            
+            /* 中性色 (暗色模式) */
+            --gray-50: #1e293b; --gray-100: #334155; --gray-200: #475569;
+            --gray-300: #64748b; --gray-400: #94a3b8; --gray-500: #cbd5e1;
+            --gray-600: #d1d5db; --gray-700: #e5e7eb; --gray-800: #f3f4f6; --gray-900: #f8fafc;
+
+            /* 陰影 (暗色模式) */
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.3);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.3);
+            --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.5);
+
+            /* 通用 */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px; --space-20: 80px;
+            --font: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+            --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+            --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem;
+            --radius-sm: 6px; --radius: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #ffffff; --bg-secondary: #f3f4f6;
+                --text: #111827; --text-secondary: #4b5563;
+                --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+                --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+                --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+                --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+                --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+                --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+                --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+                --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+                --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            }
+        }
+
+        /* Global Styles */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 700; line-height: 1.2; }
+        p { margin: 0; }
+        a { color: var(--primary); text-decoration: none; transition: all var(--duration) var(--ease); }
+        a:hover { color: var(--primary-light); }
+        img { max-width: 100%; height: auto; display: block; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
+        section { padding: var(--space-20) 0; }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-on-scroll {
+            opacity: 0;
+            animation: fadeInUp var(--duration-slow) var(--ease) forwards;
+        }
+
+        /* Header */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: var(--space-4) 0;
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--gray-100);
+            transition: all var(--duration) var(--ease);
+        }
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: var(--text-xl); font-weight: 700; color: var(--text); }
+        .logo i { color: var(--primary); margin-right: var(--space-2); }
+        .main-nav { display: none; }
+        @media (min-width: 768px) {
+            .main-nav { display: flex; gap: var(--space-6); }
+            .main-nav a { color: var(--text-secondary); font-weight: 500; }
+            .main-nav a:hover, .main-nav a.active { color: var(--text); }
+        }
+        .header-actions { display: flex; gap: var(--space-3); }
+        .mobile-menu-toggle { display: block; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
+        @media (min-width: 768px) { .mobile-menu-toggle { display: none; } }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--duration) var(--ease);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            border: 1px solid var(--gray-100);
+        }
+        .btn-secondary:hover { background-color: var(--gray-100); }
+
+        /* Hero Section */
+        .hero {
+            min-height: 70vh;
+            padding-top: 120px;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            overflow: hidden;
+            position: relative;
+        }
+        .hero-content {
+            z-index: 2;
+            animation: fadeInUp 1s var(--ease) forwards;
+        }
+        .hero h1 { font-size: var(--text-5xl); margin-bottom: var(--space-4); background: linear-gradient(45deg, var(--primary-light), var(--text)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: var(--text-xl); color: var(--text-secondary); max-width: 700px; margin: 0 auto var(--space-8); }
+        
+        /* Card */
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--space-6);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--duration) var(--ease);
+            border: 1px solid var(--gray-100);
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+        }
+        
+        /* Market Section */
+        .market-table { width: 100%; border-collapse: collapse; }
+        .market-table th, .market-table td { padding: var(--space-4); text-align: left; border-bottom: 1px solid var(--gray-100); }
+        .market-table th { color: var(--text-secondary); font-weight: 500; font-size: var(--text-sm); }
+        .market-table td { vertical-align: middle; }
+        .coin-info { display: flex; align-items: center; gap: var(--space-3); }
+        .coin-info img { width: 32px; height: 32px; }
+        .coin-name-full { display: none; }
+        .coin-name-symbol { font-weight: 600; }
+        .price-change-positive { color: var(--success); }
+        .price-change-negative { color: var(--error); }
+        @media (min-width: 768px) {
+            .coin-name-full { display: block; color: var(--text-secondary); font-size: var(--text-sm); }
+        }
+
+        /* Trading Section */
+        .trading-interface {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-8);
+        }
+        @media (min-width: 1024px) {
+            .trading-interface { grid-template-columns: 320px 1fr; }
+        }
+        .trading-panel .tabs { display: flex; margin-bottom: var(--space-4); }
+        .trading-panel .tab {
+            flex: 1;
+            padding: var(--space-3);
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid var(--gray-100);
+            color: var(--text-secondary);
+        }
+        .trading-panel .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Forms */
+        .form-group { margin-bottom: var(--space-4); }
+        .form-group label { display: block; margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+        .form-input {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            background-color: var(--bg);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: var(--text-base);
+            transition: all var(--duration) var(--ease);
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Chart Section */
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
+        .chart-header h3 { font-size: var(--text-2xl); }
+        .timeframe-selector button {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: var(--space-2) var(--space-3);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+        }
+        .timeframe-selector button.active {
+            background-color: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        /* News Section */
+        .news-grid {
+            display: grid;
+            gap: var(--space-6);
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        .news-card {
+            display: flex;
+            flex-direction: column;
+        }
+        .news-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+        }
+        .news-content { padding: var(--space-4); flex-grow: 1; display: flex; flex-direction: column;}
+        .news-tag {
+            background-color: var(--primary);
+            color: white;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-xs);
+            font-weight: 600;
+            align-self: flex-start;
+            margin-bottom: var(--space-3);
+        }
+        .news-card h3 { font-size: var(--text-lg); margin-bottom: var(--space-2); }
+        .news-card p { color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: var(--space-4); flex-grow: 1; }
+        .news-meta { font-size: var(--text-xs); color: var(--text-secondary); }
+
+        /* CTA Section */
+        .cta-section {
+            background-color: var(--bg-secondary);
+            text-align: center;
+        }
+        .cta-section h2 { font-size: var(--text-3xl); margin-bottom: var(--space-4); }
+        .cta-section p { color: var(--text-secondary); margin-bottom: var(--space-8); }
+        
+        /* Footer */
+        .main-footer {
+            background-color: var(--bg);
+            border-top: 1px solid var(--gray-100);
+            padding: var(--space-12) 0;
+        }
+        .footer-grid {
+            display: grid;
+            gap: var(--space-8);
+            grid-template-columns: repeat(2, 1fr);
+        }
+        @media (min-width: 768px) {
+            .footer-grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
+        }
+        .footer-col h4 { margin-bottom: var(--space-4); font-size: var(--text-lg); }
+        .footer-col ul { list-style: none; padding: 0; margin: 0; }
+        .footer-col li { margin-bottom: var(--space-2); }
+        .footer-col a { color: var(--text-secondary); }
+        .footer-col a:hover { color: var(--text); }
+        .social-links { display: flex; gap: var(--space-4); margin-top: var(--space-4); }
+        .social-links a { font-size: var(--text-xl); color: var(--text-secondary); }
+        .footer-bottom {
+            margin-top: var(--space-12);
+            padding-top: var(--space-6);
+            border-top: 1px solid var(--gray-100);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-container {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-8);
+            width: 90%;
+            max-width: 450px;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            transform: scale(0.95);
+            transition: all var(--duration-slow) var(--ease);
+        }
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
+        }
+        .modal-close {
+            position: absolute;
+            top: var(--space-4);
+            right: var(--space-4);
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .modal-header { text-align: center; margin-bottom: var(--space-6); }
+        .modal-header h2 { font-size: var(--text-2xl); }
+        .modal-switch { text-align: center; margin-top: var(--space-4); font-size: var(--text-sm); }
+        .modal-switch a { font-weight: 600; cursor: pointer; }
+        #register-form { display: none; }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: var(--space-6);
+            right: var(--space-6);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+        .toast {
+            padding: var(--space-4);
+            border-radius: var(--radius);
+            color: white;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            animation: slideInRight 0.3s var(--ease);
+        }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--error); }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo"><i class="fas fa-cubes"></i> NovaXchange</a>
+            <nav class="main-nav">
+                <a href="#market">市場</a>
+                <a href="#trade">交易</a>
+                <a href="#news">新聞</a>
+                <a href="#">關於我們</a>
+            </nav>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="login-btn">登入</button>
+                <button class="btn btn-primary" id="register-btn">註冊</button>
+            </div>
+            <button class="mobile-menu-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>探索下一代數位資產</h1>
+                    <p>即時追蹤、安全交易、掌握全球加密貨幣市場脈動。</p>
+                    <a href="#trade" class="btn btn-primary btn-lg">立即開始交易</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="market">
+            <div class="container">
+                <h2 style="text-align: center; font-size: var(--text-4xl); margin-bottom: var(--space-12);">市場行情</h2>
+                <div class="card">
+                    <table class="market-table">
+                        <thead>
+                            <tr>
+                                <th>資產</th>
+                                <th>最新價格</th>
+                                <th>24H 漲跌</th>
+                                <th>24H 最高價</th>
+                                <th>24H 最低價</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="crypto-row" data-symbol="BTC">
+                                <td>
+                                    <div class="coin-info">
+                                        <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/1.png" alt="Bitcoin">
+                                        <div>
+                                            <div class="coin-name-symbol">BTC</div>
+                                            <div class="coin-name-full">Bitcoin</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="price">$68,450.72</td>
+                                <td class="change price-change-positive">+2.51%</td>
+                                <td>$69,102.34</td>
+                                <td>$66,890.11</td>
+                                <td><a href="#trade" class="btn btn-primary">交易</a></td>
+                            </tr>
+                            <tr class="crypto-row" data-symbol="ETH">
+                                <td>
+                                    <div class="coin-info">
+                                        <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png" alt="Ethereum">
+                                        <div>
+                                            <div class="coin-name-symbol">ETH</div>
+                                            <div class="coin-name-full">Ethereum</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="price">$3,560.18</td>
+                                <td class="change price-change-negative">-1.15%</td>
+                                <td>$3,620.45</td>
+                                <td>$3,501.98</td>
+                                <td><a href="#trade" class="btn btn-primary">交易</a></td>
+                            </tr>
+                            <tr class="crypto-row" data-symbol="SOL">
+                                <td>
+                                    <div class="coin-info">
+                                        <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png" alt="Solana">
+                                        <div>
+                                            <div class="coin-name-symbol">SOL</div>
+                                            <div class="coin-name-full">Solana</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="price">$165.43</td>
+                                <td class="change price-change-positive">+5.78%</td>
+                                <td>$170.12</td>
+                                <td>$158.33</td>
+                                <td><a href="#trade" class="btn btn-primary">交易</a></td>
+                            </tr>
+                             <tr class="crypto-row" data-symbol="BNB">
+                                <td>
+                                    <div class="coin-info">
+                                        <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png" alt="BNB">
+                                        <div>
+                                            <div class="coin-name-symbol">BNB</div>
+                                            <div class="coin-name-full">BNB</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="price">$590.21</td>
+                                <td class="change price-change-positive">+0.89%</td>
+                                <td>$595.60</td>
+                                <td>$581.04</td>
+                                <td><a href="#trade" class="btn btn-primary">交易</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="trade">
+            <div class="container">
+                <div class="trading-interface">
+                    <div class="trading-panel card">
+                        <div class="tabs">
+                            <div class="tab active" data-tab="buy">買入</div>
+                            <div class="tab" data-tab="sell">賣出</div>
+                        </div>
+                        <form id="trade-form">
+                            <div class="form-group">
+                                <label for="price">價格 (USDT)</label>
+                                <input type="number" id="price" class="form-input" placeholder="68450.72" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="amount">數量 (BTC)</label>
+                                <input type="number" id="amount" class="form-input" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="total">總額 (USDT)</label>
+                                <input type="number" id="total" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">執行交易</button>
+                        </form>
+                    </div>
+                    <div class="chart-container card">
+                        <div class="chart-header">
+                            <h3>BTC/USDT</h3>
+                            <div class="timeframe-selector">
+                                <button class="active">1H</button>
+                                <button>4H</button>
+                                <button>1D</button>
+                                <button>1W</button>
+                            </div>
+                        </div>
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        section>
+
+        <section id="news">
+            <div class="container">
+                <h2 style="text-align: center; font-size: var(--text-4xl); margin-bottom: var(--space-12);">最新資訊</h2>
+                <div class="news-grid">
+                    <div class="card news-card">
+                        <img src="https://images.unsplash.com/photo-1640286599025-34b84a1e824d?q=80&w=800&auto=format&fit=crop" alt="News Image 1">
+                        <div class="news-content">
+                            <span class="news-tag">市場分析</span>
+                            <h3>比特幣減半後，市場將迎來新的牛市起點？</h3>
+                            <p>分析師普遍認為，歷史數據顯示比特幣每次減半後都會有一波顯著的價格上漲，但這次是否會重演歷史？</p>
+                            <div class="news-meta">2024年5月20日</div>
+                        </div>
+                    </div>
+                    <div class="card news-card">
+                        <img src="https://images.unsplash.com/photo-1639322537228-f710d846310a?q=80&w=800&auto=format&fit=crop" alt="News Image 2">
+                        <div class="news-content">
+                            <span class="news-tag">技術前沿</span>
+                            <h3>以太坊坎昆升級完成，Layer 2 交易成本大幅降低</h3>
+                            <p>Dencun 升級引入了 Proto-Danksharding，旨在降低 Layer 2 解決方案的數據儲存成本，使交易更便宜、更快速。</p>
+                            <div class="news-meta">2024年5月18日</div>
+                        </div>
+                    </div>
+                    <div class="card news-card">
+                        <img src="https://images.unsplash.com/photo-1641427244199-6202a1c4be04?q=80&w=800&auto=format&fit=crop" alt="News Image 3">
+                        <div class="news-content">
+                            <span class="news-tag">法規動態</span>
+                            <h3>美國 SEC 對於現貨以太坊 ETF 的態度是否正在轉變？</h3>
+                            <p>隨著香港批准現貨比特幣和以太坊 ETF，全球監管壓力可能促使美國證券交易委員會重新評估其立場。</p>
+                            <div class="news-meta">2024年5月15日</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <h2>準備好加入數位金融革命了嗎？</h2>
+                <p>立即創建您的 NovaXchange 帳戶，開啟安全、高效的加密貨幣交易之旅。</p>
+                <button class="btn btn-primary btn-lg" id="cta-register-btn">立即免費註冊</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <a href="#" class="logo"><i class="fas fa-cubes"></i> NovaXchange</a>
+                    <p style="color: var(--text-secondary); margin-top: var(--space-4);">為全球用戶提供安全、可靠的數位資產交易服務。</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>關於</h4>
+                    <ul>
+                        <li><a href="#">關於我們</a></li>
+                        <li><a href="#">媒體報導</a></li>
+                        <li><a href="#">人才招募</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>產品</h4>
+                    <ul>
+                        <li><a href="#">現貨交易</a></li>
+                        <li><a href="#">合約交易</a></li>
+                        <li><a href="#">API</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>支援</h4>
+                    <ul>
+                        <li><a href="#">幫助中心</a></li>
+                        <li><a href="#">聯絡我們</a></li>
+                        <li><a href="#">服務條款</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 NovaXchange. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-container">
+            <button class="modal-close">&times;</button>
+            
+            <!-- Login Form -->
+            <div id="login-form">
+                <div class="modal-header">
+                    <h2>登入您的帳戶</h2>
+                </div>
+                <form>
+                    <div class="form-group">
+                        <label for="login-email">電子郵件</label>
+                        <input type="email" id="login-email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">密碼</label>
+                        <input type="password" id="login-password" class="form-input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">登入</button>
+                </form>
+                <div class="modal-switch">
+                    還沒有帳戶？ <a id="show-register">立即註冊</a>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form">
+                <div class="modal-header">
+                    <h2>建立新帳戶</h2>
+                </div>
+                <form>
+                    <div class="form-group">
+                        <label for="register-email">電子郵件</label>
+                        <input type="email" id="register-email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">密碼</label>
+                        <input type="password" id="register-password" class="form-input" required>
+                    </div>
+                     <div class="form-group">
+                        <label for="register-confirm-password">確認密碼</label>
+                        <input type="password" id="register-confirm-password" class="form-input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">註冊</button>
+                </form>
+                <div class="modal-switch">
+                    已經有帳戶了？ <a id="show-login">前往登入</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="toast-container" id="toast-container"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Chart.js ---
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+    const chartData = {
+        labels: Array.from({ length: 30 }, (_, i) => `T-${29 - i}`),
+        datasets: [{
+            label: 'BTC/USDT',
+            data: Array.from({ length: 30 }, () => 68000 + Math.random() * 1000 - 500),
+            borderColor: 'var(--primary)',
+            backgroundColor: gradient,
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: true,
+        }]
+    };
+
+    const priceChart = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: { color: 'var(--text-secondary)' },
+                    grid: { color: 'var(--gray-100)' }
+                },
+                x: {
+                    ticks: { color: 'var(--text-secondary)', maxTicksLimit: 10 },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // --- Modal Logic ---
+    const authModal = document.getElementById('auth-modal');
+    const loginBtn = document.getElementById('login-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const ctaRegisterBtn = document.getElementById('cta-register-btn');
+    const closeBtn = authModal.querySelector('.modal-close');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const showRegisterLink = document.getElementById('show-register');
+    const showLoginLink = document.getElementById('show-login');
+
+    const openModal = () => authModal.classList.add('active');
+    const closeModal = () => authModal.classList.remove('active');
+
+    const showLogin = () => {
+        registerForm.style.display = 'none';
+        loginForm.style.display = 'block';
+        openModal();
+    };
+    const showRegister = () => {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        openModal();
+    };
+
+    loginBtn.addEventListener('click', showLogin);
+    registerBtn.addEventListener('click', showRegister);
+    ctaRegisterBtn.addEventListener('click', showRegister);
+    closeBtn.addEventListener('click', closeModal);
+    authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) closeModal();
+    });
+    showRegisterLink.addEventListener('click', showRegister);
+    showLoginLink.addEventListener('click', showLogin);
+
+    // --- Toast Notification ---
+    const toastContainer = document.getElementById('toast-container');
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+        toast.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+    
+    // --- Trading Form Simulation ---
+    const tradeForm = document.getElementById('trade-form');
+    const priceInput = document.getElementById('price');
+    const amountInput = document.getElementById('amount');
+    const totalInput = document.getElementById('total');
+
+    function updateTotal() {
+        const price = parseFloat(priceInput.value) || 0;
+        const amount = parseFloat(amountInput.value) || 0;
+        totalInput.value = (price * amount).toFixed(2);
+    }
+    priceInput.addEventListener('input', updateTotal);
+    amountInput.addEventListener('input', updateTotal);
+
+    tradeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const amount = parseFloat(amountInput.value);
+        if (amount > 0) {
+            showToast('交易委託已成功送出', 'success');
+            tradeForm.reset();
+        } else {
+            showToast('請輸入有效的數量', 'error');
+        }
+    });
+
+    // --- Real-time Price Simulation ---
+    setInterval(() => {
+        document.querySelectorAll('.crypto-row').forEach(row => {
+            const priceEl = row.querySelector('.price');
+            const changeEl = row.querySelector('.change');
+            
+            let currentPrice = parseFloat(priceEl.textContent.replace(/[^0-9.-]+/g,""));
+            let change = (Math.random() - 0.5) * 0.01 * currentPrice;
+            let newPrice = currentPrice + change;
+            
+            let currentChangePct = parseFloat(changeEl.textContent.replace('%', ''));
+            let newChangePct = currentChangePct + (Math.random() - 0.5) * 0.1;
+            
+            priceEl.textContent = `$${newPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            changeEl.textContent = `${newChangePct > 0 ? '+' : ''}${newChangePct.toFixed(2)}%`;
+            
+            changeEl.classList.toggle('price-change-positive', newChangePct > 0);
+            changeEl.classList.toggle('price-change-negative', newChangePct <= 0);
+        });
+    }, 3000);
+
+    // --- Animation on Scroll ---
+    const animatedElements = document.querySelectorAll('.card, .news-card, h2');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-on-scroll');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    animatedElements.forEach((el, index) => {
+        el.style.animationDelay = `${index * 50}ms`;
+        observer.observe(el);
+    });
+});
+</script>
+
+</body>
+</html>

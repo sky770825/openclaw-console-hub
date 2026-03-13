@@ -1,5 +1,5 @@
 # 益展學院 專案研究報告
-## 一、 搜尋加速方案 (老蔡建議事項)
+## 一、 搜尋加速方案 (主人建議事項)
 - Use SerpApi or Google Custom Search API for structured JSON instead of HTML scraping
 - Implement asynchronous requests (Python asyncio/aiohttp) for parallel domain searching (591, Mobile01, PTTe-state)
 - Pre-filter results using regex to remove duplicate domains and social media noise

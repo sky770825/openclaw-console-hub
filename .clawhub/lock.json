@@ -64,6 +64,22 @@
     "macro-pipeline": {
       "version": "3.0.0",
       "installedAt": 1772528706675
+    },
+    "youtube-watcher": {
+      "version": "1.0.0",
+      "installedAt": 1773406207890
+    },
+    "deep-scraper": {
+      "version": "1.0.1",
+      "installedAt": 1773406262062
+    },
+    "agent-browser-clawdbot": {
+      "version": "0.1.0",
+      "installedAt": 1773406442914
+    },
+    "email-daily-summary": {
+      "version": "0.1.0",
+      "installedAt": 1773408801429
     }
   }
 }

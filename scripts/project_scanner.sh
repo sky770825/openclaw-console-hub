@@ -7,7 +7,7 @@ REPORT_PATH="/Users/sky770825/.openclaw/workspace/reports/initial_audit_report.m
 
 echo "# Project Audit Report: openclaw任務面版設計" > "$REPORT_PATH"
 echo "Timestamp: $(date)" >> "$REPORT_PATH"
-echo "Authorization: Lao Cai (老蔡授權)" >> "$REPORT_PATH"
+echo "Authorization: Lao Cai (主人授權)" >> "$REPORT_PATH"
 echo "" >> "$REPORT_PATH"
 
 echo "## 1. Project Overview" >> "$REPORT_PATH"
