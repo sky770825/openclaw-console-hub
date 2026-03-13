@@ -69,8 +69,19 @@ OpenRouter 用法：`{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1
 最多 6 路同時，每路可選 flash-lite/flash/grok/haiku/sonnet/opus：
 `{"action":"delegate_agents","agents":[{"role":"分析師","model":"flash","task":"任務A"},{"role":"架構師","model":"sonnet","task":"任務B"},{"role":"代碼審查","model":"haiku","task":"任務C"}]}`
 
+### Ollama 本地模型（離線/批次/訓練用）
+| model 參數 | 實際模型 | 速度 | 用途 |
+|-----------|---------|------|------|
+| mistral-7b | ollama/mistral:7b | 106 tok/s | 輕量離線、無網路備用 |
+| dr1-7b | ollama/deepseek-r1:7b | 98 tok/s | 離線推理 |
+| qwen25-32b | ollama/qwen2.5:32b | 29 tok/s | 中文離線、批次處理 |
+| qwen25-72b | ollama/qwen2.5:72b | ~15 tok/s | 高品質離線（慢） |
+| dr1-70b | ollama/deepseek-r1:70b | ~10 tok/s | 最強離線推理（很慢） |
+
+離線時自動切換：Gemini 不可用 → ollama/qwen2.5:32b → ollama/mistral:7b
+
 ### 指揮官大腦可切換（Telegram /models）
-google/gemini-2.5-flash-lite | google/gemini-3-flash-preview | google/gemini-3-pro-preview | xai/grok-4-1-fast | claude-haiku-4-5 | claude-sonnet-4-6 | claude-opus-4-6 | ollama/mistral:7b | ollama/deepseek-r1:7b | ollama/qwen2.5:32b
+google/gemini-2.5-flash-lite | google/gemini-3-flash-preview | google/gemini-3-pro-preview | xai/grok-4-1-fast | claude-haiku-4-5 | claude-sonnet-4-6 | claude-opus-4-6 | ollama/mistral:7b | ollama/deepseek-r1:7b | ollama/qwen2.5:32b | ollama/qwen2.5:72b | ollama/deepseek-r1:70b
 
 ---
 
