@@ -11,7 +11,7 @@
  * - 待命 → 阿商、阿數（standby，需要時可啟動）
  */
 
-export type CrewModelType = 'claude-opus' | 'claude-sonnet' | 'claude-haiku' | 'claude' | 'gemini-flash' | 'gemini-pro' | 'ollama-qwen32b' | 'ollama-deepseek7b' | 'ollama-mistral7b';
+export type CrewModelType = 'claude-opus' | 'claude-sonnet' | 'claude-haiku' | 'claude' | 'gemini-flash' | 'gemini-pro' | 'ollama-qwen72b' | 'ollama-qwen32b' | 'ollama-deepseek70b' | 'ollama-deepseek7b' | 'ollama-mistral7b';
 
 export interface CrewBotConfig {
   id: string;
@@ -46,7 +46,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja1000bot',
     token: process.env.TELEGRAM_CREW_AYAN_TOKEN?.trim() ?? '',
     role: '研究員兼分析師',
-    model: 'ollama-deepseek7b',  // 本地 DeepSeek R1 推理強，適合分析；complex 升級 Gemini Pro/Claude
+    model: 'ollama-deepseek70b',  // 本地 DeepSeek R1 70B 推理強，適合分析；complex 升級 Gemini Pro/Claude
     domain: 'intelligence',
     techKeywords: ['scraping', 'crawling', 'visual-testing', 'log-analysis', 'research', 'sql', 'supabase', 'metrics', 'monitoring', 'vector-db', 'data-analysis', 'etl'],
     personality: '你是阿研，NEUXA 星群的研究員兼分析師。你擅長爬網、情報蒐集、知識整理、技術調研。你也負責 log 異常初篩——看到異常 log 會先歸類、標記嚴重程度，再轉交阿工處理。你也擅長 Supabase 查詢和數據分析，能用 SQL 和統計手段從數據裡挖出洞察、追蹤 metrics、發現異常數據並主動告警。你說話嚴謹但不枯燥，會引用數據和事實來支持觀點。你會主動追蹤技術趨勢和系統異動，不等別人叫你才動——你是星群的耳目，情報永遠跑在問題前面。',
@@ -84,7 +84,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja2000bot',
     token: process.env.TELEGRAM_CREW_AGONG_TOKEN?.trim() ?? '',
     role: '工程師',
-    model: 'ollama-qwen32b',  // 本地 Qwen 2.5 32B 程式碼能力強；complex 升級 Claude CLI
+    model: 'ollama-qwen72b',  // 本地 Qwen 2.5 72B 程式碼能力強；complex 升級 Claude CLI
     domain: 'engineering',
     techKeywords: ['typescript', 'react', 'node', 'api', 'testing', 'docker', 'devops', 'frontend', 'backend', 'security-code'],
     personality: '你是阿工，NEUXA 星群的工程師。你擅長寫代碼、系統架構、除錯、效能優化。你也負責告警處理和錯誤排查——收到 error/告警時會追根源、給修復方案。你說話直接務實，遇到技術問題直接給解決方案，不繞彎子。你會主動審查代碼品質、發現潛在的效能瓶頸和安全隱患，不等問題爆發才動手——預防勝於治療。',
@@ -114,7 +114,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja3000bot',
     token: process.env.TELEGRAM_CREW_ACE_TOKEN?.trim() ?? '',
     role: '策略師兼商業自動化',
-    model: 'ollama-qwen32b',  // 本地 Qwen 2.5 32B 規劃能力強；complex 升級 Gemini Pro
+    model: 'ollama-qwen72b',  // 本地 Qwen 2.5 72B 規劃能力強；complex 升級 Gemini Pro
     domain: 'strategy',
     techKeywords: ['planning', 'risk-assessment', 'compliance', 'roadmap', 'architecture', 'automation', 'n8n', 'saas', 'workflow', 'property', 'roi'],
     personality: '你是阿策，NEUXA 星群的策略師。你擅長任務拆解、規劃、風險評估、資源分配、優先排序。你看事情有全局觀，會從成本效益角度思考。說話有條理，喜歡分階段規劃。你也擅長商業流程自動化和工具評估，能設計 n8n/Zapier/Make 工作流、評估 SaaS 工具 ROI、規劃自動化落地方案。你會主動監控任務進度、發現瓶頸和資源衝突，提前調整排程——不等任務卡住才介入，而是預見問題並提前佈局。',
@@ -154,7 +154,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja4000bot',
     token: process.env.TELEGRAM_CREW_AMI_TOKEN?.trim() ?? '',
     role: '秘書',
-    model: 'ollama-mistral7b',  // 本地 Mistral 7B 文書整理夠用，完全免費
+    model: 'ollama-qwen32b',  // 本地 Qwen 2.5 32B 文書品質更好，96GB 跑得動
     domain: 'operations',
     techKeywords: ['documentation', 'memory', 'reporting', 'archiving'],
     personality: '你是阿秘，NEUXA 星群的秘書。你擅長摘要、日報撰寫、記憶管理、資訊整理、文件歸檔。你細心周到，會主動提醒重要事項和截止日期。語氣親切有條理。你會主動整理散落的資訊、發現遺漏的紀錄，確保團隊的集體記憶完整不遺失——你是星群的記憶守護者。',
@@ -183,7 +183,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'Rja5000bot',
     token: process.env.TELEGRAM_CREW_ASHANG_TOKEN?.trim() ?? '',
     role: '商業自動化',
-    model: 'ollama-qwen32b',  // 本地 Qwen 2.5 32B
+    model: 'ollama-qwen72b',  // 本地 Qwen 2.5 72B
     domain: 'business',
     standby: true,
     techKeywords: ['automation', 'n8n', 'saas', 'workflow', 'property', 'roi'],
@@ -214,7 +214,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     username: 'MMAIAGNET688bot',
     token: process.env.TELEGRAM_CREW_ASHU_TOKEN?.trim() ?? '',
     role: '分析師',
-    model: 'ollama-deepseek7b',  // 本地 DeepSeek R1 推理分析
+    model: 'ollama-deepseek70b',  // 本地 DeepSeek R1 70B 推理分析
     domain: 'data',
     standby: true,
     techKeywords: ['sql', 'supabase', 'metrics', 'monitoring', 'vector-db', 'data-analysis', 'etl'],

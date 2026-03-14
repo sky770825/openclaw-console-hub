@@ -47,7 +47,9 @@ const CLAUDE_UPGRADE_BOTS = new Set(['agong']);
 
 // Ollama 模型 ID 對應表
 const OLLAMA_MODEL_MAP: Record<string, string> = {
+  'ollama-qwen72b': 'qwen2.5:72b',
   'ollama-qwen32b': 'qwen2.5:32b',
+  'ollama-deepseek70b': 'deepseek-r1:70b',
   'ollama-deepseek7b': 'deepseek-r1:7b',
   'ollama-mistral7b': 'mistral:7b',
 };
@@ -78,7 +80,7 @@ function selectModel(bot: CrewBotConfig, taskComplexity: 'simple' | 'medium' | '
   // medium → 用本地大模型（32B）或 Gemini Flash
   if (taskComplexity === 'medium') {
     // 如果 bot 本身已經是 32B 模型，直接用
-    if (bot.model === 'ollama-qwen32b') return bot.model;
+    if (bot.model === 'ollama-qwen72b' || bot.model === 'ollama-qwen32b') return bot.model;
     // 7B bot medium 任務升級到 Gemini Flash（比 7B 品質好，比 Pro 省錢）
     return 'gemini-flash';
   }
