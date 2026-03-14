@@ -201,6 +201,7 @@ interface SharedState {
 }
 
 const agentCapabilities: Record<string, AgentCapability[]> = {
+  main: ['read', 'write', 'execute', 'interrupt'],
   cursor_agent: ['read', 'write', 'execute', 'interrupt'],
   codex_agent: ['read', 'write', 'execute', 'interrupt'],
   openclaw: ['read', 'write', 'execute', 'interrupt'],

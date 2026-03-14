@@ -9,7 +9,7 @@ import { spawn, execSync } from 'node:child_process';
 import { createLogger } from '../logger.js';
 import { sanitize } from '../utils/key-vault.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
-import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS } from './security.js';
+import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS, contentContainsApiKey, SUPABASE_BATCH_DELETE_LIMIT } from './security.js';
 import { recordModelUsage } from '../openclawSupabase.js';
 
 const log = createLogger('telegram');
@@ -135,6 +135,7 @@ const CHAIN_HINTS: Record<string, string> = {
   plan_project: '💡 計畫拆好了 → 子任務已進 draft，跟主人報告計畫摘要。有需要調整就 update_task。',
   roadmap: '💡 路線圖操作完成 → 搭配 query_supabase 看任務進度，或 write_file 寫週報。',
   delegate_agents: '💡 多代理完成 → 整合各代理輸出，write_file 寫總結 + index_file 入庫，再告訴主人結論。',
+  restart_service: '💡 服務已重啟 → 等幾秒後用 run_script: curl -s http://localhost:3011/api/health 確認是否正常啟動。',
 };
 
 // ── 任務操作 ──
@@ -290,24 +291,12 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
   }
   const check = isPathSafe(actionPath, 'write');
   if (!check.safe) {
-    // 靈魂文件被擋 → 自動轉存到 pending-updates/ 等主人審核
-    const basename = path.basename(actionPath);
-    if (SOUL_FILES.has(basename)) {
-      const pendingDir = path.join(NEUXA_WORKSPACE, 'pending-updates');
-      fs.mkdirSync(pendingDir, { recursive: true });
-      const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      const pendingPath = path.join(pendingDir, `${basename}.${ts}.md`);
-      fs.writeFileSync(pendingPath, `<!-- 達爾想更新 ${basename}，已轉存等主人審核 -->\n\n${content}`, 'utf8');
-      return { ok: true, output: `📋 ${basename} 是靈魂文件，已轉存到 pending-updates/ 等主人審核合併` };
-    }
     return { ok: false, output: `🚫 ${check.reason}` };
   }
 
-  // 保護 crew bot MEMORY.md — 不允許覆蓋，只允許追加工作紀錄
-  const resolvedEarly = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
-  const crewMemoryPattern = /\.openclaw\/workspace\/crew\/\w+\/MEMORY\.md$/;
-  if (crewMemoryPattern.test(resolvedEarly)) {
-    return { ok: false, output: '🛡️ MEMORY.md 結構受保護，不能直接覆蓋。系統會自動追加工作紀錄。如需寫筆記，請寫到 ~/.openclaw/workspace/crew/你的id/notes.md' };
+  // API Key 內容保護 — 不允許寫入含有 API Key 的內容（防止意外洩漏或覆蓋）
+  if (contentContainsApiKey(content)) {
+    return { ok: false, output: '🔑 內容包含 API Key，禁止寫入。API Key 只能由主人手動管理。' };
   }
 
   try {
@@ -2701,46 +2690,28 @@ async function handleAnalyzeSymbol(symbol: string, filePath?: string): Promise<A
 
 // ── 精準修補檔案 ──
 
-/** 禁止 patch 的檔案名（靈魂文件） */
-const PATCH_FORBIDDEN_NAMES = new Set([
-  'SOUL.md', 'AWAKENING.md', 'IDENTITY.md',
-]);
-
 /** patch_file 允許的根目錄白名單 */
 const PATCH_ALLOWED_ROOTS = [
   path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace'),
   PROJECT_ROOT,
 ];
 
-/** 檢查 patch_file 路徑安全性 */
+/** 檢查 patch_file 路徑安全性 — v2: 只擋 API Key 和系統目錄 */
 function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; reason?: string } {
   let expanded = rawPath;
   if (expanded.startsWith('~/') || expanded === '~') {
     expanded = path.join(process.env.HOME || '/tmp', expanded.slice(1));
   }
   const resolved = path.resolve(expanded);
-  const basename = path.basename(resolved);
 
-  if (PATCH_FORBIDDEN_NAMES.has(basename)) {
-    return { safe: false, resolved, reason: `禁止修改靈魂文件 "${basename}"` };
-  }
-
+  // 唯一禁止：openclaw.json（含 API Keys）
   for (const pattern of FORBIDDEN_PATH_PATTERNS) {
     if (resolved.toLowerCase().includes(pattern.toLowerCase())) {
-      return { safe: false, resolved, reason: `禁止修改包含 "${pattern}" 的檔案` };
+      return { safe: false, resolved, reason: `🔑 禁止修改包含 "${pattern}" 的檔案（含 API Keys）` };
     }
   }
 
-  // 禁止修改 server 源碼目錄 — 但放行 crew-bots/（達爾可自行優化星群）
-  if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
-    if (resolved.includes('/server/src/telegram/crew-bots/')) {
-      // 放行 crew-bots/ 子目錄
-    } else {
-      return { safe: false, resolved, reason: '🛑 禁止修改 server 源碼目錄，只有主人能改（crew-bots/ 除外）' };
-    }
-  }
-
-  // 只擋系統目錄，其他全放行（靈魂文件已在上面攔截）
+  // 擋系統目錄
   const sysDir = ['/etc', '/var', '/usr', '/bin', '/sbin', '/System', '/Library', '/private'];
   if (sysDir.some(d => resolved.startsWith(d))) {
     return { safe: false, resolved, reason: `禁止修改系統目錄` };
@@ -3368,6 +3339,9 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     case 'generate_site':
       result = await handleGenerateSite(action);
       break;
+    case 'restart_service':
+      result = await handleRestartService(action.service || '');
+      break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
   }
@@ -3385,6 +3359,51 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
   }
 
   return result;
+}
+
+// ── 服務重啟 ──
+
+const SERVICE_LABELS: Record<string, string> = {
+  'openclaw':        'com.dar.openclaw-taskboard',
+  'taskboard':       'com.dar.openclaw-taskboard',
+  'dashboard':       'com.dar.openclaw-dashboard',
+  'commander-bot':   'com.dar.commander-bot',
+  'ollama':          'com.dar.ollama',
+  'n8n':             'com.dar.n8n',
+  'comfyui':         'com.dar.comfyui',
+};
+
+async function handleRestartService(service: string): Promise<ActionResult> {
+  if (!service) {
+    return { ok: false, output: `restart_service 需要 service 參數。可用服務：${Object.keys(SERVICE_LABELS).join(', ')}` };
+  }
+  const key = service.toLowerCase().trim();
+  const label = SERVICE_LABELS[key];
+  if (!label) {
+    return { ok: false, output: `未知服務 "${service}"。可用：${Object.keys(SERVICE_LABELS).join(', ')}` };
+  }
+
+  const { execSync } = await import('node:child_process');
+  const uid = process.getuid ? process.getuid() : 501;
+
+  // taskboard 需要先 build
+  if (key === 'openclaw' || key === 'taskboard') {
+    try {
+      const projectDir = path.join(process.env.HOME || '/tmp', 'openclaw任務面版設計', 'server');
+      log.info(`[restart_service] Building taskboard at ${projectDir}...`);
+      execSync('npm run build', { cwd: projectDir, timeout: 60000, encoding: 'utf8' });
+    } catch (e) {
+      return { ok: false, output: `⚠️ Build 失敗，未重啟：${e instanceof Error ? e.message.slice(0, 300) : String(e)}` };
+    }
+  }
+
+  try {
+    execSync(`launchctl kickstart -k gui/${uid}/${label}`, { timeout: 10000 });
+    log.info(`[restart_service] Restarted ${service} (${label})`);
+    return { ok: true, output: `✅ 已重啟 ${service}${(key === 'openclaw' || key === 'taskboard') ? '（build + restart）' : ''}` };
+  } catch (e) {
+    return { ok: false, output: `重啟 ${service} 失敗：${e instanceof Error ? e.message.slice(0, 200) : String(e)}` };
+  }
 }
 
 // ── 網站生成 ──

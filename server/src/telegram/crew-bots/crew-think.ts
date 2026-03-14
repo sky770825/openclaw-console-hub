@@ -37,6 +37,7 @@ const VALID_ACTIONS = new Set([
   'grep_project', 'find_symbol', 'analyze_symbol', 'patch_file',
   'code_eval', 'index_file', 'reindex_knowledge', 'web_search',
   'web_browse', 'proxy_fetch', 'delegate_agents', 'mkdir', 'move_file',
+  'restart_service',
 ]);
 
 // ── 動態模型選擇 ──
