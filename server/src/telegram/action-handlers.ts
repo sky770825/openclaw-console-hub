@@ -1268,10 +1268,25 @@ export async function handlePtyExec(
   });
 }
 
-// ── 語義搜尋（Google Embedding + Supabase pgvector）──
+// ── 語義搜尋（本地 Ollama Embedding + Supabase pgvector）──
 
-/** 呼叫 Google gemini-embedding-001 取得 768 維向量 */
-async function googleEmbed(text: string): Promise<number[] | null> {
+/** 本地 Ollama nomic-embed-text 取得 768 維向量（免費、低延遲） */
+async function ollamaEmbed(text: string): Promise<number[] | null> {
+  try {
+    const resp = await fetch('http://127.0.0.1:11434/api/embeddings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'nomic-embed-text', prompt: text.slice(0, 8000) }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json() as { embedding?: number[] };
+    return data?.embedding || null;
+  } catch { return null; }
+}
+
+/** Google gemini-embedding-001 fallback（Ollama 掛掉時用） */
+async function googleEmbedFallback(text: string): Promise<number[] | null> {
   const apiKey = process.env.GOOGLE_API_KEY || '';
   if (!apiKey) return null;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`;
@@ -1284,6 +1299,11 @@ async function googleEmbed(text: string): Promise<number[] | null> {
   if (!resp.ok) return null;
   const data = await resp.json() as { embedding?: { values?: number[] } };
   return data?.embedding?.values || null;
+}
+
+/** 取得 embedding：本地 Ollama 優先，失敗 fallback Google */
+async function googleEmbed(text: string): Promise<number[] | null> {
+  return await ollamaEmbed(text) || await googleEmbedFallback(text);
 }
 
 const semanticSearchCache = new Map<string, { ts: number; results: unknown[]; output: string }>();
