@@ -11,6 +11,7 @@ import { sanitize } from '../utils/key-vault.js';
 import { sendTelegramMessageToChat } from '../utils/telegram.js';
 import { isPathSafe, isScriptSafe, NEUXA_WORKSPACE, SOUL_FILES, FORBIDDEN_PATH_PATTERNS, contentContainsApiKey, SUPABASE_BATCH_DELETE_LIMIT } from './security.js';
 import { recordModelUsage } from '../openclawSupabase.js';
+import { hasPgvector, deleteByFilePath, deleteAll as pgDeleteAll, upsertEmbedding, matchEmbeddings, textSearch as pgTextSearch, getDetailChunks } from '../pgvector-client.js';
 
 const log = createLogger('telegram');
 
@@ -1460,28 +1461,25 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
   const safeMode = ['task', 'code', 'history'].includes(mode) ? mode : classifyQueryIntent(query);
 
   try {
-    // 3. Google Embedding（使用擴展後的 query 提升召回率）
+    // 3. Embedding（本地 Ollama 優先，Google fallback）
     const queryVector = await googleEmbed(expandedQuery);
     if (!queryVector) {
-      return { ok: false, output: 'Embedding 失敗: 確認 GOOGLE_API_KEY 已設定' };
+      return { ok: false, output: 'Embedding 失敗: Ollama 和 Google API 都無法取得向量' };
     }
 
-    // 4. Supabase pgvector RPC 搜尋
-    const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
-    if (!hasSb() || !sb) {
-      return { ok: false, output: 'Supabase 未連線，無法搜尋向量庫' };
+    // 4. 本地 pgvector 搜尋
+    const pgOk = await hasPgvector();
+    if (!pgOk) {
+      return { ok: false, output: '本地 pgvector 未連線，無法搜尋向量庫' };
     }
 
     const fetchCount = Math.min(safeLimit * 3, 30); // 多取 3 倍供去重+重排名
-    const { data: rawResults, error } = await sb.rpc('match_embeddings', {
-      query_embedding: JSON.stringify(queryVector),
-      match_threshold: 0.45,
-      match_count: fetchCount,
-      search_mode: safeMode,
-    });
+    const { data: rawResults, error } = await matchEmbeddings(
+      queryVector, 0.45, fetchCount, safeMode,
+    );
 
     if (error) {
-      return { ok: false, output: `向量搜尋失敗: ${error.message}` };
+      return { ok: false, output: `向量搜尋失敗: ${(error as Error).message}` };
     }
 
     // ── 5. Hybrid Search：全文關鍵詞搜尋（ilike）──
@@ -1490,18 +1488,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
     let textSearchUsed = false;
     if (searchKeywords.length > 0) {
       try {
-        // 建構 OR 條件：content/doc_title/section_title 任一欄位包含任一關鍵詞
-        const orConditions = searchKeywords.flatMap(kw => [
-          `content.ilike.%${kw}%`,
-          `doc_title.ilike.%${kw}%`,
-          `section_title.ilike.%${kw}%`,
-        ]).join(',');
-
-        const { data: textData, error: textErr } = await sb
-          .from('openclaw_embeddings')
-          .select('id, doc_title, section_title, content, content_preview, file_path, file_name, category, chunk_index, chunk_total, zone, is_pinned, indexed_at')
-          .or(orConditions)
-          .limit(10);
+        const { data: textData, error: textErr } = await pgTextSearch(searchKeywords, 10);
 
         if (!textErr && textData && textData.length > 0) {
           textResults = textData;
@@ -1509,7 +1496,6 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
           log.info(`[HybridSearch] text search for keywords=[${searchKeywords.join(',')}] → ${textData.length} results`);
         }
       } catch (textSearchErr) {
-        // 全文搜尋失敗不影響整體，退化為純向量搜尋
         log.warn(`[HybridSearch] text search failed, falling back to vector-only: ${textSearchErr instanceof Error ? textSearchErr.message : String(textSearchErr)}`);
       }
     }
@@ -1624,14 +1610,7 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 
       if (targetPaths.length > 0) {
         try {
-          const { data: detailData } = await sb
-            .from('openclaw_embeddings')
-            .select('id, doc_title, section_title, content, content_preview, file_path, file_name, category, chunk_index, chunk_total, zone, is_pinned, indexed_at')
-            .in('file_path', targetPaths)
-            .gte('chunk_index', 0)
-            .eq('status', 'active')
-            .order('chunk_index', { ascending: true })
-            .limit(20);
+          const { data: detailData } = await getDetailChunks(targetPaths, 20);
 
           if (detailData && detailData.length > 0) {
             for (const d of detailData as any[]) {
@@ -1803,9 +1782,9 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
     return { ok: false, output: `index_file 路徑受限：只能索引 workspace/ 或專案目錄的檔案。你傳的路徑: "${filePath}"` };
   }
 
-  const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
-  if (!hasSb() || !sb) {
-    return { ok: false, output: 'Supabase 未連線，無法索引' };
+  const pgOk = await hasPgvector();
+  if (!pgOk) {
+    return { ok: false, output: '本地 pgvector 未連線，無法索引' };
   }
 
   try {
@@ -1820,7 +1799,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
     }
 
     // 去重：索引前先刪除同檔案的舊 chunks（包含 summary 和 detail）
-    await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
+    await deleteByFilePath(relPath);
 
     const titleMatch = content.match(/^# (.+)/m);
     const docTitle = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
@@ -1858,7 +1837,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
       const summaryHash = crypto.createHash('md5').update(`${relPath}:summary`).digest('hex');
       const summaryPointId = parseInt(summaryHash.slice(0, 15), 16);
 
-      const { error: sumErr } = await sb.from('openclaw_embeddings').upsert({
+      const { error: sumErr } = await upsertEmbedding({
         id: summaryPointId,
         doc_title: docTitle,
         section_title: '[SUMMARY]',
@@ -1877,7 +1856,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
         zone: inferredZone,
         is_pinned: isPinned,
         indexed_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
+      });
 
       if (!sumErr) indexed++;
       log.info(`[IndexFile] summary chunk for "${docTitle}" → ${sumErr ? 'FAILED' : 'OK'} (${sectionTitles.length} sections)`);
@@ -1897,7 +1876,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
       const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
       const pointId = parseInt(hash.slice(0, 15), 16);
 
-      const { error } = await sb.from('openclaw_embeddings').upsert({
+      const { error } = await upsertEmbedding({
         id: pointId,
         doc_title: docTitle,
         section_title: secTitle,
@@ -1916,7 +1895,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
         zone: inferredZone,
         is_pinned: isPinned,
         indexed_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
+      });
 
       if (!error) indexed++;
     }
@@ -1942,11 +1921,11 @@ function guessCategoryFromPath(relPath: string): string {
   return categoryMap[dir] || 'knowledge';
 }
 
-/** 全量重建索引（TypeScript 內建，不依賴 Python/Ollama/Docker） */
+/** 全量重建索引（TypeScript 內建，使用本地 pgvector） */
 async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
-  const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
-  if (!hasSb() || !sb) {
-    return { ok: false, output: 'Supabase 未連線，無法重建索引' };
+  const pgOk = await hasPgvector();
+  if (!pgOk) {
+    return { ok: false, output: '本地 pgvector 未連線，無法重建索引' };
   }
 
   const scanDirs = [
@@ -1978,8 +1957,8 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
   }
 
   if (mode === 'rebuild') {
-    const { error: delErr } = await sb.from('openclaw_embeddings').delete().gte('id', 0);
-    if (delErr) log.warn(`[ReindexKnowledge] 清空舊資料失敗: ${delErr.message}`);
+    const { error: delErr } = await pgDeleteAll();
+    if (delErr) log.warn(`[ReindexKnowledge] 清空舊資料失敗: ${(delErr as Error).message}`);
   }
 
   const startTime = Date.now();
@@ -2019,7 +1998,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
         const isPinned = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'AWAKENING.md', 'CONSCIOUSNESS_ANCHOR.md'].includes(fileName);
 
         // 去重：先刪除同檔案的舊 chunks（與 index_file 一致）
-        await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
+        await deleteByFilePath(relPath);
 
         // ── Step 1: SUMMARY chunk（chunk_index = -1）──
         const sectionTitles = sections
@@ -2033,7 +2012,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
         if (summaryVector) {
           const summaryHash = crypto.createHash('md5').update(`${relPath}:summary`).digest('hex');
           const summaryPointId = parseInt(summaryHash.slice(0, 15), 16);
-          const { error: sumErr } = await sb.from('openclaw_embeddings').upsert({
+          const { error: sumErr } = await upsertEmbedding({
             id: summaryPointId,
             doc_title: docTitle, section_title: '[SUMMARY]',
             content: summaryContent, content_preview: summaryContent.slice(0, 200),
@@ -2044,7 +2023,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
             status: 'active', content_type: inferredContentType,
             zone: inferredZone, is_pinned: isPinned,
             indexed_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
+          });
           if (!sumErr) totalIndexed++;
         }
 
@@ -2063,7 +2042,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
           const hash = crypto.createHash('md5').update(`${relPath}:${i}`).digest('hex');
           const pointId = parseInt(hash.slice(0, 15), 16);
 
-          const { error } = await sb.from('openclaw_embeddings').upsert({
+          const { error } = await upsertEmbedding({
             id: pointId,
             doc_title: docTitle, section_title: secTitle,
             content: `[DETAIL] ${section}`, content_preview: section.slice(0, 200),
@@ -2074,7 +2053,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
             status: 'active', content_type: inferredContentType,
             zone: inferredZone, is_pinned: isPinned,
             indexed_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
+          });
 
           if (!error) totalIndexed++;
           if (i % 10 === 9) await new Promise(r => setTimeout(r, 200));
@@ -2096,7 +2075,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
   return {
     ok: true,
     output: `向量索引${mode === 'rebuild' ? '重建' : '更新'}已在背景啟動。\n` +
-      `掃描到 ${mdFiles.length} 個 .md 檔案，使用 Google Embedding + Supabase pgvector。\n` +
+      `掃描到 ${mdFiles.length} 個 .md 檔案，使用 Ollama Embedding + 本地 pgvector。\n` +
       `可稍後用 semantic_search 驗證結果。`,
   };
 }

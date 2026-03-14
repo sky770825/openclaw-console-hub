@@ -1,6 +1,6 @@
 /**
  * 批次向量索引工具
- * 讀取目錄下所有 .md 檔案，切 chunk → embed (Google API) → upsert Supabase openclaw_embeddings
+ * 讀取目錄下所有 .md 檔案，切 chunk → embed (Ollama/Google) → upsert 本地 pgvector
  * 與 action-handlers.ts 的 handleIndexFile 使用相同邏輯，但支援整個目錄批次處理
  *
  * v2 切分策略：300-500 token chunks + 50 token overlap + 父標題上下文
@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { createLogger } from '../logger.js';
+import { hasPgvector, deleteByFilePath, upsertEmbedding } from '../pgvector-client.js';
 
 const log = createLogger('batch-index');
 
@@ -214,7 +215,7 @@ function chunkDocument(content: string, docTitle: string): Chunk[] {
 async function indexSingleFile(
   filePath: string,
   category: string,
-  sb: any,
+  _unused: any,
   limiter: <T>(fn: () => Promise<T>) => Promise<T>,
 ): Promise<{ ok: boolean; fileName: string; chunks: number; indexed: number }> {
   const content = fs.readFileSync(filePath, 'utf-8');
@@ -236,7 +237,7 @@ async function indexSingleFile(
   }
 
   // 去重：索引前先刪除同檔案的舊 chunks
-  await sb.from('openclaw_embeddings').delete().eq('file_path', relPath);
+  await deleteByFilePath(relPath);
 
   const contentType = inferContentType(cat, fileName);
   const zone = inferZone(cat);
@@ -278,15 +279,14 @@ async function indexSingleFile(
         indexed_at: new Date().toISOString(),
       };
 
-      // tags 欄位（如果 Supabase 表有此欄位則寫入）
       if (tags.length > 0) {
         row.tags = tags;
       }
 
-      const { error } = await sb.from('openclaw_embeddings').upsert(row, { onConflict: 'id' });
+      const { error } = await upsertEmbedding(row);
 
       if (error) {
-        log.warn(`[BatchIndex] upsert 失敗: ${fileName} chunk-${i}: ${error.message}`);
+        log.warn(`[BatchIndex] upsert 失敗: ${fileName} chunk-${i}: ${(error as Error).message}`);
         return false;
       }
       return true;
@@ -319,14 +319,10 @@ export async function batchIndexDirectory(
     throw new Error(`目錄不存在或不是目錄: ${resolved}`);
   }
 
-  // 動態載入 Supabase（與 action-handlers.ts 相同模式）
-  const { hasSupabase, supabase: sb } = await import('../supabase.js');
-  if (!hasSupabase() || !sb) {
-    throw new Error('Supabase 未連線，無法索引');
-  }
-
-  if (!process.env.GOOGLE_API_KEY) {
-    throw new Error('GOOGLE_API_KEY 未設定，無法產生 embedding');
+  // 檢查本地 pgvector 連線
+  const pgOk = await hasPgvector();
+  if (!pgOk) {
+    throw new Error('本地 pgvector 未連線，無法索引');
   }
 
   // 遞迴掃描所有 .md 檔案
@@ -350,7 +346,7 @@ export async function batchIndexDirectory(
   // 逐檔處理（檔案之間循序，embedding 呼叫在檔案內受 limiter 控制）
   for (const filePath of mdFiles) {
     try {
-      const fileResult = await indexSingleFile(filePath, category, sb, limiter);
+      const fileResult = await indexSingleFile(filePath, category, null, limiter);
       if (fileResult.ok && fileResult.indexed > 0) {
         result.indexed++;
         result.files.push(`${fileResult.fileName} (${fileResult.indexed}/${fileResult.chunks} chunks)`);
