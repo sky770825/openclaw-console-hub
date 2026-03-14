@@ -135,7 +135,7 @@ const autoExecutorState: AutoExecutorState = {
 let autoExecutorInterval: NodeJS.Timeout | null = null;
 
 // ─── 並發槽位：最多同時執行 MAX_CONCURRENT 個任務 ───
-const MAX_CONCURRENT = 2; // 2 條線路同時跑
+const MAX_CONCURRENT = 4; // 2 條線路同時跑
 interface ExecutorSlot { taskId: string; startedAt: number; }
 const activeSlots: ExecutorSlot[] = [];
 const SLOT_TIMEOUT_MS = 2 * 60 * 1000; // 單槽超時 2 分鐘

@@ -167,10 +167,14 @@ export async function createTask(name: string, description?: string, owner?: str
         const tName = String(t.name || t.title || '');
         const tStatus = String(t.status || '');
         const updatedAt = new Date(String(t.updatedAt || t.updated_at || 0)).getTime();
-        // 非 done 同名 → 阻擋（永遠）
-        if (tName === trimmedName && tStatus !== 'done') return true;
-        // failed 但 30 分鐘內 → 也阻擋（防卡死循環）
-        if (tName === trimmedName && tStatus === 'failed' && updatedAt > thirtyMinAgo) return true;
+        if (tName !== trimmedName) return false;
+        // 非 done/failed 同名 → 阻擋（永遠）
+        if (tStatus !== 'done' && tStatus !== 'failed') return true;
+        // done 10 分鐘內 → 也阻擋（防重複執行）
+        const tenMinAgo = Date.now() - 10 * 60_000;
+        if (tStatus === 'done' && updatedAt > tenMinAgo) return true;
+        // failed 30 分鐘內 → 阻擋（防卡死循環）
+        if (tStatus === 'failed' && updatedAt > thirtyMinAgo) return true;
         return false;
       });
       if (dup) {
