@@ -2,8 +2,8 @@
  * 風險分類器 — 根據任務內容自動判斷風險等級
  * 🟢 none     = 自動通過（查資料、健康檢查）
  * 🟡 low      = Claude 自動執行（一般開發任務）
- * 🔴 medium   = Claude 直接審核執行（刪檔、改 DB、改 auth）— 不需老蔡審核
- * 🟣 critical = 老蔡親審（部署、改密鑰、花錢）
+ * 🔴 medium   = Claude 直接審核執行（刪檔、改 DB、改 auth）— 不需主人審核
+ * 🟣 critical = 主人親審（部署、改密鑰、花錢）
  */
 
 export type DispatchRiskLevel = 'none' | 'low' | 'medium' | 'critical';
@@ -36,7 +36,7 @@ const MEDIUM_KEYWORDS = [
   'truncate', 'alter table',
 ];
 
-// 規劃/設計類任務降為 low — 老蔡已批准自動執行（2026-03-07）
+// 規劃/設計類任務降為 low — 主人已批准自動執行（2026-03-07）
 const LOW_KEYWORDS = [
   '規劃', '設計', 'landing page', '方案規劃', '技術方案',
   '架構設計', '實作規劃', '數據追蹤', 'kpi',

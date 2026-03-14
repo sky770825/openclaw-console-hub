@@ -4,7 +4,7 @@
  * 功能：
  * 1. 卡死偵測：bot 超過 N 秒沒回覆 → 判斷原因
  * 2. 故障分類：timeout / empty reply / API error / circuit break
- * 3. 自動修復：重試(降級模型) / 跳過 / 通知老蔡
+ * 3. 自動修復：重試(降級模型) / 跳過 / 通知主人
  * 4. 健康報告：定期匯總各 bot 的健康狀態
  */
 
@@ -60,7 +60,7 @@ export type RepairAction =
   | 'retry_downgrade'  // 降級模型重試
   | 'skip'             // 跳過這個 bot
   | 'cooldown'         // 冷卻一段時間再說
-  | 'notify_owner'     // 通知老蔡
+  | 'notify_owner'     // 通知主人
   | 'restart_polling';  // 重啟 polling
 
 // ── Standby Bot 簡要健康紀錄 ──
@@ -408,7 +408,7 @@ export async function autoRepair(diagnosis: DiagnosisResult): Promise<boolean> {
       return true;
 
     case 'notify_owner': {
-      // 通知老蔡
+      // 通知主人
       if (!CREW_GROUP_CHAT_ID) return false;
       const alertBot = ACTIVE_CREW_BOTS[0];
       if (!alertBot) return false;

@@ -6,7 +6,7 @@
 import { ACTIVE_CREW_BOTS, CREW_BOT_USERNAMES, SYSTEM_BOT_USERNAMES } from './crew-config.js';
 import type { CrewBotConfig } from './crew-config.js';
 
-/** 管理員 username（享有與小蔡相同的低門檻 + 全員集合權限） */
+/** 管理員 username（享有與達爾相同的低門檻 + 全員集合權限） */
 const ADMIN_USERNAMES = new Set(['gousmaaa', 'sky770825']);
 
 export interface RoutingDecision {
@@ -222,7 +222,7 @@ export function routeMessage(
 ): RoutingDecision {
   const lowerUsername = (senderUsername || '').toLowerCase();
 
-  // ─── Layer 1: Bot 訊息過濾（小蔡 + 匿名管理員例外） ───
+  // ─── Layer 1: Bot 訊息過濾（達爾 + 匿名管理員例外） ───
   const ALLOWED_BOT_USERNAMES = new Set(['xiaoji_cai_bot', 'groupanonymousbot']);
   if (senderIsBot && !ALLOWED_BOT_USERNAMES.has(lowerUsername)) {
     return { respondingBots: [], filtered: true, filterReason: 'bot message' };

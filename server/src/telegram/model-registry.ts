@@ -27,9 +27,9 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'gemini-2.5-flash', label: '⚡ Gemini 2.5 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   { id: 'gemini-2.5-pro', label: '🏋️ Gemini 2.5 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'gemini-3-flash-preview', label: '🔥 Gemini 3 Flash', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  { id: 'gemini-3-pro-preview', label: '🧠 Gemini 3 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  { id: 'claude-opus-4-6', label: '🚨 Claude Opus 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'claude-sonnet-4-6', label: '💎 Claude Sonnet 4.6', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'gemini-3.1-pro-preview', label: '🧠 Gemini 3.1 Pro', provider: 'Google', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'claude-opus-4-6', label: '🚨 Claude Opus 4.6 (1M)', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'claude-sonnet-4-6', label: '💎 Claude Sonnet 4.6 (1M)', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'claude-haiku-4-5-20251001', label: '⚡ Claude Haiku 4.5', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   // ══════════════════════════════════════════
   // 子代理級（ask_ai 可派遣，全部免費/訂閱制）
@@ -38,9 +38,9 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // 其他：xAI、Kimi、DeepSeek
   // ══════════════════════════════════════════
   // ── 訂閱制 CLI（Claude Code / Codex / Cursor）——可當指揮官 + 子代理 ──
-  { id: 'claude-opus-cli', label: '🏆 Claude Opus (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
-  { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
-  { id: 'claude-haiku-cli', label: '⚡ Claude Haiku (CLI 訂閱)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'claude-opus-cli', label: '🏆 Claude Opus (CLI 1M)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 32768, role: 'commander' },
+  { id: 'claude-sonnet-cli', label: '💎 Claude Sonnet (CLI 1M)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'claude-haiku-cli', label: '⚡ Claude Haiku (CLI)', provider: 'Claude-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   { id: 'codex-mini', label: '📦 Codex Mini (CLI)', provider: 'OpenAI-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── Google 免費額度 ──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
@@ -50,9 +50,10 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // ── Kimi ──
   { id: 'kimi-k2.5', label: '🌙 Kimi K2.5', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'kimi-k2-turbo-preview', label: '🌀 Kimi K2 Turbo', provider: 'Kimi', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
-  // ── xAI ──
+  // ── xAI（2M context window）──
   { id: 'grok-4-1-fast', label: '🤖 Grok 4.1 Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
   { id: 'grok-4-1-fast-reasoning', label: '🧩 Grok 4.1 Reasoning', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
+  { id: 'grok-code-fast-1', label: '💻 Grok Code Fast', provider: 'xAI', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
   // ── OpenRouter 免費 ──
   { id: 'nousresearch/hermes-3-llama-3.1-405b:free', label: '🆓 Hermes 405B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🆓 Llama 3.3 70B', provider: 'OpenRouter', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },

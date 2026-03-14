@@ -53,17 +53,17 @@ let lastConflictNotifyAt = 0;
 let lastUnauthorizedNotifyAt = 0;
 let lastUnauthorizedChatNotifyAt = 0;
 
-// 小蔡 bot 狀態
+// 達爾 bot 狀態
 let xiaocaiOffset = 0;
 let xiaocaiRunning = false;
 const xiaocaiHistory = new Map<number, Array<{ role: string; text: string }>>();
 
 // 心跳狀態
-let lastUserActivityAt = 0; // 老蔡最後一次發訊息的時間
+let lastUserActivityAt = 0; // 主人最後一次發訊息的時間
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let heartbeatBusy = false; // 心跳是否正在執行中
 const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘（不再 5 分鐘搶資源）
-const HEARTBEAT_IDLE_THRESHOLD_MS = 10 * 60 * 1000; // 老蔡 10 分鐘沒說話才觸發
+const HEARTBEAT_IDLE_THRESHOLD_MS = 10 * 60 * 1000; // 主人 10 分鐘沒說話才觸發
 const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
 
 // Action Circuit Breaker — 阻止同一個 action 連續失敗超過 N 次
@@ -290,7 +290,7 @@ async function replyStatus(chatId: number, useToken = TOKEN): Promise<void> {
   const modelLabel = getAvailableModels().find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
   const text =
     `📊 <b>系統狀態</b>\n\n` +
-    `<b>小蔡主模型：</b>${modelLabel} (<code>${xiaocaiMainModel}</code>)\n` +
+    `<b>達爾主模型：</b>${modelLabel} (<code>${xiaocaiMainModel}</code>)\n` +
     `<b>Taskboard:</b> ${tasks ? 'ok' : 'down'}\n` +
     `<b>Tasks:</b> ready=${ready} running=${runningTasks} done=${done} total=${total}\n` +
     `<b>Runs:</b> active=${activeRuns} total=${runList.length}\n` +
@@ -336,7 +336,7 @@ async function replyModels(chatId: number): Promise<void> {
   const currentLabel = getAvailableModels().find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
   const currentProvider = getModelProvider(xiaocaiMainModel);
   const text =
-    `🧠 <b>小蔡主模型切換</b>（指揮官級）\n\n` +
+    `🧠 <b>達爾主模型切換</b>（指揮官級）\n\n` +
     `<b>目前：</b>${currentLabel}\n` +
     `<b>Provider：</b>${currentProvider}\n` +
     `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
@@ -363,7 +363,7 @@ async function replyModelsXiaocai(chatId: number): Promise<void> {
   const currentLabel = getAvailableModels().find(m => m.id === xiaocaiMainModel)?.label || xiaocaiMainModel;
   const currentProvider = getModelProvider(xiaocaiMainModel);
   const text =
-    `🧠 <b>小蔡主模型切換</b>（指揮官級）\n\n` +
+    `🧠 <b>達爾主模型切換</b>（指揮官級）\n\n` +
     `<b>目前：</b>${currentLabel}\n` +
     `<b>Provider：</b>${currentProvider}\n` +
     `<b>模型 ID：</b><code>${xiaocaiMainModel}</code>\n\n` +
@@ -374,7 +374,7 @@ async function replyModelsXiaocai(chatId: number): Promise<void> {
 async function replyCleanup(chatId: number): Promise<void> {
   const text =
     `🧹 <b>清理工具</b>\n\n` +
-    `清理卡死 runs（避免小蔡卡循環）：\n` +
+    `清理卡死 runs（避免達爾卡循環）：\n` +
     `<code>curl -sS -X POST ${TASKBOARD_BASE_URL}/api/openclaw/maintenance/cleanup-stale-runs -H 'Content-Type: application/json' -d '{"olderThanMinutes":45,"limit":50}' | jq .</code>`;
   await sendTelegramMessageToChat(chatId, text, { token: TOKEN, parseMode: 'HTML' });
 }
@@ -529,7 +529,7 @@ async function startCodexTriage(chatId: number, issueText: string): Promise<void
   const now = new Date();
   const taskId = `t-codex-triage-${now.getTime()}`;
   const desc =
-    `【目標】排除 OpenClaw/小蔡 無回應、卡循環、cron error、gateway timeout 等問題，並給出可重複的修復方案。\n\n` +
+    `【目標】排除 OpenClaw/達爾 無回應、卡循環、cron error、gateway timeout 等問題，並給出可重複的修復方案。\n\n` +
     `【使用者描述】\n${issueText || '(無)'}\n\n` +
     `【要求】\n` +
     `1. 先跑自救巡檢（不動 DB）：bash scripts/openclaw-recover-no-response.sh\n` +
@@ -702,7 +702,7 @@ async function replyCmdMenu(chatId: number): Promise<void> {
   });
 }
 
-// ── 小蔡任務派發 ──
+// ── 達爾任務派發 ──
 
 async function sendXiaojiTaskAssignment(
   chatId: number,
@@ -723,7 +723,7 @@ async function sendXiaojiTaskAssignment(
     ],
   };
   await sendTelegramMessageToChat(chatId,
-    `📋 <b>【小蔡任務指派】</b>\n\n` +
+    `📋 <b>【達爾任務指派】</b>\n\n` +
     `<b>任務：</b>${taskName}\n` +
     `<b>優先級：</b>${priority}\n` +
     `<b>ID：</b><code>${taskId}</code>\n\n` +
@@ -749,12 +749,12 @@ async function handleXiaojiCallback(chatId: number, action: string, taskId: stri
       5000
     );
     await sendTelegramMessageToChat(chatId,
-      `✅ <b>小蔡已接收任務</b>\n\n任務 <code>${taskId}</code> 已開始執行。`,
+      `✅ <b>達爾已接收任務</b>\n\n任務 <code>${taskId}</code> 已開始執行。`,
       { token: GROUP_TOKEN || TOKEN, parseMode: 'HTML' }
     );
   } else if (action === 'reject') {
     await sendTelegramMessageToChat(chatId,
-      `⚠️ <b>小蔡無法執行</b>\n\n任務 <code>${taskId}</code> 保持佇列中，等老蔡回來處理。`,
+      `⚠️ <b>達爾無法執行</b>\n\n任務 <code>${taskId}</code> 保持佇列中，等主人回來處理。`,
       { token: GROUP_TOKEN || TOKEN, parseMode: 'HTML' }
     );
   } else if (action === 'done') {
@@ -768,7 +768,7 @@ async function handleXiaojiCallback(chatId: number, action: string, taskId: stri
       5000
     );
     await sendTelegramMessageToChat(chatId,
-      `🎉 <b>任務完成</b>\n\n小蔡已完成任務 <code>${taskId}</code>`,
+      `🎉 <b>任務完成</b>\n\n達爾已完成任務 <code>${taskId}</code>`,
       { token: GROUP_TOKEN || TOKEN, parseMode: 'HTML' }
     );
   }
@@ -861,7 +861,7 @@ async function replyDeputy(chatId: number, arg?: string): Promise<void> {
         { text: on ? '⏸ 關閉暫代' : '🤖 開啟暫代', callback_data: on ? 'deputy:off' : 'deputy:on' },
         { text: '🚀 立即執行', callback_data: 'deputy:run' },
       ],
-      ...(on ? [[{ text: '📋 派工給小蔡', callback_data: 'deputy:delegate' }]] : []),
+      ...(on ? [[{ text: '📋 派工給達爾', callback_data: 'deputy:delegate' }]] : []),
       [{ text: '⬅️ 回主菜單', callback_data: '/start' }],
     ],
   };
@@ -1005,7 +1005,7 @@ async function poll(): Promise<void> {
         const models = getAvailableModels();
         const label = models.find(m => m.id === next)?.label || next;
         log.info(`[TelegramControl] 主模型切換：${prev} → ${next}`);
-        await sendTelegramMessageToChat(chatId, `✅ 小蔡主模型已切換\n\n<b>${label}</b>\n<code>${next}</code>\n\n即時生效，不需重啟`, { token: TOKEN, parseMode: 'HTML' });
+        await sendTelegramMessageToChat(chatId, `✅ 達爾主模型已切換\n\n<b>${label}</b>\n<code>${next}</code>\n\n即時生效，不需重啟`, { token: TOKEN, parseMode: 'HTML' });
         continue;
       }
       if (text.startsWith('alert:resolve:')) {
@@ -1285,11 +1285,11 @@ async function groupPoll(): Promise<void> {
               { text: '📋 日報', callback_data: 'group:report' },
             ],
             [
-              { text: '🤖 小蔡暫代 ON', callback_data: 'group:deputy_on' },
-              { text: '🛑 小蔡暫代 OFF', callback_data: 'group:deputy_off' },
+              { text: '🤖 達爾暫代 ON', callback_data: 'group:deputy_on' },
+              { text: '🛑 達爾暫代 OFF', callback_data: 'group:deputy_off' },
             ],
             [
-              { text: '📋 派工給小蔡', callback_data: 'deputy:delegate' },
+              { text: '📋 派工給達爾', callback_data: 'deputy:delegate' },
               { text: '🔄 甦醒報告', callback_data: 'group:wake' },
             ],
           ],
@@ -1324,7 +1324,7 @@ async function groupPoll(): Promise<void> {
         continue;
       }
 
-      // 老蔡回來自動停止暫代
+      // 主人回來自動停止暫代
       const isCallback = !!cbData;
       const isDeputyCmd = text.startsWith('/deputy') || text.startsWith('deputy:');
       const isBotMsg = !!(msg.from as Record<string, unknown> | undefined)?.is_bot;
@@ -1341,13 +1341,13 @@ async function groupPoll(): Promise<void> {
             const toggleObj = asObj(toggleRes);
             if (toggleObj.ok) {
               await sendTelegramMessageToChat(chatId,
-                `👑 <b>老蔡已接手</b>\n\n` +
-                `偵測到老蔡活動，暫代模式已自動關閉。\n` +
-                `小蔡：老蔡回來了，指揮權交還。\n\n` +
+                `👑 <b>主人已接手</b>\n\n` +
+                `偵測到主人活動，暫代模式已自動關閉。\n` +
+                `達爾：主人回來了，指揮權交還。\n\n` +
                 `如需重新開啟：/deputy on`,
                 { token: GROUP_TOKEN, parseMode: 'HTML' }
               );
-              log.info('[Deputy] 老蔡回來 → 暫代模式自動關閉（群組偵測）');
+              log.info('[Deputy] 主人回來 → 暫代模式自動關閉（群組偵測）');
             } else {
               log.warn(`[Deputy] toggle API 失敗: ${String(toggleObj.message ?? 'unknown')}`);
             }
@@ -1368,14 +1368,14 @@ function groupLoop(): void {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 小蔡 Bot (@xiaoji_cai_bot) polling loop
+// 達爾 Bot (@xiaoji_cai_bot) polling loop
 // ══════════════════════════════════════════════════════════════
 
-/** 判斷小蔡收到的是否純閒聊/確認（不需要 action） */
+/** 判斷達爾收到的是否純閒聊/確認（不需要 action） */
 const XIAOCAI_CHITCHAT = [
   /^(早安?|午安|晚安|嗨|hi|hello|hey|哈+|嘿|yo)[\s!！。.~]*$/i,
   /^(辛苦了?|謝謝|感謝|讚|棒|ok|好的?|收到|了解|掰|再見|88|嗯|對|好)[\s!！。.~]*$/i,
-  /^(怎麼樣|在嗎|小蔡|你覺得呢)[\s?？!！。.~]*$/i,
+  /^(怎麼樣|在嗎|達爾|你覺得呢)[\s?？!！。.~]*$/i,
   /^[\p{Emoji}\s]+$/u,
 ];
 /** 確認/反饋/意見類（不限字數，匹配即閒聊） */
@@ -1491,7 +1491,7 @@ async function xiaocaiPoll(): Promise<void> {
               const models = getAvailableModels();
               const label = models.find(m => m.id === next)?.label || next;
               log.info(`[XiaocaiBot] 主模型切換：${prev} → ${next}`);
-              await sendTelegramMessageToChat(cbChatId, `✅ 小蔡主模型已切換\n\n${label}\n${next}\n\n即時生效，不需重啟`, { token: XIAOCAI_TOKEN });
+              await sendTelegramMessageToChat(cbChatId, `✅ 達爾主模型已切換\n\n${label}\n${next}\n\n即時生效，不需重啟`, { token: XIAOCAI_TOKEN });
             }
           } else if (cbData === 'models:refresh' || cbData === '/models') {
             await replyModelsXiaocai(cbChatId);
@@ -1539,26 +1539,26 @@ async function xiaocaiPoll(): Promise<void> {
       if (!text && !imageBase64) continue;
 
       log.info(`[XiaocaiBot] recv chatId=${chatId} text=${text.slice(0, 60)}${imageBase64 ? ' +image' : ''}`);
-      lastUserActivityAt = Date.now(); // 追蹤老蔡最後活動時間（心跳用）
+      lastUserActivityAt = Date.now(); // 追蹤主人最後活動時間（心跳用）
 
       const allowedChatId = process.env.TELEGRAM_CHAT_ID?.trim();
       if (allowedChatId && String(chatId) !== allowedChatId) {
-        // 群組訊息：所有訊息都記進 history（小蔡看得到上下文），但只有提到小蔡才回覆
+        // 群組訊息：所有訊息都記進 history（達爾看得到上下文），但只有提到達爾才回覆
         if (chatId < 0) {
           // 取得發訊者名稱
           const fromUser = msg.from as Record<string, unknown> | undefined;
           const senderName = (fromUser?.first_name as string) || (fromUser?.username as string) || '群友';
-          // 記進群組 history（小蔡能看到所有對話）
+          // 記進群組 history（達爾能看到所有對話）
           const groupHist = xiaocaiHistory.get(chatId) || [];
           groupHist.push({ role: 'user', text: `[${senderName}] ${text}` });
           if (groupHist.length > 30) groupHist.splice(0, groupHist.length - 30); // 保留最近 30 條
           xiaocaiHistory.set(chatId, groupHist);
 
           const lowerText = text.toLowerCase();
-          const mentionsXiaocai = lowerText.includes('小蔡') || lowerText.includes('@xiaoji_cai_bot');
-          if (!mentionsXiaocai) continue; // 沒提到小蔡 → 不回覆，但 history 已記錄
-          // 提到小蔡 → 小蔡本人回覆（走 xiaocaiThink，帶群組 history 上下文）
-          log.info(`[XiaocaiBot] 群組提到小蔡，回覆 chatId=${chatId}`);
+          const mentionsXiaocai = lowerText.includes('達爾') || lowerText.includes('@xiaoji_cai_bot');
+          if (!mentionsXiaocai) continue; // 沒提到達爾 → 不回覆，但 history 已記錄
+          // 提到達爾 → 達爾本人回覆（走 xiaocaiThink，帶群組 history 上下文）
+          log.info(`[XiaocaiBot] 群組提到達爾，回覆 chatId=${chatId}`);
           const groupReply = await xiaocaiThink(chatId, text, xiaocaiMainModel, xiaocaiHistory, imageBase64 ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined);
           if (groupReply) {
             await sendTelegramMessageToChat(chatId, groupReply, { token: XIAOCAI_TOKEN });
@@ -1569,7 +1569,7 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
 
-      // ── 小蔡 Reply Keyboard 選單 ──
+      // ── 達爾 Reply Keyboard 選單 ──
       const XIAOCAI_MENU_KEYBOARD = {
         keyboard: [
           [{ text: '📊 系統狀態' }, { text: '🚀 任務板' }],
@@ -1583,12 +1583,12 @@ async function xiaocaiPoll(): Promise<void> {
       // 指令路由
       const xcCmd = text.split(/\s+/)[0]?.split('@')[0]?.toLowerCase() ?? '';
 
-      // ── /say — 老蔡下令，小蔡去群組發訊息 ──
+      // ── /say — 主人下令，達爾去群組發訊息 ──
       if (xcCmd === '/say' || xcCmd === '/broadcast') {
         const sayMsg = text.replace(/^\/(say|broadcast)\s*/i, '').trim();
         const groupChatId = process.env.TELEGRAM_GROUP_CHAT_ID?.trim() || process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim();
         if (!sayMsg) {
-          await sendTelegramMessageToChat(chatId, '用法：/say <訊息>\n\n小蔡會把你的訊息發到群組', { token: XIAOCAI_TOKEN });
+          await sendTelegramMessageToChat(chatId, '用法：/say <訊息>\n\n達爾會把你的訊息發到群組', { token: XIAOCAI_TOKEN });
           continue;
         }
         if (!groupChatId) {
@@ -1613,7 +1613,7 @@ async function xiaocaiPoll(): Promise<void> {
         const pending = taskList.filter((t: Record<string, unknown>) => t.status === 'pending').length;
         const running = taskList.filter((t: Record<string, unknown>) => t.status === 'running').length;
         const done = taskList.filter((t: Record<string, unknown>) => t.status === 'done').length;
-        await sendTelegramMessageToChat(chatId, `📊 小蔡狀態\n\n主模型：${label} (${xiaocaiMainModel})\n任務：${pending} 待辦 / ${running} 進行中 / ${done} 完成\n\n切換模型：/models`, { token: XIAOCAI_TOKEN });
+        await sendTelegramMessageToChat(chatId, `📊 達爾狀態\n\n主模型：${label} (${xiaocaiMainModel})\n任務：${pending} 待辦 / ${running} 進行中 / ${done} 完成\n\n切換模型：/models`, { token: XIAOCAI_TOKEN });
         continue;
       }
       if (text === '🚀 任務板' || xcCmd === '/tasks') {
@@ -1688,11 +1688,11 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
       if (xcCmd === '/start' || xcCmd === '/help' || text === '❓ 幫助') {
-        await sendTelegramMessageToChat(chatId, `我是小蔡 🚀\n\n直接跟我聊天就好。\n\n/say <訊息> — 小蔡去群組發訊息\n/models — 切換模型\n/status — 系統狀態\n/tasks — 任務板\n/report — 日報\n/health — 健康檢查\n/recover — 自救巡檢`, { token: XIAOCAI_TOKEN, replyMarkup: XIAOCAI_MENU_KEYBOARD });
+        await sendTelegramMessageToChat(chatId, `我是達爾 🚀\n\n直接跟我聊天就好。\n\n/say <訊息> — 達爾去群組發訊息\n/models — 切換模型\n/status — 系統狀態\n/tasks — 任務板\n/report — 日報\n/health — 健康檢查\n/recover — 自救巡檢`, { token: XIAOCAI_TOKEN, replyMarkup: XIAOCAI_MENU_KEYBOARD });
         continue;
       }
 
-      // ── 授權切換 Claude Code：老蔡說「同意/授權/可以/批准」→ 把最近任務派給 Claude Code agent ──
+      // ── 授權切換 Claude Code：主人說「同意/授權/可以/批准」→ 把最近任務派給 Claude Code agent ──
       const authLower = text.trim().toLowerCase();
       const isAuthApproval = [
         // 明確授權
@@ -1707,22 +1707,22 @@ async function xiaocaiPoll(): Promise<void> {
         '確認', '確定', '是的', '嗯', '好', '行',
       ].some(kw => authLower === kw || authLower.includes(kw));
 
-      // 從歷史找小蔡最近是否在要求授權（寫入/修改/部署等）
+      // 從歷史找達爾最近是否在要求授權（寫入/修改/部署等）
       const hist = xiaocaiHistory.get(chatId) || [];
       const recentBotMsg = [...hist].reverse().find(h => h.role === 'model')?.text || '';
-      const wasAskingPermission = /授權|權限|允許.*寫入|允許.*修改|可以.*改|需要.*批准|你同意|需要你|是否同意|要我.*修|要我.*改|要我.*寫|要我.*建|要我.*做|要我.*執行|我可以|可否|能不能|請問.*可以|老蔡.*確認|確認.*再/i.test(recentBotMsg);
+      const wasAskingPermission = /授權|權限|允許.*寫入|允許.*修改|可以.*改|需要.*批准|你同意|需要你|是否同意|要我.*修|要我.*改|要我.*寫|要我.*建|要我.*做|要我.*執行|我可以|可否|能不能|請問.*可以|主人.*確認|確認.*再/i.test(recentBotMsg);
 
       if (isAuthApproval && wasAskingPermission && hist.length >= 2) {
-        log.info(`[XiaocaiBot] 🔧 老蔡授權，切換 Claude Code agent 執行`);
+        log.info(`[XiaocaiBot] 🔧 主人授權，切換 Claude Code agent 執行`);
         fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
         }).catch(() => {});
 
-        // 從歷史中還原任務上下文（只取老蔡的訊息，過濾掉系統回饋/action結果）
+        // 從歷史中還原任務上下文（只取主人的訊息，過濾掉系統回饋/action結果）
         const recentUserMsgs = hist.filter(h => h.role === 'user' && !h.text.startsWith('[系統') && !h.text.startsWith('[執行結果')).slice(-5).map(h => h.text);
         const taskContext = recentUserMsgs.slice(-3).join('\n').slice(0, 500);
-        const taskTitle = recentUserMsgs.find(m => m.length > 3 && m.length < 100)?.slice(0, 50) || '老蔡授權任務';
+        const taskTitle = recentUserMsgs.find(m => m.length > 3 && m.length < 100)?.slice(0, 50) || '主人授權任務';
 
         try {
           const taskRes = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
@@ -1730,12 +1730,12 @@ async function xiaocaiPoll(): Promise<void> {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENCLAW_API_KEY || ''}` },
             body: JSON.stringify({
               name: `[Claude Code] ${taskTitle}`,
-              description: `老蔡對話上下文：\n${taskContext}\n\n老蔡已授權，請用 Claude Code 完成任務。`,
+              description: `主人對話上下文：\n${taskContext}\n\n主人已授權，請用 Claude Code 完成任務。`,
               status: 'ready',
               priority: 1,
-              owner: '小蔡',
+              owner: '達爾',
               cat: 'development',
-              riskLevel: 'low',  // 老蔡已授權，不需要再審核
+              riskLevel: 'low',  // 主人已授權，不需要再審核
             }),
           });
           const taskData = await taskRes.json() as any;
@@ -1748,7 +1748,7 @@ async function xiaocaiPoll(): Promise<void> {
           hist.push({ role: 'user', text });
           hist.push({ role: 'model', text: `已切換 Claude Code agent 執行，任務 ID: ${taskId}` });
           xiaocaiHistory.set(chatId, hist.slice(-20));
-          appendInteractionLog(text, [`✅ 切換 Claude Code: ${recentUserMsgs[0]?.slice(0, 40)}`], `老蔡授權，已派 Claude Code`);
+          appendInteractionLog(text, [`✅ 切換 Claude Code: ${recentUserMsgs[0]?.slice(0, 40)}`], `主人授權，已派 Claude Code`);
           continue;
         } catch (e) {
           log.warn({ err: e }, '[XiaocaiBot] 建 Claude Code 任務失敗，fallback');
@@ -1756,7 +1756,7 @@ async function xiaocaiPoll(): Promise<void> {
       }
 
       // ── 多步執行迴路（最多 6 輪連續行動）──
-      const MAX_CHAIN_STEPS = 6;  // 對話 chain 最多 6 步，讓小蔡能完成查+分析+執行+驗證
+      const MAX_CHAIN_STEPS = 6;  // 對話 chain 最多 6 步，讓達爾能完成查+分析+執行+驗證
       let currentInput = text;
       let finalReply = '';
       const allActionResults: string[] = [];
@@ -1796,12 +1796,12 @@ async function xiaocaiPoll(): Promise<void> {
           : '';
 
         const thinkInput = isFollowUp
-          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${recentResults.join('\n')}${failureGuidance}\n\n判斷下一步：\n- ❌ 失敗了 → 看上方替代路徑，選一條換試。最多換 2 次，2 次都失敗再告訴老蔡。\n- 🔒 被阻擋 → 換完全不同的工具或方法，不要用同一個 action\n- ⏱️ 限速了 → 這個 action 呼叫太頻繁，等一下或換其他 action 先做別的事\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，跟老蔡說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做`
+          ? `[系統回饋] 執行結果（step ${step}/${MAX_CHAIN_STEPS}）：\n${recentResults.join('\n')}${failureGuidance}\n\n判斷下一步：\n- ❌ 失敗了 → 看上方替代路徑，選一條換試。最多換 2 次，2 次都失敗再告訴主人。\n- 🔒 被阻擋 → 換完全不同的工具或方法，不要用同一個 action\n- ⏱️ 限速了 → 這個 action 呼叫太頻繁，等一下或換其他 action 先做別的事\n- ✅ 成功但資訊不夠 → 繼續查（read_file / query_supabase / ask_ai）\n- ✅ 成功且夠了 → 停止，跟主人說：(1) 你查到什麼 (2) 你的判斷 (3) 建議怎麼做`
           : currentInput;
 
         // 第一輪帶圖片，後續 follow-up 不帶
         const thinkImage = (!isFollowUp && imageBase64) ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined;
-        // 發送 typing indicator 讓老蔡知道小蔡在思考
+        // 發送 typing indicator 讓主人知道達爾在思考
         fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
@@ -1813,7 +1813,7 @@ async function xiaocaiPoll(): Promise<void> {
           const cleanReply = stripActionJson(reply).trim();
           // step 0 沒帶 action — 判斷是否該重試
           if (step === 0 && text.length > 8 && !isXiaocaiChitChat(text)) {
-            // 小蔡已經給了實質回覆（分析/報告/回答/確認）→ 接受，不強制 action
+            // 達爾已經給了實質回覆（分析/報告/回答/確認）→ 接受，不強制 action
             // 門檻降到 5 字：「報告沒問題」「看完了」「沒事」這種都算實質回覆
             const isHollow = cleanReply.length < 5
               || cleanReply.includes('請重新說明')
@@ -1970,7 +1970,7 @@ async function xiaocaiPoll(): Promise<void> {
             ? `\n\n[上一步執行結果]\n${prevDriveResults.map(r => r.slice(0, 200)).join('\n')}`
             : '';
           const driveReply = await xiaocaiThink(chatId,
-            `[系統] 你剛才的行動已完成。${resultContext}\n\n現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給老蔡一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。`,
+            `[系統] 你剛才的行動已完成。${resultContext}\n\n現在做兩件事之一：\n1. 如果還有承諾要做但沒做的 → 用 action 做掉\n2. 如果都做完了 → 給主人一句話摘要：「做了什麼 → 結果是什麼 → 接下來建議什麼」\n不要重複你已經說過的話。如果真的沒什麼要補充，回「done」。`,
             xiaocaiMainModel, xiaocaiHistory
           );
           const driveActions = extractActionJsons(driveReply);
@@ -2084,15 +2084,15 @@ function xiaocaiLoop(): void {
 }
 
 // ══════════════════════════════════════════════════════════════
-// NEUXA 心跳 — 老蔡不在時自主思考
+// NEUXA 心跳 — 主人不在時自主思考
 // ══════════════════════════════════════════════════════════════
 
 async function heartbeatTick(): Promise<void> {
   if (!XIAOCAI_TOKEN) return;
 
-  // 老蔡最近 10 分鐘有活動 → 不打擾，跳過
+  // 主人最近 10 分鐘有活動 → 不打擾，跳過
   if (lastUserActivityAt > 0 && (Date.now() - lastUserActivityAt) < HEARTBEAT_IDLE_THRESHOLD_MS) {
-    log.info('[Heartbeat] 老蔡活躍中，跳過心跳');
+    log.info('[Heartbeat] 主人活躍中，跳過心跳');
     return;
   }
 
@@ -2110,7 +2110,7 @@ async function heartbeatTick(): Promise<void> {
   log.info('[Heartbeat] 🫀 心跳觸發 — 開始自主思考');
   heartbeatBusy = true;
 
-  const heartbeatInput = `[心跳醒來] 老蔡目前不在線。你自己醒來了。\n讀完以下指南後，按照裡面的步驟自主行動：\n\n${heartbeatContent}`;
+  const heartbeatInput = `[心跳醒來] 主人目前不在線。你自己醒來了。\n讀完以下指南後，按照裡面的步驟自主行動：\n\n${heartbeatContent}`;
 
   try {
     // 第一輪思考
@@ -2120,9 +2120,9 @@ async function heartbeatTick(): Promise<void> {
     const hbBreaker = new ActionCircuitBreaker(2);
 
     for (let step = 0; step < MAX_HEARTBEAT_STEPS; step++) {
-      // 老蔡發訊息了 → 立刻中斷心跳，優先回覆
+      // 主人發訊息了 → 立刻中斷心跳，優先回覆
       if (lastUserActivityAt > 0 && (Date.now() - lastUserActivityAt) < 60_000) {
-        log.info('[Heartbeat] 老蔡剛發訊息，中斷心跳讓出資源');
+        log.info('[Heartbeat] 主人剛發訊息，中斷心跳讓出資源');
         break;
       }
       const isFollowUp = step > 0;
@@ -2248,11 +2248,11 @@ export function startTelegramStopPoll(): void {
       loop();
     });
 
-  // 小蔡 polling（Server 負責，不再檢查 gateway）
+  // 達爾 polling（Server 負責，不再檢查 gateway）
   if (XIAOCAI_TOKEN && process.env.XIAOCAI_POLL_DISABLED !== '1') {
     xiaocaiRunning = true;
     const xcBotId = XIAOCAI_TOKEN.split(':')[0] || '(unknown)';
-    log.info(`[XiaocaiBot] 啟動小蔡 bot polling bot_id=${xcBotId}`);
+    log.info(`[XiaocaiBot] 啟動達爾 bot polling bot_id=${xcBotId}`);
     fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/deleteWebhook?drop_pending_updates=true`)
       .catch(e => log.warn('[Telegram] deleteWebhook 失敗:', e instanceof Error ? e.message : String(e)))
       .finally(() => xiaocaiLoop());
@@ -2291,7 +2291,7 @@ export function stopTelegramStopPoll(): void {
 
 /** 手動觸發心跳（繞過活躍檢查） */
 export async function triggerHeartbeat(): Promise<string> {
-  if (!XIAOCAI_TOKEN) return '小蔡 bot 未設定';
+  if (!XIAOCAI_TOKEN) return '達爾 bot 未設定';
   const saved = lastUserActivityAt;
   lastUserActivityAt = 0; // 暫時清除，讓心跳不被跳過
   try {

@@ -278,7 +278,7 @@ router.post('/handshake/init', async (req, res) => {
 
 /**
  * POST /api/federation/handshake/respond
- * 外部節點提交簽章，等待老蔡審核
+ * 外部節點提交簽章，等待主人審核
  * Body: { node_id, signature }
  */
 router.post('/handshake/respond', async (req, res) => {
@@ -325,7 +325,7 @@ router.post('/handshake/respond', async (req, res) => {
     return;
   }
 
-  // 簽章驗證通過 → 等待老蔡審核
+  // 簽章驗證通過 → 等待主人審核
   await supabase!
     .from('fadp_members')
     .update({ status: 'pending_owner_approval', handshake_challenge: null })
@@ -337,7 +337,7 @@ router.post('/handshake/respond', async (req, res) => {
     response_hash: hashApiKey(signature).slice(0, 16),
   });
 
-  // 通知老蔡（Telegram）
+  // 通知主人（Telegram）
   const nodeLabel = member.label || node_id;
   const approveUrl = `${process.env.OPENCLAW_API_BASE || 'http://localhost:3011'}/api/federation/handshake/approve/${node_id}?token=${process.env.FADP_ADMIN_TOKEN || 'change-me'}`;
   const rejectUrl = `${process.env.OPENCLAW_API_BASE || 'http://localhost:3011'}/api/federation/handshake/reject/${node_id}?token=${process.env.FADP_ADMIN_TOKEN || 'change-me'}`;
@@ -347,13 +347,13 @@ router.post('/handshake/respond', async (req, res) => {
     `<b>節點：</b>${nodeLabel}\n` +
     `<b>類型：</b>${member.node_type}\n` +
     `<b>端點：</b>${member.endpoint_url || '本地節點'}\n\n` +
-    `簽章驗證 ✅ 通過，請老蔡決定是否批准：\n` +
+    `簽章驗證 ✅ 通過，請主人決定是否批准：\n` +
     `✅ 批准：<a href="${approveUrl}">點此批准</a>\n` +
     `❌ 拒絕：<a href="${rejectUrl}">點此拒絕</a>`,
     { parseMode: 'HTML' }
   );
 
-  log.info(`[FADP] 節點 ${node_id} 簽章驗證通過，等待老蔡審核`);
+  log.info(`[FADP] 節點 ${node_id} 簽章驗證通過，等待主人審核`);
   res.json({
     ok: true,
     status: 'pending_owner_approval',
@@ -363,7 +363,7 @@ router.post('/handshake/respond', async (req, res) => {
 
 /**
  * GET /api/federation/handshake/approve/:nodeId
- * 老蔡批准節點加入（透過 Telegram 連結觸發）
+ * 主人批准節點加入（透過 Telegram 連結觸發）
  * Query: ?token=FADP_ADMIN_TOKEN
  */
 router.get('/handshake/approve/:nodeId', async (req, res) => {
@@ -434,7 +434,7 @@ router.get('/handshake/approve/:nodeId', async (req, res) => {
 
   log.info(`[FADP] ✅ 節點 ${nodeId} 已批准加入聯盟`);
 
-  // 回傳 HTML 方便老蔡直接在瀏覽器操作
+  // 回傳 HTML 方便主人直接在瀏覽器操作
   res.setHeader('Content-Type', 'text/html');
   res.send(`
     <html><body style="font-family:sans-serif;padding:2rem;background:#0a0a0a;color:#00ff88">
@@ -448,7 +448,7 @@ router.get('/handshake/approve/:nodeId', async (req, res) => {
 
 /**
  * GET /api/federation/handshake/reject/:nodeId
- * 老蔡拒絕節點加入
+ * 主人拒絕節點加入
  */
 router.get('/handshake/reject/:nodeId', async (req, res) => {
   if (!requireSupabase(res)) return;
@@ -1036,12 +1036,12 @@ router.post('/trust/request-upgrade', async (req, res) => {
   });
 
   log.info(`[FADP] 🌟 節點 ${member.node_id} 申請 L3 升級（分數: ${member.trust_score}）`);
-  res.json({ ok: true, message: 'L3 升級申請已送出，等待老蔡審核' });
+  res.json({ ok: true, message: 'L3 升級申請已送出，等待主人審核' });
 });
 
 /**
  * GET /api/federation/trust/approve/:nodeId
- * 老蔡批准 L3 升級（Telegram 連結觸發）
+ * 主人批准 L3 升級（Telegram 連結觸發）
  * 批准後信任分數設為 100，並記錄
  */
 router.get('/trust/approve/:nodeId', async (req, res) => {
@@ -1102,7 +1102,7 @@ router.get('/trust/approve/:nodeId', async (req, res) => {
 
 /**
  * GET /api/federation/trust/reject/:nodeId
- * 老蔡拒絕 L3 升級申請
+ * 主人拒絕 L3 升級申請
  */
 router.get('/trust/reject/:nodeId', async (req, res) => {
   if (!requireSupabase(res)) return;

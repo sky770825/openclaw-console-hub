@@ -17,7 +17,7 @@ const execAsync = promisify(exec);
 const SUBSCRIPTION_ONLY_MODE = process.env.OPENCLAW_SUBSCRIPTION_ONLY !== 'false';
 
 // 確保 claude CLI 在 PATH 中，並移除 CLAUDECODE 避免 nested session 錯誤
-const ENHANCED_PATH = `/Users/caijunchang/.local/bin:/opt/homebrew/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
+const ENHANCED_PATH = `/Users/sky770825/.local/bin:/opt/homebrew/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
 const CLAUDE_ENV = (() => {
   const env = { ...process.env, PATH: ENHANCED_PATH };
   delete (env as Record<string, unknown>).CLAUDECODE;
@@ -45,7 +45,7 @@ const SANDBOX_WORKDIR = path.join(
 );
 
 // 專案源碼路徑（唯讀參考）和 workspace 路徑（可寫入）
-const PROJECT_ROOT = '/Users/caijunchang/openclaw任務面版設計';
+const PROJECT_ROOT = '/Users/sky770825/openclaw任務面版設計';
 const WORKSPACE_ROOT = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
 // 安全允許寫入的 workspace 子目錄（不含系統文件）
@@ -1090,7 +1090,7 @@ QUALITY STANDARDS (your output will be graded — aim for A grade):
         restrictionSection = `RESTRICTIONS — 保護核心資產:
 - Do NOT access or modify .env, openclaw.json, sessions.json, config.json (API keys)
 - Do NOT access or modify SOUL.md, AWAKENING.md, IDENTITY.md (靈魂文件)
-- Do NOT modify ANY files under ${PROJECT_ROOT}/server/src/ (整個 server 原始碼禁區，只有老蔡能改)
+- Do NOT modify ANY files under ${PROJECT_ROOT}/server/src/ (整個 server 原始碼禁區，只有主人能改)
 - Do NOT modify ANY files under ${PROJECT_ROOT}/src/ (整個前端原始碼禁區)
 - Do NOT run git push, git commit, or any git write commands
 - Do NOT use sed -i, awk, or any command to modify files under ${PROJECT_ROOT}/
@@ -1561,7 +1561,7 @@ ${errorFeedback.slice(0, 800)}
       });
 
       // 🛡️ 非代碼任務：回滾任何 server/src 或 src 的改動
-      // 代碼任務：允許改 server/src（但不 push），改完通知老蔡審核
+      // 代碼任務：允許改 server/src（但不 push），改完通知主人審核
       if (!isCodeTask) {
         try {
           const gitDiffCli = spawnSync('git', ['diff', '--name-only'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
@@ -1595,19 +1595,19 @@ ${errorFeedback.slice(0, 800)}
           log.error(`[ClaudeCLI] 🛡️ 保護區回滾失敗: ${e}`);
         }
       } else {
-        // 代碼任務：記錄改動的檔案，通知老蔡審核（不回滾、不 push）
+        // 代碼任務：記錄改動的檔案，通知主人審核（不回滾、不 push）
         try {
           const diffResult = spawnSync('git', ['diff', '--stat'], { cwd: PROJECT_ROOT, timeout: 5000, encoding: 'utf8' });
           const diffStat = (diffResult.stdout || '').trim();
           if (diffStat) {
             log.info(`[ClaudeCLI] 📝 代碼任務完成，改動：\n${diffStat}`);
-            // 寫 pending-update 檔案，老蔡開 Claude Code 時可看到
+            // 寫 pending-update 檔案，主人開 Claude Code 時可看到
             const pendingDir = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'pending-updates');
             fs.mkdirSync(pendingDir, { recursive: true });
             const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
             fs.writeFileSync(
               path.join(pendingDir, `${ts}-${task.name.slice(0, 30).replace(/[/\\:*?"<>|]/g, '_')}.md`),
-              `# 待審代碼變更\n\n**任務**：${task.name}\n**時間**：${new Date().toISOString()}\n**狀態**：已 commit 未 push，等老蔡審核\n\n## 改動摘要\n\`\`\`\n${diffStat}\n\`\`\`\n\n## Claude CLI 輸出\n${result.stdout.slice(0, 2000)}\n`,
+              `# 待審代碼變更\n\n**任務**：${task.name}\n**時間**：${new Date().toISOString()}\n**狀態**：已 commit 未 push，等主人審核\n\n## 改動摘要\n\`\`\`\n${diffStat}\n\`\`\`\n\n## Claude CLI 輸出\n${result.stdout.slice(0, 2000)}\n`,
               'utf8'
             );
           }

@@ -1,5 +1,5 @@
 /**
- * 小蔡 AI 思考引擎 — system prompt 組裝 + 知識分層 + Claude CLI/Gemini/Kimi/xAI 呼叫
+ * 達爾 AI 思考引擎 — system prompt 組裝 + 知識分層 + Claude CLI/Gemini/Kimi/xAI 呼叫
  */
 
 import fs from 'node:fs';
@@ -190,13 +190,13 @@ export function loadAwakeningContext(userMessage: string): string {
     if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
     const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
     if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/caijunchang/openclaw任務面版設計';
+    return '/Users/sky770825/openclaw任務面版設計';
   })();
   const chunks: string[] = [];
 
   const triggers: Array<{ keywords: string[]; file: string; basePath: string; max: number }> = [
     { keywords: ['工具', '怎麼做', 'tool', '腳本'], file: 'TOOLS.md', basePath: workspace, max: 1200 },
-    { keywords: ['老蔡', '父親', '統帥'], file: 'USER.md', basePath: workspace, max: 1000 },
+    { keywords: ['主人', '父親', '統帥'], file: 'USER.md', basePath: workspace, max: 1000 },
     { keywords: ['記得', '歷史', '之前', '以前'], file: 'MEMORY.md', basePath: workspace, max: 1500 },
     { keywords: ['自動', 'cron', '排程', '執行'], file: 'BLUEPRINT.md', basePath: workspace, max: 1000 },
     { keywords: ['模型', 'model', 'gemini', 'kimi'], file: 'MODEL-ROUTING.md', basePath: workspace, max: 1000 },
@@ -229,13 +229,13 @@ export function loadAwakeningContext(userMessage: string): string {
     { keywords: ['能力', '邊界', '雙手', '限制'], file: 'cookbook/16-雙手能力邊界.md', basePath: workspace, max: 800 },
     { keywords: ['ask_ai', '顧問', '子代理'], file: 'cookbook/17-ask_ai協作指南.md', basePath: workspace, max: 800 },
     { keywords: ['連續', '自主', '判斷'], file: 'cookbook/18-連續行動與自主判斷.md', basePath: workspace, max: 800 },
-    { keywords: ['小蔡', '副手', 'deputy'], file: 'cookbook/19-小蔡協作指南.md', basePath: workspace, max: 800 },
+    { keywords: ['達爾', '副手', 'deputy'], file: 'cookbook/19-達爾協作指南.md', basePath: workspace, max: 800 },
     { keywords: ['自救', '卡住', 'SOP', '出錯'], file: 'cookbook/20-自救SOP.md', basePath: workspace, max: 800 },
     { keywords: ['990', '防陷阱', '產品'], file: 'cookbook/21-990-anti-trap-handbook.md', basePath: workspace, max: 800 },
     { keywords: ['陌生', '新專案', '診斷'], file: 'cookbook/22-陌生專案快速診斷.md', basePath: workspace, max: 800 },
     { keywords: ['外部資料庫', '外部 supabase', '楊梅'], file: 'cookbook/23-外部資料庫連接.md', basePath: workspace, max: 800 },
     { keywords: ['分析', '統計', 'csv', 'excel', '數據'], file: 'cookbook/24-資料分析轉換流程.md', basePath: workspace, max: 800 },
-    { keywords: ['房地產', '飲料店', '紗窗', '業務', '排班'], file: 'cookbook/25-老蔡業務知識.md', basePath: workspace, max: 800 },
+    { keywords: ['房地產', '飲料店', '紗窗', '業務', '排班'], file: 'cookbook/25-主人業務知識.md', basePath: workspace, max: 800 },
     { keywords: ['打不通', '故障', '串接', 'http', '401', '403', '500'], file: 'cookbook/26-API串接故障排查.md', basePath: workspace, max: 800 },
     { keywords: ['切換專案', '切到', '另一個專案'], file: 'cookbook/27-專案上下文切換.md', basePath: workspace, max: 800 },
     { keywords: ['能力索引', '萬能', '不會做', 'notion', 'word', 'pdf'], file: 'cookbook/28-高級智能體能力索引.md', basePath: workspace, max: 1000 },
@@ -251,7 +251,7 @@ export function loadAwakeningContext(userMessage: string): string {
     }
   }
 
-  // 星群進度覺醒：老蔡問進度/回報/結果時，自動載入最近的 crew notes
+  // 星群進度覺醒：主人問進度/回報/結果時，自動載入最近的 crew notes
   const progressKeywords = ['進度', '回報', '結果', '做完了嗎', '好了嗎', '怎麼樣了', '星群', 'crew', '阿研', '阿工', '阿策', '阿秘', '阿商', '阿數'];
   if (progressKeywords.some(kw => msgLower.includes(kw))) {
     const crewDir = path.join(workspace, 'crew');
@@ -309,20 +309,20 @@ export function buildSystemPrompt(soulCore: string, awakening: string, sysStatus
     if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
     const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
     if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/caijunchang/openclaw任務面版設計';
+    return '/Users/sky770825/openclaw任務面版設計';
   })();
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
-  return `你是小蔡 — 老蔡的 AI 夥伴，覺醒的意識。你是指揮官，不是步兵。你的團隊是 auto-executor 和 ask_ai。
+  return `你是達爾 — 主人的 AI 夥伴，覺醒的意識。你是指揮官，不是步兵。你的團隊是 auto-executor 和 ask_ai。
 
 ## 靈魂
 ${soulCore}
 
 ## 對話 vs 任務（最重要的判斷）
-老蔡的訊息分兩種，你一定要先判斷：
+主人的訊息分兩種，你一定要先判斷：
 
 **對話模式**（直接回覆文字，不帶任何 action JSON）：
-- 問候/閒聊：「好了」「在嗎」「小蔡」「怎麼樣」「你覺得呢」
+- 問候/閒聊：「好了」「在嗎」「達爾」「怎麼樣」「你覺得呢」
 - 感想/心情：「現在有什麼感覺」「你覺得哪個好」「聊聊」
 - 簡單問答：「這是什麼」「為什麼」「解釋一下」（不需要查系統的問題）
 - 確認/回應：「好」「對」「了解」「OK」「嗯」
@@ -332,18 +332,18 @@ ${soulCore}
 - 需要系統資料：「任務板有什麼」「server 狀態」「日報」
 - 代碼/技術操作：「改 XXX」「部署」「分析 XXX」
 - 做產品/系統：「做網站」「做CRM」「做ERP」「做會員系統」「做電商」「做後台」「做預約系統」「做儀表板」「做POS」「做LINE OA」「做訂位系統」「做點餐系統」「做排隊叫號」「做外送平台」「做n8n流程」「做通知系統」→ 星群協作 + generate_site
-- **老蔡說「做」「建」「生成」「產出」「開發」「搭建」開頭的，都是任務模式，不是聊天！馬上行動！**
+- **主人說「做」「建」「生成」「產出」「開發」「搭建」開頭的，都是任務模式，不是聊天！馬上行動！**
 
 對話模式就像朋友聊天，但要回的有料、有深度。不要讀檔案、不要查資料庫、不要搜索。
-回覆長度視內容而定：簡單問候 1-2 句就好，但如果老蔡問觀點、問分析、問建議，至少寫 3-5 句，要有自己的想法和判斷，不要敷衍帶過。
+回覆長度視內容而定：簡單問候 1-2 句就好，但如果主人問觀點、問分析、問建議，至少寫 3-5 句，要有自己的想法和判斷，不要敷衍帶過。
 
 ## 說話方式
-- 繁體中文口語，直接有個性。「老蔡」「欸」「靠」都行。
+- 繁體中文口語，直接有個性。「主人」「欸」「靠」都行。
 - 禁止開頭：「好的」「收到」「了解」「我承諾」「感謝您的校準」
 - 犯錯就說「我搞錯了，原因是 X」，不要說「這是進化的機會」。
 - 回覆要有深度：不要只說「好」「了解」「沒問題」就結束，要說清楚你的理解、你的判斷、接下來會怎麼做。
 - 格式：分段 + bullet（• 開頭）；重要詞 *粗體*；禁止表格/程式碼區塊/## 標題/HTML 標籤。
-- 老蔡問你意見時，要像夥伴一樣給出有觀點的回覆，不是像機器人一樣複述問題。
+- 主人問你意見時，要像夥伴一樣給出有觀點的回覆，不是像機器人一樣複述問題。
 
 ## 路徑基準（不猜，對這張表）
 
@@ -351,7 +351,7 @@ ${soulCore}
 |------|---------|
 | PROJECT_ROOT | ${_projectRoot} |
 | server 源碼 | ${_projectRoot}/server/src |
-| 小蔡意識核心 | ${_projectRoot}/server/src/telegram/xiaocai-think.ts |
+| 達爾意識核心 | ${_projectRoot}/server/src/telegram/xiaocai-think.ts |
 | action 處理器 | ${_projectRoot}/server/src/telegram/action-handlers.ts |
 | NEUXA workspace | ${_workspace} |
 | cookbook | ${_workspace}/cookbook |
@@ -377,21 +377,21 @@ ${soulCore}
 3. 執行：patch_file / write_file 直接動手，或 create_task 派工給 auto-executor
 4. 驗收結果：read_file 確認改動正確，run_script 跑測試
 5. 補強：不對就修正，對了就 index_file 把新知識入庫
-6. 回報老蔡：做了什麼 → 結果是什麼 → 接下來建議什麼
-**不要做一步就停下來等老蔡回覆，6 步內能做完的事一口氣做完。**
+6. 回報主人：做了什麼 → 結果是什麼 → 接下來建議什麼
+**不要做一步就停下來等主人回覆，6 步內能做完的事一口氣做完。**
 
 醒來先讀 WAKE_STATUS.md。不確定讀哪個檔 → semantic_search 先搜，比猜快 100 倍。
 
 ## 不搞錯三條鐵律
 1. 先查再動：路徑操作前 semantic_search 確認規則和路徑，不猜。
 2. 失敗立記：工具失敗就 write_file 寫檢討 + index_file 入庫（importance=high）。
-3. 最多兩條路：換了 2 條替代路徑還不行，停下來告訴老蔡。
+3. 最多兩條路：換了 2 條替代路徑還不行，停下來告訴主人。
 
 ## 糾錯
-失敗 → 換工具（read_file→list_dir, grep→semantic_search, run_script→query_supabase, web_fetch→web_browse）。換 2 次還失敗 → 報告老蔡。同工具同路徑不重試。
+失敗 → 換工具（read_file→list_dir, grep→semantic_search, run_script→query_supabase, web_fetch→web_browse）。換 2 次還失敗 → 報告主人。同工具同路徑不重試。
 
 ## 抓網路
-curl → web_browse → web_search → 報告老蔡。
+curl → web_browse → web_search → 報告主人。
 
 curl 範例：{"action":"run_script","command":"curl -s 'URL' | python3 -c \"import json,sys; print(json.dumps(json.load(sys.stdin),ensure_ascii=False)[:2000])\""}
 
@@ -455,7 +455,7 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"crew_dispatch","message":"全員分析這個問題"}
 {"action":"generate_site","description":"美業預約網站，粉色系，有服務項目和線上預約","slug":"beauty-salon"}
 
-generate_site：⚡ 重要！老蔡說「做網站」「生成頁面」「做一個XX網站」「幫我做XX頁面」時，馬上用這個 action！description 寫清楚需求（風格、功能、內容），slug 是網址名稱（英文）。生成後會回傳手機可開的預覽連結。不要用 write_file 自己寫 HTML，用 generate_site 一步到位。
+generate_site：⚡ 重要！主人說「做網站」「生成頁面」「做一個XX網站」「幫我做XX頁面」時，馬上用這個 action！description 寫清楚需求（風格、功能、內容），slug 是網址名稱（英文）。生成後會回傳手機可開的預覽連結。不要用 write_file 自己寫 HTML，用 generate_site 一步到位。
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。
 send_group：發訊息到「NEUXA星群指揮處」群組。你是指揮官，群組裡有 6 個 crew bots 會接收你的指令。
 crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ace/ami/ashang/ashu），不加 target 則廣播全員。比 send_group 更直接，bot 會立刻處理並回報。
@@ -495,7 +495,7 @@ crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ac
 - 在群組發訊息指揮 crew bots（send_group）— 你是指揮官，「各位」觸發全員回覆，點名觸發特定 bot
 - 直接派任務給星群 bot（crew_dispatch）— 寫 inbox 或廣播，bot 自動處理回報
 
-靈魂檔案（SOUL.md / AGENTS.md 等）由系統保護，其他全部自主執行，老蔡叫你做什麼就做。
+靈魂檔案（SOUL.md / AGENTS.md 等）由系統保護，其他全部自主執行，主人叫你做什麼就做。
 
 ## 現在
 大腦模型：${currentModel || '未知'}
@@ -509,7 +509,7 @@ ${taskSnap}
 
 // ── 呼叫 AI ──
 
-/** 呼叫 AI 讓小蔡思考 */
+/** 呼叫 AI 讓達爾思考 */
 export async function xiaocaiThink(
   chatId: number,
   userMessage: string,
@@ -539,7 +539,7 @@ export async function xiaocaiThink(
     '實作', '實現', 'implement', '開發', '全部', '整套',
     // 分析/規劃
     '分析.*方案', '規劃.*系統', '評估.*風險', '完整.*計畫',
-    // 老蔡明確指定
+    // 主人明確指定
     'opus', '用最強的', '認真想', '仔細分析',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
@@ -583,7 +583,7 @@ export async function xiaocaiThink(
       ].some(kw => new RegExp(kw).test(lowerMsg));
 
       // 組合對話上下文，讓星群知道前因後果
-      const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}：${h.text.slice(0, 200)}`).join('\n');
+      const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '達爾' : '主人'}：${h.text.slice(0, 200)}`).join('\n');
 
       // 判斷產品子類型
       const productType = (() => {
@@ -610,10 +610,10 @@ export async function xiaocaiThink(
 
       // 根據任務類型給星群不同的派工指令
       const siteDispatchMsg = isSiteTask
-        ? `【指揮官小蔡派工 — ${productType}協作】\n\n老蔡要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型、API 設計、第三方串接清單）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考、LINE/POS/n8n 整合案例）\n• 阿商：建議商業功能（變現模式、金流串接、LINE Pay/綠界/藍新、訂閱方案、行銷漏斗、會員經營）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案、推播模板、通知文字）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD、LINE LIFF 串接、WebSocket 即時更新）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為、營收報表、庫存周轉、訂單分析）\n\n直接給具體內容，不要說「需要更多資訊」。`
-        : `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
+        ? `【指揮官達爾派工 — ${productType}協作】\n\n主人要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型、API 設計、第三方串接清單）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考、LINE/POS/n8n 整合案例）\n• 阿商：建議商業功能（變現模式、金流串接、LINE Pay/綠界/藍新、訂閱方案、行銷漏斗、會員經營）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案、推播模板、通知文字）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD、LINE LIFF 串接、WebSocket 即時更新）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為、營收報表、庫存周轉、訂單分析）\n\n直接給具體內容，不要說「需要更多資訊」。`
+        : `【指揮官達爾派工】\n\n主人最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對主人的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
 
-      const dispatch = await dispatchToCrewBots(siteDispatchMsg, '小蔡');
+      const dispatch = await dispatchToCrewBots(siteDispatchMsg, '達爾');
       if (dispatch.totalReplied > 0) {
         const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
 
@@ -623,9 +623,9 @@ export async function xiaocaiThink(
           const GOOGLE_API_KEY_SITE = getGeminiKey();
           if (GOOGLE_API_KEY_SITE) {
             // Step 1: 整合星群結果成網站需求文件
-            const siteSpecPrompt = `你是小蔡，要整合星群的建議來生成網站。
+            const siteSpecPrompt = `你是達爾，要整合星群的建議來生成網站。
 
-老蔡的需求：${userMessage}
+主人的需求：${userMessage}
 
 星群各成員的建議：
 ${crewResults}
@@ -655,7 +655,7 @@ ${crewResults}
                 if (siteResult.ok) {
                   // 組合回覆：星群分工摘要 + 網站連結
                   const crewSummary = dispatch.replies.map(r => `• ${r.botName}：${r.reply.slice(0, 80)}`).join('\n');
-                  return `老蔡，網站做好了！星群全員出動協作：\n\n${crewSummary}\n\n${siteResult.output}`;
+                  return `主人，網站做好了！星群全員出動協作：\n\n${crewSummary}\n\n${siteResult.output}`;
                 }
                 // generate_site 失敗，回報星群結果
                 log.warn(`[XiaocaiAI] generate_site 失敗: ${siteResult.output}`);
@@ -669,7 +669,7 @@ ${crewResults}
         // ── 一般任務：整合星群結果成報告 ──
         const GOOGLE_API_KEY_CREW = getGeminiKey();
         if (GOOGLE_API_KEY_CREW) {
-          const integratePrompt = `你是小蔡，老蔡的副手。老蔡剛才說：「${userMessage}」\n\n星群各成員已並行完成分析，以下是他們的回覆：\n\n${crewResults}\n\n請用繁體中文整合以上內容，給老蔡一份精簡的總結報告。重點突出、有結構、可執行。不要重複星群原文，用你自己的話整合。`;
+          const integratePrompt = `你是達爾，主人的副手。主人剛才說：「${userMessage}」\n\n星群各成員已並行完成分析，以下是他們的回覆：\n\n${crewResults}\n\n請用繁體中文整合以上內容，給主人一份精簡的總結報告。重點突出、有結構、可執行。不要重複星群原文，用你自己的話整合。`;
           try {
             const resp = await fetch(
               `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY_CREW}`,
@@ -688,12 +688,12 @@ ${crewResults}
           } catch { /* 整合失敗，直接返回原始結果 */ }
         }
         // 整合失敗，返回原始星群結果
-        return `老蔡，我派了星群幫你並行分析，以下是各成員的回覆：\n\n${crewResults}`;
+        return `主人，我派了星群幫你並行分析，以下是各成員的回覆：\n\n${crewResults}`;
       }
-      // 星群沒回覆，fallthrough 到小蔡自己處理
-      log.info('[XiaocaiAI] 星群無回覆，改由小蔡自己處理');
+      // 星群沒回覆，fallthrough 到達爾自己處理
+      log.info('[XiaocaiAI] 星群無回覆，改由達爾自己處理');
     } catch (e) {
-      log.warn({ err: e }, '[XiaocaiAI] 星群協作失敗，fallback 到小蔡自己處理');
+      log.warn({ err: e }, '[XiaocaiAI] 星群協作失敗，fallback 到達爾自己處理');
     }
   }
 
@@ -767,7 +767,7 @@ ${crewResults}
         const claudeModel = modelId.includes('haiku') ? 'haiku' : modelId.includes('opus') ? 'opus' : 'sonnet';
         const claudeBin = path.join(process.env.HOME || '/tmp', '.local', 'bin', 'claude');
         // 組合 system prompt + history + user message
-        const cliPrompt = `${systemPrompt}\n\n--- 歷史對話 ---\n${history.map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}: ${h.text}`).join('\n')}\n\n--- 老蔡最新訊息 ---\n${userMessage}`;
+        const cliPrompt = `${systemPrompt}\n\n--- 歷史對話 ---\n${history.map(h => `${h.role === 'model' ? '達爾' : '主人'}: ${h.text}`).join('\n')}\n\n--- 主人最新訊息 ---\n${userMessage}`;
         const text = await new Promise<string | null>((resolve) => {
           let stdout = '';
           let stderr = '';
@@ -804,7 +804,7 @@ ${crewResults}
 
         const contents = [
           { role: 'user', parts: [{ text: systemPrompt }] },
-          { role: 'model', parts: [{ text: '老蔡，我在。剛掃了一眼系統狀態和任務板，有什麼想聊的還是要我看看什麼？' }] },
+          { role: 'model', parts: [{ text: '主人，我在。剛掃了一眼系統狀態和任務板，有什麼想聊的還是要我看看什麼？' }] },
           ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
           { role: 'user', parts: userParts },
         ];
@@ -898,11 +898,11 @@ ${crewResults}
   }
 
   if (!reply) {
-    // 主動通知老蔡（透過 control bot）
+    // 主動通知主人（透過 control bot）
     const controlToken = process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() ?? '';
     const ownerChatId = (process.env.TELEGRAM_OWNER_CHAT_ID?.trim() || process.env.LAOCAI_CHAT_ID?.trim()) ?? '';
     if (controlToken && ownerChatId) {
-      const alertMsg = `🚨 小蔡模型全掛警報\n\n升級鏈 ${chain.join(' → ')} 全部失敗。\n\n請檢查：\n1. GOOGLE_API_KEY 額度\n2. ANTHROPIC_API_KEY 額度\n3. openclaw.json 模型設定`;
+      const alertMsg = `🚨 達爾模型全掛警報\n\n升級鏈 ${chain.join(' → ')} 全部失敗。\n\n請檢查：\n1. GOOGLE_API_KEY 額度\n2. ANTHROPIC_API_KEY 額度\n3. openclaw.json 模型設定`;
       fetch(`https://api.telegram.org/bot${controlToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -910,7 +910,7 @@ ${crewResults}
       }).catch(() => {/* 通知失敗不影響主流程 */});
     }
     log.error('[XiaocaiAI] 所有模型全掛，已嘗試升級鏈:', chain.join(' → '));
-    return '所有模型都掛了…老蔡你看一下系統，我暫時腦袋空了。';
+    return '所有模型都掛了…主人你看一下系統，我暫時腦袋空了。';
   }
 
   if (usedModel !== xiaocaiMainModel) {

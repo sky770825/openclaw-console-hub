@@ -27,7 +27,7 @@ const PROJECT_ROOT: string = (() => {
   const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
   if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
   // fallback（向後相容）
-  return '/Users/caijunchang/openclaw任務面版設計';
+  return '/Users/sky770825/openclaw任務面版設計';
 })();
 
 export type ActionResult = { ok: boolean; output: string };
@@ -115,7 +115,7 @@ export async function createReviewTaskForHuman(agentId: string, originalTaskId: 
   }
 }
 
-/** 行动链提示：引导小蔡一次回复打包多个 action */
+/** 行动链提示：引导達爾一次回复打包多个 action */
 const CHAIN_HINTS: Record<string, string> = {
   read_file: '💡 读完了 → 现在一口气：(1) write_file 写分析 + index_file 索引，或 (2) code_eval 验证逻辑，两三个一起发。',
   write_file: '💡 写完了 → (1) 如果有 ⚠️ 提示，先 run_script: ls <路徑> 確認存在再回報。(2) workspace 內的檔案馬上 index_file 索引。',
@@ -132,9 +132,9 @@ const CHAIN_HINTS: Record<string, string> = {
   query_supabase: '💡 查完了 → 有异常就 run_script 诊断 + write_file 写报告，一起发。',
   pty_exec: '💡 互動命令完成 → 檢查輸出是否正常，有問題再跑一次或 write_file 記錄結果。',
   patch_file: '💡 修補完了 → read_file 確認結果，或繼續 patch_file 改下一處。多處修改一起發。',
-  plan_project: '💡 計畫拆好了 → 子任務已進 draft，跟老蔡報告計畫摘要。有需要調整就 update_task。',
+  plan_project: '💡 計畫拆好了 → 子任務已進 draft，跟主人報告計畫摘要。有需要調整就 update_task。',
   roadmap: '💡 路線圖操作完成 → 搭配 query_supabase 看任務進度，或 write_file 寫週報。',
-  delegate_agents: '💡 多代理完成 → 整合各代理輸出，write_file 寫總結 + index_file 入庫，再告訴老蔡結論。',
+  delegate_agents: '💡 多代理完成 → 整合各代理輸出，write_file 寫總結 + index_file 入庫，再告訴主人結論。',
 };
 
 // ── 任務操作 ──
@@ -142,7 +142,7 @@ const CHAIN_HINTS: Record<string, string> = {
 /** 建立任務 */
 export async function createTask(name: string, description?: string, owner?: string): Promise<string> {
   try {
-    const validOwner = owner && ['小蔡', '老蔡', 'system'].includes(owner) ? owner : '小蔡';
+    const validOwner = owner && ['達爾', '主人', 'system'].includes(owner) ? owner : '達爾';
     const trimmedName = name.slice(0, 100);
 
     // 安全底線：只擋洩漏密鑰的任務（其他全放行，靈魂文件保護在 bot-polling 層）
@@ -179,7 +179,7 @@ export async function createTask(name: string, description?: string, owner?: str
       }
     }
 
-    // 自動批准：輕量任務直接 ready，高風險任務才 draft 等老蔡批准
+    // 自動批准：輕量任務直接 ready，高風險任務才 draft 等主人批准
     const HIGH_RISK_PATTERNS = [
       /刪除.*資料/i, /drop.*table/i, /rm\s+-rf/i, /核心.*架構/i,
       /修改.*auth/i, /修改.*密碼/i, /修改.*key/i, /修改.*env/i,
@@ -195,7 +195,7 @@ export async function createTask(name: string, description?: string, owner?: str
       signal: AbortSignal.timeout(10000),
     });
     const result = (await r.json()) as Record<string, unknown>;
-    const statusNote = initialStatus === 'draft' ? '（⚠️ 高風險 — 需老蔡批准）' : '（✅ 自動批准，即將執行）';
+    const statusNote = initialStatus === 'draft' ? '（⚠️ 高風險 — 需主人批准）' : '（✅ 自動批准，即將執行）';
     return result.id ? `已建立，ID: ${result.id}，owner: ${validOwner}${statusNote}` : '建立失敗';
   } catch (err) {
     console.error('[createTask] 連線錯誤:', err instanceof Error ? err.message : err);
@@ -245,7 +245,7 @@ export async function handleReadFile(actionPath: string): Promise<ActionResult> 
   try {
     let resolved = path.isAbsolute(actionPath) ? actionPath : path.resolve(NEUXA_WORKSPACE, actionPath);
 
-    // 自動修正常見相對路徑（小蔡常忘記打絕對路徑）
+    // 自動修正常見相對路徑（達爾常忘記打絕對路徑）
     if (!fs.existsSync(resolved) && !path.isAbsolute(actionPath)) {
       // 先用 prefix mapping
       for (const [prefix, abs] of PATH_PREFIXES) {
@@ -290,15 +290,15 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
   }
   const check = isPathSafe(actionPath, 'write');
   if (!check.safe) {
-    // 靈魂文件被擋 → 自動轉存到 pending-updates/ 等老蔡審核
+    // 靈魂文件被擋 → 自動轉存到 pending-updates/ 等主人審核
     const basename = path.basename(actionPath);
     if (SOUL_FILES.has(basename)) {
       const pendingDir = path.join(NEUXA_WORKSPACE, 'pending-updates');
       fs.mkdirSync(pendingDir, { recursive: true });
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const pendingPath = path.join(pendingDir, `${basename}.${ts}.md`);
-      fs.writeFileSync(pendingPath, `<!-- 小蔡想更新 ${basename}，已轉存等老蔡審核 -->\n\n${content}`, 'utf8');
-      return { ok: true, output: `📋 ${basename} 是靈魂文件，已轉存到 pending-updates/ 等老蔡審核合併` };
+      fs.writeFileSync(pendingPath, `<!-- 達爾想更新 ${basename}，已轉存等主人審核 -->\n\n${content}`, 'utf8');
+      return { ok: true, output: `📋 ${basename} 是靈魂文件，已轉存到 pending-updates/ 等主人審核合併` };
     }
     return { ok: false, output: `🚫 ${check.reason}` };
   }
@@ -316,7 +316,7 @@ export async function handleWriteFile(actionPath: string, content: string): Prom
     fs.writeFileSync(resolved, content, 'utf8');
     const outsideWorkspace = !resolved.startsWith(NEUXA_WORKSPACE);
     const suffix = outsideWorkspace
-      ? `\n⚠️ 寫到 workspace 以外的路徑。請立刻用 run_script: ls ${resolved} 確認檔案存在，再回報老蔡。`
+      ? `\n⚠️ 寫到 workspace 以外的路徑。請立刻用 run_script: ls ${resolved} 確認檔案存在，再回報主人。`
       : '';
     // 寫完 .js/.ts 自動語法檢查
     let syntaxNote = '';
@@ -528,7 +528,7 @@ export function handleRunScriptBg(command: string, label?: string): ActionResult
   });
 
   log.info(`[NEUXA-BG] 背景啟動: "${tag}" pid=${proc.pid}`);
-  return { ok: true, output: `已開始背景執行: ${tag} (pid=${proc.pid})，完成後會 Telegram 通知老蔡。` };
+  return { ok: true, output: `已開始背景執行: ${tag} (pid=${proc.pid})，完成後會 Telegram 通知主人。` };
 }
 
 // ── AI 諮詢 ──
@@ -1038,12 +1038,12 @@ export async function handleProxyFetch(url: string, method: string, body: string
 // ── 安全腳本執行（白名單模式）──
 
 /**
- * 小蔡可以直接跑的輕量工具白名單。
+ * 達爾可以直接跑的輕量工具白名單。
  * 規則：唯讀/診斷性質，30 秒 timeout，沙盒環境（無 API key）。
  * 重型任務（改代碼、部署、npm install）仍然要建任務。
  */
 const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
-  // curl — GET/POST 都放行（API 呼叫是小蔡核心能力）
+  // curl — GET/POST 都放行（API 呼叫是達爾核心能力）
   { pattern: /curl\s+/, desc: 'curl 請求' },
   // 系統診斷
   { pattern: /^lsof\s+/, desc: 'lsof' },
@@ -1081,7 +1081,7 @@ const SAFE_SCRIPT_PATTERNS: Array<{ pattern: RegExp; desc: string }> = [
   // kill（單一進程管理，不是 killall）
   { pattern: /^kill\s+\d+/, desc: 'kill 單一進程' },
   // 通知腳本
-  { pattern: /notify-laocai/, desc: '通知老蔡' },
+  { pattern: /notify-laocai/, desc: '通知主人' },
 ];
 
 /** 危險指令黑名單（真正會造成不可逆破壞的才擋） */
@@ -1099,7 +1099,7 @@ function suggestAlternative(cmd: string): string {
   if (/git\s+push\s+--force/i.test(cmd))
     return '→ force push 禁止。用 git push（不帶 --force）。';
   if (/npm\s+publish/i.test(cmd))
-    return '→ npm publish 禁止。用 create_task 派工給老蔡。';
+    return '→ npm publish 禁止。用 create_task 派工給主人。';
   return '→ 這個命令不在白名單。試試拆成更簡單的命令，或用 create_task 派工。';
 }
 
@@ -1766,7 +1766,7 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
   }
 
   // ── 路徑白名單：crew bot 只能索引特定目錄，防止向量庫被灌垃圾 ──
-  const homeDir = process.env.HOME || '/Users/caijunchang';
+  const homeDir = process.env.HOME || '/Users/sky770825';
   const indexAllowedPrefixes = [
     path.join(PROJECT_ROOT, 'cookbook'),                                    // cookbook/
     path.join(homeDir, '.openclaw/workspace/skills'),                      // skills/
@@ -2098,7 +2098,7 @@ async function handleReindexKnowledge(mode: string): Promise<ActionResult> {
 
 // ── 網頁搜尋與抓取 ──
 
-/** Google Custom Search — 小蔡用來搜網頁學技能 */
+/** Google Custom Search — 達爾用來搜網頁學技能 */
 async function handleWebSearch(query: string, _limit: number = 5): Promise<ActionResult> {
   if (!query) return { ok: false, output: 'web_search 需要 query 參數' };
 
@@ -2731,12 +2731,12 @@ function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; re
     }
   }
 
-  // 禁止修改 server 源碼目錄 — 但放行 crew-bots/（小蔡可自行優化星群）
+  // 禁止修改 server 源碼目錄 — 但放行 crew-bots/（達爾可自行優化星群）
   if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
     if (resolved.includes('/server/src/telegram/crew-bots/')) {
       // 放行 crew-bots/ 子目錄
     } else {
-      return { safe: false, resolved, reason: '🛑 禁止修改 server 源碼目錄，只有老蔡能改（crew-bots/ 除外）' };
+      return { safe: false, resolved, reason: '🛑 禁止修改 server 源碼目錄，只有主人能改（crew-bots/ 除外）' };
     }
   }
 
@@ -2984,7 +2984,7 @@ async function handlePlanProject(action: Record<string, string>): Promise<Action
         `來源: plan_project → ${goal.slice(0, 50)}`,
       ].filter(Boolean).join('\n');
 
-      const result = await createTask(taskName, desc, '小蔡');
+      const result = await createTask(taskName, desc, '達爾');
       if (result.includes('已建立')) {
         created.push(`W${t.week || 1} [${t.estimated_effort || 'M'}] ${taskName}`);
       } else {
@@ -3010,7 +3010,7 @@ async function handlePlanProject(action: Record<string, string>): Promise<Action
         ([w, names]) => `W${w}: ${names.join(' / ')}`
       ),
       '',
-      `已建立 ${created.length} 個任務（draft 狀態，等老蔡批准）`,
+      `已建立 ${created.length} 個任務（draft 狀態，等主人批准）`,
       ...(failed.length > 0 ? [`建立失敗 ${failed.length} 個:\n${failed.join('\n')}`] : []),
       '',
       '--- 依賴關係 ---',
@@ -3309,7 +3309,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     }
     case 'send_group': {
-      // 小蔡去群組發訊息（指揮 crew bots / 發布公告）
+      // 達爾去群組發訊息（指揮 crew bots / 發布公告）
       const groupMsg = action.message || action.text || action.content || '';
       if (!groupMsg) { result = { ok: false, output: 'send_group 需要 message 參數' }; break; }
       const groupChatId = process.env.TELEGRAM_GROUP_CHAT_ID?.trim() || process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim();
@@ -3322,7 +3322,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
 
         // 內部調度 crew bots（Forum 群組 bot→bot 訊息不走 getUpdates）
         const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
-        const dispatch = await dispatchToCrewBots(groupMsg, '小蔡');
+        const dispatch = await dispatchToCrewBots(groupMsg, '達爾');
         let dispatchNote = '';
         if (dispatch.totalReplied > 0) {
           const summary = dispatch.replies.map(r => `[${r.botName}]: ${r.reply.slice(0, 200)}`).join('\n');
@@ -3335,7 +3335,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     }
     case 'crew_dispatch': {
-      // 小蔡主動派任務給星群 — 直接 dispatch 或寫 inbox
+      // 達爾主動派任務給星群 — 直接 dispatch 或寫 inbox
       const crewMsg = action.message || action.text || '';
       if (!crewMsg) { result = { ok: false, output: 'crew_dispatch 需要 message 參數' }; break; }
       const targetBot = action.target || ''; // 可選：指定 bot ID
@@ -3352,7 +3352,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
         } else {
           // 廣播：dispatch 給所有星群（走群組討論模式）
           const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
-          const dispatch = await dispatchToCrewBots(crewMsg, '小蔡');
+          const dispatch = await dispatchToCrewBots(crewMsg, '達爾');
           if (dispatch.totalReplied > 0) {
             const summary = dispatch.replies.map(r => `[${r.botName}]: ${r.reply.slice(0, 150)}`).join('\n');
             result = { ok: true, output: `星群 ${dispatch.totalReplied} 個 bot 回覆了：\n${summary}` };
@@ -3379,7 +3379,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     recordModelUsage(model, tokensEstimate, 0, type).catch(() => {});
   }
 
-  // 成功时追加 chain hint，引导小蔡连续行动
+  // 成功时追加 chain hint，引导達爾连续行动
   if (result.ok && CHAIN_HINTS[type]) {
     result.output += '\n' + CHAIN_HINTS[type];
   }
@@ -3715,7 +3715,7 @@ ${html}`;
 
     return {
       ok: true,
-      output: `✅ 網站已生成！${phaseInfo}\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📏 大小：${html.length} 字元${issueNote}\n\n老蔡可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
+      output: `✅ 網站已生成！${phaseInfo}\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📏 大小：${html.length} 字元${issueNote}\n\n主人可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
     };
   } catch (e) {
     return { ok: false, output: `generate_site 失敗: ${e instanceof Error ? e.message : String(e)}` };
@@ -3755,12 +3755,12 @@ export function appendInteractionLog(
 
     const entry =
       `\n### ${timeStr}\n` +
-      `老蔡：${userSnippet || '（系統觸發）'}\n` +
+      `主人：${userSnippet || '（系統觸發）'}\n` +
       `動作：\n  ${actionSummary}\n` +
       `回覆：${replySnippet}\n`;
 
     if (!fs.existsSync(logPath)) {
-      fs.writeFileSync(logPath, `# 小蔡互動日誌 — ${dateStr}\n`, 'utf8');
+      fs.writeFileSync(logPath, `# 達爾互動日誌 — ${dateStr}\n`, 'utf8');
     }
     fs.appendFileSync(logPath, entry, 'utf8');
   } catch (e) {

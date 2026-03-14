@@ -228,7 +228,7 @@ export async function fetchOpenClawUIActions(): Promise<Record<string, unknown>[
 // 2026-02-28 NEUXA: 新增模型成本記錄功能
 export async function recordModelUsage(modelName: string, tokensUsed: number, cost: number, purpose: string) {
   try {
-    const { data, error } = await supabase.from('openclaw_audit_logs').insert([
+    const { data, error } = await supabaseServiceRole.from('openclaw_audit_logs').insert([
       {
         action: 'MODEL_USAGE',
         resource: modelName,

@@ -33,7 +33,7 @@ export function isPathSafe(targetPath: string, operation: 'read' | 'write'): { s
 
   if (operation === 'read') {
     // 讀取只擋靈魂文件的刪除（不擋讀），其他全放行
-    // 小蔡需要讀取 .env / config 來排查問題，寫入才是真正的風險
+    // 達爾需要讀取 .env / config 來排查問題，寫入才是真正的風險
     return { safe: true };
   }
 
@@ -48,10 +48,10 @@ export function isPathSafe(targetPath: string, operation: 'read' | 'write'): { s
     }
   }
 
-  // 禁止寫入 server 源碼目錄 — 但放行 crew-bots/ 子目錄（小蔡可自行優化星群）
+  // 禁止寫入 server 源碼目錄 — 但放行 crew-bots/ 子目錄（達爾可自行優化星群）
   if ((resolved.includes('/server/src/') || resolved.includes('/server/dist/'))
     && !resolved.includes('/server/src/telegram/crew-bots/')) {
-    return { safe: false, reason: '🛑 禁止寫入 server 源碼目錄，只有老蔡能改（crew-bots/ 除外）' };
+    return { safe: false, reason: '🛑 禁止寫入 server 源碼目錄，只有主人能改（crew-bots/ 除外）' };
   }
 
   return { safe: true };

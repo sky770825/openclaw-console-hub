@@ -4,7 +4,7 @@
  *
  * GET    /tasks       — 列出任務（含 in-memory fallback）
  *        ?status=pending|running|done|...         — 篩選任務狀態
- *        ?owner=小蔡                              — 篩選任務擁有者
+ *        ?owner=達爾                              — 篩選任務擁有者
  *        ?priority=3                              — 篩選最低優先級（priority >= N）
  *        ?tags=feature,bug                        — 篩選標籤（逗號分隔，任一匹配即可）
  *        ?search=登入                             — 任務名稱/描述文字搜尋
@@ -378,7 +378,7 @@ openclawTasksRouter.get('/', async (req, res) => {
       });
     }
 
-    // ?owner=小蔡  — 大小寫不敏感子字串匹配
+    // ?owner=達爾  — 大小寫不敏感子字串匹配
     const filterOwner = String(req.query.owner ?? '').trim();
     if (filterOwner) {
       const ownerLower = filterOwner.toLowerCase();
