@@ -645,7 +645,7 @@ async function executeNextPendingTask(): Promise<void> {
       // 如果所有任務都需要審核，沒有可執行的
       const taskRisk = classifyTaskRisk(task);
       const taskApproved = approvedCriticalTaskIds.has(task.id);
-      if ((taskRisk === 'critical' || taskRisk === 'medium') && !taskApproved) {
+      if (taskRisk === 'critical' && !taskApproved) {
         log.info('[AutoDispatch] 所有任務都在待審佇列，等待主人審核');
         return;
       }
