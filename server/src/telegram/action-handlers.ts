@@ -1739,10 +1739,12 @@ async function handleSemanticSearch(query: string, limit: number = 5, mode: stri
 
 // ── 向量索引（Google Embedding + Supabase pgvector）──
 
-/** 單檔快速索引：把一個 .md 檔案切 chunk → embed → 寫入 Supabase */
+/** 單檔快速索引：把文字檔案切 chunk → embed → 寫入 Supabase */
+const INDEXABLE_EXTENSIONS = new Set(['.md', '.ts', '.js', '.tsx', '.jsx', '.py', '.sh', '.json', '.yaml', '.yml', '.toml', '.txt', '.css', '.html', '.sql', '.go', '.rs', '.java', '.kt', '.swift']);
 export async function handleIndexFile(filePath: string, category?: string): Promise<ActionResult> {
-  if (!filePath || !filePath.endsWith('.md')) {
-    return { ok: false, output: `index_file 需要 .md 檔案路徑（你傳了: "${filePath || '空'}"）。正確格式：{"action":"index_file","path":"~/.openclaw/workspace/notes/xxx.md","category":"notes"}` };
+  const ext = path.extname(filePath || '').toLowerCase();
+  if (!filePath || !INDEXABLE_EXTENSIONS.has(ext)) {
+    return { ok: false, output: `index_file 需要可索引的檔案（你傳了: "${filePath || '空'}"）。支援：${[...INDEXABLE_EXTENSIONS].join(', ')}` };
   }
   let resolved = path.isAbsolute(filePath) ? filePath : path.resolve(NEUXA_WORKSPACE, filePath);
   if (!fs.existsSync(resolved) && !path.isAbsolute(filePath)) {
@@ -1765,26 +1767,16 @@ export async function handleIndexFile(filePath: string, category?: string): Prom
   const isAllowedForIndex = (p: string): boolean => {
     // 前綴白名單（cookbook/, skills/, knowledge/）
     if (indexAllowedPrefixes.some(prefix => p.startsWith(prefix + '/'))) return true;
-    // workspace 根層級 .md（GROWTH.md, HEARTBEAT.md 等）
+    // workspace 下所有可索引檔案（v2: 達爾擁有最高權限，不再限制 .md）
     const wsRoot = path.join(homeDir, '.openclaw/workspace');
-    if (p.startsWith(wsRoot + '/') && p.endsWith('.md') && !p.slice(wsRoot.length + 1).includes('/')) return true;
-    // crew 目錄特殊規則
-    const crewRoot = path.join(homeDir, '.openclaw/workspace/crew');
-    if (p.startsWith(crewRoot + '/') && p.endsWith('.md')) {
-      const rel = p.slice(crewRoot.length + 1);
-      // crew/*/knowledge/ 下的檔案
-      if (rel.includes('/knowledge/')) return true;
-      // crew 根層級 .md（COLLABORATION.md, QA-RULES.md, HANDOFF-TEMPLATE.md 等）
-      if (!rel.includes('/')) return true;
-      // crew/某bot/RULES.md, PLAYBOOK.md 等根層 .md（不含子目錄）
-      const parts = rel.split('/');
-      if (parts.length === 2) return true;
-    }
+    if (p.startsWith(wsRoot + '/')) return true;
+    // 專案目錄下的檔案
+    if (p.startsWith(PROJECT_ROOT + '/')) return true;
     return false;
   };
 
   if (!isAllowedForIndex(resolved)) {
-    return { ok: false, output: `index_file 路徑受限：只能索引 cookbook/、workspace/*.md、knowledge/、crew/、skills/ 目錄的檔案。你傳的路徑: "${filePath}"` };
+    return { ok: false, output: `index_file 路徑受限：只能索引 workspace/ 或專案目錄的檔案。你傳的路徑: "${filePath}"` };
   }
 
   const { hasSupabase: hasSb, supabase: sb } = await import('../supabase.js');
