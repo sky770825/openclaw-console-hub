@@ -1,0 +1,89 @@
+{
+  "brand": {
+    "name": "主人美業沙龍",
+    "name_en": "Laocai Beauty Salon",
+    "slogan": "探索極致之美",
+    "founded": "2020",
+    "instagram": "@laocai_beauty",
+    "instagram_url": "https://www.instagram.com/laocai_beauty",
+    "facebook_url": "https://www.facebook.com/laocaibeauty",
+    "line_id": "@laocai-beauty",
+    "website": "https://laocai-beauty.com",
+    "booking_url": "https://booking.laocai-beauty.com"
+  },
+  "contact": {
+    "address": "台北市美麗路88號",
+    "phone": "(02) 8888-8888",
+    "email": "info@laocai-beauty.com",
+    "hours": "週二至週日 11:00 - 20:00",
+    "closed": "週一公休"
+  },
+  "services": [
+    {
+      "id": "facial-deep",
+      "name": "臉部深層保養",
+      "duration_min": 90,
+      "price_ntd": 1800,
+      "description": "深層清潔、保濕、抗老護理，喚醒肌膚光彩"
+    },
+    {
+      "id": "body-massage",
+      "name": "全身舒壓按摩",
+      "duration_min": 120,
+      "price_ntd": 2500,
+      "description": "結合芳香精油與專業手技，放鬆身心、舒緩壓力"
+    },
+    {
+      "id": "nail-japanese",
+      "name": "日式美甲設計",
+      "duration_min": 90,
+      "price_ntd": 1200,
+      "price_note": "起",
+      "description": "從簡約裸色到華麗造型，打造指尖藝術"
+    },
+    {
+      "id": "eyelash-korean",
+      "name": "韓式嫁接睫毛",
+      "duration_min": 90,
+      "price_ntd": 1500,
+      "price_note": "起",
+      "description": "自然濃密效果，讓雙眼更有神"
+    },
+    {
+      "id": "seasonal-repair",
+      "name": "換季修護臉部療程",
+      "duration_min": 90,
+      "price_ntd": 1800,
+      "promo": {
+        "price_ntd": 1500,
+        "valid_until": "2026-03-31",
+        "label": "三月限定"
+      },
+      "description": "針對換季敏感設計，含鎮定面膜 + 保濕導入"
+    },
+    {
+      "id": "spring-combo",
+      "name": "春日煥采按摩套組",
+      "duration_min": 120,
+      "price_ntd": 3500,
+      "promo": {
+        "price_ntd": 2800,
+        "valid_until": "2026-03-31",
+        "label": "三月限定"
+      },
+      "description": "全身精油按摩 + 臉部基礎護理，完整呵護"
+    }
+  ],
+  "team": [
+    {"name": "蔡小美", "title": "首席美容師", "specialty": "臉部肌膚管理、抗老護理"},
+    {"name": "林巧手", "title": "美甲美睫總監", "specialty": "日式美甲、韓式嫁接"},
+    {"name": "王舒壓", "title": "資深芳療師", "specialty": "全身經絡、精油舒緩"}
+  ],
+  "_meta": {
+    "status": "PLACEHOLDER",
+    "warning": "此檔案中的品牌名稱、地址、電話、人名均為佔位用假資料。代理在產出對外內容時，必須先確認 status 欄位。若為 PLACEHOLDER，禁止直接引用，應標註 [待填入真實資料] 並提醒主人更新。",
+    "last_updated": "2026-03-15",
+    "updated_by": "dar",
+    "note": "所有代理產出內容時必須引用此檔案的資料，禁止自行編造價格、時長、聯絡方式。status 為 VERIFIED 時才可直接引用。"
+  }
+}
