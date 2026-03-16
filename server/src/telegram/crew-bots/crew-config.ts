@@ -11,6 +11,9 @@
 
 export type CrewModelType = 'claude-opus' | 'claude-sonnet' | 'claude-sonnet-cli' | 'claude-haiku' | 'claude' | 'gemini-flash' | 'gemini-flash-lite' | 'gemini-pro';
 
+/** 支援的通訊頻道 */
+export type CrewChannelType = 'telegram' | 'discord';
+
 export interface CrewBotConfig {
   id: string;
   name: string;
@@ -39,11 +42,28 @@ export interface CrewBotConfig {
   activationCondition?: string;
   /** bot 狀態 */
   status?: 'active' | 'standby';
+  /** 啟用的通訊頻道（預設 telegram，可加 discord） */
+  channels?: CrewChannelType[];
+  /** Discord 專屬設定 */
+  discord?: {
+    channelId?: string;
+    roleId?: string;
+  };
 }
 
 export const CREW_GROUP_CHAT_ID = process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim()
   || process.env.TELEGRAM_GROUP_CHAT_ID?.trim()
   || '';
+
+/** Discord 設定 */
+export const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN?.trim() || '';
+export const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID?.trim() || '';
+
+/** 可用的通訊頻道（根據環境變數自動偵測） */
+export const AVAILABLE_CHANNELS: CrewChannelType[] = [
+  'telegram',
+  ...(DISCORD_BOT_TOKEN ? ['discord' as CrewChannelType] : []),
+];
 
 export const CREW_BOTS: CrewBotConfig[] = [
   {
