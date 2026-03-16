@@ -20,59 +20,42 @@ class MonitoringEngine:
         self.last_results = {}
     
     def check_gateway(self) -> Tuple[bool, str]:
-        """檢查 OpenClaw Gateway 狀態 - 改進版，包含實際 HTTP 健康檢查"""
+        """檢查 OpenClaw Gateway 狀態 - 優先 HTTP 健康檢查"""
+        # 1. 優先做 HTTP 健康檢查（最可靠）
         try:
-            # 首先檢查 CLI 狀態
+            import urllib.request
+            for url in ["http://localhost:18789/health", "http://127.0.0.1:18789/"]:
+                try:
+                    req = urllib.request.urlopen(url, timeout=3)
+                    if req.status == 200:
+                        return True, "✅ Gateway 運行中 (HTTP 連線正常)"
+                except:
+                    continue
+        except:
+            pass
+
+        # 2. 嘗試端口檢測
+        port_ok, port_msg = self._check_gateway_port()
+        if port_ok:
+            return port_ok, port_msg
+
+        # 3. 最後嘗試 CLI（可能不存在）
+        try:
             result = subprocess.run(
                 ["openclaw", "gateway", "status"],
                 capture_output=True,
                 text=True,
                 timeout=10
             )
-            
             output = result.stdout.lower()
-            
-            # 檢查是否正在監聽（實際運作中）
-            is_listening = "listening" in output
-            is_running = "running" in output or "active" in output or "正在執行" in output
-            is_stopped = "stopped" in output or "inactive" in output or "not loaded" in output
-            
-            # 嘗試實際 HTTP 連線測試
-            http_ok = False
-            try:
-                import requests
-                # 嘗試連線到 Gateway 健康檢查端點
-                for url in ["http://localhost:18789/health", "http://localhost:18789/status", "http://127.0.0.1:18789/"]:
-                    try:
-                        resp = requests.get(url, timeout=3)
-                        if resp.status_code == 200:
-                            http_ok = True
-                            break
-                    except:
-                        continue
-            except:
-                pass
-            
-            # 綜合判斷
-            if http_ok:
-                return True, "✅ Gateway 運行中 (HTTP 連線正常)"
-            elif is_listening:
-                return True, "✅ Gateway 正在監聽端口"
-            elif is_running:
+            if "listening" in output or "running" in output or "active" in output:
                 return True, "✅ Gateway 服務運行中"
-            elif is_stopped:
+            elif "stopped" in output or "inactive" in output:
                 return False, "⚠️ Gateway 已停止"
-            else:
-                # 無法確定狀態，嘗試端口檢測
-                return self._check_gateway_port()
-                
-        except FileNotFoundError:
-            return False, "❌ openclaw 指令不存在"
-        except subprocess.TimeoutExpired:
-            return False, "❌ Gateway 檢查逾時"
-        except Exception as e:
-            # 出錯時嘗試端口檢測作為備用
-            return self._check_gateway_port()
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+        return False, "⚠️ Gateway 無回應"
     
     def _check_gateway_port(self) -> Tuple[bool, str]:
         """透過檢查端口來判斷 Gateway 狀態"""

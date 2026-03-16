@@ -544,7 +544,7 @@ export async function handleAskClaude(
   return new Promise<ActionResult>((resolve) => {
     let stdout = '';
     let stderr = '';
-    const claudeBin = path.join(process.env.HOME || '/tmp', '.local', 'bin', 'claude');
+    const claudeBin = '/opt/homebrew/bin/claude';
     const child = spawn(claudeBin, [
       '-p',
       '--model', claudeModel,

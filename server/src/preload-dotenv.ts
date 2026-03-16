@@ -1,6 +1,10 @@
 /**
  * 必須最先載入，讓 .env 在 supabase / 其他模組讀 process.env 前就生效
  */
+// 強制 IPv4 優先（Telegram API IPv6 在 Tailscale 環境下超時）
+import dns from 'node:dns';
+dns.setDefaultResultOrder('ipv4first');
+
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

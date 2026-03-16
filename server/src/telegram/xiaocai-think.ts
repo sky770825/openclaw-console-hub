@@ -544,19 +544,14 @@ export async function xiaocaiThink(
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
   // ── 星群協作模式：複雜任務自動派工給星群並行處理 ──
-  const isCrewTask = !isSystemMsg && lowerMsg.length >= 5 && [
-    '網站', '方案', '規劃', '分析', '調研', '設計.*系統', '開發.*功能',
-    '商業', '市場', '競品', '技術方案', '架構設計', '全部做', '幫我做',
-    '會員', 'crm', 'erp', '後台', '管理系統', '預約', '排班',
-    '電商', '購物', '金流', '串接', '儀表板', 'dashboard',
-    '表單', 'form', '登入', '註冊', 'login', '後端', 'api',
-    'landing', '活動頁', '作品集', 'portfolio', '部落格', 'blog',
-    'saas', '訂閱', '報表', '庫存', '進銷存', '排程',
-    'n8n', 'workflow', '自動化流程', 'line', 'line oa', 'line bot',
-    '訂位', '訂餐', '點餐', '餐點', '菜單', 'menu', 'pos', '收銀',
-    '排隊', '叫號', '外送', '外帶', '餐廳', '餐飲',
-    'notify', '通知', '推播', 'webhook', '串接.*api',
-  ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
+  // 條件1：特定關鍵字命中
+  // 條件2：isComplex 且訊息夠長（≥10字，排除簡單指令）
+  // 條件3：訊息含動作意圖（做/建/改/升級/處理）且夠長
+  // 閒聊排除：短句 + 問候/確認/感謝 → 達爾自己秒回，不派星群
+  const isGreeting = /^(好的?|對[的啊]?|嗯|ok|謝|收到|了解|知道了?|懂|是[的啊]?|不是|沒有|有|你好|早安?|晚安|掰|哈|讚|嘻|呵|喔|噢|👍|❤|😊)/i.test(lowerMsg.trim());
+  const isShortChat = lowerMsg.length <= 8 && !isComplex;
+  // 任務偵測：不是閒聊、不是系統訊息、訊息有實質內容（≥5字）→ 直接派星群
+  const isCrewTask = !isSystemMsg && !isGreeting && !isShortChat && lowerMsg.length >= 5;
 
   if (isCrewTask) {
     log.info(`[XiaocaiAI] 🚀 星群協作模式：派工給星群並行處理`);
@@ -613,7 +608,10 @@ export async function xiaocaiThink(
         ? `【指揮官達爾派工 — ${productType}協作】\n\n主人要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型、API 設計、第三方串接清單）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考、LINE/POS/n8n 整合案例）\n• 阿商：建議商業功能（變現模式、金流串接、LINE Pay/綠界/藍新、訂閱方案、行銷漏斗、會員經營）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案、推播模板、通知文字）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD、LINE LIFF 串接、WebSocket 即時更新）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為、營收報表、庫存周轉、訂單分析）\n\n直接給具體內容，不要說「需要更多資訊」。`
         : `【指揮官達爾派工】\n\n主人最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對主人的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
 
-      const dispatch = await dispatchToCrewBots(siteDispatchMsg, '達爾');
+      // 達爾派工：直接指定核心代理，不走關鍵字過濾
+      const dispatch = await dispatchToCrewBots(siteDispatchMsg, '達爾', {
+        targetBots: ['agong', 'ace', 'ayan', 'ami'],
+      });
       if (dispatch.totalReplied > 0) {
         const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
 
@@ -711,25 +709,25 @@ ${crewResults}
     }
   }
 
-  const startModel = isComplex ? 'claude-opus-cli' : xiaocaiMainModel;
+  const startModel = isComplex ? 'claude-opus-cli' : 'claude-sonnet-cli';
   if (isComplex) log.info(`[XiaocaiAI] 🏆 偵測到複雜任務，升級到 Opus`);
+  else log.info(`[XiaocaiAI] ⚡ 一般任務，使用 Sonnet CLI（快速回覆）`);
 
   // ── 階梯式升級鏈 ──
-  // 簡單對話：Gemini 優先（秒回）→ Claude CLI 兜底
-  // 複雜任務：Claude CLI 優先（品質）→ Gemini 兜底
+  // 所有對話：Claude CLI 優先（主人指定）→ Gemini 兜底
   const ESCALATION_CHAIN = isComplex
     ? [
-        startModel,                              // 第 0 層：Opus CLI
+        startModel,                              // 第 0 層：Opus CLI（複雜任務）
         'claude-sonnet-cli',                     // 第 1 層：Sonnet CLI
         'gemini-2.5-pro',                        // 第 2 層：Gemini Pro（免費）
         'gemini-2.5-flash',                      // 第 3 層：Gemini Flash（免費）
         'claude-sonnet-4-6',                     // 第 4 層：API 付費兜底
       ]
     : [
-        'gemini-2.5-flash',                      // 第 0 層：Gemini Flash（免費秒回）
-        'claude-haiku-cli',                      // 第 1 層：Haiku CLI（快速）
-        'gemini-2.5-pro',                        // 第 2 層：Gemini Pro（免費）
-        'claude-sonnet-cli',                     // 第 3 層：Sonnet CLI（兜底）
+        startModel,                              // 第 0 層：主人選的模型優先
+        'claude-sonnet-cli',                     // 第 1 層：Sonnet CLI
+        'gemini-2.5-flash',                      // 第 2 層：Gemini Flash（免費）
+        'gemini-2.5-pro',                        // 第 3 層：Gemini Pro（免費）
         'claude-sonnet-4-6',                     // 第 4 層：API 付費兜底
       ];
   // 去重（如果主模型已經是某層就不重複）
@@ -765,14 +763,14 @@ ${crewResults}
       if (prov === 'claude-cli') {
         // ── Claude Code CLI 訂閱制（不花 API 錢）──
         const claudeModel = modelId.includes('haiku') ? 'haiku' : modelId.includes('opus') ? 'opus' : 'sonnet';
-        const claudeBin = path.join(process.env.HOME || '/tmp', '.local', 'bin', 'claude');
+        const claudeBin = '/opt/homebrew/bin/claude';
         // 組合 system prompt + history + user message
         const cliPrompt = `${systemPrompt}\n\n--- 歷史對話 ---\n${history.map(h => `${h.role === 'model' ? '達爾' : '主人'}: ${h.text}`).join('\n')}\n\n--- 主人最新訊息 ---\n${userMessage}`;
         const text = await new Promise<string | null>((resolve) => {
           let stdout = '';
           let stderr = '';
           const child = spawn(claudeBin, ['-p', '--model', claudeModel, cliPrompt], {
-            env: (() => { const e: Record<string, string | undefined> = { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}` }; delete e.CLAUDECODE; delete e.CLAUDE_CODE; delete e.CLAUDE_SKIP_ANALYTICS; delete e.ANTHROPIC_API_KEY; return e; })(),
+            env: (() => { const e: Record<string, string | undefined> = { ...process.env, HOME: process.env.HOME, PATH: `/opt/homebrew/bin:${process.env.PATH || '/usr/bin:/bin'}` }; delete e.CLAUDECODE; delete e.CLAUDE_CODE; delete e.CLAUDE_SKIP_ANALYTICS; delete e.ANTHROPIC_API_KEY; return e; })(),
             cwd: process.env.HOME || '/tmp',
             timeout: 90000,
             stdio: ['ignore', 'pipe', 'pipe'],
@@ -935,11 +933,16 @@ ${crewResults}
   // 還原 JSON action 塊（反引號完整保留）
   const clean = protectedReply.replace(/__JSON_ACTION_(\d+)__/g, (_, i) => jsonPlaceholders[Number(i)]);
 
-  // 更新對話歷史
+  // 附加模型標籤（讓主人知道用了什麼模型）
+  const modelTag = usedModel !== xiaocaiMainModel
+    ? `\n\n— 📡 ${usedModel}（原設定 ${xiaocaiMainModel}）`
+    : `\n\n— 📡 ${usedModel}`;
+
+  // 更新對話歷史（不含標籤，避免污染上下文）
   history.push({ role: 'user', text: userMessage });
   history.push({ role: 'model', text: clean });
   if (history.length > 20) history.splice(0, history.length - 20);
   xiaocaiHistory.set(chatId, history);
 
-  return clean;
+  return clean + modelTag;
 }

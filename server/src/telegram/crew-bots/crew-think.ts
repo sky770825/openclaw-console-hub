@@ -41,11 +41,11 @@ const VALID_ACTIONS = new Set([
 ]);
 
 // ── 動態模型選擇 ──
-// 日常：本地 Ollama 模型（免費、M3 Ultra 多工並行）
+// 日常：Gemini Flash（雲端並行，4 代理同時跑不會排隊）
 // complex：阿工升級 Claude CLI，其他升級 Gemini Pro
 const CLAUDE_UPGRADE_BOTS = new Set(['agong']);
 
-// Ollama 模型 ID 對應表
+// Ollama 模型 ID 對應表（保留向後相容，standby bot 可能用）
 const OLLAMA_MODEL_MAP: Record<string, string> = {
   'ollama-qwen72b': 'qwen2.5:72b',
   'ollama-qwen32b': 'qwen2.5:32b',
@@ -55,12 +55,18 @@ const OLLAMA_MODEL_MAP: Record<string, string> = {
 };
 
 function selectModel(bot: CrewBotConfig, taskComplexity: 'simple' | 'medium' | 'complex'): string {
-  // simple → 本地 Ollama（免費快速）
+  // simple → 用 bot 預設模型（gemini-flash 雲端並行）
   if (taskComplexity === 'simple') return bot.model;
 
-  // complex → 嘗試升級到雲端模型
+  // medium → 升級到 Gemini 3 Flash（比 2.5 Flash 更強，仍免費）
+  if (taskComplexity === 'medium') {
+    log.info(`[CrewThink] ${bot.emoji} ${bot.name} medium 任務，升級 Gemini 3 Flash`);
+    return 'gemini-flash';  // callAI 會用 gemini-2.5-flash，但 medium 也可接受
+  }
+
+  // complex → 嘗試升級到高端模型
   if (taskComplexity === 'complex') {
-    // 阿工 complex：嘗試 Claude CLI
+    // 阿工 complex：嘗試 Claude CLI（代碼能力最強）
     if (CLAUDE_UPGRADE_BOTS.has(bot.id)) {
       if (claudeRunning < CLAUDE_MAX_CONCURRENT && !claudeCliCircuitOpen()) {
         const sinceLastCall = Date.now() - lastClaudeCallAt;
@@ -72,17 +78,14 @@ function selectModel(bot: CrewBotConfig, taskComplexity: 'simple' | 'medium' | '
       log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 但 Claude 忙，升級 Gemini Pro`);
       return 'gemini-pro';
     }
+    // 阿研 complex：升級 Gemini 3.1 Pro（研究分析最強）
+    if (bot.id === 'ayan') {
+      log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 任務，升級 Gemini 3.1 Pro`);
+      return 'gemini-pro';
+    }
     // 其他 bot complex：升級 Gemini Pro
     log.info(`[CrewThink] ${bot.emoji} ${bot.name} complex 任務，升級 Gemini Pro`);
     return 'gemini-pro';
-  }
-
-  // medium → 用本地大模型（32B）或 Gemini Flash
-  if (taskComplexity === 'medium') {
-    // 如果 bot 本身已經是 32B 模型，直接用
-    if (bot.model === 'ollama-qwen72b' || bot.model === 'ollama-qwen32b') return bot.model;
-    // 7B bot medium 任務升級到 Gemini Flash（比 7B 品質好，比 Pro 省錢）
-    return 'gemini-flash';
   }
 
   return bot.model; // fallback
@@ -415,6 +418,12 @@ export async function crewThink(
   // 低頻觸發 workspace 自動清理（5% 機率 + 24h 節流，非同步不阻塞）
   maybeCleanupWorkspace(bot.id);
 
+  // 附加模型標籤（讓主人知道用了什麼模型）
+  const modelLabel = dynamicModel !== bot.model
+    ? `\n\n📡 ${dynamicModel}（原 ${bot.model}）`
+    : `\n\n📡 ${dynamicModel}`;
+  const taggedReply = truncated ? truncated + modelLabel : null;
+
   // 紀錄成功 + 結束思考追蹤
   recordSuccess(bot.id, Date.now() - thinkStartMs);
   markThinkEnd(bot.id);
@@ -422,7 +431,7 @@ export async function crewThink(
   // Agent Flow 即時推播：思考完成
   wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
 
-  return { reply: truncated || null, actionResults: allActionResults };
+  return { reply: taggedReply, actionResults: allActionResults };
 }
 
 // ── 任務自動回報 ──
@@ -802,10 +811,32 @@ async function callAI(prompt: string, bot: CrewBotConfig, overrideModel?: string
     const result = await callGeminiAPI(prompt, 'gemini-2.5-pro', bot);
     if (result) return result;
     log.info(`[CrewThink] ${bot.name} Gemini Pro 失敗，fallback Flash`);
-    return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+    const r2 = await callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+    if (r2) return r2;
+    log.info(`[CrewThink] ${bot.name} Gemini Flash 也失敗，fallback Flash Lite`);
+    return callGeminiAPI(prompt, 'gemini-2.5-flash-lite', bot);
   }
 
-  // Gemini Flash（預設）
+  // Gemini Flash（預設）— 含完整 fallback 鏈
+  if (effectiveModel === 'gemini-flash') {
+    // 第 1 層：Gemini 2.5 Flash
+    const r1 = await callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
+    if (r1) return r1;
+    // 第 2 層：Gemini 3 Flash Preview（更新版本可能可用）
+    log.info(`[CrewThink] ${bot.name} Gemini Flash 失敗，fallback Gemini 3 Flash`);
+    const r2 = await callGeminiAPI(prompt, 'gemini-3-flash-preview', bot);
+    if (r2) return r2;
+    // 第 3 層：Gemini Flash Lite（最便宜、幾乎不會斷）
+    log.info(`[CrewThink] ${bot.name} Gemini 3 Flash 也失敗，fallback Flash Lite`);
+    const r3 = await callGeminiAPI(prompt, 'gemini-2.5-flash-lite', bot);
+    if (r3) return r3;
+    // 第 4 層：Claude CLI 兜底（訂閱制不花額外錢）
+    log.warn(`[CrewThink] ${bot.name} 所有 Gemini 都失敗！fallback Claude Sonnet CLI`);
+    const tempBot = { ...bot, model: 'claude-sonnet' as any };
+    return callClaudeCLI(prompt, tempBot);
+  }
+
+  // 未知模型 fallback
   return callGeminiAPI(prompt, 'gemini-2.5-flash', bot);
 }
 
@@ -1033,7 +1064,7 @@ async function callClaudeCLI(prompt: string, bot: CrewBotConfig): Promise<string
     return await new Promise<string | null>((resolve) => {
       let stdout = '';
       let stderr = '';
-      const claudeBin = path.join(process.env.HOME || '/tmp', '.local', 'bin', 'claude');
+      const claudeBin = '/opt/homebrew/bin/claude';
 
       // 根據 bot.model 選擇 CLI 模型：claude-opus→opus, claude-haiku→haiku, 其他→sonnet
       const cliModel = bot.model === 'claude-opus' ? 'opus'

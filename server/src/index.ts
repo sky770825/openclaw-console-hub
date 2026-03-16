@@ -4,6 +4,51 @@
  * OpenClaw v4 板：/api/openclaw/* 寫入 Supabase
  */
 import './preload-dotenv.js';
+
+// 修復 Tailscale 環境下 IPv6 連 Telegram API 超時問題
+// 替換全域 fetch，對 api.telegram.org 的請求改用 node:https（走 IPv4）
+import https from 'node:https';
+const _originalFetch = globalThis.fetch;
+globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+  // 只攔截 Telegram API 請求
+  if (url.includes('api.telegram.org')) {
+    return new Promise((resolve, reject) => {
+      const parsed = new URL(url);
+      const postData = init?.body ? String(init.body) : undefined;
+      const reqOptions: https.RequestOptions = {
+        hostname: parsed.hostname,
+        port: 443,
+        path: parsed.pathname + parsed.search,
+        method: init?.method || (postData ? 'POST' : 'GET'),
+        headers: {
+          ...Object.fromEntries(Object.entries(init?.headers || {}).map(([k, v]) => [k, String(v)])),
+          ...(postData ? { 'Content-Type': 'application/json' } : {}),
+        },
+        timeout: 120_000, // long polling timeout
+        family: 4,        // 強制 IPv4
+      };
+      const req = https.request(reqOptions, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString('utf8');
+          resolve(new Response(body, {
+            status: res.statusCode || 200,
+            statusText: res.statusMessage || 'OK',
+            headers: res.headers as Record<string, string>,
+          }));
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Telegram request timeout')); });
+      if (postData) req.write(postData);
+      req.end();
+    });
+  }
+  return _originalFetch(input, init);
+};
+
 import { createLogger } from './logger.js';
 import { startTelegramStopPoll, triggerHeartbeat } from './telegram/index.js';
 import path from 'path';
@@ -4196,7 +4241,7 @@ wsManager.initialize(server);
 // 啟動時載入 FADP 封鎖清單到記憶體
 loadBlocklistFromSupabase().catch(() => {});
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, '0.0.0.0', () => {
   log.info(`OpenClaw API http://localhost:${PORT}`);
   log.info(`  WebSocket ws://localhost:${PORT}/ws`);
   log.info(`  GET  /api/tasks, /api/tasks/:id, PATCH /api/tasks/:id`);

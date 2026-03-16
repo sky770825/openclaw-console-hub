@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local' as string }); // 確保載入 .env.local
+dotenv.config(); // 載入 cwd 下的 .env（由 preload-dotenv 已先載入，此為備援）
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
