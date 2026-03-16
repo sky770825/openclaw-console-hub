@@ -487,7 +487,7 @@ app.use(federationBlockerMiddleware);
 // 只允許 GATEWAY_CONFIG.allowedOutbound 清單內的事件通過
 app.use(postMessageFirewall());
 
-// 小蔡完成任務後呼叫此端點通知老蔡（localhost only，不需 API key）
+// 達爾完成任務後呼叫此端點通知主人（localhost only，不需 API key）
 app.post('/internal/notify', async (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || '';
   if (!clientIp.includes('127.0.0.1') && !clientIp.includes('::1') && !clientIp.includes('localhost')) {
@@ -3804,7 +3804,7 @@ app.post('/api/crew/patrol', async (_req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
 });
 
-// ── Crew Doctor — 星群健康檢查 ──
+// ── Crew Doctor — 蝦蝦團隊健康檢查 ──
 app.get('/api/crew/health', async (_req, res) => {
   try {
     const { getAllHealthStatus, diagnoseAll } = await import('./telegram/crew-bots/crew-doctor.js');
@@ -4028,7 +4028,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '2.5.33',
+    version: '2.6.0',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {

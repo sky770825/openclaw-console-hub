@@ -1,5 +1,5 @@
 /**
- * NEUXA 星群 Crew Bots — 意圖路由 + Orchestrator 模式
+ * 蝦蝦團隊 Crew Bots — 意圖路由 + Orchestrator 模式
  * 從關鍵字路由升級為意圖分析，精準派給 1-2 個最相關的 bot
  */
 

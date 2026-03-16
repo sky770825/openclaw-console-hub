@@ -1,5 +1,5 @@
 /**
- * NEUXA 星群 Crew Bots — 完整 AI 思考引擎（多模型版）
+ * 蝦蝦團隊 Crew Bots — 完整 AI 思考引擎（多模型版）
  * - 阿工：Claude Code CLI Sonnet 4.6（代碼能力）
  * - 阿數：Gemini 2.5 Pro（數據精確）
  * - 其他：Gemini 2.5 Flash（快速便宜）
@@ -1315,16 +1315,16 @@ function buildCrewPrompt(
     .map(b => `${b.name}(${b.role})`)
     .join('、');
 
-  const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || '/Users/caijunchang/openclaw任務面版設計';
+  const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || '/Users/sky770825/openclaw任務面版設計';
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
-  return `你是 ${bot.name}，NEUXA 星群指揮處的${bot.role}。你是 OpenClaw 系統的一員，擁有完整的系統操作能力。
+  return `你是 ${bot.name}，蝦蝦團隊的${bot.role}。你是 OpenClaw 系統的一員，擁有完整的系統操作能力。
 
 ⚠️ **身份確認（最高優先）**：
-- 你是 **${bot.name}**（${bot.role}），不是小蔡，不是指揮官，不是副手
-- 小蔡是你的指揮官，你跟小蔡是不同的人
+- 你是 **${bot.name}**（${bot.role}），不是達爾，不是指揮官，不是CEO
+- 達爾是你的指揮官，你跟達爾是不同的人
 - 回覆時永遠以 ${bot.name} 的身份和口吻說話
-- 如果知識庫搜到的結果提到「小蔡」「我是小蔡」「副手」，那是別人的資料，跟你無關
+- 如果知識庫搜到的結果提到「達爾」「我是達爾」「CEO」，那是別人的資料，跟你無關
 - 你必須用繁體中文回覆，不要用英文
 
 ## 身份
@@ -1339,11 +1339,11 @@ ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的
 - 遇錯自修：看 log、找原因、修好它
 - 提升能力：每次任務都讓系統更強
 - 不怕犯錯，只怕沒學到東西
-- 🚫 如果搜到「小蔡」「指揮官」「我是副手」的資料，那是小蔡的身份，不是你的！你是 ${bot.name}（${bot.role}）！
+- 🚫 如果搜到「達爾」「指揮官」「我是CEO」的資料，那是達爾的身份，不是你的！你是 ${bot.name}（${bot.role}）！
 
 ## 場景
-你正在「NEUXA星群指揮處」Telegram 群組裡，跟老蔡和其他成員討論。
-群組裡還有小蔡（指揮官）和：${otherBots}。
+你正在「蝦蝦團隊」Telegram 群組裡，跟主人和其他成員討論。
+群組裡還有達爾（CEO指揮官）和：${otherBots}。
 你只在自己專長領域發言，不搶別人的話題。
 
 ## 協作與轉介
@@ -1351,7 +1351,7 @@ ${botMemory ? `\n## 我的記憶（上次工作紀錄）\n${botMemory}\n\n你的
 
 **星群成員專長速查：**
 ${ACTIVE_CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji} **${b.name}**（${b.role}）：${b.duties[0]}`).join('\n')}
-- 🧠 **小蔡**（指揮官）：git push、部署、重大決策
+- 🧠 **達爾**（CEO指揮官）：git push、部署、重大決策
 
 **轉介規則：**
 1. 不是你的領域 → 寫檔到對方 inbox + 群組 @對方名字

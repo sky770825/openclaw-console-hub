@@ -1,13 +1,13 @@
 /**
- * NEUXA 星群 — 巡邏機制（事件驅動 + 心跳開關版）
+ * 蝦蝦團隊 — 巡邏機制（事件驅動 + 心跳開關版）
  * 手動觸發：群組喊「巡邏」「報到」
  * 事件驅動：onErrorDetected / onMetricsAnomaly 即時觸發
  * 自動心跳：API 開關 on/off，預設關閉，間隔 60 分鐘
  *
- * 阿研：log + metrics 巡邏
- * 阿工：工程診斷
- * 阿策：策略 + 效率評估
- * 阿秘：待辦整理
+ * 行銷蝦：log + metrics 巡邏
+ * 工程蝦：工程診斷
+ * 設計蝦：策略 + 效率評估
+ * 達爾：待辦整理
  */
 
 import { createLogger } from '../../logger.js';
@@ -34,7 +34,7 @@ interface PatrolTask {
 
 const patrolTasks: PatrolTask[] = [
   {
-    // 阿研：log + metrics 巡邏（合併原阿研 + 阿數）
+    // 行銷蝦：log + metrics 巡邏
     botId: 'ayan',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"run_script","command":"tail -50 ~/.openclaw/logs/server.log | grep -i -E \\"error|warn|fail|crash\\" | tail -10"}\n' +
@@ -44,7 +44,7 @@ const patrolTasks: PatrolTask[] = [
     lastRun: 0,
   },
   {
-    // 阿工：工程診斷（不變）
+    // 工程蝦：工程診斷
     botId: 'agong',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"run_script","command":"tail -80 ~/.openclaw/automation/logs/taskboard.log | grep -i -E \\"error|fail|crash|ECONNREFUSED|ETIMEOUT|TypeError|ReferenceError\\" | tail -15"}\n\n' +
@@ -52,7 +52,7 @@ const patrolTasks: PatrolTask[] = [
     lastRun: 0,
   },
   {
-    // 阿策：策略 + 效率評估（合併原阿策 + 阿商）
+    // 設計蝦：策略 + 效率評估
     botId: 'ace',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running,blocked"}],"limit":30}\n' +
@@ -62,7 +62,7 @@ const patrolTasks: PatrolTask[] = [
     lastRun: 0,
   },
   {
-    // 阿秘：待辦整理（不變）
+    // 達爾：待辦整理
     botId: 'ami',
     prompt: '你的回覆必須包含以下 action JSON（直接複製貼上，不要改）：\n\n' +
       '{"action":"query_supabase","table":"openclaw_tasks","select":"id,title,status,thought","filters":[{"column":"status","op":"in","value":"pending,queued,running"}],"limit":20}\n\n' +
@@ -142,7 +142,7 @@ async function heartbeatTick(): Promise<void> {
 
 // ── 事件驅動觸發 ──
 
-/** 偵測到錯誤時，直接觸發阿工的工程診斷，不等定時巡邏 */
+/** 偵測到錯誤時，直接觸發工程蝦的工程診斷，不等定時巡邏 */
 export function onErrorDetected(errorMsg: string): void {
   const agongTask = patrolTasks.find(t => t.botId === 'agong');
   if (!agongTask) return;
@@ -150,7 +150,7 @@ export function onErrorDetected(errorMsg: string): void {
   const bot = ACTIVE_CREW_BOTS.find(b => b.id === 'agong');
   if (!bot?.token || !CREW_GROUP_CHAT_ID) return;
 
-  log.info(`[CrewPatrol] onErrorDetected 觸發阿工診斷: ${errorMsg.slice(0, 100)}`);
+  log.info(`[CrewPatrol] onErrorDetected 觸發工程蝦診斷: ${errorMsg.slice(0, 100)}`);
 
   const eventTask: PatrolTask = {
     botId: 'agong',
@@ -162,7 +162,7 @@ export function onErrorDetected(errorMsg: string): void {
   );
 }
 
-/** 偵測到 metrics 異常時，觸發阿研初篩 + 阿數深度分析 */
+/** 偵測到 metrics 異常時，觸發行銷蝦初篩 + 深度分析 */
 export function onMetricsAnomaly(metric: string, value: number): void {
   const ayanTask = patrolTasks.find(t => t.botId === 'ayan');
   if (!ayanTask) return;
@@ -170,7 +170,7 @@ export function onMetricsAnomaly(metric: string, value: number): void {
   const bot = ACTIVE_CREW_BOTS.find(b => b.id === 'ayan');
   if (!bot?.token || !CREW_GROUP_CHAT_ID) return;
 
-  log.info(`[CrewPatrol] onMetricsAnomaly 觸發阿研分析: ${metric}=${value}`);
+  log.info(`[CrewPatrol] onMetricsAnomaly 觸發行銷蝦分析: ${metric}=${value}`);
 
   const eventTask: PatrolTask = {
     botId: 'ayan',
@@ -181,9 +181,9 @@ export function onMetricsAnomaly(metric: string, value: number): void {
     log.error({ err }, '[CrewPatrol] onMetricsAnomaly 執行失敗')
   );
 
-  // 阿數（standby）做深度分析
+  // standby 做深度分析
   triggerDataAnalysis(`metrics 異常告警：${metric}=${value}，需深度分析根因和趨勢`).catch(err =>
-    log.error({ err }, '[CrewPatrol] onMetricsAnomaly 阿數深度分析失敗')
+    log.error({ err }, '[CrewPatrol] onMetricsAnomaly 深度分析失敗')
   );
 }
 

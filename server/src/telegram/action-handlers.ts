@@ -16,6 +16,26 @@ const log = createLogger('telegram');
 
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
+const NOTION_TOKEN = process.env.NOTION_TOKEN?.trim() ?? '';
+const NOTION_VERSION = '2022-06-28';
+
+/** 將 markdown-like 純文字轉為 Notion block 陣列 */
+function textToNotionBlocks(text: string): any[] {
+  return text.split('\n').filter(line => line.trim()).map(line => {
+    if (line.startsWith('# ')) {
+      return { object: 'block', type: 'heading_1', heading_1: { rich_text: [{ type: 'text', text: { content: line.slice(2) } }] } };
+    } else if (line.startsWith('## ')) {
+      return { object: 'block', type: 'heading_2', heading_2: { rich_text: [{ type: 'text', text: { content: line.slice(3) } }] } };
+    } else if (line.startsWith('- [ ] ') || line.startsWith('- [x] ')) {
+      const checked = line.startsWith('- [x] ');
+      return { object: 'block', type: 'to_do', to_do: { rich_text: [{ type: 'text', text: { content: line.slice(6) } }], checked } };
+    } else if (line.startsWith('- ')) {
+      return { object: 'block', type: 'bulleted_list_item', bulleted_list_item: { rich_text: [{ type: 'text', text: { content: line.slice(2) } }] } };
+    } else {
+      return { object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: line } }] } };
+    }
+  });
+}
 
 /**
  * 專案根目錄 — 統一單一來源，不再寫死路徑
@@ -27,7 +47,7 @@ const PROJECT_ROOT: string = (() => {
   const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
   if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
   // fallback（向後相容）
-  return '/Users/caijunchang/openclaw任務面版設計';
+  return '/Users/sky770825/openclaw任務面版設計';
 })();
 
 export type ActionResult = { ok: boolean; output: string };
@@ -2731,7 +2751,7 @@ function isPatchPathSafe(rawPath: string): { safe: boolean; resolved: string; re
     }
   }
 
-  // 禁止修改 server 源碼目錄 — 但放行 crew-bots/（小蔡可自行優化星群）
+  // 禁止修改 server 源碼目錄 — 但放行 crew-bots/（達爾可自行優化蝦蝦團隊）
   if (resolved.includes('/server/src/') || resolved.includes('/server/dist/')) {
     if (resolved.includes('/server/src/telegram/crew-bots/')) {
       // 放行 crew-bots/ 子目錄
@@ -3188,6 +3208,166 @@ function expandTilde(p: string): string {
   return p;
 }
 
+// ── Notion API Handlers ──
+
+/** notion_read_page: 讀取 Notion 頁面的 block 內容 */
+async function handleNotionReadPage(pageId: string): Promise<ActionResult> {
+  if (!pageId) return { ok: false, output: 'notion_read_page 需要 pageId 參數' };
+  if (!NOTION_TOKEN) return { ok: false, output: 'notion_read_page: 缺少 NOTION_TOKEN 環境變數' };
+  try {
+    const res = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Notion-Version': NOTION_VERSION,
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return { ok: false, output: `Notion API 錯誤 (${res.status}): ${errText}` };
+    }
+    const data = await res.json() as { results: any[] };
+    const texts = data.results.map((block: any) => {
+      const blockType = block.type;
+      const content = block[blockType];
+      if (content?.rich_text) {
+        const prefix = blockType === 'heading_1' ? '# ' : blockType === 'heading_2' ? '## ' : blockType === 'heading_3' ? '### ' : blockType === 'to_do' ? (content.checked ? '- [x] ' : '- [ ] ') : blockType === 'bulleted_list_item' ? '- ' : blockType === 'numbered_list_item' ? '1. ' : '';
+        return prefix + content.rich_text.map((t: any) => t.plain_text || '').join('');
+      }
+      return `[${blockType}]`;
+    });
+    return { ok: true, output: texts.join('\n') };
+  } catch (e) {
+    return { ok: false, output: `notion_read_page 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+/** notion_create_page: 在指定父頁面下建立新頁面 */
+async function handleNotionCreatePage(parentPageId: string, title: string, content?: string): Promise<ActionResult> {
+  if (!parentPageId) return { ok: false, output: 'notion_create_page 需要 parentPageId 參數' };
+  if (!title) return { ok: false, output: 'notion_create_page 需要 title 參數' };
+  if (!NOTION_TOKEN) return { ok: false, output: 'notion_create_page: 缺少 NOTION_TOKEN 環境變數' };
+  try {
+    const children = content ? textToNotionBlocks(content) : [];
+    const body = {
+      parent: { page_id: parentPageId },
+      properties: {
+        title: [{ type: 'text', text: { content: title } }],
+      },
+      children,
+    };
+    const res = await fetch('https://api.notion.com/v1/pages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Notion-Version': NOTION_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return { ok: false, output: `Notion API 錯誤 (${res.status}): ${errText}` };
+    }
+    const data = await res.json() as { id: string; url: string };
+    return { ok: true, output: `頁面已建立: id=${data.id} url=${data.url}` };
+  } catch (e) {
+    return { ok: false, output: `notion_create_page 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+/** notion_write_content: 將內容追加到現有頁面 */
+async function handleNotionWriteContent(pageId: string, content: string): Promise<ActionResult> {
+  if (!pageId) return { ok: false, output: 'notion_write_content 需要 pageId 參數' };
+  if (!content) return { ok: false, output: 'notion_write_content 需要 content 參數' };
+  if (!NOTION_TOKEN) return { ok: false, output: 'notion_write_content: 缺少 NOTION_TOKEN 環境變數' };
+  try {
+    const children = textToNotionBlocks(content);
+    const res = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Notion-Version': NOTION_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ children }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return { ok: false, output: `Notion API 錯誤 (${res.status}): ${errText}` };
+    }
+    const data = await res.json() as { results: any[] };
+    return { ok: true, output: `已追加 ${data.results.length} 個 block 到頁面 ${pageId}` };
+  } catch (e) {
+    return { ok: false, output: `notion_write_content 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+/** notion_query_database: 查詢 Notion 資料庫 */
+async function handleNotionQueryDatabase(databaseId: string, filter?: string): Promise<ActionResult> {
+  if (!databaseId) return { ok: false, output: 'notion_query_database 需要 databaseId 參數' };
+  if (!NOTION_TOKEN) return { ok: false, output: 'notion_query_database: 缺少 NOTION_TOKEN 環境變數' };
+  try {
+    const bodyObj: any = { page_size: 100 };
+    if (filter) {
+      try {
+        bodyObj.filter = typeof filter === 'string' ? JSON.parse(filter) : filter;
+      } catch { /* ignore parse errors, proceed without filter */ }
+    }
+    const res = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Notion-Version': NOTION_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bodyObj),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return { ok: false, output: `Notion API 錯誤 (${res.status}): ${errText}` };
+    }
+    const data = await res.json() as { results: any[]; has_more: boolean };
+    const summary = data.results.map((page: any) => {
+      const titleProp = Object.values(page.properties).find((p: any) => p.type === 'title') as any;
+      const titleText = titleProp?.title?.map((t: any) => t.plain_text).join('') || '(untitled)';
+      return `- ${titleText} (id: ${page.id})`;
+    });
+    return { ok: true, output: `查詢結果 (${data.results.length} 筆, has_more=${data.has_more}):\n${summary.join('\n')}` };
+  } catch (e) {
+    return { ok: false, output: `notion_query_database 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+/** notion_update_checklist: 更新 to_do block 的勾選狀態 */
+async function handleNotionUpdateChecklist(blockId: string, checked: boolean): Promise<ActionResult> {
+  if (!blockId) return { ok: false, output: 'notion_update_checklist 需要 blockId 參數' };
+  if (!NOTION_TOKEN) return { ok: false, output: 'notion_update_checklist: 缺少 NOTION_TOKEN 環境變數' };
+  try {
+    const res = await fetch(`https://api.notion.com/v1/blocks/${blockId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Notion-Version': NOTION_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ to_do: { checked } }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return { ok: false, output: `Notion API 錯誤 (${res.status}): ${errText}` };
+    }
+    return { ok: true, output: `Block ${blockId} 已更新: checked=${checked}` };
+  } catch (e) {
+    return { ok: false, output: `notion_update_checklist 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 /** 統一 action 調度器 */
 export async function executeNEUXAAction(action: Record<string, string>): Promise<ActionResult> {
   const type = action.action;
@@ -3335,7 +3515,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     }
     case 'crew_dispatch': {
-      // 小蔡主動派任務給星群 — 直接 dispatch 或寫 inbox
+      // 達爾主動派任務給蝦蝦團隊 — 直接 dispatch 或寫 inbox
       const crewMsg = action.message || action.text || '';
       if (!crewMsg) { result = { ok: false, output: 'crew_dispatch 需要 message 參數' }; break; }
       const targetBot = action.target || ''; // 可選：指定 bot ID
@@ -3352,7 +3532,7 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
         } else {
           // 廣播：dispatch 給所有星群（走群組討論模式）
           const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
-          const dispatch = await dispatchToCrewBots(crewMsg, '小蔡');
+          const dispatch = await dispatchToCrewBots(crewMsg, '達爾');
           if (dispatch.totalReplied > 0) {
             const summary = dispatch.replies.map(r => `[${r.botName}]: ${r.reply.slice(0, 150)}`).join('\n');
             result = { ok: true, output: `星群 ${dispatch.totalReplied} 個 bot 回覆了：\n${summary}` };
@@ -3367,6 +3547,21 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     }
     case 'generate_site':
       result = await handleGenerateSite(action);
+      break;
+    case 'notion_read_page':
+      result = await handleNotionReadPage(action.pageId || action.page_id || action.id || '');
+      break;
+    case 'notion_create_page':
+      result = await handleNotionCreatePage(action.parentPageId || action.parent_page_id || '', action.title || action.name || '', action.content);
+      break;
+    case 'notion_write_content':
+      result = await handleNotionWriteContent(action.pageId || action.page_id || action.id || '', action.content || action.text || '');
+      break;
+    case 'notion_query_database':
+      result = await handleNotionQueryDatabase(action.databaseId || action.database_id || action.id || '', action.filter);
+      break;
+    case 'notion_update_checklist':
+      result = await handleNotionUpdateChecklist(action.blockId || action.block_id || action.id || '', action.checked === 'true' || action.checked === '1');
       break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };

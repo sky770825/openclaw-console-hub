@@ -77,7 +77,7 @@ const repliedSet = new Set<string>();
 
 let dispatchRunning = false;
 
-// ── 閉環回傳：收集星群回覆 → 彙整 → 發回老蔡私訊 ──
+// ── 閉環回傳：收集星群回覆 → 彙整 → 發回主人私訊 ──
 interface ReplyCollector {
   messageId: number;
   originalText: string;
@@ -765,7 +765,7 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
   }
 }
 
-// ── 閉環回傳：星群結果自動彙整回傳老蔡 ──
+// ── 閉環回傳：星群結果自動彙整回傳主人 ──
 
 function startReplyCollector(messageId: number, originalText: string, senderName: string, expectedBotIds: string[]): void {
   if (replyCollectors.has(messageId)) return;
@@ -833,12 +833,12 @@ async function flushCollector(messageId: number): Promise<void> {
   let summary = '';
   if (GOOGLE_API_KEY) {
     try {
-      const prompt = `你是小蔡，老蔡的副手。老蔡在星群說了：「${collector.originalText}」
+      const prompt = `你是達爾，主人的CEO指揮官。主人在蝦蝦團隊說了：「${collector.originalText}」
 
-星群各成員的回覆：
+蝦蝦團隊各成員的回覆：
 ${crewResults}
 
-請用繁體中文整合以上內容，給老蔡一份精簡的總結報告。格式：
+請用繁體中文整合以上內容，給主人一份精簡的總結報告。格式：
 1. 開頭一句話總結
 2. 各成員重點（用 bullet points）
 3. 結論/建議行動
@@ -868,7 +868,7 @@ ${crewResults}
 
   // fallback：沒有 Gemini 就直接拼接
   if (!summary) {
-    summary = `老蔡，星群 ${collector.replies.length} 個成員回覆了你的「${collector.originalText.slice(0, 30)}」：\n\n${collector.replies.map(r => `• ${r.botName}：${r.reply.slice(0, 200)}`).join('\n')}`;
+    summary = `主人，蝦蝦團隊 ${collector.replies.length} 個成員回覆了你的「${collector.originalText.slice(0, 30)}」：\n\n${collector.replies.map(r => `• ${r.botName}：${r.reply.slice(0, 200)}`).join('\n')}`;
   }
 
   // 截斷避免 Telegram 4096 限制

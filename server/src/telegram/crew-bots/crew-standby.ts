@@ -1,7 +1,6 @@
 /**
- * NEUXA 星群 — Standby Bot 自動啟動管理
- * 阿商（ashang）：商業自動化 — SaaS 審計、n8n workflow 設計、自動化機會掃描
- * 阿數（ashu）：數據分析 — 異常告警、深度查詢、每日數據洞察報告
+ * 蝦蝦團隊 — Standby Bot 自動啟動管理
+ * Standby Bot：商業自動化 + 數據分析
  *
  * 觸發方式：
  * 1. 事件驅動（其他 bot 偵測到需要 standby bot 的場景）
@@ -18,8 +17,8 @@ const log = createLogger('crew-standby');
 
 // ── 排程狀態 ──
 let schedulerTimer: ReturnType<typeof setInterval> | null = null;
-let lastDailyReport = 0;    // 阿數每日報告
-let lastWeeklyAudit = 0;    // 阿商每週審計
+let lastDailyReport = 0;    // 每日報告
+let lastWeeklyAudit = 0;    // 每週審計
 
 // ── Task ID 計數器 ──
 let taskCounter = 0;

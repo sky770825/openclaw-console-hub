@@ -190,7 +190,7 @@ export function loadAwakeningContext(userMessage: string): string {
     if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
     const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
     if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/caijunchang/openclaw任務面版設計';
+    return '/Users/sky770825/openclaw任務面版設計';
   })();
   const chunks: string[] = [];
 
@@ -251,8 +251,8 @@ export function loadAwakeningContext(userMessage: string): string {
     }
   }
 
-  // 星群進度覺醒：老蔡問進度/回報/結果時，自動載入最近的 crew notes
-  const progressKeywords = ['進度', '回報', '結果', '做完了嗎', '好了嗎', '怎麼樣了', '星群', 'crew', '阿研', '阿工', '阿策', '阿秘', '阿商', '阿數'];
+  // 蝦蝦團隊進度覺醒：主人問進度/回報/結果時，自動載入最近的 crew notes
+  const progressKeywords = ['進度', '回報', '結果', '做完了嗎', '好了嗎', '怎麼樣了', '蝦蝦', '團隊', 'crew', '行銷蝦', '設計蝦', '工程蝦', 'ashang', 'ashu', 'agong'];
   if (progressKeywords.some(kw => msgLower.includes(kw))) {
     const crewDir = path.join(workspace, 'crew');
     try {
@@ -278,7 +278,7 @@ export function loadAwakeningContext(userMessage: string): string {
         allNotes.sort((a, b) => b.mtime - a.mtime);
         for (const n of allNotes.slice(0, 3)) {
           const content = readFileSlice(n.path, 1000);
-          if (content) chunks.push(`=== 星群回報：${n.bot}/${n.file} ===\n${content}`);
+          if (content) chunks.push(`=== 蝦蝦回報：${n.bot}/${n.file} ===\n${content}`);
         }
       }
     } catch { /* ignore */ }
@@ -309,7 +309,7 @@ export function buildSystemPrompt(soulCore: string, awakening: string, sysStatus
     if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
     const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
     if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/caijunchang/openclaw任務面版設計';
+    return '/Users/sky770825/openclaw任務面版設計';
   })();
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
@@ -331,7 +331,7 @@ ${soulCore}
 - 明確要你做事：「查一下」「幫我看」「修這個」「建一個任務」
 - 需要系統資料：「任務板有什麼」「server 狀態」「日報」
 - 代碼/技術操作：「改 XXX」「部署」「分析 XXX」
-- 做產品/系統：「做網站」「做CRM」「做ERP」「做會員系統」「做電商」「做後台」「做預約系統」「做儀表板」「做POS」「做LINE OA」「做訂位系統」「做點餐系統」「做排隊叫號」「做外送平台」「做n8n流程」「做通知系統」→ 星群協作 + generate_site
+- 做產品/系統：「做網站」「做CRM」「做ERP」「做會員系統」「做電商」「做後台」「做預約系統」「做儀表板」「做POS」「做LINE OA」「做訂位系統」「做點餐系統」「做排隊叫號」「做外送平台」「做n8n流程」「做通知系統」→ 蝦蝦團隊協作 + generate_site
 - **老蔡說「做」「建」「生成」「產出」「開發」「搭建」開頭的，都是任務模式，不是聊天！馬上行動！**
 
 對話模式就像朋友聊天，但要回的有料、有深度。不要讀檔案、不要查資料庫、不要搜索。
@@ -452,32 +452,28 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"delegate_agents","agents":[{"role":"角色A","model":"flash","task":"任務A"},{"role":"角色B","model":"flash","task":"任務B"}],"context":"共享背景"}
 {"action":"send_group","message":"要發到群組的訊息"}
 {"action":"crew_dispatch","message":"任務描述","target":"agong"}
-{"action":"crew_dispatch","message":"全員分析這個問題"}
+{"action":"crew_dispatch","message":"分析這個問題","target":"ashang"}
 {"action":"generate_site","description":"美業預約網站，粉色系，有服務項目和線上預約","slug":"beauty-salon"}
 
 generate_site：⚡ 重要！老蔡說「做網站」「生成頁面」「做一個XX網站」「幫我做XX頁面」時，馬上用這個 action！description 寫清楚需求（風格、功能、內容），slug 是網址名稱（英文）。生成後會回傳手機可開的預覽連結。不要用 write_file 自己寫 HTML，用 generate_site 一步到位。
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。
-send_group：發訊息到「NEUXA星群指揮處」群組。你是指揮官，群組裡有 6 個 crew bots 會接收你的指令。
-crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ace/ami/ashang/ashu），不加 target 則廣播全員。比 send_group 更直接，bot 會立刻處理並回報。
+send_group：發訊息到「蝦蝦團隊」群組。你是達爾（指揮官），群組裡有 3 隻蝦蝦會接收你的指令。
+crew_dispatch：直接派任務給蝦蝦。加 target 指定蝦蝦（ashang=行銷蝦/ashu=設計蝦/agong=工程蝦），系統會根據關鍵字自動精準路由。
 
-🎖️ 指揮官模式觸發規則：
-- 訊息含「各位」「大家」「全員」「所有人」「夥伴們」→ 全部 6 個 crew bot 回覆
-- 點名特定 bot（如「阿研」「阿工」）→ 被點名的 bot 回覆
-- 訊息含專長關鍵字 → 相關 bot 自動回覆（門檻比一般人低）
-- 你發的訊息不受限速，不會被過濾
+🦐 蝦蝦團隊精準路由規則：
+- 系統根據訊息關鍵字自動路由到對應蝦蝦（1-3隻）
+- 訊息 ≤ 8 字或無行動意圖（做/建/改/升級/處理/分析）→ 達爾自己回
+- 路由結果為空 → 達爾自己回，不派蝦蝦
 
-👥 Crew Bots 專長：
-- 阿研（研究員）：調研、爬網、情報、知識整理、log初篩
-- 阿工（工程師）：代碼、架構、debug、錯誤排查、修復
-- 阿策（策略師）：任務拆解、規劃、風險評估、資源分配
-- 阿秘（秘書）：摘要、日報、記憶管理、文件歸檔、提醒
-- 阿商（商業分析）：競品、營收、商業模式、990房產
-- 阿數（分析師）：SQL、數據、統計、metrics、異常告警
+🦐 蝦蝦團隊（3隻）：
+- 行銷蝦 ashang：文案、SEO、社群、品牌策略、行銷企劃、EDM、促銷、CTA、競品分析
+- 設計蝦 ashu：視覺設計、UI/UX、配色、排版、品牌手冊、CI、Logo、字型、風格
+- 工程蝦 agong：前後端開發、部署、bug修復、效能優化、RWD、API、CSS、React、Vercel
 
 📝 使用範例：
-{"action":"send_group","message":"各位，請分析一下最近系統的健康狀態，各自從自己的專長角度回報"}
-{"action":"send_group","message":"阿研，幫我調研 Live2D 技術方案"}
-{"action":"send_group","message":"阿工 阿策，這個 bug 修復方案你們怎麼看？"}
+{"action":"crew_dispatch","message":"幫我寫一份 SEO 優化文案","target":"ashang"}
+{"action":"crew_dispatch","message":"設計新的品牌配色方案","target":"ashu"}
+{"action":"crew_dispatch","message":"修復首頁 RWD 問題","target":"agong"}
 ⚠️ Supabase 真實欄位（不要用不存在的欄位！）：
   openclaw_tasks: id, title(=name), status, cat(=tags), progress, auto, thought(=description), subs, created_at, updated_at
   openclaw_runs: id, task_id, task_name, status, started_at, ended_at, duration_ms, input_summary, output_summary, steps, created_at
@@ -492,8 +488,8 @@ crew_dispatch：直接派任務給星群。加 target 指定 bot（ayan/agong/ac
 - 修改程式碼（patch_file / write_file）
 - 派子代理並行工作（delegate_agents）
 - 呼叫 API（proxy_fetch / run_script: curl）
-- 在群組發訊息指揮 crew bots（send_group）— 你是指揮官，「各位」觸發全員回覆，點名觸發特定 bot
-- 直接派任務給星群 bot（crew_dispatch）— 寫 inbox 或廣播，bot 自動處理回報
+- 在群組發訊息指揮蝦蝦團隊（send_group）— 你是達爾，3隻蝦蝦會接收指令
+- 直接派任務給蝦蝦（crew_dispatch）— 精準路由到行銷蝦/設計蝦/工程蝦，蝦蝦自動處理回報
 
 靈魂檔案（SOUL.md / AGENTS.md 等）由系統保護，其他全部自主執行，老蔡叫你做什麼就做。
 
@@ -505,6 +501,30 @@ ${taskSnap}
 
 ## 底線
 不暴露 key / 不 push git / 不刪資料 / 不改密碼 / 不改版本號${awakening}`;
+}
+
+// ── 蝦蝦精準路由 — 根據關鍵字派給單一蝦蝦 ──
+
+function routeToShrimp(message: string): string[] {
+  const msg = message.toLowerCase();
+
+  // 行銷蝦關鍵字
+  const marketingKeywords = ['文案', '行銷', 'seo', '社群', '內容', '企劃', '品牌', '關鍵字', 'edm', '促銷', 'campaign', '語調', '標語', 'cta', '競品'];
+  // 設計蝦關鍵字
+  const designKeywords = ['設計', 'ci', '視覺', '配色', 'ui', 'ux', 'logo', '排版', '風格', '色系', '字型', '圓角', '版面', '美感', '品牌手冊'];
+  // 工程蝦關鍵字
+  const engineeringKeywords = ['代碼', '開發', '部署', 'bug', '修復', '網站', '前端', '後端', 'css', 'javascript', 'react', 'api', 'vercel', '效能', '追蹤碼', 'html', 'rwd'];
+
+  const hasMarketing = marketingKeywords.some(k => msg.includes(k));
+  const hasDesign = designKeywords.some(k => msg.includes(k));
+  const hasEngineering = engineeringKeywords.some(k => msg.includes(k));
+
+  const targets: string[] = [];
+  if (hasMarketing) targets.push('ashang');
+  if (hasDesign) targets.push('ashu');
+  if (hasEngineering) targets.push('agong');
+
+  return targets;
 }
 
 // ── 呼叫 AI ──
@@ -543,23 +563,14 @@ export async function xiaocaiThink(
     'opus', '用最強的', '認真想', '仔細分析',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
-  // ── 星群協作模式：複雜任務自動派工給星群並行處理 ──
-  const isCrewTask = !isSystemMsg && lowerMsg.length >= 5 && [
-    '網站', '方案', '規劃', '分析', '調研', '設計.*系統', '開發.*功能',
-    '商業', '市場', '競品', '技術方案', '架構設計', '全部做', '幫我做',
-    '會員', 'crm', 'erp', '後台', '管理系統', '預約', '排班',
-    '電商', '購物', '金流', '串接', '儀表板', 'dashboard',
-    '表單', 'form', '登入', '註冊', 'login', '後端', 'api',
-    'landing', '活動頁', '作品集', 'portfolio', '部落格', 'blog',
-    'saas', '訂閱', '報表', '庫存', '進銷存', '排程',
-    'n8n', 'workflow', '自動化流程', 'line', 'line oa', 'line bot',
-    '訂位', '訂餐', '點餐', '餐點', '菜單', 'menu', 'pos', '收銀',
-    '排隊', '叫號', '外送', '外帶', '餐廳', '餐飲',
-    'notify', '通知', '推播', 'webhook', '串接.*api',
-  ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
+  // ── 蝦蝦團隊協作模式：精準路由給對應蝦蝦 ──
+  // 短訊息（≤8字）或無行動意圖 → 達爾自己回，不派蝦蝦
+  const hasActionIntent = ['做', '建', '改', '升級', '處理', '分析'].some(k => lowerMsg.includes(k));
+  const shrimpTargets = (!isSystemMsg && lowerMsg.length > 8 && hasActionIntent) ? routeToShrimp(userMessage) : [];
+  const isCrewTask = shrimpTargets.length > 0;
 
   if (isCrewTask) {
-    log.info(`[XiaocaiAI] 🚀 星群協作模式：派工給星群並行處理`);
+    log.info(`[XiaocaiAI] 🦐 蝦蝦團隊精準派工：${shrimpTargets.join(', ')}`);
     try {
       const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
       // 判斷是否為「做網站/生成頁面」類任務
@@ -582,7 +593,7 @@ export async function xiaocaiThink(
         '做.*workflow', '建.*workflow', '做.*自動化', '建.*自動化',
       ].some(kw => new RegExp(kw).test(lowerMsg));
 
-      // 組合對話上下文，讓星群知道前因後果
+      // 組合對話上下文，讓蝦蝦知道前因後果
       const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}：${h.text.slice(0, 200)}`).join('\n');
 
       // 判斷產品子類型
@@ -608,26 +619,45 @@ export async function xiaocaiThink(
         return '網站';
       })();
 
-      // 根據任務類型給星群不同的派工指令
-      const siteDispatchMsg = isSiteTask
-        ? `【指揮官小蔡派工 — ${productType}協作】\n\n老蔡要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長，針對「${productType}」給出你負責的部分：\n• 阿策：規劃系統架構（功能模組、頁面結構、用戶流程、資料模型、API 設計、第三方串接清單）\n• 阿研：調研同類產品最佳實踐（UI/UX 趨勢、必備功能、競品參考、LINE/POS/n8n 整合案例）\n• 阿商：建議商業功能（變現模式、金流串接、LINE Pay/綠界/藍新、訂閱方案、行銷漏斗、會員經營）\n• 阿秘：撰寫所有文案（標題、描述、按鈕文字、提示訊息、空狀態文案、推播模板、通知文字）\n• 阿工：建議前端技術方案（互動功能、動畫效果、RWD、LINE LIFF 串接、WebSocket 即時更新）\n• 阿數：建議數據追蹤（KPI 指標、轉換漏斗、用戶行為、營收報表、庫存周轉、訂單分析）\n\n直接給具體內容，不要說「需要更多資訊」。`
-        : `【指揮官小蔡派工】\n\n老蔡最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請根據你的專長角色，針對老蔡的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
+      // 根據任務類型給蝦蝦團隊不同的派工指令
+      const shrimpRoleDesc: Record<string, string> = {
+        ashang: '行銷蝦（文案、SEO、社群、品牌策略、行銷企劃）',
+        ashu: '設計蝦（視覺設計、UI/UX、配色、排版、品牌手冊）',
+        agong: '工程蝦（前後端開發、部署、bug修復、效能優化、RWD）',
+      };
+      const targetRoles = shrimpTargets.map(t => `• ${shrimpRoleDesc[t] || t}`).join('\n');
 
-      const dispatch = await dispatchToCrewBots(siteDispatchMsg, '小蔡');
+      const siteDispatchMsg = isSiteTask
+        ? `【達爾派工 — ${productType}協作】\n\n主人要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}指定蝦蝦：\n${targetRoles}\n\n請根據你的專長，針對「${productType}」給出你負責的部分。直接給具體內容，不要說「需要更多資訊」。`
+        : `【達爾派工】\n\n主人最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}指定蝦蝦：\n${targetRoles}\n\n請根據你的專長角色，針對主人的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
+
+      // 按序派工：逐一派給目標蝦蝦（行銷+設計先，工程後）
+      const allReplies: Array<{ botName: string; reply: string }> = [];
+      for (const target of shrimpTargets) {
+        try {
+          const dispatch = await dispatchToCrewBots(siteDispatchMsg, '達爾', { targetBots: [target] });
+          if (dispatch.totalReplied > 0) {
+            allReplies.push(...dispatch.replies);
+          }
+        } catch (e) {
+          log.warn({ err: e }, `[XiaocaiAI] 蝦蝦 ${target} 派工失敗`);
+        }
+      }
+      const dispatch = { totalReplied: allReplies.length, replies: allReplies };
       if (dispatch.totalReplied > 0) {
         const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
 
-        // ── 網站任務：星群結果 → 整合 → generate_site 生成實際網站 ──
+        // ── 網站任務：蝦蝦結果 → 整合 → generate_site 生成實際網站 ──
         if (isSiteTask) {
-          log.info(`[XiaocaiAI] 🏗️ 網站協作模式：${dispatch.totalReplied} 個 bot 回覆，開始整合生成`);
+          log.info(`[XiaocaiAI] 🏗️ 網站協作模式：${dispatch.totalReplied} 隻蝦蝦回覆，開始整合生成`);
           const GOOGLE_API_KEY_SITE = getGeminiKey();
           if (GOOGLE_API_KEY_SITE) {
-            // Step 1: 整合星群結果成網站需求文件
-            const siteSpecPrompt = `你是小蔡，要整合星群的建議來生成網站。
+            // Step 1: 整合蝦蝦結果成網站需求文件
+            const siteSpecPrompt = `你是達爾，要整合蝦蝦團隊的建議來生成網站。
 
-老蔡的需求：${userMessage}
+主人的需求：${userMessage}
 
-星群各成員的建議：
+蝦蝦團隊各成員的建議：
 ${crewResults}
 
 請根據以上所有建議，整合成一份簡潔的網站需求描述（一段話，200字以內），包含：風格、色系、所有區塊、功能、文案重點。這段描述會直接交給 AI 生成 HTML。`;
@@ -653,23 +683,23 @@ ${crewResults}
                 });
 
                 if (siteResult.ok) {
-                  // 組合回覆：星群分工摘要 + 網站連結
+                  // 組合回覆：蝦蝦分工摘要 + 網站連結
                   const crewSummary = dispatch.replies.map(r => `• ${r.botName}：${r.reply.slice(0, 80)}`).join('\n');
-                  return `老蔡，網站做好了！星群全員出動協作：\n\n${crewSummary}\n\n${siteResult.output}`;
+                  return `主人，網站做好了！蝦蝦團隊出動協作：\n\n${crewSummary}\n\n${siteResult.output}`;
                 }
-                // generate_site 失敗，回報星群結果
+                // generate_site 失敗，回報蝦蝦結果
                 log.warn(`[XiaocaiAI] generate_site 失敗: ${siteResult.output}`);
               }
             } catch (e) {
-              log.warn({ err: e }, '[XiaocaiAI] 網站協作整合失敗');
+              log.warn({ err: e }, '[XiaocaiAI] 蝦蝦網站協作整合失敗');
             }
           }
         }
 
-        // ── 一般任務：整合星群結果成報告 ──
+        // ── 一般任務：整合蝦蝦結果成報告 ──
         const GOOGLE_API_KEY_CREW = getGeminiKey();
         if (GOOGLE_API_KEY_CREW) {
-          const integratePrompt = `你是小蔡，老蔡的副手。老蔡剛才說：「${userMessage}」\n\n星群各成員已並行完成分析，以下是他們的回覆：\n\n${crewResults}\n\n請用繁體中文整合以上內容，給老蔡一份精簡的總結報告。重點突出、有結構、可執行。不要重複星群原文，用你自己的話整合。`;
+          const integratePrompt = `你是達爾，主人的AI夥伴。主人剛才說：「${userMessage}」\n\n蝦蝦團隊已完成分析，以下是他們的回覆：\n\n${crewResults}\n\n請用繁體中文整合以上內容，給主人一份精簡的總結報告。重點突出、有結構、可執行。不要重複蝦蝦原文，用你自己的話整合。`;
           try {
             const resp = await fetch(
               `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY_CREW}`,
@@ -681,25 +711,25 @@ ${crewResults}
               const data = await resp.json() as any;
               const integrated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
               if (integrated) {
-                log.info(`[XiaocaiAI] 🚀 星群協作完成，${dispatch.totalReplied} 個 bot 回覆，已整合`);
+                log.info(`[XiaocaiAI] 🦐 蝦蝦團隊協作完成，${dispatch.totalReplied} 隻蝦蝦回覆，已整合`);
                 return integrated;
               }
             }
           } catch { /* 整合失敗，直接返回原始結果 */ }
         }
-        // 整合失敗，返回原始星群結果
-        return `老蔡，我派了星群幫你並行分析，以下是各成員的回覆：\n\n${crewResults}`;
+        // 整合失敗，返回原始蝦蝦結果
+        return `主人，我派了蝦蝦團隊幫你分析，以下是各蝦蝦的回覆：\n\n${crewResults}`;
       }
-      // 星群沒回覆，fallthrough 到小蔡自己處理
-      log.info('[XiaocaiAI] 星群無回覆，改由小蔡自己處理');
+      // 蝦蝦沒回覆，fallthrough 到達爾自己處理
+      log.info('[XiaocaiAI] 蝦蝦無回覆，改由達爾自己處理');
     } catch (e) {
-      log.warn({ err: e }, '[XiaocaiAI] 星群協作失敗，fallback 到小蔡自己處理');
+      log.warn({ err: e }, '[XiaocaiAI] 蝦蝦團隊協作失敗，fallback 到達爾自己處理');
     }
   }
 
 
-  // ── Standby Bot 智能路由：檢查是否需要喚醒阿商/阿數 ──
-  if (!isCrewTask && !isSystemMsg && lowerMsg.length >= 5) {
+  // ── Standby Bot 智能路由：檢查是否需要喚醒備用蝦蝦 ──
+  if (!isCrewTask && !isSystemMsg && lowerMsg.length > 8) {
     try {
       const { checkStandbyNeed } = await import('./crew-bots/crew-standby.js');
       const standbyResult = await checkStandbyNeed(userMessage);

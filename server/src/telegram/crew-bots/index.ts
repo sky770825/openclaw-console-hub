@@ -1,5 +1,5 @@
 /**
- * NEUXA 星群 Crew Bots v2 — Orchestrator-Worker 模式
+ * 蝦蝦團隊 Crew Bots v3 — Orchestrator-Worker 模式
  * 4 個常駐 bot + 2 個待命 bot（按需啟動）
  */
 

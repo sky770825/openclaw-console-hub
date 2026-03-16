@@ -46,8 +46,8 @@ async function notifyXiaocaiTaskResult(
     const summaryLine = summary ? `\n📝 ${summary.slice(0, 200)}` : '';
     const qualityLine = qualityInfo ? `\n📊 ${qualityInfo}` : '';
     const nextStep = success
-      ? '\n👉 用 query_supabase 查看詳細結果，確認品質後跟老蔡匯報'
-      : '\n👉 用 query_supabase 查看錯誤原因，判斷要重建任務還是報告老蔡';
+      ? '\n👉 用 query_supabase 查看詳細結果，確認品質後跟主人匯報'
+      : '\n👉 用 query_supabase 查看錯誤原因，判斷要重建任務還是報告主人';
     const text = `${icon} 任務${status}：${taskName}\n🆔 ${taskId}${summaryLine}${qualityLine}${nextStep}`;
     await sendTelegramMessageToChat(XIAOCAI_CHAT_ID, text, { token: XIAOCAI_BOT_TOKEN });
   } catch { /* 通知失敗不影響主流程 */ }
@@ -140,7 +140,7 @@ interface ExecutorSlot { taskId: string; startedAt: number; }
 const activeSlots: ExecutorSlot[] = [];
 const SLOT_TIMEOUT_MS = 2 * 60 * 1000; // 單槽超時 2 分鐘
 
-// 老蔡已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
+// 主人已親自批准的 critical 任務 ID，下一次 poll 時直接執行，不再走派工審核
 const approvedCriticalTaskIds = new Set<string>();
 const autoExecutorExecHistoryMs: number[] = [];
 // AI分析 類任務限頻：每小時最多 5 個，避免量產低價值分析報告
@@ -268,7 +268,7 @@ async function triggerIdlePatrol(): Promise<void> {
 
   const prompt = `你是 OpenClaw 星艦指揮中心的自動巡邏系統。任務板目前是空的。
 
-專案路徑：/Users/caijunchang/openclaw任務面版設計
+專案路徑：/Users/sky770825/openclaw任務面版設計
 技術棧：React + TypeScript + Vite + Express.js (server/src/)
 
 最近完成的任務：
@@ -458,7 +458,7 @@ async function sendDispatchDigest(): Promise<void> {
   text += `<b>已執行：</b>${d.totalExecuted} 個任務\n`;
   text += `<b>成功：</b>${d.successes}  <b>失敗：</b>${d.failures}\n`;
   if (d.pendingReviews > 0) {
-    text += `\n🟣 <b>等待老蔡審核：${d.pendingReviews} 個</b>\n`;
+    text += `\n🟣 <b>等待主人審核：${d.pendingReviews} 個</b>\n`;
   }
   if (d.tasks.length > 0) {
     text += `\n<b>任務明細：</b>\n`;
@@ -558,8 +558,8 @@ async function executeNextPendingTask(): Promise<void> {
       .map(openClawTaskToTask)
       .filter((t) => {
         if (t.status !== 'ready') return false;
-        // 跳過指派給老蔡的任務 — 需要老蔡本人處理
-        if (t.owner === '老蔡') return false;
+        // 跳過指派給主人的任務 — 需要主人本人處理
+        if (t.owner === '主人') return false;
         // 跳過已在並發槽位中的任務（避免同一任務跑兩次）
         if (activeSlots.some(s => s.taskId === t.id)) return false;
         // 跳過標記為 manual-only 的任務（需人工執行，不交給 auto-executor）
@@ -585,7 +585,7 @@ async function executeNextPendingTask(): Promise<void> {
     if (pendingTasks.length === 0) {
       consecutiveIdlePolls++;
       if (consecutiveIdlePolls >= IDLE_PATROL_THRESHOLD) {
-        // IdlePatrol 已關閉（老蔡 2026-03-02 指令）— 空閒就空閒，不自己建任務
+        // IdlePatrol 已關閉（主人 2026-03-02 指令）— 空閒就空閒，不自己建任務
         consecutiveIdlePolls = 0;
       } else {
         log.info('[AutoExecutor] 沒有待執行的任務');
@@ -601,7 +601,7 @@ async function executeNextPendingTask(): Promise<void> {
       for (const candidate of pendingTasks) {
         const riskLevel = classifyTaskRisk(candidate);
         const bossApproved = approvedCriticalTaskIds.has(candidate.id);
-        // 只有 critical 需要老蔡審核，medium 由 Claude 直接執行
+        // 只有 critical 需要主人審核，medium 由 Claude 直接執行
         if (riskLevel === 'critical' && !bossApproved) {
           const alreadyPending = autoExecutorState.pendingReviews.some((r) => r.taskId === candidate.id);
           if (!alreadyPending) {
@@ -611,7 +611,7 @@ async function executeNextPendingTask(): Promise<void> {
               taskId: candidate.id,
               taskName: candidate.name || '未命名任務',
               riskLevel,
-              reason: `${label}任務需老蔡審核`,
+              reason: `${label}任務需主人審核`,
               queuedAt: new Date().toISOString(),
             });
             await upsertOpenClawTask({ id: candidate.id, status: 'pending_review' as never });
@@ -622,7 +622,7 @@ async function executeNextPendingTask(): Promise<void> {
               `<b>說明：</b>${(candidate.description || '無').slice(0, 200)}`,
               { parseMode: 'HTML' }
             );
-            log.info(`[AutoDispatch] ${emoji} 任務「${candidate.name}」需老蔡審核（${riskLevel}），已排入待審佇列`);
+            log.info(`[AutoDispatch] ${emoji} 任務「${candidate.name}」需主人審核（${riskLevel}），已排入待審佇列`);
             autoExecutorState.recentExecutions.push({
               taskId: candidate.id,
               taskName: candidate.name || '',
@@ -630,7 +630,7 @@ async function executeNextPendingTask(): Promise<void> {
               status: 'pending_review',
               executedAt: new Date().toISOString(),
               agentType: 'pending',
-              summary: '等待老蔡審核',
+              summary: '等待主人審核',
             });
           } else {
             log.info(`[AutoDispatch] 任務「${candidate.name}」已在待審佇列，跳過`);
@@ -646,7 +646,7 @@ async function executeNextPendingTask(): Promise<void> {
       const taskRisk = classifyTaskRisk(task);
       const taskApproved = approvedCriticalTaskIds.has(task.id);
       if ((taskRisk === 'critical' || taskRisk === 'medium') && !taskApproved) {
-        log.info('[AutoDispatch] 所有任務都在待審佇列，等待老蔡審核');
+        log.info('[AutoDispatch] 所有任務都在待審佇列，等待主人審核');
         return;
       }
     }
@@ -668,7 +668,7 @@ async function executeNextPendingTask(): Promise<void> {
       }
 
       if (bossApproved) {
-        log.info(`[AutoDispatch] ✅ 任務「${task.name}」已獲老蔡批准，跳過風險派工，直接執行`);
+        log.info(`[AutoDispatch] ✅ 任務「${task.name}」已獲主人批准，跳過風險派工，直接執行`);
       } else if (riskLevel === 'medium') {
         log.info(`[AutoDispatch] 🟡 中風險任務「${task.name}」，Claude 直接審核執行`);
       } else if (riskLevel === 'low') {
@@ -1091,7 +1091,7 @@ autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
     }
     startDispatchDigestTimer();
     await sendTelegramMessage(
-      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，直接審核派工\n僅紫燈（critical）任務需老蔡確認',
+      '🚀 <b>自動派工模式已開啟</b>\n\nClaude 接管指揮權，直接審核派工\n僅紫燈（critical）任務需主人確認',
       { parseMode: 'HTML' }
     );
   }
@@ -1101,7 +1101,7 @@ autoExecutorRouter.post('/dispatch/toggle', async (req, res) => {
     stopDispatchDigestTimer();
     await sendDispatchDigest();
     await sendTelegramMessage(
-      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向老蔡報告',
+      '⏸️ <b>自動派工模式已關閉</b>\n\nAgent 直接向主人報告',
       { parseMode: 'HTML' }
     );
   }
@@ -1137,12 +1137,12 @@ autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
   const review = autoExecutorState.pendingReviews[idx];
 
   if (decision === 'approved') {
-    // 記錄為老蔡已批准，下一次 poll 時跳過 critical 派工閘，直接執行
+    // 記錄為主人已批准，下一次 poll 時跳過 critical 派工閘，直接執行
     approvedCriticalTaskIds.add(taskId);
     await upsertOpenClawTask({ id: taskId, status: 'queued' });
     autoExecutorState.pendingReviews.splice(idx, 1);
     await sendTelegramMessage(
-      `✅ 老蔡已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 直接執行`,
+      `✅ 主人已批准任務：<b>${review.taskName}</b>\n任務將由 auto-executor 直接執行`,
       { parseMode: 'HTML' }
     );
     return res.json({ ok: true, taskId, decision: 'approved' });
@@ -1152,7 +1152,7 @@ autoExecutorRouter.post('/dispatch/review/:taskId', async (req, res) => {
   await upsertOpenClawTask({ id: taskId, status: 'done' });
   autoExecutorState.pendingReviews.splice(idx, 1);
   await sendTelegramMessage(
-    `❌ 老蔡已拒絕任務：<b>${review.taskName}</b>`,
+    `❌ 主人已拒絕任務：<b>${review.taskName}</b>`,
     { parseMode: 'HTML' }
   );
   res.json({ ok: true, taskId, decision: 'rejected' });
