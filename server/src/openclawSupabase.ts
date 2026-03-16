@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local' as string }); // 確保載入 .env.local
+dotenv.config(); // 載入 cwd 下的 .env（由 preload-dotenv 已先載入，此為備援）
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -228,7 +228,7 @@ export async function fetchOpenClawUIActions(): Promise<Record<string, unknown>[
 // 2026-02-28 NEUXA: 新增模型成本記錄功能
 export async function recordModelUsage(modelName: string, tokensUsed: number, cost: number, purpose: string) {
   try {
-    const { data, error } = await supabase.from('openclaw_audit_logs').insert([
+    const { data, error } = await supabaseServiceRole.from('openclaw_audit_logs').insert([
       {
         action: 'MODEL_USAGE',
         resource: modelName,

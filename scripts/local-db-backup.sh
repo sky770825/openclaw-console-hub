@@ -4,10 +4,10 @@
 # 整合了日誌旋轉呼叫
 
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-BACKUP_PARENT_DIR="/Users/caijunchang/.openclaw/backups"
+BACKUP_PARENT_DIR="/Users/sky770825/.openclaw/backups"
 BACKUP_DIR="$BACKUP_PARENT_DIR/$TIMESTAMP"
-WORKSPACE_DIR="/Users/caijunchang/.openclaw/workspace"
-BASE_DIR="/Users/caijunchang/.openclaw"
+WORKSPACE_DIR="/Users/sky770825/.openclaw/workspace"
+BASE_DIR="/Users/sky770825/.openclaw"
 
 # 建立備份目錄
 mkdir -p "$BACKUP_DIR"

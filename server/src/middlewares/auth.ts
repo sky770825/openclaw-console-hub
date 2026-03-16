@@ -75,6 +75,14 @@ export function requiredAccessLevel(req: Request): AccessLevel {
     return 'none';
   }
 
+  // Ollama 代理：localhost 免 auth（內部服務直連）
+  if (path.startsWith('/ollama/') || path === '/ollama') {
+    const ip = req.ip || req.socket?.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (isLocal) return 'none';
+    return 'admin';
+  }
+
   // Admin-only endpoints
   if (path === '/features' && method === 'PATCH') return 'admin';
   if (path.startsWith('/admin/')) return 'admin';

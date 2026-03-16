@@ -3,7 +3,7 @@
 # 每天自動遞增 patch 版本號，commit 並 push。
 # 由 macOS launchd 每天 00:01 觸發。
 
-MAIN_DIR="/Users/caijunchang/openclaw任務面版設計"
+MAIN_DIR="/Users/sky770825/Desktop/大額/openclaw任務面版設計"
 LOG="/tmp/openclaw-version-bump.log"
 BUMP_FLAG="$MAIN_DIR/.claude/.version-bumped-$(date +%Y%m%d)"
 

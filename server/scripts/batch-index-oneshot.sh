@@ -3,7 +3,7 @@
 # 用法: bash scripts/batch-index-oneshot.sh [目錄] [category]
 set -euo pipefail
 
-DIR="${1:-/Users/caijunchang/openclaw任務面版設計/cookbook}"
+DIR="${1:-/Users/sky770825/openclaw任務面版設計/cookbook}"
 CATEGORY="${2:-cookbook}"
 TOTAL=0
 INDEXED=0

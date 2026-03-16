@@ -4,6 +4,51 @@
  * OpenClaw v4 板：/api/openclaw/* 寫入 Supabase
  */
 import './preload-dotenv.js';
+
+// 修復 Tailscale 環境下 IPv6 連 Telegram API 超時問題
+// 替換全域 fetch，對 api.telegram.org 的請求改用 node:https（走 IPv4）
+import https from 'node:https';
+const _originalFetch = globalThis.fetch;
+globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+  // 只攔截 Telegram API 請求
+  if (url.includes('api.telegram.org')) {
+    return new Promise((resolve, reject) => {
+      const parsed = new URL(url);
+      const postData = init?.body ? String(init.body) : undefined;
+      const reqOptions: https.RequestOptions = {
+        hostname: parsed.hostname,
+        port: 443,
+        path: parsed.pathname + parsed.search,
+        method: init?.method || (postData ? 'POST' : 'GET'),
+        headers: {
+          ...Object.fromEntries(Object.entries(init?.headers || {}).map(([k, v]) => [k, String(v)])),
+          ...(postData ? { 'Content-Type': 'application/json' } : {}),
+        },
+        timeout: 120_000, // long polling timeout
+        family: 4,        // 強制 IPv4
+      };
+      const req = https.request(reqOptions, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString('utf8');
+          resolve(new Response(body, {
+            status: res.statusCode || 200,
+            statusText: res.statusMessage || 'OK',
+            headers: res.headers as Record<string, string>,
+          }));
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Telegram request timeout')); });
+      if (postData) req.write(postData);
+      req.end();
+    });
+  }
+  return _originalFetch(input, init);
+};
+
 import { createLogger } from './logger.js';
 import { startTelegramStopPoll, triggerHeartbeat } from './telegram/index.js';
 import path from 'path';
@@ -78,6 +123,7 @@ import autoExecutorRouter, {
 // === 新增：房源文案 API 路由 (P3 任務) ===
 import propertyApiRouter from './routes/property-api.js';
 import { proxyRouter } from './routes/proxy.js';
+import { ollamaProxyRouter } from './routes/ollama-proxy.js';
 import {
   hasN8n,
   listWorkflows,
@@ -200,6 +246,7 @@ interface SharedState {
 }
 
 const agentCapabilities: Record<string, AgentCapability[]> = {
+  main: ['read', 'write', 'execute', 'interrupt'],
   cursor_agent: ['read', 'write', 'execute', 'interrupt'],
   codex_agent: ['read', 'write', 'execute', 'interrupt'],
   openclaw: ['read', 'write', 'execute', 'interrupt'],
@@ -523,6 +570,8 @@ app.use('/api/tools', propertyApiRouter);
 app.use('/api/proxy', proxyRouter);
 // FADP 聯盟協防協議路由（/api/federation/*，部分端點不需 auth，內部使用 x-fadp-key）
 app.use('/api/federation', federationRouter);
+// Ollama 統一代理（本地模型走 Server 代理，方便監控管理）
+app.use('/api/ollama', ollamaProxyRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
@@ -1502,7 +1551,7 @@ app.post('/api/openclaw/run-next', async (_req, res) => {
 
 // ─── 紅色警戒 ─────────────────────────────────────────────
 
-/** 小蔡觸發紅色警戒：建立警報 + block 任務 + Telegram 通知 */
+/** 達爾觸發紅色警戒：建立警報 + block 任務 + Telegram 通知 */
 app.post('/api/openclaw/red-alert', async (req, res) => {
   try {
     const { taskId, title, description, severity, category } = req.body as {
@@ -1565,7 +1614,7 @@ app.post('/api/openclaw/red-alert', async (req, res) => {
   }
 });
 
-/** 老蔡解除紅色警戒：review approved + 任務恢復 queued */
+/** 主人解除紅色警戒：review approved + 任務恢復 queued */
 app.post('/api/openclaw/red-alert/:reviewId/resolve', async (req, res) => {
   try {
     const { reviewId } = req.params;
@@ -1609,7 +1658,7 @@ const PROPOSAL_CAT_EMOJI: Record<string, string> = {
   commercial: '💼', system: '⚙️', tool: '🔧', risk: '🛡️', creative: '💡',
 };
 
-/** 小蔡提案：建立提案 review + Telegram 通知老蔡 */
+/** 達爾提案：建立提案 review + Telegram 通知主人 */
 app.post('/api/openclaw/proposal', async (req, res) => {
   try {
     const { title, category, background, idea, goal, risk } = req.body as {
@@ -1676,7 +1725,7 @@ app.post('/api/openclaw/proposal', async (req, res) => {
   }
 });
 
-/** 老蔡審核提案：批准 / 駁回 / 批准+轉任務 */
+/** 主人審核提案：批准 / 駁回 / 批准+轉任務 */
 app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
   try {
     const { reviewId } = req.params;
@@ -1695,7 +1744,7 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
         await upsertOpenClawReview({
           ...review,
           status: newStatus,
-          reasoning: note ? `${review.reasoning || ''}\n---\n老蔡：${note}` : review.reasoning,
+          reasoning: note ? `${review.reasoning || ''}\n---\n主人：${note}` : review.reasoning,
         });
       }
     }
@@ -1705,7 +1754,7 @@ app.post('/api/openclaw/proposal/:reviewId/decide', async (req, res) => {
     const memRev = memReviews.find((r) => r.id === reviewId);
     if (memRev) {
       memRev.status = newStatus;
-      if (note) memRev.reasoning = `${memRev.reasoning || ''}\n---\n老蔡：${note}`;
+      if (note) memRev.reasoning = `${memRev.reasoning || ''}\n---\n主人：${note}`;
     }
 
     // 2. 如果是「批准+轉任務」，建立任務
@@ -2672,7 +2721,7 @@ app.get('/api/defense/firewall-logs', async (req, res) => {
   }
 });
 
-// GET /api/defense/deputy — 副手(小蔡)即時狀態
+// GET /api/defense/deputy — 副手(達爾)即時狀態
 app.get('/api/defense/deputy', (_req, res) => {
   try {
     const deputyState = (() => {
@@ -2955,7 +3004,7 @@ app.post('/api/openclaw/wake-report', async (req, res) => {
 
     // ── 通知管道 ──
 
-    // 1) Telegram 通知老蔡
+    // 1) Telegram 通知主人
     const topOpsText = report.topOperations
       .slice(0, 3)
       .map(([op, cnt]: [string, number]) => `${op}(${cnt}次)`)
@@ -3174,7 +3223,7 @@ app.post('/api/openclaw/deputy/toggle', async (req, res) => {
       maxTasksPerRun: body.maxTasksPerRun || state.maxTasksPerRun || 3,
       allowedTags: body.allowedTags || state.allowedTags || ['auto-ok'],
       excludeTags: body.excludeTags || state.excludeTags || [],
-      // 委派模式：暫代期間可派工給小蔡
+      // 委派模式：暫代期間可派工給達爾
       delegateToXiaoji: body.delegateToXiaoji ?? state.delegateToXiaoji ?? true,
     };
     writeDeputyState(newState);
@@ -3184,10 +3233,10 @@ app.post('/api/openclaw/deputy/toggle', async (req, res) => {
       msg = '🤖 <b>暫代模式已開啟</b>\n\n' +
         'Claude Code 將在每次巡檢時自動執行可處理的任務。\n' +
         `規則：最多每輪 ${newState.maxTasksPerRun} 個任務、只處理 auto-ok 標記的任務。\n\n` +
-        (newState.delegateToXiaoji ? '📋 小蔡：暫代期間你會收到任務指令，請依照指示執行。\n\n' : '') +
+        (newState.delegateToXiaoji ? '📋 達爾：暫代期間你會收到任務指令，請依照指示執行。\n\n' : '') +
         '關閉：/deputy off';
     } else if (body.source === 'boss-return') {
-      msg = '👑 <b>老蔡已接手</b>\n\n暫代模式已自動關閉。\n小蔡：老蔡回來了，指揮權交還。';
+      msg = '👑 <b>主人已接手</b>\n\n暫代模式已自動關閉。\n達爾：主人回來了，指揮權交還。';
     } else {
       msg = '⏸ <b>暫代模式已關閉</b>\n\nClaude Code 不再自動執行任務，僅巡檢報告。';
     }
@@ -3748,8 +3797,8 @@ app.get('/api/system-schedules', async (_req, res) => {
   }
 });
 
-// 小蔡指揮 crew bots（內部調度，繞過 Forum bot→bot 限制）
-// 先用小蔡 bot 發訊息到群組，再觸發 crew dispatch
+// 達爾指揮 crew bots（內部調度，繞過 Forum bot→bot 限制）
+// 先用達爾 bot 發訊息到群組，再觸發 crew dispatch
 app.post('/api/crew/dispatch', async (req, res) => {
   try {
     const { message, sender } = req.body || {};
@@ -3763,7 +3812,7 @@ app.post('/api/crew/dispatch', async (req, res) => {
     }
 
     const { dispatchToCrewBots } = await import('./telegram/crew-bots/crew-poller.js');
-    const dispatch = await dispatchToCrewBots(message, sender || '小蔡');
+    const dispatch = await dispatchToCrewBots(message, sender || '達爾');
     res.json({ ok: true, dispatched: dispatch.totalReplied, replies: dispatch.replies, message: dispatch.totalReplied > 0 ? `${dispatch.totalReplied} 個 crew bot 已回覆` : '無匹配的 crew bot' });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
@@ -3855,10 +3904,10 @@ app.get('/api/agents/status', async (_req, res) => {
     const { getHeartbeatStatus } = await import('./telegram/crew-bots/crew-patrol.js');
     const heartbeat = getHeartbeatStatus();
 
-    // 小蔡（指揮官）
+    // 達爾（指揮官）
     const xiaocaiStatus = {
       id: 'xiaocai',
-      name: '小蔡',
+      name: '達爾',
       role: '指揮官',
       emoji: '🧠',
       model: 'gemini-flash',
@@ -3974,8 +4023,8 @@ app.post('/api/telegram/force-test', async (_req, res) => {
 app.get('/api/openclaw/activity-log', (req, res) => {
   const lines = Math.min(Number(req.query.lines) || 20, 100);
   const logPath = path.join(
-    process.env.HOME || '/Users/caijunchang',
-    'Desktop/小蔡/🧠核心文件/shared-activity.log',
+    process.env.HOME || '/Users/sky770825',
+    'Desktop/達爾/🧠核心文件/shared-activity.log',
   );
   try {
     if (!fs.existsSync(logPath)) {
@@ -4192,7 +4241,7 @@ wsManager.initialize(server);
 // 啟動時載入 FADP 封鎖清單到記憶體
 loadBlocklistFromSupabase().catch(() => {});
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, '0.0.0.0', () => {
   log.info(`OpenClaw API http://localhost:${PORT}`);
   log.info(`  WebSocket ws://localhost:${PORT}/ws`);
   log.info(`  GET  /api/tasks, /api/tasks/:id, PATCH /api/tasks/:id`);
@@ -4224,7 +4273,7 @@ server.listen(PORT, '127.0.0.1', () => {
     (async () => {
       try {
         const ocTasks = await fetchOpenClawTasks();
-        // pending_review 是等待老蔡審核的任務，不要重置
+        // pending_review 是等待主人審核的任務，不要重置
         const orphans = (ocTasks ?? []).filter((t) => t.status === 'in_progress');
         if (orphans.length > 0) {
           log.warn(`[StartupReconcile] 發現 ${orphans.length} 筆孤立 in_progress 任務，改回 queued`);
@@ -4238,7 +4287,7 @@ server.listen(PORT, '127.0.0.1', () => {
         // 確認 pending_review 任務不被重置
         const pendingReviews = (ocTasks ?? []).filter((t) => t.status === 'pending_review');
         if (pendingReviews.length > 0) {
-          log.info(`[StartupReconcile] 保留 ${pendingReviews.length} 筆 pending_review 任務（等待老蔡審核）`);
+          log.info(`[StartupReconcile] 保留 ${pendingReviews.length} 筆 pending_review 任務（等待主人審核）`);
         }
       } catch (e) {
         log.error('[StartupReconcile] 失敗:', e);

@@ -2,7 +2,7 @@
 # 輕量 batch-index 腳本 — 繞過 server，直接用 curl 呼叫 Google + Supabase API
 # 用法: bash scripts/run-batch-index.sh [目錄] [category]
 
-DIR="${1:-/Users/caijunchang/openclaw任務面版設計/cookbook}"
+DIR="${1:-/Users/sky770825/openclaw任務面版設計/cookbook}"
 CATEGORY="${2:-cookbook}"
 GOOGLE_KEY="${GOOGLE_API_KEY:-}"
 SB_URL="https://vbejswywswaeyfasnwjq.supabase.co"

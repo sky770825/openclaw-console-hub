@@ -28,7 +28,7 @@ fi
 
 TASK_SUMMARY=""
 if [[ -n "$TASKS_JSON" ]]; then
-  TASK_SUMMARY="$(echo "$TASKS_JSON" | python3 /Users/caijunchang/openclaw任務面版設計/scripts/_wake_task_parse.py 2>/dev/null || echo '(解析失敗)')"
+  TASK_SUMMARY="$(echo "$TASKS_JSON" | python3 /Users/sky770825/openclaw任務面版設計/scripts/_wake_task_parse.py 2>/dev/null || echo '(解析失敗)')"
 fi
 
 # ── 3. Deputy 狀態 ──
@@ -83,7 +83,7 @@ fi
 
 # ── 7. API 額度快速檢測 ──
 # Key 從 .env 讀取，不要硬寫（避免 push 後被 Google 標記 leaked）
-GOOGLE_KEY="$(grep '^GOOGLE_API_KEY=' /Users/caijunchang/openclaw任務面版設計/server/.env 2>/dev/null | cut -d= -f2)"
+GOOGLE_KEY="$(grep '^GOOGLE_API_KEY=' /Users/sky770825/openclaw任務面版設計/server/.env 2>/dev/null | cut -d= -f2)"
 check_model() {
   local model="$1"
   local code
@@ -136,7 +136,7 @@ fi
 
 # ── 9. git 最新 commit ──
 GIT_LOG=""
-cd /Users/caijunchang/openclaw任務面版設計 2>/dev/null && \
+cd /Users/sky770825/openclaw任務面版設計 2>/dev/null && \
   GIT_LOG="$(git log --oneline -3 2>/dev/null | sed 's/^/  /')" || GIT_LOG="(git 讀取失敗)"
 
 # ── 寫出 WAKE_STATUS.md ──
@@ -196,7 +196,7 @@ $(
   fi
   # 從任務板找 running 狀態
   if [[ -n "$TASKS_JSON" ]]; then
-    echo "$TASKS_JSON" | python3 /Users/caijunchang/openclaw任務面版設計/scripts/_wake_urgent_parse.py 2>/dev/null || true
+    echo "$TASKS_JSON" | python3 /Users/sky770825/openclaw任務面版設計/scripts/_wake_urgent_parse.py 2>/dev/null || true
   fi
   echo "- ✅ 讀取 MEMORY.md 了解專案狀態"
   echo "- ✅ 確認最新 git commits 是否需要後續行動"
@@ -205,8 +205,8 @@ HEADER
 } > "$OUT"
 
 # ── 9. 同步 CLAUDE.md 到小蔡工作目錄 ──
-LAOCAI_CLAUDE="/Users/caijunchang/openclaw任務面版設計/CLAUDE.md"
-XIAOJI_CLAUDE="/Users/caijunchang/openclaw任務面版設計/CLAUDE.md"
+LAOCAI_CLAUDE="/Users/sky770825/openclaw任務面版設計/CLAUDE.md"
+XIAOJI_CLAUDE="/Users/sky770825/openclaw任務面版設計/CLAUDE.md"
 if [[ -f "$LAOCAI_CLAUDE" ]]; then
   if ! diff -q "$LAOCAI_CLAUDE" "$XIAOJI_CLAUDE" > /dev/null 2>&1; then
     cp "$LAOCAI_CLAUDE" "$XIAOJI_CLAUDE"

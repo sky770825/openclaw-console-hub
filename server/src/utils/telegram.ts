@@ -310,7 +310,7 @@ export async function notifyProposal(
     `<b>背景：</b>\n${truncBg}\n\n` +
     (truncGoal ? `<b>目標：</b>\n${truncGoal}\n\n` : '') +
     (truncRisk ? `<b>風險：</b>\n${truncRisk}\n\n` : '') +
-    `⏳ <b>等待老蔡審核</b>`;
+    `⏳ <b>等待主人審核</b>`;
 
   const replyMarkup = {
     inline_keyboard: [
