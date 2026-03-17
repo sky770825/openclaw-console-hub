@@ -54,6 +54,7 @@ import { startTelegramStopPoll, triggerHeartbeat } from './telegram/index.js';
 import { startDiscordBridge } from './discord/index.js';
 import { crewThink } from './telegram/crew-bots/crew-think.js';
 import { ACTIVE_CREW_BOTS } from './telegram/crew-bots/crew-config.js';
+import { xiaocaiThink } from './telegram/xiaocai-think.js';
 import path from 'path';
 import fs from 'fs';
 import { spawn, execSync } from 'child_process';
@@ -4343,7 +4344,18 @@ server.listen(PORT, '0.0.0.0', () => {
   startTelegramStopPoll();
 
   // Discord ↔ Telegram 雙向同步橋
+  // 達爾的 Discord 對話歷史（per channel）
+  const discordHistory = new Map<number, Array<{ role: string; text: string }>>();
+  const DISCORD_CHAT_ID = 99999;  // 虛擬 chatId 給 Discord 用
+  const xiaocaiModel = process.env.XIAOCAI_MODEL || 'gemini-2.5-flash';
+
   startDiscordBridge(async (botId, text, senderName) => {
+    // 指揮中心 → 達爾本人（xiaocaiThink）
+    if (botId === 'xiaocai') {
+      const reply = await xiaocaiThink(DISCORD_CHAT_ID, text, xiaocaiModel, discordHistory);
+      return reply || '';
+    }
+    // 各部門頻道 → 對應蝦蝦
     const bot = ACTIVE_CREW_BOTS.find(b => b.id === botId);
     if (!bot) return '';
     const result = await crewThink(bot, text, senderName);
