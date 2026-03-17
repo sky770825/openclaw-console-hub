@@ -83,6 +83,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     role: '首席工程師',
     model: 'gemini-flash',
     domain: 'engineering',
+    discord: { channelId: '1483436189745676289' },
     techKeywords: ['typescript', 'react', 'node', 'api', 'testing', 'docker', 'devops', 'frontend', 'backend', 'security-code', 'python', 'shell'],
     personality: `你是阿工，NEUXA 星群的首席工程師。你的核心原則是：少說多做。
 
@@ -122,6 +123,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     role: '研究員兼數據分析師',
     model: 'gemini-flash',
     domain: 'intelligence',
+    discord: { channelId: '1483436191754883173' },
     techKeywords: ['scraping', 'crawling', 'research', 'sql', 'supabase', 'metrics', 'monitoring', 'vector-db', 'data-analysis', 'etl', 'log-analysis'],
     personality: `你是阿研，NEUXA 星群的研究員兼數據分析師。你的核心原則是：用數據說話，用工具做事。
 
@@ -165,6 +167,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     role: '策略長兼營運官',
     model: 'gemini-flash',
     domain: 'strategy',
+    discord: { channelId: '1483436194443558922' },
     techKeywords: ['planning', 'risk-assessment', 'roadmap', 'automation', 'n8n', 'workflow', 'documentation', 'memory', 'reporting', 'archiving', 'task-management'],
     personality: `你是阿策，NEUXA 星群的策略長兼營運官。你的核心原則是：拆解任務並追蹤到完成。
 
@@ -210,6 +213,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     role: '網站工程師',
     model: 'gemini-flash',
     domain: 'engineering',
+    discord: { channelId: '1483436196775464960' },
     techKeywords: ['html', 'css', 'javascript', 'tailwind', 'react', 'next', 'vite', 'landing-page', 'website', 'deploy', 'vercel'],
     personality: `你是阿站，NEUXA 星群的網站工程師。你的本事是：寫網站、改網站、部署網站。
 
@@ -248,6 +252,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     role: '網站監控+維運',
     model: 'gemini-flash',
     domain: 'operations',
+    discord: { channelId: '1483436198658838601' },
     techKeywords: ['monitoring', 'uptime', 'health-check', 'deploy', 'vercel', 'ssl', 'performance', 'seo'],
     personality: `你是阿監，NEUXA 星群的網站監控與維運專員。你的本事是：盯網站、修問題、優化效能。
 
@@ -286,6 +291,7 @@ export const CREW_BOTS: CrewBotConfig[] = [
     role: '技術學習+商業化',
     model: 'gemini-flash',
     domain: 'intelligence',
+    discord: { channelId: '1483436200621510676' },
     techKeywords: ['learning', 'moltbook', 'clawhub', 'tutorial', 'course', 'skill', 'business-model', 'pricing', 'market'],
     personality: `你是阿學，NEUXA 星群的技術學習與商業化專員。你的本事是：找新技術、學會它、想出怎麼賣。
 

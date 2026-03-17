@@ -10,6 +10,7 @@ import type { CrewBotConfig } from './crew-config.js';
 import { routeMessage } from './crew-router.js';
 import { crewThink, pushHistory } from './crew-think.js';
 import { triggerPatrolNow } from './crew-patrol.js';
+import { bridgeToDiscord } from '../../discord/discord-bridge.js';
 import { isCoolingDown, diagnose, autoRepair, recordFailure, fullCheckup } from './crew-doctor.js';
 import { scanInbox, archiveInboxFile, type InboxFile } from './crew-inbox.js';
 
@@ -337,6 +338,7 @@ async function executeRound(
         sendCount++;
         const htmlMsg = formatBotReplyHTML(bot, reply);
         await sendTelegramMessageToChat(chatId, htmlMsg, { token: bot.token, silent: true, parseMode: 'HTML' });
+        bridgeToDiscord(bot.id, reply).catch(() => {});
         pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
         replies.push({ botId: bot.id, botName: bot.name, reply });
         log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} replied (len=${reply.length}, actions=${result.actionResults.length})`);
@@ -744,6 +746,7 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
               silent: true,
               parseMode: 'HTML',
             });
+            bridgeToDiscord(bot.id, reply).catch(() => {});
             pushHistory({
               role: 'model',
               text: reply,
