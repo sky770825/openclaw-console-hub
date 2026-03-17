@@ -5,6 +5,7 @@
 
 import { ACTIVE_CREW_BOTS, CREW_BOT_USERNAMES, SYSTEM_BOT_USERNAMES } from './crew-config.js';
 import type { CrewBotConfig } from './crew-config.js';
+import { isDmAllowed, isUserRateLimited, isGroupAllowed } from '../security.js';
 
 /** 管理員 username（享有與達爾相同的低門檻 + 全員集合權限） */
 const ADMIN_USERNAMES = new Set(['gousmaaa', 'sky770825']);
@@ -219,8 +220,29 @@ export function routeMessage(
   text: string,
   senderUsername: string,
   senderIsBot: boolean,
+  chatContext?: { chatId?: string | number; chatType?: 'private' | 'group' | 'supergroup'; senderId?: string | number },
 ): RoutingDecision {
   const lowerUsername = (senderUsername || '').toLowerCase();
+
+  // ─── Layer 0: DM 白名單 + 群組白名單 + 用戶限速（學自 Discord security） ───
+  if (chatContext) {
+    const { chatId, chatType, senderId } = chatContext;
+
+    // DM 白名單檢查
+    if (chatType === 'private' && senderId && !isDmAllowed(senderId)) {
+      return { respondingBots: [], filtered: true, filterReason: 'dm not in allowlist' };
+    }
+
+    // 群組白名單檢查
+    if ((chatType === 'group' || chatType === 'supergroup') && chatId && !isGroupAllowed(chatId)) {
+      return { respondingBots: [], filtered: true, filterReason: 'group not in allowlist' };
+    }
+
+    // 用戶限速檢查
+    if (senderId && isUserRateLimited(senderId)) {
+      return { respondingBots: [], filtered: true, filterReason: 'user rate limited' };
+    }
+  }
 
   // ─── Layer 1: Bot 訊息過濾（達爾 + 匿名管理員例外） ───
   const ALLOWED_BOT_USERNAMES = new Set(['xiaoji_cai_bot', 'groupanonymousbot']);

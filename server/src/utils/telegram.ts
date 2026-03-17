@@ -12,6 +12,41 @@ const log = createLogger('telegram-util');
 
 const GROUP_CHAT_LOG = process.env.HOME + '/.openclaw/workspace/reports/group_chat_log.md';
 
+// ─── 訊息分段（學自 Discord extension 的 chunking 策略） ───
+const TELEGRAM_CHUNK_LIMIT = 3900;  // Telegram 上限 4096，留 buffer
+
+/**
+ * 智慧分段：在段落/換行處切割，不暴力截斷
+ * 學自 Discord extension 的 textChunkLimit + chunker 設計
+ */
+function chunkMessage(text: string, limit = TELEGRAM_CHUNK_LIMIT): string[] {
+  if (text.length <= limit) return [text];
+
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= limit) {
+      chunks.push(remaining);
+      break;
+    }
+
+    // 優先在段落邊界（雙換行）切割
+    let splitAt = remaining.lastIndexOf('\n\n', limit);
+    // 其次在換行處切割
+    if (splitAt < limit * 0.3) splitAt = remaining.lastIndexOf('\n', limit);
+    // 最後在空白處切割
+    if (splitAt < limit * 0.3) splitAt = remaining.lastIndexOf(' ', limit);
+    // 都找不到就硬切
+    if (splitAt < limit * 0.3) splitAt = limit;
+
+    chunks.push(remaining.slice(0, splitAt).trimEnd());
+    remaining = remaining.slice(splitAt).trimStart();
+  }
+
+  return chunks;
+}
+
 /** 把 bot 發出的訊息也記進 group_chat_log.md */
 function logBotMessage(chatId: number | string, text: string, token: string) {
   try {
@@ -115,28 +150,43 @@ export async function sendTelegramMessageToChat(
 ): Promise<void> {
   const token = options.token?.trim() || process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() || TELEGRAM_BOT_TOKEN;
   if (!token) return;
-  try {
-    const safeText = sanitizeUtf8(text);
-    const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: safeText,
-        disable_notification: options.silent ?? false,
-        ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
-        ...(options.replyMarkup ? { reply_markup: options.replyMarkup } : {}),
-      }),
-    });
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] send failed');
-    } else {
-      logBotMessage(chatId, text, token);
+
+  const safeText = sanitizeUtf8(text);
+  const chunks = chunkMessage(safeText);
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks.length > 1
+      ? `${chunks[i]}\n\n📄 (${i + 1}/${chunks.length})`
+      : chunks[i];
+
+    try {
+      const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: chunk,
+          disable_notification: options.silent ?? false,
+          ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
+          // reply_markup 只在最後一段才附加
+          ...(i === chunks.length - 1 && options.replyMarkup ? { reply_markup: options.replyMarkup } : {}),
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] send failed');
+      } else {
+        logBotMessage(chatId, chunks[i], token);
+      }
+    } catch (error) {
+      log.error({ err: error }, '[TelegramControl] Failed to send message');
     }
-  } catch (error) {
-    log.error({ err: error }, '[TelegramControl] Failed to send message');
+
+    // 多段之間加小延遲避免 Telegram 限速
+    if (i < chunks.length - 1) {
+      await new Promise(r => setTimeout(r, 300));
+    }
   }
 }
 

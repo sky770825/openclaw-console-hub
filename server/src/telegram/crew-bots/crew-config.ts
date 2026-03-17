@@ -49,6 +49,15 @@ export interface CrewBotConfig {
     channelId?: string;
     roleId?: string;
   };
+  /** 安全策略（學自 Discord extension 的 security policy） */
+  security?: {
+    /** DM 策略：allowlist=白名單 / open=開放 */
+    dmPolicy?: 'allowlist' | 'open';
+    /** 群組策略：requireMention=需要 @bot / open=所有訊息都回 */
+    groupPolicy?: 'requireMention' | 'open';
+    /** 最大回應長度（超過自動分段） */
+    maxResponseLength?: number;
+  };
 }
 
 export const CREW_GROUP_CHAT_ID = process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim()

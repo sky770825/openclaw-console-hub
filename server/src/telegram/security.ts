@@ -1,5 +1,7 @@
 /**
  * NEUXA 安全沙盒 — 路徑檢查、腳本檢查、敏感常量
+ *
+ * v9.1.1: 新增 DM 白名單 + 用戶限速（學自 Discord extension 安全策略）
  */
 
 import path from 'node:path';
@@ -72,6 +74,86 @@ const WRITE_INDICATORS = [
   /sed\s+-i/, /cat\s.*>/, /echo\s.*>/, /printf\s.*>/,
   /npm\s+install/, /npm\s+uninstall/, /npm\s+update/,
 ];
+
+// ─── DM 白名單（學自 Discord extension 的 allowFrom 策略） ───
+
+/** 允許私訊 bot 的 Telegram user ID / username */
+const DM_ALLOWLIST = new Set([
+  process.env.TELEGRAM_OWNER_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim() || '',
+  // 管理員 username
+  'gousmaaa',
+  'sky770825',
+].filter(Boolean));
+
+/** DM 安全策略（學自 Discord 的 resolveDmPolicy） */
+export type DmPolicy = 'allowlist' | 'open';
+
+/** 當前 DM 策略（預設 allowlist，只有白名單用戶能觸發 bot） */
+export const DM_POLICY: DmPolicy = (process.env.TELEGRAM_DM_POLICY as DmPolicy) || 'allowlist';
+
+/**
+ * 檢查 DM 是否允許
+ * @param senderId - Telegram user ID 或 username
+ * @returns 是否允許回應此 DM
+ */
+export function isDmAllowed(senderId: string | number): boolean {
+  if (DM_POLICY === 'open') return true;
+  const id = String(senderId).toLowerCase();
+  return DM_ALLOWLIST.has(id);
+}
+
+/**
+ * 動態新增 DM 白名單
+ */
+export function addDmAllowEntry(userId: string): void {
+  DM_ALLOWLIST.add(userId);
+}
+
+// ─── 用戶限速（學自 Discord extension 的 streaming/coalesce 策略） ───
+
+/** 每用戶請求記錄 */
+const userRequestLog = new Map<string, number[]>();
+
+/** 用戶限速設定 */
+const USER_RATE_LIMIT = 10;        // 每用戶每分鐘最多 10 條
+const USER_RATE_WINDOW_MS = 60_000;
+
+/**
+ * 檢查用戶是否超過限速
+ * @returns true = 被限速（不應回應）
+ */
+export function isUserRateLimited(userId: string | number): boolean {
+  const id = String(userId);
+  const now = Date.now();
+  const log = userRequestLog.get(id) || [];
+
+  // 清除過期記錄
+  const recent = log.filter(t => now - t < USER_RATE_WINDOW_MS);
+  userRequestLog.set(id, recent);
+
+  if (recent.length >= USER_RATE_LIMIT) return true;
+
+  recent.push(now);
+  return false;
+}
+
+// ─── 群組安全策略（學自 Discord extension 的 groupPolicy） ───
+
+/** 允許 bot 回應的群組 chat ID 白名單 */
+const GROUP_ALLOWLIST = new Set([
+  process.env.TELEGRAM_CREW_GROUP_CHAT_ID?.trim() || '',
+  process.env.TELEGRAM_GROUP_CHAT_ID?.trim() || '',
+].filter(Boolean));
+
+/**
+ * 檢查群組是否在白名單中
+ * @param chatId - Telegram 群組 chat ID
+ * @returns 是否允許在此群組回應
+ */
+export function isGroupAllowed(chatId: string | number): boolean {
+  const id = String(chatId);
+  return GROUP_ALLOWLIST.has(id);
+}
 
 /** 安全檢查：腳本內容是否安全 */
 export function isScriptSafe(script: string): { safe: boolean; reason?: string } {

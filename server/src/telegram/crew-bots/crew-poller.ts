@@ -645,7 +645,7 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
         update_id: number;
         message?: {
           message_id: number;
-          chat: { id: number };
+          chat: { id: number; type?: string };
           from?: { id: number; first_name?: string; username?: string; is_bot?: boolean };
           text?: string;
         };
@@ -684,6 +684,11 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
           msg.text,
           msg.from.username || '',
           msg.from.is_bot || false,
+          {
+            chatId: String(msg.chat.id),
+            chatType: msg.chat.type as 'private' | 'group' | 'supergroup',
+            senderId: String(msg.from.id),
+          },
         );
         routingCache.set(messageId, decision);
         log.info(`[CrewPoller] Route msg=${messageId} from=${msg.from.username || msg.from.first_name} is_bot=${msg.from.is_bot} text="${msg.text.slice(0, 50)}" filtered=${decision.filtered} reason=${decision.filterReason || 'none'} bots=${decision.respondingBots.map(b => b.botId).join(',') || 'none'}`);
