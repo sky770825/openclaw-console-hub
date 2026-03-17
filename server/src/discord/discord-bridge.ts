@@ -14,6 +14,7 @@ import {
   DISCORD_COMMAND_CENTER,
   DISCORD_TASK_REPORT,
   DISCORD_ALERT,
+  DAR_CHANNELS,
   BOT_EMOJI,
 } from './discord-config.js';
 import { sendDiscordMessage } from './discord-rest.js';
@@ -110,16 +111,27 @@ export async function handleDiscordMessage(msg: DiscordMessage): Promise<void> {
 
   // 4. 查找對應的 bot
   const mapping = DISCORD_CHANNEL_MAP[msg.channelId];
-
-  // 指揮中心 → 達爾
   const isCommandCenter = msg.channelId === DISCORD_COMMAND_CENTER;
+  const isTaskReport = msg.channelId === DISCORD_TASK_REPORT;
+  const isAlert = msg.channelId === DISCORD_ALERT;
 
-  if (!mapping && !isCommandCenter) {
-    // 未知頻道，不處理
-    return;
+  // 達爾可以在任何頻道被呼叫
+  const darKeywords = ['達爾', '老蔡', '指揮', 'ceo', '小蔡', 'xiaocai', '總指揮', '主人'];
+  const lowerContent = msg.content.toLowerCase();
+  const callDar = darKeywords.some(k => lowerContent.includes(k));
+
+  // 決定用誰回覆
+  let botId: string;
+  if (callDar || DAR_CHANNELS.has(msg.channelId)) {
+    // 提到達爾 / 達爾直管頻道 → 達爾本人
+    botId = 'xiaocai';
+  } else if (mapping) {
+    // 各部門/知識庫/運維頻道 → 對應蝦蝦
+    botId = mapping.botId;
+  } else {
+    // 未知頻道（如 #general）→ 達爾
+    botId = 'xiaocai';
   }
-
-  const botId = mapping?.botId || 'xiaocai';
 
   // 5. 呼叫 AI 思考
   if (!thinkFn) {
