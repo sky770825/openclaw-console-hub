@@ -19,9 +19,10 @@ export function stopCrewBots(): void {
   stopStandbyScheduler();
 }
 
-// 巡邏
+// 巡邏 + 每日排程
 export { triggerPatrolNow } from './crew-patrol.js';
 export { onErrorDetected, onMetricsAnomaly } from './crew-patrol.js';
+export { getDailySchedulerStatus, triggerDailyJobNow } from './crew-patrol.js';
 
 // 配置
 export type { CrewBotConfig } from './crew-config.js';

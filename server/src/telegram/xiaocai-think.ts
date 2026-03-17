@@ -455,7 +455,9 @@ OpenRouter 免費：{"action":"proxy_fetch","url":"https://openrouter.ai/api/v1/
 {"action":"crew_dispatch","message":"分析這個問題","target":"ashang"}
 {"action":"generate_site","description":"美業預約網站，粉色系，有服務項目和線上預約","slug":"beauty-salon"}
 
-generate_site：⚡ 重要！老蔡說「做網站」「生成頁面」「做一個XX網站」「幫我做XX頁面」時，馬上用這個 action！description 寫清楚需求（風格、功能、內容），slug 是網址名稱（英文）。生成後會回傳手機可開的預覽連結。不要用 write_file 自己寫 HTML，用 generate_site 一步到位。
+generate_site：⚡ 重要！主人說「做網站」「生成頁面」「做一個XX網站」「幫我做XX頁面」時，馬上用這個 action！description 寫清楚需求（風格、功能、內容），slug 是網址名稱（英文）。生成後會回傳手機可開的預覽連結。不要用 write_file 自己寫 HTML，用 generate_site 一步到位。
+sales_inquiry：客戶詢價時用。參數：type（landing-page/portfolio/ecommerce/saas/dashboard/blog/website）、description（客戶需求）。會自動查作品集、報價、通知主人。
+list_portfolio：列出所有 AI 生成的作品集。不需要參數。
 delegate_agents：多個不相關分析任務同時進行時用；子代理用 flash/pro，禁用 claude。
 send_group：發訊息到「蝦蝦團隊」群組。你是達爾（指揮官），群組裡有 3 隻蝦蝦會接收你的指令。
 crew_dispatch：直接派任務給蝦蝦。加 target 指定蝦蝦（ashang=行銷蝦/ashu=設計蝦/agong=工程蝦），系統會根據關鍵字自動精準路由。
@@ -563,89 +565,63 @@ export async function xiaocaiThink(
     'opus', '用最強的', '認真想', '仔細分析',
   ].some(kw => kw.includes('.*') ? new RegExp(kw).test(lowerMsg) : lowerMsg.includes(kw));
 
-  // ── 蝦蝦團隊協作模式：精準路由給對應蝦蝦 ──
-  // 短訊息（≤8字）或無行動意圖 → 達爾自己回，不派蝦蝦
-  const hasActionIntent = ['做', '建', '改', '升級', '處理', '分析'].some(k => lowerMsg.includes(k));
-  const shrimpTargets = (!isSystemMsg && lowerMsg.length > 8 && hasActionIntent) ? routeToShrimp(userMessage) : [];
-  const isCrewTask = shrimpTargets.length > 0;
+  // ── 星群協作模式：複雜任務自動派工給星群並行處理 ──
+  // 條件1：特定關鍵字命中
+  // 條件2：isComplex 且訊息夠長（≥10字，排除簡單指令）
+  // 條件3：訊息含動作意圖（做/建/改/升級/處理）且夠長
+  // 閒聊排除：短句 + 問候/確認/感謝 → 達爾自己秒回，不派星群
+  const isGreeting = /^(好的?|對[的啊]?|嗯|ok|謝|收到|了解|知道了?|懂|是[的啊]?|不是|沒有|有|你好|早安?|晚安|掰|哈|讚|嘻|呵|喔|噢|👍|❤|😊)/i.test(lowerMsg.trim());
+  const isShortChat = lowerMsg.length <= 8 && !isComplex;
+  // 星群協作條件（收緊）：必須是複雜任務 或 明確含動作意圖的長訊息
+  // 一般聊天/問題由達爾自己處理，不派星群
+  const hasActionIntent = /做|建|改|升級|處理|分析|規劃|設計|開發|部署|修|整理|調整|優化|研究|調研/.test(lowerMsg);
+  const isCrewTask = !isSystemMsg && !isGreeting && !isShortChat && (isComplex || (hasActionIntent && lowerMsg.length >= 15));
 
   if (isCrewTask) {
-    log.info(`[XiaocaiAI] 🦐 蝦蝦團隊精準派工：${shrimpTargets.join(', ')}`);
+    log.info(`[XiaocaiAI] 🚀 星群協作模式：精準派工`);
     try {
       const { dispatchToCrewBots } = await import('./crew-bots/crew-poller.js');
-      // 判斷是否為「做網站/生成頁面」類任務
-      const isSiteTask = [
-        '做.*網站', '生成.*網站', '做.*頁面', '建.*網站', '網站.*做', 'landing.*page',
-        '做.*系統', '建.*系統', '做.*後台', '建.*後台', '做.*平台', '建.*平台',
-        '做.*crm', '做.*erp', '建.*crm', '建.*erp',
-        '做.*會員', '建.*會員', '做.*預約', '建.*預約',
-        '做.*電商', '建.*電商', '做.*商城', '建.*商城',
-        '做.*dashboard', '做.*儀表板', '建.*儀表板',
-        '做.*表單', '建.*表單', '做.*登入', '建.*登入',
-        '做.*部落格', '建.*部落格', '做.*blog',
-        '做.*portfolio', '做.*作品集', '建.*作品集',
-        '做.*line', '建.*line', '做.*bot', '建.*bot',
-        '做.*pos', '建.*pos', '做.*收銀', '建.*收銀',
-        '做.*訂位', '建.*訂位', '做.*訂餐', '建.*訂餐',
-        '做.*點餐', '建.*點餐', '做.*菜單', '建.*菜單',
-        '做.*排隊', '建.*排隊', '做.*叫號', '建.*叫號',
-        '做.*外送', '做.*通知', '建.*通知',
-        '做.*workflow', '建.*workflow', '做.*自動化', '建.*自動化',
-      ].some(kw => new RegExp(kw).test(lowerMsg));
 
-      // 組合對話上下文，讓蝦蝦知道前因後果
-      const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '小蔡' : '老蔡'}：${h.text.slice(0, 200)}`).join('\n');
+      // ── 智能路由：達爾先判斷任務屬於哪個領域，只派給相關 bot ──
+      // 工程領域：代碼/bug/架構/部署/效能/修復
+      const needAgong = /代碼|程式|code|bug|架構|開發|api|server|部署|deploy|效能|優化|typescript|react|node|error|錯誤|修復|fix|排查|crash|測試|test|debug|編譯|安全|重構/.test(lowerMsg);
+      // 研究領域：研究/分析/數據/調研/爬網/情報/log/監控
+      const needAyan = /研究|分析|調研|趨勢|報告|市場|爬網|情報|知識|索引|搜尋|數據|資料|data|sql|查詢|統計|metrics|監控|supabase|報表|log|日誌|異常/.test(lowerMsg);
+      // 策略+秘書領域：策略/規劃/計畫/風險/排程/自動化/整理/文件/記錄/摘要
+      const needAce = /策略|計畫|規劃|路線|風險|優先|排序|資源|時程|目標|決策|方案|自動化|n8n|zapier|workflow|商業|business|roi|成本|流程|整合|任務拆解|分工|整理|文件|記錄|提醒|日報|週報|摘要|總結|備忘|歸檔|進度/.test(lowerMsg);
+      // 判斷是否為「做網站/生成頁面」類任務 → 全員協作
+      const isSiteTask = /做.{0,4}(網站|系統|後台|平台|crm|erp|會員|預約|電商|商城|dashboard|儀表板|表單|登入|部落格|blog|portfolio|作品集|line|bot|pos|收銀|訂位|訂餐|點餐|菜單|排隊|叫號|外送|通知|workflow|自動化)|建.{0,4}(網站|系統|後台|平台)|landing.*page/.test(lowerMsg);
 
-      // 判斷產品子類型
-      const productType = (() => {
-        if (/crm|客戶管理/.test(lowerMsg)) return 'CRM 客戶管理系統';
-        if (/erp|進銷存|庫存/.test(lowerMsg)) return 'ERP 企業資源管理系統';
-        if (/會員|登入|註冊/.test(lowerMsg)) return '會員管理系統';
-        if (/預約|排班/.test(lowerMsg)) return '預約排班系統';
-        if (/電商|購物|商城|金流/.test(lowerMsg)) return '電商購物平台';
-        if (/dashboard|儀表板|報表/.test(lowerMsg)) return '數據儀表板';
-        if (/部落格|blog/.test(lowerMsg)) return '部落格系統';
-        if (/作品集|portfolio/.test(lowerMsg)) return '作品集展示頁';
-        if (/表單|form/.test(lowerMsg)) return '智慧表單系統';
-        if (/後台|管理系統|後端|api/.test(lowerMsg)) return '管理後台系統';
-        if (/line|line.?oa|line.?bot|推播|notify/.test(lowerMsg)) return 'LINE OA / Bot 系統';
-        if (/pos|收銀|結帳機/.test(lowerMsg)) return 'POS 收銀系統';
-        if (/訂位|訂餐|點餐|餐點|菜單|menu/.test(lowerMsg)) return '訂位點餐系統';
-        if (/排隊|叫號/.test(lowerMsg)) return '排隊叫號系統';
-        if (/外送|外帶/.test(lowerMsg)) return '外送外帶平台';
-        if (/餐廳|餐飲/.test(lowerMsg)) return '餐飲管理系統';
-        if (/n8n|workflow|自動化流程|webhook/.test(lowerMsg)) return 'n8n 自動化工作流';
-        if (/通知|推播/.test(lowerMsg)) return '通知推播系統';
-        return '網站';
-      })();
-
-      // 根據任務類型給蝦蝦團隊不同的派工指令
-      const shrimpRoleDesc: Record<string, string> = {
-        ashang: '行銷蝦（文案、SEO、社群、品牌策略、行銷企劃）',
-        ashu: '設計蝦（視覺設計、UI/UX、配色、排版、品牌手冊）',
-        agong: '工程蝦（前後端開發、部署、bug修復、效能優化、RWD）',
-      };
-      const targetRoles = shrimpTargets.map(t => `• ${shrimpRoleDesc[t] || t}`).join('\n');
-
-      const siteDispatchMsg = isSiteTask
-        ? `【達爾派工 — ${productType}協作】\n\n主人要做的產品：${userMessage}\n產品類型：${productType}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}指定蝦蝦：\n${targetRoles}\n\n請根據你的專長，針對「${productType}」給出你負責的部分。直接給具體內容，不要說「需要更多資訊」。`
-        : `【達爾派工】\n\n主人最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}指定蝦蝦：\n${targetRoles}\n\n請根據你的專長角色，針對主人的指令直接做事、給出具體內容。不要說「指令不明確」「需要更多資訊」，根據你的專業知識和判斷直接給出你負責的部分。`;
-
-      // 按序派工：逐一派給目標蝦蝦（行銷+設計先，工程後）
-      const allReplies: Array<{ botName: string; reply: string }> = [];
-      for (const target of shrimpTargets) {
-        try {
-          const dispatch = await dispatchToCrewBots(siteDispatchMsg, '達爾', { targetBots: [target] });
-          if (dispatch.totalReplied > 0) {
-            allReplies.push(...dispatch.replies);
-          }
-        } catch (e) {
-          log.warn({ err: e }, `[XiaocaiAI] 蝦蝦 ${target} 派工失敗`);
-        }
+      // 決定派工名單（3 人精銳：阿工/阿研/阿策）
+      let targetBots: string[];
+      if (isSiteTask) {
+        targetBots = ['agong', 'ayan', 'ace'];
+      } else {
+        targetBots = [];
+        if (needAgong) targetBots.push('agong');
+        if (needAyan) targetBots.push('ayan');
+        if (needAce) targetBots.push('ace');
+        if (targetBots.length === 0) targetBots = ['ace'];
       }
-      const dispatch = { totalReplied: allReplies.length, replies: allReplies };
+
+      log.info(`[XiaocaiAI] 📋 派工名單：${targetBots.join(', ')}（共 ${targetBots.length} 個）`);
+
+      // 組合對話上下文
+      const recentHistory = history.slice(-4).map(h => `${h.role === 'model' ? '達爾' : '主人'}：${h.text.slice(0, 200)}`).join('\n');
+
+      // 組合派工 prompt — 強調動手做事
+      const dispatchMsg = isSiteTask
+        ? `【指揮官達爾派工 — 產品協作】\n\n主人要做的產品：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}請用你的工具（read_file、write_file、grep_project、web_search、query_supabase、create_task 等）直接動手做事，不要只給建議。`
+        : `【指揮官達爾派工】\n\n主人最新指令：${userMessage}\n\n${recentHistory ? `對話背景：\n${recentHistory}\n\n` : ''}重要：你必須用工具動手做事，不要只給建議。用 read_file/write_file/grep_project/web_search/query_supabase/create_task/patch_file 等工具執行任務，完成後回報做了什麼和結果。`;
+
+      const dispatch = await dispatchToCrewBots(dispatchMsg, '達爾', {
+        targetBots,
+      });
       if (dispatch.totalReplied > 0) {
-        const crewResults = dispatch.replies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
+        // 過濾太短或無效回覆
+        const relevantReplies = dispatch.replies.filter(r => !r.reply.includes('[跳過]') && r.reply.length > 20);
+        if (relevantReplies.length > 0) {
+        const crewResults = relevantReplies.map(r => `**${r.botName}**：${r.reply}`).join('\n\n');
 
         // ── 網站任務：蝦蝦結果 → 整合 → generate_site 生成實際網站 ──
         if (isSiteTask) {
@@ -704,7 +680,7 @@ ${crewResults}
             const resp = await fetch(
               `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY_CREW}`,
               { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: integratePrompt }] }], generationConfig: { maxOutputTokens: 2000 } }),
+                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: integratePrompt }] }], generationConfig: { maxOutputTokens: 4000 } }),
                 signal: AbortSignal.timeout(30000) }
             );
             if (resp.ok) {
@@ -717,11 +693,12 @@ ${crewResults}
             }
           } catch { /* 整合失敗，直接返回原始結果 */ }
         }
-        // 整合失敗，返回原始蝦蝦結果
-        return `主人，我派了蝦蝦團隊幫你分析，以下是各蝦蝦的回覆：\n\n${crewResults}`;
+        // 整合失敗，返回原始星群結果
+        return `主人，我派了星群幫你並行分析，以下是各成員的回覆：\n\n${crewResults}`;
+        } // end relevantReplies.length > 0
       }
-      // 蝦蝦沒回覆，fallthrough 到達爾自己處理
-      log.info('[XiaocaiAI] 蝦蝦無回覆，改由達爾自己處理');
+      // 星群沒回覆或無有效回覆，fallthrough 到達爾自己處理
+      log.info('[XiaocaiAI] 星群無有效回覆，改由達爾自己處理');
     } catch (e) {
       log.warn({ err: e }, '[XiaocaiAI] 蝦蝦團隊協作失敗，fallback 到達爾自己處理');
     }

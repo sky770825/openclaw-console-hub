@@ -105,6 +105,10 @@ const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
   // 資料庫 — cost 1
   query_supabase:   { windowMs: ONE_MINUTE, maxRequests: 15, cost: 1 },
 
+  // 銷售 + 作品集 — cost 1
+  sales_inquiry:    { windowMs: ONE_MINUTE, maxRequests: 20, cost: 1 },
+  list_portfolio:   { windowMs: ONE_MINUTE, maxRequests: 20, cost: 1 },
+
   // 規劃類 — cost 2~3
   plan_project:     { windowMs: ONE_MINUTE, maxRequests: 10, cost: 2 },
   roadmap:          { windowMs: ONE_MINUTE, maxRequests: 3,  cost: 3 },

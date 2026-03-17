@@ -3563,6 +3563,12 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     case 'notion_update_checklist':
       result = await handleNotionUpdateChecklist(action.blockId || action.block_id || action.id || '', action.checked === 'true' || action.checked === '1');
       break;
+    case 'sales_inquiry':
+      result = await handleSalesInquiry(action);
+      break;
+    case 'list_portfolio':
+      result = await handleListPortfolio();
+      break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
   }
@@ -3891,6 +3897,57 @@ ${html}`;
 
     log.info(`[GenerateSite] ✅ 完成 slug=${slug} size=${html.length} phases=${needsFix ? 3 : 2}${issueNote}`);
 
+    // ── Portfolio 自動登錄 ──
+    const portfolioPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'sites', 'portfolio.json');
+    let portfolio: Array<Record<string, unknown>> = [];
+    try { portfolio = JSON.parse(fs.readFileSync(portfolioPath, 'utf8')); } catch { /* first time */ }
+    const existingIdx = portfolio.findIndex((p: Record<string, unknown>) => p.slug === slug);
+    const entry = {
+      slug,
+      name: action.name || action.slug || slug,
+      description: description.slice(0, 200),
+      productType: action.productType || action.type || 'website',
+      auditScore: needsFix ? 'fixed' : 'pass',
+      htmlSize: html.length,
+      createdAt: existingIdx >= 0 ? (portfolio[existingIdx] as Record<string, unknown>).createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      previewUrl,
+      vercelUrl: '',
+    };
+    if (existingIdx >= 0) portfolio[existingIdx] = entry;
+    else portfolio.push(entry);
+    fs.writeFileSync(portfolioPath, JSON.stringify(portfolio, null, 2), 'utf8');
+    log.info(`[Portfolio] 📋 登錄 ${slug}，共 ${portfolio.length} 個作品`);
+
+    // ── Vercel 自動部署 ──
+    let vercelUrl = '';
+    try {
+      const vercelToken = process.env.VERCEL_TOKEN?.trim();
+      if (vercelToken) {
+        log.info(`[Deploy] 🚀 開始 Vercel 部署 ${slug}...`);
+        const deployResult = execSync(
+          `cd "${sitesDir}" && vercel deploy --yes --prod --token="${vercelToken}" --name="${slug}" 2>&1`,
+          { timeout: 120_000, encoding: 'utf8' }
+        );
+        const urlMatch = deployResult.match(/https:\/\/[^\s]+\.vercel\.app[^\s]*/);
+        if (urlMatch) {
+          vercelUrl = urlMatch[0];
+          entry.vercelUrl = vercelUrl;
+          fs.writeFileSync(portfolioPath, JSON.stringify(portfolio, null, 2), 'utf8');
+          log.info(`[Deploy] ✅ 已部署: ${vercelUrl}`);
+        }
+      } else {
+        log.info('[Deploy] ⏭ 未設定 VERCEL_TOKEN，跳過自動部署');
+      }
+    } catch (deployErr) {
+      log.warn(`[Deploy] ⚠️ Vercel 部署失敗: ${deployErr instanceof Error ? deployErr.message : String(deployErr)}`);
+    }
+
+    // ── 自動生成 Portfolio 展示頁 ──
+    try {
+      _generatePortfolioPage(portfolio);
+    } catch { /* non-critical */ }
+
     // n8n 網站生成完成 webhook
     try {
       const n8nUrl = process.env.N8N_API_URL?.replace(/\/$/, '');
@@ -3900,7 +3957,7 @@ ${html}`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             siteName: slug,
-            url: publicUrl || previewUrl,
+            url: vercelUrl || publicUrl || previewUrl,
             productType: action.productType || action.type || 'website',
             auditScore: needsFix ? 'fixed' : 'pass',
           }),
@@ -3908,13 +3965,167 @@ ${html}`;
       }
     } catch { /* n8n optional */ }
 
+    const deployNote = vercelUrl ? `\n🌐 正式網址：${vercelUrl}` : '';
     return {
       ok: true,
-      output: `✅ 網站已生成！${phaseInfo}\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}\n📏 大小：${html.length} 字元${issueNote}\n\n老蔡可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
+      output: `✅ 網站已生成！${phaseInfo}\n\n🔗 預覽：${previewUrl}${publicUrl ? `\n📱 手機可開：${publicUrl}` : ''}${deployNote}\n📏 大小：${html.length} 字元${issueNote}\n📋 已加入作品集（共 ${portfolio.length} 件）\n\n主人可以直接點連結預覽。如果要修改，告訴我哪裡要改。`
     };
   } catch (e) {
     return { ok: false, output: `generate_site 失敗: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+// ── Portfolio 展示頁生成 ──
+
+function _generatePortfolioPage(portfolio: Array<Record<string, unknown>>): void {
+  const sitesRoot = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'sites');
+  const cards = portfolio.map((p) => `
+    <div class="card" onclick="window.open('${p.vercelUrl || p.previewUrl}','_blank')">
+      <div class="card-badge">${p.productType || 'website'}</div>
+      <iframe src="${p.previewUrl}" loading="lazy" sandbox></iframe>
+      <div class="card-body">
+        <h3>${_escHtml(String(p.name || p.slug))}</h3>
+        <p>${_escHtml(String(p.description || '').slice(0, 100))}</p>
+        <div class="card-meta">
+          <span>${String(p.updatedAt || '').split('T')[0]}</span>
+          <span>${p.auditScore === 'pass' ? '✅ 一次通過' : '🔧 AI修正'}</span>
+        </div>
+        ${p.vercelUrl ? `<a href="${p.vercelUrl}" class="deploy-link" target="_blank">🌐 正式網址</a>` : ''}
+      </div>
+    </div>`).join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="zh-TW"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEUXA AI 作品集 — OpenClaw TsAIs</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans TC','Inter',sans-serif;background:#0a0a0f;color:#e8e8f0;min-height:100vh}
+.hero{text-align:center;padding:60px 20px 40px;background:linear-gradient(135deg,#0a0a2e,#1a0a3e)}
+.hero h1{font-size:2.5rem;background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#9ca3af;margin-top:12px;font-size:1.1rem}
+.stats{display:flex;gap:24px;justify-content:center;margin-top:24px}
+.stat{background:rgba(255,255,255,.05);padding:12px 24px;border-radius:12px}
+.stat strong{font-size:1.5rem;color:#a855f7}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:24px;padding:40px 5%;max-width:1400px;margin:0 auto}
+.card{background:#16162a;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(168,85,247,.2)}
+.card-badge{position:absolute;top:12px;right:12px;background:rgba(168,85,247,.8);color:#fff;padding:4px 10px;border-radius:8px;font-size:.75rem;z-index:2}
+.card iframe{width:100%;height:220px;border:none;pointer-events:none}
+.card-body{padding:16px}
+.card-body h3{font-size:1.1rem;margin-bottom:6px}
+.card-body p{color:#9ca3af;font-size:.85rem;line-height:1.4}
+.card-meta{display:flex;justify-content:space-between;margin-top:10px;font-size:.75rem;color:#6b7280}
+.deploy-link{display:inline-block;margin-top:8px;color:#a855f7;font-size:.85rem;text-decoration:none}
+.footer{text-align:center;padding:40px;color:#6b7280;font-size:.85rem}
+.cta{display:inline-block;margin-top:20px;padding:14px 36px;background:linear-gradient(90deg,#6366f1,#a855f7);color:#fff;border-radius:12px;text-decoration:none;font-weight:600;font-size:1.1rem;transition:opacity .2s}
+.cta:hover{opacity:.85}
+</style></head><body>
+<div class="hero">
+  <h1>NEUXA AI 作品集</h1>
+  <p>由 AI 全自動生成、審核、部署的商用網站</p>
+  <div class="stats">
+    <div class="stat"><strong>${portfolio.length}</strong><br>作品數</div>
+    <div class="stat"><strong>${portfolio.filter(p => p.vercelUrl).length}</strong><br>已上線</div>
+    <div class="stat"><strong>${portfolio.filter(p => p.auditScore === 'pass').length}</strong><br>一次通過</div>
+  </div>
+  <a class="cta" href="https://t.me/neuxa_sales_bot" target="_blank">📩 聯繫我們訂製網站</a>
+</div>
+<div class="grid">${cards}</div>
+<div class="footer">© ${new Date().getFullYear()} OpenClaw TsAIs — Powered by NEUXA AI</div>
+</body></html>`;
+
+  const dir = path.join(sitesRoot, 'portfolio');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8');
+  log.info(`[Portfolio] 📄 展示頁已更新 (${portfolio.length} 件作品)`);
+}
+
+function _escHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Sales Bot：客戶查看作品集 + 自動報價 ──
+
+export async function handleSalesInquiry(action: Record<string, string>): Promise<ActionResult> {
+  try {
+    const portfolioPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'sites', 'portfolio.json');
+    let portfolio: Array<Record<string, unknown>> = [];
+    try { portfolio = JSON.parse(fs.readFileSync(portfolioPath, 'utf8')); } catch { /* empty */ }
+
+    const clientType = action.type || action.productType || 'website';
+    const clientDesc = action.description || '';
+
+    // 價格表
+    const priceTable: Record<string, { base: number; label: string }> = {
+      'landing-page':    { base: 3000,  label: '單頁式形象網站' },
+      'portfolio':       { base: 5000,  label: '作品集展示網站' },
+      'ecommerce':       { base: 12000, label: '電商購物網站' },
+      'saas':            { base: 18000, label: 'SaaS 應用網站' },
+      'dashboard':       { base: 15000, label: '管理後台' },
+      'blog':            { base: 4000,  label: '部落格網站' },
+      'website':         { base: 5000,  label: '商用網站' },
+    };
+    const pricing = priceTable[clientType] || priceTable['website']!;
+
+    // 找相關作品
+    const relatedWorks = portfolio
+      .filter(p => p.productType === clientType || String(p.description || '').includes(clientType))
+      .slice(0, 3);
+    const worksPreview = relatedWorks.length > 0
+      ? relatedWorks.map(p => `  • ${p.name} → ${p.vercelUrl || p.previewUrl}`).join('\n')
+      : '  （暫無同類作品，但我們可以為您量身打造）';
+
+    const quote = `📋 **NEUXA AI 網站服務報價單**
+
+🏷 類型：${pricing.label}
+💰 參考價格：NT$ ${pricing.base.toLocaleString()} 起
+📝 需求：${clientDesc || '（待確認）'}
+
+🖼 相關作品：
+${worksPreview}
+
+✅ 包含服務：
+  • AI 全自動設計 + 程式碼生成
+  • 響應式設計（手機/平板/桌機）
+  • SEO 基礎優化
+  • Vercel 自動部署 + SSL
+  • 一次免費修改
+
+⏰ 交付時間：24 小時內
+📩 確認訂製請回覆「確認」，我會通知主人開始製作。`;
+
+    // 通知主人
+    const ownerChatId = process.env.TELEGRAM_OWNER_CHAT_ID || process.env.TELEGRAM_CHAT_ID || '';
+    if (ownerChatId) {
+      const notify = `🔔 新客戶詢價！\n類型：${pricing.label}\n需求：${clientDesc || '未說明'}\n報價：NT$ ${pricing.base.toLocaleString()}`;
+      sendTelegramMessageToChat(ownerChatId, notify).catch(() => {});
+    }
+
+    return { ok: true, output: quote };
+  } catch (e) {
+    return { ok: false, output: `sales_inquiry 失敗: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+/** 列出作品集 */
+export async function handleListPortfolio(): Promise<ActionResult> {
+  const portfolioPath = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace', 'sites', 'portfolio.json');
+  let portfolio: Array<Record<string, unknown>> = [];
+  try { portfolio = JSON.parse(fs.readFileSync(portfolioPath, 'utf8')); } catch { /* empty */ }
+
+  if (portfolio.length === 0) return { ok: true, output: '📋 作品集目前是空的。生成網站後會自動加入。' };
+
+  const port = process.env.PORT || '3011';
+  const publicBase = process.env.TUNNEL_URL || process.env.PUBLIC_URL || `http://localhost:${port}`;
+  const portfolioUrl = `${publicBase}/sites/portfolio/index.html`;
+
+  const list = portfolio.map((p, i) =>
+    `${i + 1}. **${p.name || p.slug}** [${p.productType}]\n   ${p.vercelUrl || p.previewUrl}\n   ${p.auditScore === 'pass' ? '✅' : '🔧'} ${String(p.updatedAt || '').split('T')[0]}`
+  ).join('\n\n');
+
+  return { ok: true, output: `📋 **NEUXA 作品集** (${portfolio.length} 件)\n\n${list}\n\n🖼 展示頁：${portfolioUrl}` };
 }
 
 // ── 自動記憶 ──
