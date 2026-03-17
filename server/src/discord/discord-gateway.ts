@@ -23,13 +23,25 @@ export interface DiscordMessage {
   timestamp: string;
 }
 
+export interface DiscordInteraction {
+  id: string;
+  token: string;
+  channelId: string;
+  guildId: string;
+  commandName: string;
+  options: Record<string, string>;
+  user: { id: string; username: string };
+}
+
 type MessageHandler = (msg: DiscordMessage) => void;
+type InteractionHandler = (interaction: DiscordInteraction) => void;
 
 let ws: WebSocket | null = null;
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let sequence: number | null = null;
 let sessionId: string | null = null;
 let messageHandler: MessageHandler | null = null;
+let interactionHandler: InteractionHandler | null = null;
 let reconnectAttempts = 0;
 let stopped = false;
 
@@ -72,6 +84,27 @@ function handleDispatch(t: string, d: Record<string, unknown>) {
     sessionId = d.session_id as string;
     log.info(`[Discord] Gateway READY, session=${sessionId}`);
     reconnectAttempts = 0;
+    return;
+  }
+
+  if (t === 'INTERACTION_CREATE' && interactionHandler) {
+    const interactionData = d.data as { name: string; options?: Array<{ name: string; value: string }> } | undefined;
+    const user = (d.member as { user?: { id: string; username: string } })?.user || d.user as { id: string; username: string } | undefined;
+    if (interactionData && user) {
+      const options: Record<string, string> = {};
+      for (const opt of interactionData.options || []) {
+        options[opt.name] = opt.value;
+      }
+      interactionHandler({
+        id: d.id as string,
+        token: d.token as string,
+        channelId: d.channel_id as string,
+        guildId: (d.guild_id as string) || '',
+        commandName: interactionData.name,
+        options,
+        user: { id: user.id, username: user.username },
+      });
+    }
     return;
   }
 
@@ -168,9 +201,10 @@ function scheduleReconnect() {
 }
 
 /** 啟動 Discord Gateway */
-export function startDiscordGateway(onMessage: MessageHandler): void {
+export function startDiscordGateway(onMessage: MessageHandler, onInteraction?: InteractionHandler): void {
   stopped = false;
   messageHandler = onMessage;
+  interactionHandler = onInteraction || null;
   connect();
 }
 

@@ -7,6 +7,7 @@ import { createLogger } from '../logger.js';
 import { DISCORD_BOT_TOKEN } from './discord-config.js';
 import { startDiscordGateway, stopDiscordGateway } from './discord-gateway.js';
 import { handleDiscordMessage, registerThinkFn } from './discord-bridge.js';
+import { handleInteraction, registerCommandThinkFn } from './discord-commands.js';
 
 const log = createLogger('discord');
 
@@ -26,10 +27,11 @@ export function startDiscordBridge(thinkFn?: (botId: string, text: string, sende
 
   if (thinkFn) {
     registerThinkFn(thinkFn);
+    registerCommandThinkFn(thinkFn);
   }
 
-  startDiscordGateway(handleDiscordMessage);
-  log.info('[Discord] Bridge started — Telegram ↔ Discord sync enabled');
+  startDiscordGateway(handleDiscordMessage, handleInteraction);
+  log.info('[Discord] Bridge + Slash Commands started');
 }
 
 /** 停止 Discord 橋接 */
