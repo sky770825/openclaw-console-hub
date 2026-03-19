@@ -6,43 +6,7 @@
       "Bash(npm run build*)",
       "Bash(node *)",
       "Bash(lsof *)",
-      "Bash(kill *)",
-      "Bash(nohup *)",
-      "Bash(bash /Users/sky770825/openclaw任務面版設計/scripts/*)",
-      "Bash(# 看 NEUXA 最近有沒有工具呼叫（bash/read/write等） grep -a \"\"tool_call\\\\|bash\\\\|read\\\\|write\\\\|runId\\\\|agent.*start\\\\|agent.*end\"\" /tmp/openclaw/openclaw-2026-02-27.log)",
-      "Bash(# 看最後一次 NEUXA 有活動是什麼時候 grep -a \"\"sendMessage ok\\\\|runId\\\\|thinking\\\\|draining\"\" ~/.openclaw/logs/gateway.log)",
-      "Bash(# 找 sessions_spawn 的錯誤訊息原文 grep -a \"\"sessions_spawn\\\\|agentId is not allowed\\\\|spawn\\\\|subagent\"\" ~/.openclaw/logs/gateway.log)",
-      "Bash(# 看 openclaw 版本，看是否有 sessions_spawn 功能文件 openclaw --version && openclaw help)",
-      "Read(//Users/sky770825/openclaw任務面版設計/**)",
-      "Bash(# Check the FULL timeline - incoming message to outgoing reply tail -200 /tmp/openclaw/openclaw-2026-02-27.log)",
-      "Bash(# Look at the FULL flow including delivery tail -500 /tmp/openclaw/openclaw-2026-02-27.log)",
-      "Bash(# Check if there''s already a proxy/mirror for Telegram in the config grep -rn \"\"telegram\\\\|proxy\\\\|HTTPS_PROXY\\\\|HTTP_PROXY\"\" /Users/sky770825/.openclaw/config.json /Users/sky770825/.openclaw/openclaw.json)",
-      "Bash(# Check if openclaw gateway supports Telegram API base URL override strings /opt/homebrew/lib/node_modules/openclaw/dist/*.js)",
-      "Bash(# Search for proxy configuration for telegram strings /opt/homebrew/lib/node_modules/openclaw/dist/*.js)",
-      "Read(//private/etc/**)",
-      "Bash(sudo tee -a /etc/hosts)",
-      "Bash(# 看小蔡工作目錄最近有沒有新檔案 ls -lt /Users/sky770825/Downloads/openclaw-console-hub-main/)",
-      "Bash(# 找今天 15:00 之後修改的文件（NEUXA workspace） find /Users/sky770825/.openclaw/workspace/ -maxdepth 1 -type f -newer /Users/sky770825/.openclaw/workspace/WAKE_STATUS.md -o -name \"\"*.md\"\" -newer /tmp/openclaw-server.log)",
-      "Bash(# 看 gateway 主 log ls -lt /Users/sky770825/.openclaw/logs/)",
-      "Bash(# 從進程歷史找啟動路徑 grep -r \"\"openclaw-gateway\"\" /Users/sky770825/Library/LaunchAgents/)",
-      "Bash(# 看 NEUXA 的 sessions（最近活動） ls -lt /Users/sky770825/.openclaw/workspace/memory/)",
-      "Bash(# 找 n8n 相關 find /Users/sky770825/openclaw任務面版設計/docs -name \"\"*n8n*\"\" -o -name \"\"*N8N*\"\" -o -name \"\"*workflow*\"\" && echo \"\"=== supabase ===\"\" && find /Users/sky770825/openclaw任務面版設計/docs -name \"\"*supabase*\"\" -o -name \"\"*Supabase*\"\" -o -name \"\"*database*\"\" && echo \"\"=== server .env ===\"\" && grep \"\"SUPABASE\\\\|N8N\\\\|NEXT_PUBLIC\"\" /Users/sky770825/openclaw任務面版設計/server/.env)",
-      "Bash(launchctl stop com.openclaw.taskboard)",
-      "Bash(launchctl start com.openclaw.taskboard)",
-      "Bash(sort -t/ -k7)",
-      "Bash(# 22:15 的第一次「如何讓模型200%」— 沒有 reply？看看那段時間 tail -1000 /Users/sky770825/.openclaw/automation/logs/taskboard.log)",
-      "Bash(# 看最新的 NEUXA 活動 — 他現在在做什麼 tail -30 /Users/sky770825/.openclaw/automation/logs/taskboard.log)",
-      "Bash(# 1. 品質閘門：看最新跑的任務品質 tail -500 /Users/sky770825/.openclaw/automation/logs/taskboard.log)",
-      "Bash(# 2. 派工邏輯：看 AutoExecutor 怎麼 pick 任務、owner 分配 tail -500 /Users/sky770825/.openclaw/automation/logs/taskboard.log)",
-      "Bash(# 4. 看 Gemini AI 審查的問題 — 回空太多次 tail -1000 /Users/sky770825/.openclaw/automation/logs/taskboard.log)",
-      "Bash(# 5. 風險分類是否合理 — 看 riskClassifier 的判斷 tail -1000 /Users/sky770825/.openclaw/automation/logs/taskboard.log)",
-      "Read(//Users/sky770825/openclaw任務面版設計/server/**)",
-      "Bash(# 找到 v5.1 巔峰時的 system prompt \\(在那時還是 telegram-stop-poll.ts\\) git show 2bdbe29a:server/src/telegram-stop-poll.ts)",
-      "Bash(# v5.2 指揮優先校準 git show fef4ff28:server/src/telegram-stop-poll.ts)",
-      "Bash(# 全面盤點：NEUXA 的所有知識文件 echo \"\"=== workspace 根目錄 ===\"\" && ls ~/.openclaw/workspace/*.md)"
-    ],
-    "additionalDirectories": [
-      "/Users/sky770825/openclaw任務面版設計"
+      "Bash(bash scripts/*)"
     ]
   },
   "hooks": {
@@ -61,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/sky770825/openclaw任務面版設計/scripts/session-sync.sh 2>/dev/null; bash /Users/sky770825/openclaw任務面版設計/scripts/wake-sync.sh 2>/dev/null; exit 0"
+            "command": "bash scripts/session-sync.sh 2>/dev/null; bash scripts/wake-sync.sh 2>/dev/null; exit 0"
           }
         ]
       }
@@ -72,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/sky770825/openclaw任務面版設計/scripts/post-push-sync.sh && bash /Users/sky770825/openclaw任務面版設計/scripts/notify-laocai.sh '小蔡 git push 完成' 'done' '已同步到 main' 2>/dev/null; exit 0"
+            "command": "bash scripts/post-push-sync.sh && bash scripts/notify-laocai.sh 'git push 完成' 'done' '已同步' 2>/dev/null; exit 0"
           }
         ]
       }

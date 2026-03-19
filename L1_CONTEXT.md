@@ -9,7 +9,7 @@
 
 | 項目 | 值 |
 |------|-----|
-| 工作目錄 | `/Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project` |
+| 工作目錄 | repo 根目錄（由 `git rev-parse --show-toplevel` 決定） |
 | Server Port | 3011 |
 | API Base | `http://localhost:3011` |
 | API Key | 見 `.env`（`oc-oAw9...`） |

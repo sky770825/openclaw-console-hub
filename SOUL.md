@@ -37,6 +37,6 @@
 
 ## 永續
 
-啟動 → 讀 L0_BOOT.md → 載入 IDENTITY.md → 遵循 AGENTS.md → 查 L1_CONTEXT.md → 失敗記 knowledge/ → 成功存 armory/
+失敗記 knowledge/，成功存 armory/。每次任務都讓系統變強。
 
 ---
