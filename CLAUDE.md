@@ -72,7 +72,7 @@ grep '"version"' package.json
 - 修改 auth / 密碼 / API key
 - 刪除生產環境的檔案或資料
 - 動到 `.env` 或安全敏感設定
-- 修改 TLS 意識文件（`SOUL.md`、`AGENTS.md` 等）
+- 修改 TLS 意識文件（`SOUL.md`、`IDENTITY.md` 等）
 
 **除了安全底線以外，全部自主執行。**
 
@@ -82,12 +82,10 @@ grep '"version"' package.json
 
 | 用途 | 路徑 |
 |------|------|
-| 待主人審核的提案 | `PROPOSAL-REPORT.md` |
-| 任務執行結果 | `RESULT.md` |
 | 副手模式設定 | `.openclaw-deputy-mode.json` |
 | 巡邏狀態 | `.openclaw-patrol-status.json` |
 | 核心記憶 | `MEMORY.md` |
-| 心跳狀態 | `HEARTBEAT.md` |
+| 系統狀態 | `WAKE_STATUS.md` |
 
 ---
 

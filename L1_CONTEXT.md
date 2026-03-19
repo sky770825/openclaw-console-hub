@@ -27,10 +27,8 @@ L0_BOOT.md → IDENTITY.md → SOUL.md → L1_CONTEXT.md（本檔）→ PROJECTS
 | 用途 | 路徑 |
 |------|------|
 | 工作守則 | `CLAUDE.md` |
-| 代理手冊 | `AGENTS.md` |
 | 系統狀態 | `WAKE_STATUS.md` |
-| 待審提案 | `PROPOSAL-REPORT.md` |
-| 任務結果 | `RESULT.md` |
+| 核心記憶 | `MEMORY.md` |
 | 副手模式 | `.openclaw-deputy-mode.json` |
 | 巡邏狀態 | `.openclaw-patrol-status.json` |
 
