@@ -850,6 +850,59 @@ export async function handleAskAI(model: string, prompt: string, context?: strin
   return lastResult;
 }
 
+/**
+ * ask_claude — 直叫 Anthropic API（不走 CLI、不走升級鏈）
+ * crew-bots 需要精準推理時專用，跳過 Gemini 直達 Claude
+ * 支援 model: sonnet（預設）/ opus / haiku
+ */
+export async function handleAskClaude(
+  model: string,
+  prompt: string,
+  context?: string,
+  systemPrompt?: string,
+): Promise<ActionResult> {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!anthropicKey) return { ok: false, output: '❌ 沒有 ANTHROPIC_API_KEY，無法直叫 Claude' };
+  if (!prompt?.trim()) return { ok: false, output: '❌ prompt 不能為空' };
+
+  // 模型解析：簡稱 → 完整 model ID
+  const MODEL_MAP: Record<string, string> = {
+    sonnet: 'claude-sonnet-4-6',
+    opus: 'claude-opus-4-6',
+    haiku: 'claude-haiku-4-5-20251001',
+  };
+  const m = (model || 'sonnet').toLowerCase().trim();
+  const modelId = MODEL_MAP[m] || (m.startsWith('claude-') ? m : MODEL_MAP.sonnet);
+
+  // 組合 prompt
+  const fullPrompt = context ? `${context}\n\n---\n\n${prompt}` : prompt;
+  const sys = systemPrompt || '你是 OpenClaw 團隊的 AI 參謀，請精準、專業地回答。';
+
+  // 選 maxTokens：opus 給多一點
+  const maxTokens = modelId.includes('opus') ? 8192 : 4096;
+  const timeoutMs = modelId.includes('opus') ? 120_000 : 60_000;
+
+  const startTime = Date.now();
+  try {
+    const { callAnthropic } = await import('./model-registry.js');
+    const reply = await callAnthropic(
+      anthropicKey,
+      modelId,
+      sys,
+      [{ role: 'user', content: fullPrompt }],
+      maxTokens,
+      timeoutMs,
+    );
+    const durationMs = Date.now() - startTime;
+    if (!reply) return { ok: false, output: `${modelId} 空回覆` };
+    return { ok: true, output: `[🧠 ${modelId} | ${durationMs}ms]\n${reply}` };
+  } catch (e) {
+    const durationMs = Date.now() - startTime;
+    log.warn({ err: e }, `[AskClaude] ${modelId} failed after ${durationMs}ms`);
+    return { ok: false, output: `${modelId} 錯誤: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 /** 多角色代理並行協作：delegate_agents */
 interface AgentSpec {
   role: string;       // 角色名稱，如「規劃師」「開發者」「測試員」
@@ -3494,6 +3547,14 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     case 'ask_ai':
       result = await handleAskAI((action.model || 'flash').toLowerCase(), action.prompt || '', action.context);
+      break;
+    case 'ask_claude':
+      result = await handleAskClaude(
+        (action.model || 'sonnet').toLowerCase(),
+        action.prompt || '',
+        action.context,
+        action.system,
+      );
       break;
     case 'proxy_fetch':
       result = await handleProxyFetch(action.url || '', action.method || 'POST', action.body || '');

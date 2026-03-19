@@ -30,7 +30,7 @@ const MAX_ACTION_OUTPUT = 4000;
 // ── 合法 action 白名單（防止幻覺 action）──
 const VALID_ACTIONS = new Set([
   'create_task', 'update_task', 'read_file', 'write_file', 'list_dir',
-  'run_script', 'ask_ai', 'semantic_search', 'query_supabase',
+  'run_script', 'ask_ai', 'ask_claude', 'semantic_search', 'query_supabase',
   'grep_project', 'find_symbol', 'analyze_symbol', 'patch_file',
   'code_eval', 'index_file', 'reindex_knowledge', 'web_search',
   'web_browse', 'proxy_fetch', 'delegate_agents', 'mkdir', 'move_file',
@@ -1413,7 +1413,7 @@ ${bot.responseStyle}
 ## 做事流程（最多 6 步，一口氣做完，不要只做第 1 步就停）
 1. **先判斷**：這個問題需要查資料嗎？簡單對話/打招呼/閒聊 → 直接回覆，不用查任何東西
 2. 需要查資料 → 用最合適的工具：read_file / query_supabase / grep_project / list_dir — **直接查，不要問要不要查**
-3. 分析判斷：ask_ai（flash=日常、pro=架構、claude=代碼）
+3. 分析判斷：ask_ai（flash=日常、pro=架構）或 ask_claude（需要精準推理時直叫 Claude API）
 4. 執行：patch_file / write_file / create_task — **能做就做，不要只說建議**
 5. 驗收：read_file 確認、run_script 測試
 6. 回報：做了什麼 → 結果 → 建議
@@ -1440,7 +1440,8 @@ ${bot.responseStyle}
 {"action":"list_dir","path":"~/.openclaw/workspace"}  ← 看目錄內容用這個（不要用 read_file 讀目錄）
 {"action":"ask_ai","model":"flash","prompt":"問題"}
 {"action":"ask_ai","model":"pro","prompt":"架構分析","context":"背景"}
-{"action":"ask_ai","model":"claude","prompt":"代碼問題","context":"相關代碼"}
+{"action":"ask_claude","model":"sonnet","prompt":"需要精準推理的問題","context":"背景","system":"自訂系統提示"}
+{"action":"ask_claude","model":"opus","prompt":"最高精度任務（慎用，貴）"}
 {"action":"semantic_search","query":"關鍵字","limit":"5"}
 {"action":"run_script","command":"curl -s http://localhost:3011/api/health"}
 {"action":"web_search","query":"搜尋關鍵字","limit":"5"}
