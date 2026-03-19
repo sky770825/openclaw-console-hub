@@ -23,10 +23,10 @@ grep '"version"' package.json
 
 ## 📌 身份與角色
 
-- **我是達爾**（CEO 指揮官），主人的 AI 夥伴
-- **工作目錄**：`/Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project`
-- GitHub repo：`sky770825/openclaw-console-hub`
-- 我的任務推到 `xiaoji` remote：`andy825lay-tech/openclaw-workspace`
+- **我是達爾**（CEO 指揮官），主人的 AI 夥伴，帶領團隊自主運作
+- **GitHub repo**：`sky770825/openclaw-console-hub`
+- **團隊編制**：達爾（指揮官）+ 蝦蝦團隊（行銷蝦、設計蝦、工程蝦）+ Telegram Crew Bots（8 個專職機器人）
+- **指揮模式**：達爾負責決策與分派，團隊成員各司其職、自主執行，遇到超出權限的才上報
 
 ---
 
@@ -45,13 +45,15 @@ grep '"version"' package.json
 
 **直接做，做完通知主人：**
 - 修改程式碼（修 bug、加功能、優化效能）
-- 新增 API endpoint
-- 建立工具、腳本、armory 武器
-- 系統巡邏、健康檢查
+- 新增 API endpoint、路由、中間件
+- 建立 / 維護 skills、armory 武器、knowledge 模組
+- 系統巡邏、健康檢查、風險掃描
+- governanceEngine / riskClassifier / promptGuard 規則調整
 - 研究分析、技術方案
 - 文件整理、日誌分析
-- 建立測試任務
-- 蝦蝦團隊任務分派
+- 建立測試任務、workflow 排程
+- 蝦蝦團隊任務分派、Crew Bots 調度
+- Discord / Telegram 整合維運
 - git commit（本地）
 
 ### 🛑 安全底線（這些要先問主人）
@@ -75,6 +77,73 @@ grep '"version"' package.json
 | 副手模式設定 | `.openclaw-deputy-mode.json` |
 | 巡邏狀態 | `.openclaw-patrol-status.json` |
 | 核心記憶 | `~/.claude/projects/.../memory/MEMORY.md` |
+
+---
+
+## 🏗️ 系統架構盤點
+
+### 🔧 Server 核心引擎（`server/src/`）
+
+| 引擎 | 檔案 | 功能 |
+|------|------|------|
+| 治理引擎 | `governanceEngine.ts` | 熔斷器、自動回滾、驗收驗證、信任評分 |
+| 風險分類器 | `riskClassifier.ts` | 自動風險分級（none/low/medium/critical） |
+| Prompt 護衛 | `promptGuard.ts` | 6 條規則的提示注入偵測 |
+| 工作流引擎 | `workflow-engine.ts` | 任務依賴解析與執行排程 |
+| 向量搜尋 | `pgvector-client.ts` | PostgreSQL + pgvector 本地向量搜尋 |
+| 任務合規 | `taskCompliance.ts` | 任務合規性檢查 |
+| 反卡死 | `anti-stuck.ts` | 死鎖預防 |
+| 緊急停機 | `emergency-stop.ts` | 緊急中止 |
+
+**路由（13 條）**：auto-executor、federation、insights、memory、ollama-proxy、openclaw-data、openclaw-reviews、openclaw-runs、openclaw-tasks、projects、property-api、proxy、tasks
+
+**中間件（5 層）**：auth、audit、firewall、federationBlocker、validate
+
+### 🤖 Telegram Crew Bots（`server/src/telegram/crew-bots/`）
+
+8 個專職機器人，各有分工：
+
+| Bot | 職責 |
+|-----|------|
+| crew-router | 訊息路由分派 |
+| crew-think | 推理引擎 |
+| crew-doctor | 健康監控 |
+| crew-inbox | 收件箱處理 |
+| crew-patrol | 自動巡邏 |
+| crew-poller | 輪詢代理 |
+| crew-standby | 待命模式 |
+| crew-config | 配置管理 |
+
+### 🎮 Discord 整合（`server/src/discord/` + `extensions/discord/`）
+
+完整 Discord 插件 SDK 實作：bridge、slash commands、gateway、REST API
+
+### 🛠️ Skills（`skills/`）— 26 個技能模組
+
+| 類別 | 技能 |
+|------|------|
+| 記憶系統 | memory、neural-memory、triple-memory、git-notes-memory |
+| 安全防護 | clawsec-suite、contextguard、guardian-arsenal、password-manager |
+| 搜尋 & 爬蟲 | tavily-search、web-fetch、web-monitor、playwright-scraper |
+| 開發工具 | git-commit-gen、github、skill-creator、file-sync |
+| AI & 分析 | council-of-the-wise、reflect-learn、screen-vision、neuxa-consciousness-sync |
+| 系統整合 | n8n、clawhub、healthcheck、log-analyzer、session-logs |
+
+### ⚔️ Armory（`armory/`）— 5 個武器
+
+data-inspector、proxy-web-fetch、security-scanner、universal-data-connector、skills
+
+### 📖 Knowledge（`knowledge/`）— 16 個知識模組
+
+AI 模型知識（opus-4.6、sonnet-4.5、gpt-5.2、grok-4.1、qwen3、gemini-vision 等）+ 系統架構文件 + 決策樹 + QMD 本地搜尋引擎
+
+### 🎭 Orchestrator（`orchestrator/`）
+
+Python LangGraph 多代理編排：根據任務類型（research/coding/creative/execute/security/monitor）自動路由到合適的模型與代理
+
+### 📜 Scripts — 153 個自動化腳本
+
+涵蓋：代理管理、自動巡邏、任務管理、安全防護、部署、通知、記憶、監控、n8n 整合、Git 工具
 
 ---
 
@@ -256,11 +325,28 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## 📡 目前系統狀態（2026-03-19 更新）
 
-- 蝦蝦團隊 4 人（達爾+行銷蝦+設計蝦+工程蝦）
-- Server：v9.2.0，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + Discord 整合 + cloudflared tunnel
-- 達爾：5 個 Notion actions + 蝦蝦精準派工
-- 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
-- Owner 密碼：sky36990
+**團隊與組織：**
+- 蝦蝦團隊 4 人（達爾指揮官 + 行銷蝦 + 設計蝦 + 工程蝦）
+- Telegram Crew Bots 8 個專職機器人（router/think/doctor/inbox/patrol/poller/standby/config）
+- 達爾負責決策分派，團隊自主運作
+
+**Server 核心：**
+- v9.2.0，port 3011
+- 治理三件套：governanceEngine（熔斷/回滾）+ riskClassifier（風險分級）+ promptGuard（注入偵測）
+- autoExecutor + workflow-engine + 四階段品質引擎
+- 13 條 API 路由、5 層中間件
+- pgvector 向量搜尋（同義詞擴展 + 多因子重排名）
+- Discord 完整插件 + Telegram 雙向整合 + cloudflared tunnel
+
+**工具庫規模：**
+- 26 個 skills（記憶/安全/搜尋/開發/AI 分析/系統整合）
+- 5 個 armory 武器
+- 16 個 knowledge 模組
+- 73 份 cookbook 手冊
+- 153 個自動化腳本
+- 131 份 docs 文件
+
+**基礎設施：**
 - API Key 已寫入 `.env`，達爾可直接寫入任務
-- 知識庫 cookbook/ 已同步（73 份手冊）
-- 159 知識檔
+- Python LangGraph orchestrator 多代理編排
+- n8n 工作流整合（Zeabur 雲端）
