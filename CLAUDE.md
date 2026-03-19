@@ -86,7 +86,8 @@ grep '"version"' package.json
 | 任務執行結果 | `RESULT.md` |
 | 副手模式設定 | `.openclaw-deputy-mode.json` |
 | 巡邏狀態 | `.openclaw-patrol-status.json` |
-| 核心記憶 | `~/.claude/projects/.../memory/MEMORY.md` |
+| 核心記憶 | `MEMORY.md` |
+| 心跳狀態 | `HEARTBEAT.md` |
 
 ---
 
@@ -300,7 +301,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
   3. `server/src/index.ts`
   4. `CLAUDE.md`（本段 + 系統狀態段）
   5. `MEMORY.md`（header 第 3~4 行）
-  6. `~/.openclaw/workspace/HEARTBEAT.md`（Server 版本行）
+  6. `HEARTBEAT.md`（Server 版本行）
 - 每天 00:01 主人 launchd 自動遞增 patch 版本號
 
 ---
