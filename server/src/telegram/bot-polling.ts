@@ -317,7 +317,7 @@ async function replyTasks(chatId: number, useToken = TOKEN): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
-const providerIcons: Record<string, string> = { 'Claude-CLI': '🔑', Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
+const providerIcons: Record<string, string> = { 'Claude-CLI': '🔑', Google: '🔵', Anthropic: '💎', MiniMax: '🌀', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
 
 async function replyModels(chatId: number): Promise<void> {
   const commanders = getCommanderModels();

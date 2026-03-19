@@ -747,8 +747,10 @@ ${crewResults}
     const prov = getModelProvider(modelId);
 
     // 無 API Key 的 provider 直接跳過，不浪費升級鏈時間
-    if (prov === 'kimi' || prov === 'deepseek' || prov === 'xai' || prov === 'openrouter') {
-      const key = prov === 'openrouter'
+    if (prov === 'minimax' || prov === 'kimi' || prov === 'deepseek' || prov === 'xai' || prov === 'openrouter') {
+      const key = prov === 'minimax'
+        ? (process.env.MINIMAX_API_KEY?.trim() || getProviderKey('minimax'))
+        : prov === 'openrouter'
         ? (process.env.OPENROUTER_API_KEY?.trim() || getProviderKey('openrouter'))
         : getProviderKey(prov);
       if (!key) {
@@ -855,10 +857,13 @@ ${crewResults}
         return text || null;
 
       } else {
-        // OpenAI 相容 API（Kimi / xAI / DeepSeek / OpenRouter）
+        // OpenAI 相容 API（MiniMax / Kimi / xAI / DeepSeek / OpenRouter）
         let baseUrl: string;
         let apiKey: string;
-        if (prov === 'openrouter') {
+        if (prov === 'minimax') {
+          baseUrl = 'https://api.minimax.io/v1';
+          apiKey = process.env.MINIMAX_API_KEY?.trim() || getProviderKey('minimax') || '';
+        } else if (prov === 'openrouter') {
           baseUrl = 'https://openrouter.ai/api/v1';
           apiKey = process.env.OPENROUTER_API_KEY?.trim() || getProviderKey('openrouter') || '';
         } else {

@@ -45,8 +45,8 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   // ── Google 免費額度 ──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── MiniMax（OpenAI 相容，超便宜前沿模型）──
-  { id: 'MiniMax-M2.7', label: '🌀 MiniMax M2.7', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
-  { id: 'MiniMax-M2.7-highspeed', label: '⚡ MiniMax M2.7 HS', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
+  { id: 'MiniMax-M2.7', label: '🌀 MiniMax M2.7', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
+  { id: 'MiniMax-M2.7-highspeed', label: '⚡ MiniMax M2.7 HS', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   // ── DeepSeek ──
   { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
