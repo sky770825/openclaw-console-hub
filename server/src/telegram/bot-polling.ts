@@ -64,7 +64,9 @@ let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let heartbeatBusy = false; // 心跳是否正在執行中
 const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘（不再 5 分鐘搶資源）
 const HEARTBEAT_IDLE_THRESHOLD_MS = 10 * 60 * 1000; // 主人 10 分鐘沒說話才觸發
-const HEARTBEAT_CHAT_ID = -1; // 虛擬 chatId，不會發 Telegram
+// 心跳用獨立的虛擬 chatId 維護對話歷史（不與真實對話混淆）
+// 使用負數確保不會與任何真實 Telegram chat ID 衝突
+const HEARTBEAT_CHAT_ID = -999;
 
 // Action Circuit Breaker — 阻止同一個 action 連續失敗超過 N 次
 class ActionCircuitBreaker {

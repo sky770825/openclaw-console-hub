@@ -17,7 +17,7 @@ const execAsync = promisify(exec);
 const SUBSCRIPTION_ONLY_MODE = process.env.OPENCLAW_SUBSCRIPTION_ONLY !== 'false';
 
 // 確保 claude CLI 在 PATH 中，並移除 CLAUDECODE 避免 nested session 錯誤
-const ENHANCED_PATH = `/Users/sky770825/.local/bin:/opt/homebrew/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
+const ENHANCED_PATH = `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:/opt/homebrew/bin:${process.env.PATH || '/usr/local/bin:/usr/bin:/bin'}`;
 const CLAUDE_ENV = (() => {
   const env = { ...process.env, PATH: ENHANCED_PATH };
   delete (env as Record<string, unknown>).CLAUDECODE;
@@ -45,7 +45,13 @@ const SANDBOX_WORKDIR = path.join(
 );
 
 // 專案源碼路徑（唯讀參考）和 workspace 路徑（可寫入）
-const PROJECT_ROOT = '/Users/sky770825/openclaw任務面版設計';
+const PROJECT_ROOT = (() => {
+  if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
+  const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+  if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
+  if (fs.existsSync(path.join(process.cwd(), 'package.json'))) return process.cwd();
+  return path.join(process.env.HOME || '/tmp', 'openclaw-console-hub');
+})();
 const WORKSPACE_ROOT = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
 // 安全允許寫入的 workspace 子目錄（不含系統文件）

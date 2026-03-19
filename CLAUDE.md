@@ -213,7 +213,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：Server **v2.6.0** / System **v9.0.0**
+- 目前版本：**v9.2.0**
 - 每次重大功能更新，版本號 patch +1（如 v2.6.1、v2.6.2）
 - **版本號必須同步更新 6 處**（閉環 SOP，不可遺漏）：
   1. `package.json`
@@ -254,10 +254,10 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ---
 
-## 📡 目前系統狀態（2026-03-16 更新）
+## 📡 目前系統狀態（2026-03-19 更新）
 
 - 蝦蝦團隊 4 人（達爾+行銷蝦+設計蝦+工程蝦）
-- Server：v2.6.0 / System v9.0.0，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + cloudflared tunnel
+- Server：v9.2.0，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + Discord 整合 + cloudflared tunnel
 - 達爾：5 個 Notion actions + 蝦蝦精準派工
 - 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
 - Owner 密碼：sky36990

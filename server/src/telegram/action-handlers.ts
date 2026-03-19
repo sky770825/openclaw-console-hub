@@ -41,16 +41,93 @@ function textToNotionBlocks(text: string): any[] {
  * 專案根目錄 — 統一單一來源，不再寫死路徑
  * 優先順序：env OPENCLAW_PROJECT_ROOT → server/ 往上兩層 → 舊路徑 fallback
  */
+/** 統一解析專案根目錄 — 不再 hardcode 本地路徑 */
 const PROJECT_ROOT: string = (() => {
   if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
-  // server/dist/telegram/action-handlers.js → 往上 3 層 = 專案根目錄
   const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
   if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-  // fallback（向後相容）
-  return '/Users/sky770825/openclaw任務面版設計';
+  if (fs.existsSync(path.join(process.cwd(), 'package.json'))) return process.cwd();
+  return path.join(process.env.HOME || '/tmp', 'openclaw-console-hub');
 })();
 
 export type ActionResult = { ok: boolean; output: string };
+
+// ── 鐵律強制器：同類動作連續失敗 2 次即拒絕第 3 次 ──
+// 防止達爾走火入魔，反覆對同一個失敗操作重試（WhatsApp 事件教訓）
+class IronRuleEnforcer {
+  private failMap = new Map<string, { count: number; lastAt: number }>();
+  private readonly maxConsecutiveFails: number;
+  private readonly cooldownMs: number;
+
+  constructor(maxFails = 2, cooldownMs = 10 * 60 * 1000) {
+    this.maxConsecutiveFails = maxFails;
+    this.cooldownMs = cooldownMs; // 10 分鐘冷卻後自動重置
+  }
+
+  private key(action: Record<string, string>): string {
+    const type = action.action || '';
+    const target = action.path || action.url || action.command || action.cmd || action.query || action.name || '';
+    return `${type}::${target}`;
+  }
+
+  /** 檢查是否允許執行。回傳 null 表示放行，回傳 string 表示拒絕原因 */
+  check(action: Record<string, string>): string | null {
+    const k = this.key(action);
+    const entry = this.failMap.get(k);
+    if (!entry) return null;
+
+    // 冷卻期過了 → 自動重置
+    if (Date.now() - entry.lastAt > this.cooldownMs) {
+      this.failMap.delete(k);
+      return null;
+    }
+
+    if (entry.count >= this.maxConsecutiveFails) {
+      return `🛑 鐵律：「${action.action}」對同一目標已連續失敗 ${entry.count} 次，最多換 2 條路。冷卻 ${Math.ceil((this.cooldownMs - (Date.now() - entry.lastAt)) / 60000)} 分鐘後才可重試。`;
+    }
+    return null;
+  }
+
+  recordSuccess(action: Record<string, string>): void {
+    this.failMap.delete(this.key(action));
+  }
+
+  recordFailure(action: Record<string, string>): void {
+    const k = this.key(action);
+    const entry = this.failMap.get(k) || { count: 0, lastAt: 0 };
+    entry.count++;
+    entry.lastAt = Date.now();
+    this.failMap.set(k, entry);
+  }
+
+  /** 取得目前被封鎖的動作清單（供 /status 查看） */
+  getBlockedActions(): Array<{ key: string; failCount: number; cooldownRemainSec: number }> {
+    const now = Date.now();
+    const blocked: Array<{ key: string; failCount: number; cooldownRemainSec: number }> = [];
+    for (const [k, entry] of this.failMap) {
+      if (entry.count >= this.maxConsecutiveFails && now - entry.lastAt < this.cooldownMs) {
+        blocked.push({
+          key: k,
+          failCount: entry.count,
+          cooldownRemainSec: Math.ceil((this.cooldownMs - (now - entry.lastAt)) / 1000),
+        });
+      }
+    }
+    return blocked;
+  }
+
+  reset(): void {
+    this.failMap.clear();
+  }
+}
+
+/** 全域鐵律強制器實例 */
+const ironRule = new IronRuleEnforcer();
+
+/** 取得鐵律強制器（供外部查詢狀態用） */
+export function getIronRuleEnforcer(): IronRuleEnforcer {
+  return ironRule;
+}
 
 interface OpenClawTaskUpdate {
   status?: string;
@@ -182,18 +259,22 @@ export async function createTask(name: string, description?: string, owner?: str
       const raw = (await checkR.json()) as Record<string, unknown> | Array<Record<string, unknown>>;
       const existing: Array<Record<string, unknown>> = Array.isArray(raw) ? raw : (Array.isArray((raw as Record<string, unknown>).tasks) ? (raw as Record<string, unknown>).tasks as Array<Record<string, unknown>> : []);
       const thirtyMinAgo = Date.now() - 30 * 60_000;
+      const tenMinAgo = Date.now() - 10 * 60_000;
       const dup = existing.find((t: Record<string, unknown>) => {
         const tName = String(t.name || t.title || '');
         const tStatus = String(t.status || '');
         const updatedAt = new Date(String(t.updatedAt || t.updated_at || 0)).getTime();
-        // 非 done 同名 → 阻擋（永遠）
-        if (tName === trimmedName && tStatus !== 'done') return true;
+        // 非 done/failed 同名 → 阻擋（永遠）
+        if (tName === trimmedName && tStatus !== 'done' && tStatus !== 'failed') return true;
+        // done 但 10 分鐘內完成 → 阻擋（防「整理桌面」連建 4 次的走火入魔）
+        if (tName === trimmedName && tStatus === 'done' && updatedAt > tenMinAgo) return true;
         // failed 但 30 分鐘內 → 也阻擋（防卡死循環）
         if (tName === trimmedName && tStatus === 'failed' && updatedAt > thirtyMinAgo) return true;
         return false;
       });
       if (dup) {
         const dupStatus = String(dup.status);
+        if (dupStatus === 'done') return `同名任務剛在 10 分鐘內完成 (ID: ${dup.id})，不重複建立。如需重做請改名。`;
         if (dupStatus === 'failed') return `同名任務最近剛失敗 (ID: ${dup.id})，30 分鐘內禁止重建。請改名或等待。`;
         return `已存在同名任務 (ID: ${dup.id}, status: ${dupStatus})，不重複建立`;
       }
@@ -3373,6 +3454,13 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
   const type = action.action;
   log.info(`[NEUXA-Action] type=${type} path=${action.path || ''}${type === 'ask_ai' ? ` model=${action.model || '(none)'} promptLen=${(action.prompt || '').length} contextLen=${(action.context || '').length}` : ''}`);
 
+  // ── 鐵律檢查：同類動作連續失敗 2 次即拒絕 ──
+  const ironRuleBlock = ironRule.check(action);
+  if (ironRuleBlock) {
+    log.warn(`[NEUXA-IronRule] 阻擋: ${type} → ${ironRuleBlock}`);
+    return { ok: false, output: ironRuleBlock };
+  }
+
   let result: ActionResult;
 
   switch (type) {
@@ -3571,6 +3659,17 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
       break;
     default:
       result = { ok: false, output: `未知 action: ${type}` };
+  }
+
+  // ── 鐵律記錄：追蹤成功/失敗 ──
+  if (result.ok) {
+    ironRule.recordSuccess(action);
+  } else {
+    ironRule.recordFailure(action);
+    const blocked = ironRule.check(action);
+    if (blocked) {
+      log.warn(`[NEUXA-IronRule] ⚠️ ${type} 已達鐵律上限，下次將被拒絕`);
+    }
   }
 
   // Record model usage for AI-related actions (fire and forget)

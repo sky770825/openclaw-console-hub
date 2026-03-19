@@ -1316,7 +1316,7 @@ function buildCrewPrompt(
     .map(b => `${b.name}(${b.role})`)
     .join('、');
 
-  const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || '/Users/sky770825/openclaw任務面版設計';
+  const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || process.cwd();
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
   return `你是 ${bot.name}，蝦蝦團隊的${bot.role}。你是 OpenClaw 系統的一員，擁有完整的系統操作能力。
