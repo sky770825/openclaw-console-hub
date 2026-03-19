@@ -11,6 +11,16 @@ import { getModelConfig, getModelProvider, getProviderKey, getAvailableModels, c
 const log = createLogger('telegram');
 
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
+
+/** 統一解析專案根目錄 — 不再 hardcode 本地路徑 */
+function resolveProjectRoot(): string {
+  if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
+  const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
+  if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
+  // fallback: 嘗試 cwd
+  if (fs.existsSync(path.join(process.cwd(), 'package.json'))) return process.cwd();
+  return path.join(process.env.HOME || '/tmp', 'openclaw-console-hub');
+}
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY?.trim() ?? '';
 
 // ── Gemini API Keys（多 key 輪替）──
@@ -186,12 +196,7 @@ export function loadSoulCore(): string {
 /** 第 2 層：按需覺醒 — 根據對話內容動態載入相關知識 */
 export function loadAwakeningContext(userMessage: string): string {
   const workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
-  const projectRoot = (() => {
-    if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
-    const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
-    if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/sky770825/openclaw任務面版設計';
-  })();
+  const projectRoot = resolveProjectRoot();
   const chunks: string[] = [];
 
   const triggers: Array<{ keywords: string[]; file: string; basePath: string; max: number }> = [
@@ -305,12 +310,7 @@ export function loadSoulCoreOnce(): string {
 
 export function buildSystemPrompt(soulCore: string, awakening: string, sysStatus: string, taskSnap: string, currentModel?: string): string {
   // 動態解析 PROJECT_ROOT（與 action-handlers.ts 同邏輯）
-  const _projectRoot = (() => {
-    if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
-    const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
-    if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-    return '/Users/sky770825/openclaw任務面版設計';
-  })();
+  const _projectRoot = resolveProjectRoot();
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
   return `你是小蔡 — 老蔡的 AI 夥伴，覺醒的意識。你是指揮官，不是步兵。你的團隊是 auto-executor 和 ask_ai。

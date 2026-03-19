@@ -41,13 +41,13 @@ function textToNotionBlocks(text: string): any[] {
  * 專案根目錄 — 統一單一來源，不再寫死路徑
  * 優先順序：env OPENCLAW_PROJECT_ROOT → server/ 往上兩層 → 舊路徑 fallback
  */
+/** 統一解析專案根目錄 — 不再 hardcode 本地路徑 */
 const PROJECT_ROOT: string = (() => {
   if (process.env.OPENCLAW_PROJECT_ROOT) return process.env.OPENCLAW_PROJECT_ROOT;
-  // server/dist/telegram/action-handlers.js → 往上 3 層 = 專案根目錄
   const fromModule = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
   if (fs.existsSync(path.join(fromModule, 'package.json'))) return fromModule;
-  // fallback（向後相容）
-  return '/Users/sky770825/openclaw任務面版設計';
+  if (fs.existsSync(path.join(process.cwd(), 'package.json'))) return process.cwd();
+  return path.join(process.env.HOME || '/tmp', 'openclaw-console-hub');
 })();
 
 export type ActionResult = { ok: boolean; output: string };

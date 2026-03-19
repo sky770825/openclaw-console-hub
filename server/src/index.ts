@@ -4266,7 +4266,16 @@ server.listen(PORT, '0.0.0.0', () => {
   if (isTelegramConfigured()) {
     log.info(`  [Telegram] 已設定，任務開始/完成/失敗/超時通知將發送至 TG`);
   } else {
-    log.warn(`  [Telegram] 未設定 → 不會發送通知。請在 .env 設定 TELEGRAM_BOT_TOKEN 與 TELEGRAM_CHAT_ID 後重啟。`);
+    log.warn(`  [Telegram] 未設定 → 不會發送通知。請在 .env 設定以下環境變數後重啟：`);
+    if (!process.env.TELEGRAM_BOT_TOKEN?.trim()) log.warn(`    - TELEGRAM_BOT_TOKEN 未設定（必要：通知推播用）`);
+    if (!process.env.TELEGRAM_CHAT_ID?.trim()) log.warn(`    - TELEGRAM_CHAT_ID 未設定（必要：你的私人 Chat ID）`);
+  }
+  // 進階 Telegram 功能檢查
+  if (!process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() && !process.env.TELEGRAM_STOP_BOT_TOKEN?.trim()) {
+    log.warn(`  [Telegram] 控制 Bot 未設定（TELEGRAM_CONTROL_BOT_TOKEN），無法使用 /start 選單和指令控制`);
+  }
+  if (!process.env.GOOGLE_API_KEY?.trim() && !process.env.GEMINI_API_KEY?.trim()) {
+    log.warn(`  [Telegram] AI 引擎未設定（GOOGLE_API_KEY 或 GEMINI_API_KEY），達爾無法思考回覆`);
   }
 
   // AutoExecutor bootstrap/self-heal (disk state is the source of truth).
