@@ -10,7 +10,7 @@
 | 項目 | 資訊 |
 |------|------|
 | Repo | `sky770825/openclaw-console-hub` |
-| 版本 | v9.2.0 |
+| 版本 | v9.2.1 |
 | Server | port 3011 |
 | 前端 | Vite + React |
 | 後端 | Express + TypeScript |

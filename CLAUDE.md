@@ -292,7 +292,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v9.2.0**
+- 目前版本：**v9.2.1**
 - 每次重大功能更新，版本號 patch +1（如 v2.6.1、v2.6.2）
 - **版本號必須同步更新 6 處**（閉環 SOP，不可遺漏）：
   1. `package.json`
@@ -341,7 +341,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 - 達爾負責決策分派，團隊自主運作
 
 **Server 核心：**
-- v9.2.0，port 3011
+- v9.2.1，port 3011
 - 治理三件套：governanceEngine（熔斷/回滾）+ riskClassifier（風險分級）+ promptGuard（注入偵測）
 - autoExecutor + workflow-engine + 四階段品質引擎
 - 13 條 API 路由、5 層中間件
