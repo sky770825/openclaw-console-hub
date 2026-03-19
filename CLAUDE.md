@@ -295,7 +295,14 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 - 目前版本：**v9.2.1**
 - 每次重大功能更新，版本號 patch +1（如 v2.6.1、v2.6.2）
-- **版本號必須同步更新 6 處**（閉環 SOP，不可遺漏）：
+- **版本更新指令（一鍵更新 6 處）：**
+  ```bash
+  bash scripts/bump-version.sh patch   # patch +1（預設）
+  bash scripts/bump-version.sh minor   # minor +1
+  bash scripts/bump-version.sh major   # major +1
+  bash scripts/bump-version.sh 9.3.0   # 指定版本
+  ```
+- 腳本會自動同步以下 6 處（不可手動改，用腳本）：
   1. `package.json`
   2. `server/package.json`
   3. `server/src/index.ts`
