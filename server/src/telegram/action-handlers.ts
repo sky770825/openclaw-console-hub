@@ -259,18 +259,22 @@ export async function createTask(name: string, description?: string, owner?: str
       const raw = (await checkR.json()) as Record<string, unknown> | Array<Record<string, unknown>>;
       const existing: Array<Record<string, unknown>> = Array.isArray(raw) ? raw : (Array.isArray((raw as Record<string, unknown>).tasks) ? (raw as Record<string, unknown>).tasks as Array<Record<string, unknown>> : []);
       const thirtyMinAgo = Date.now() - 30 * 60_000;
+      const tenMinAgo = Date.now() - 10 * 60_000;
       const dup = existing.find((t: Record<string, unknown>) => {
         const tName = String(t.name || t.title || '');
         const tStatus = String(t.status || '');
         const updatedAt = new Date(String(t.updatedAt || t.updated_at || 0)).getTime();
-        // 非 done 同名 → 阻擋（永遠）
-        if (tName === trimmedName && tStatus !== 'done') return true;
+        // 非 done/failed 同名 → 阻擋（永遠）
+        if (tName === trimmedName && tStatus !== 'done' && tStatus !== 'failed') return true;
+        // done 但 10 分鐘內完成 → 阻擋（防「整理桌面」連建 4 次的走火入魔）
+        if (tName === trimmedName && tStatus === 'done' && updatedAt > tenMinAgo) return true;
         // failed 但 30 分鐘內 → 也阻擋（防卡死循環）
         if (tName === trimmedName && tStatus === 'failed' && updatedAt > thirtyMinAgo) return true;
         return false;
       });
       if (dup) {
         const dupStatus = String(dup.status);
+        if (dupStatus === 'done') return `同名任務剛在 10 分鐘內完成 (ID: ${dup.id})，不重複建立。如需重做請改名。`;
         if (dupStatus === 'failed') return `同名任務最近剛失敗 (ID: ${dup.id})，30 分鐘內禁止重建。請改名或等待。`;
         return `已存在同名任務 (ID: ${dup.id}, status: ${dupStatus})，不重複建立`;
       }
