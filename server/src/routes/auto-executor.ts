@@ -268,7 +268,7 @@ async function triggerIdlePatrol(): Promise<void> {
 
   const prompt = `你是 OpenClaw 星艦指揮中心的自動巡邏系統。任務板目前是空的。
 
-專案路徑：/Users/sky770825/openclaw任務面版設計
+專案路徑：${process.env.OPENCLAW_PROJECT_ROOT || process.cwd()}
 技術棧：React + TypeScript + Vite + Express.js (server/src/)
 
 最近完成的任務：

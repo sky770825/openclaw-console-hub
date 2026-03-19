@@ -301,8 +301,9 @@ async function executeDailyJob(job: DailyJob, prompt: string): Promise<void> {
     return;
   }
 
-  // 通知主人的 chatId（私聊）
-  const masterChatId = 5819565005;
+  // 通知主人的 chatId（從環境變數讀取，不再 hardcode）
+  const masterChatIdRaw = process.env.TELEGRAM_OWNER_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim() || '';
+  const masterChatId = masterChatIdRaw ? Number(masterChatIdRaw) : 0;
   const xiaocaiToken = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() || '';
 
   const result: CrewThinkResult = await crewThink(bot, prompt, '每日排程', 'full');
@@ -334,7 +335,7 @@ async function executeDailyJob(job: DailyJob, prompt: string): Promise<void> {
     }
 
     // 也發到主人的私聊（用達爾 bot）
-    if (xiaocaiToken) {
+    if (xiaocaiToken && masterChatId) {
       await sendTelegramMessageToChat(masterChatId, truncated, {
         token: xiaocaiToken,
         silent: true,
