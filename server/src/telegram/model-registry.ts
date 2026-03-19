@@ -44,6 +44,9 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'codex-mini', label: '📦 Codex Mini (CLI)', provider: 'OpenAI-CLI', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
   // ── Google 免費額度 ──
   { id: 'gemini-2.5-flash-lite', label: '💨 Flash Lite 2.5', provider: 'Google', temperature: 0.85, maxOutputTokens: 8192, role: 'subagent' },
+  // ── MiniMax（OpenAI 相容，超便宜前沿模型）──
+  { id: 'MiniMax-M2.7', label: '🌀 MiniMax M2.7', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
+  { id: 'MiniMax-M2.7-highspeed', label: '⚡ MiniMax M2.7 HS', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 16384, role: 'subagent' },
   // ── DeepSeek ──
   { id: 'deepseek-chat', label: '🐋 DeepSeek V3', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
   { id: 'deepseek-reasoner', label: '🧬 DeepSeek R1', provider: 'DeepSeek', temperature: 1, maxOutputTokens: 8192, role: 'subagent' },
@@ -112,7 +115,7 @@ export function getProviderKey(provider: string): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'claude-cli' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' {
+export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'claude-cli' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' | 'minimax' {
   // 先查 registry（最準確）
   const reg = MODEL_REGISTRY.find(m => m.id === modelId);
   if (reg) {
@@ -120,6 +123,7 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'cla
     if (p === 'claude-cli') return 'claude-cli';
     if (p === 'google') return 'google';
     if (p === 'anthropic') return 'anthropic';
+    if (p === 'minimax') return 'minimax';
     if (p === 'deepseek') return 'deepseek';
     if (p === 'kimi') return 'kimi';
     if (p === 'xai') return 'xai';
@@ -128,6 +132,7 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'cla
   // fallback: 按 id prefix 判斷
   if (modelId.endsWith('-cli')) return 'claude-cli';
   if (modelId.startsWith('claude')) return 'anthropic';
+  if (modelId.startsWith('MiniMax') || modelId.startsWith('minimax')) return 'minimax';
   if (modelId.startsWith('kimi')) return 'kimi';
   if (modelId.startsWith('grok')) return 'xai';
   if (modelId.startsWith('deepseek') && !modelId.includes('/')) return 'deepseek';

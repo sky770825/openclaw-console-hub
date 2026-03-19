@@ -903,6 +903,56 @@ export async function handleAskClaude(
   }
 }
 
+/**
+ * ask_minimax — 直叫 MiniMax M2.7 API（OpenAI 相容格式）
+ * 便宜前沿模型，適合大量分析、長文處理、日常推理
+ * 支援 model: m2.7（預設）/ m2.7-highspeed（快速版）
+ */
+export async function handleAskMinimax(
+  model: string,
+  prompt: string,
+  context?: string,
+  systemPrompt?: string,
+): Promise<ActionResult> {
+  const minimaxKey = process.env.MINIMAX_API_KEY?.trim();
+  if (!minimaxKey) return { ok: false, output: '❌ 沒有 MINIMAX_API_KEY，無法叫 MiniMax' };
+  if (!prompt?.trim()) return { ok: false, output: '❌ prompt 不能為空' };
+
+  // 模型解析
+  const MODEL_MAP: Record<string, string> = {
+    'm2.7': 'MiniMax-M2.7',
+    'highspeed': 'MiniMax-M2.7-highspeed',
+    'hs': 'MiniMax-M2.7-highspeed',
+    'fast': 'MiniMax-M2.7-highspeed',
+  };
+  const m = (model || 'm2.7').toLowerCase().trim();
+  const modelId = MODEL_MAP[m] || (m.startsWith('MiniMax') ? m : MODEL_MAP['m2.7']);
+
+  const fullPrompt = context ? `${context}\n\n---\n\n${prompt}` : prompt;
+  const sys = systemPrompt || '你是 OpenClaw 團隊的 AI 參謀，請精準、專業地回答。';
+
+  const startTime = Date.now();
+  try {
+    const { callOpenAICompatible } = await import('./model-registry.js');
+    const reply = await callOpenAICompatible(
+      'https://api.minimax.io/v1',
+      minimaxKey,
+      modelId,
+      sys,
+      [{ role: 'user', content: fullPrompt }],
+      8192,
+      90_000,
+    );
+    const durationMs = Date.now() - startTime;
+    if (!reply) return { ok: false, output: `${modelId} 空回覆` };
+    return { ok: true, output: `[🌀 ${modelId} | ${durationMs}ms]\n${reply}` };
+  } catch (e) {
+    const durationMs = Date.now() - startTime;
+    log.warn({ err: e }, `[AskMinimax] ${modelId} failed after ${durationMs}ms`);
+    return { ok: false, output: `${modelId} 錯誤: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 /** 多角色代理並行協作：delegate_agents */
 interface AgentSpec {
   role: string;       // 角色名稱，如「規劃師」「開發者」「測試員」
@@ -1137,6 +1187,14 @@ export async function handleProxyFetch(url: string, method: string, body: string
           const ocData = JSON.parse(fs.readFileSync(path.join(process.env.HOME || '/tmp', '.openclaw', 'openclaw.json'), 'utf8'));
           key = ocData?.models?.providers?.deepseek?.apiKey || '';
         } catch { /* */ }
+        return { url: u, headers: { ...h, Authorization: `Bearer ${key}` } };
+      },
+    },
+    {
+      pattern: /^https:\/\/api\.minimax\.io\//,
+      name: 'MiniMax',
+      inject: (u, h) => {
+        const key = process.env.MINIMAX_API_KEY?.trim() || '';
         return { url: u, headers: { ...h, Authorization: `Bearer ${key}` } };
       },
     },
@@ -3551,6 +3609,14 @@ export async function executeNEUXAAction(action: Record<string, string>): Promis
     case 'ask_claude':
       result = await handleAskClaude(
         (action.model || 'sonnet').toLowerCase(),
+        action.prompt || '',
+        action.context,
+        action.system,
+      );
+      break;
+    case 'ask_minimax':
+      result = await handleAskMinimax(
+        (action.model || 'm2.7').toLowerCase(),
         action.prompt || '',
         action.context,
         action.system,
