@@ -1,34 +1,43 @@
 #!/bin/bash
 # scripts/log-rotate.sh
-# 日誌自動旋轉腳本：旋轉、壓縮並清理舊日誌
+# 日誌自動輪轉：旋轉、壓縮並清理舊日誌
+# 每天由 launchd 自動執行，或手動 bash scripts/log-rotate.sh
 
-LOG_DIR="/Users/sky770825/.openclaw/logs"
-MAX_DAYS=14
-MAX_SIZE_MB=50
+LOG_DIR="$HOME/.openclaw/automation/logs"
+REPORT_DIR="$HOME/.openclaw/workspace/reports"
+MAX_DAYS=7
+MAX_SIZE_MB=20
 TIMESTAMP=$(date +'%Y%m%d%H%M%S')
 
-echo "🔄 開始執行日誌旋轉 - $(date +'%Y-%m-%d %H:%M:%S')"
+echo "[log-rotate] $(date +'%Y-%m-%d %H:%M:%S') 開始日誌輪轉"
 
-if [ ! -d "$LOG_DIR" ]; then
-    echo "❌ 找不到日誌目錄: $LOG_DIR"
-    exit 1
-fi
+# 輪轉單一檔案（保留最後 1000 行）
+rotate_file() {
+  local file="$1"
+  local max_mb="${2:-$MAX_SIZE_MB}"
+  [ ! -f "$file" ] && return
 
-# 1. 處理大於指定大小的日誌
-find "$LOG_DIR" -type f -name "*.log" -size +"${MAX_SIZE_MB}M" | while read -r log_file; do
-    echo "📏 檔案過大 (>50MB): $log_file，正在旋轉並壓縮..."
-    mv "$log_file" "${log_file}.${TIMESTAMP}.old"
-    gzip "${log_file}.${TIMESTAMP}.old"
-    touch "$log_file"
-    echo "✅ 已將 $log_file 旋轉並壓縮為 ${log_file}.${TIMESTAMP}.old.gz"
+  local size_mb=$(du -m "$file" 2>/dev/null | awk '{print $1}')
+  if [ "$size_mb" -gt "$max_mb" ]; then
+    local rotated="${file}.${TIMESTAMP}"
+    tail -1000 "$file" > "${file}.tmp"
+    mv "$file" "$rotated"
+    mv "${file}.tmp" "$file"
+    gzip -f "$rotated" 2>/dev/null
+    echo "[log-rotate] $(basename $file): ${size_mb}MB -> rotated + gzipped"
+  fi
+}
+
+# 主要日誌
+rotate_file "${LOG_DIR}/taskboard.log" 20
+rotate_file "${LOG_DIR}/taskboard-error.log" 10
+
+# 群組聊天日誌
+rotate_file "${REPORT_DIR}/group_chat_log.md" 5
+
+# 清理超過 MAX_DAYS 天的壓縮檔
+for dir in "$LOG_DIR" "$REPORT_DIR"; do
+  [ -d "$dir" ] && find "$dir" -type f -name "*.gz" -mtime +${MAX_DAYS} -delete 2>/dev/null
 done
 
-# 2. 壓縮現有的 .old 檔案（如果還沒壓縮）
-find "$LOG_DIR" -type f -name "*.old" -exec gzip {} \; 2>/dev/null
-
-# 3. 刪除超過指定天數的舊檔案
-echo "🗑️ 正在清理超過 $MAX_DAYS 天的舊檔案..."
-find "$LOG_DIR" -type f \( -name "*.gz" -o -name "*.jsonl" -o -name "*.old" \) -mtime +$MAX_DAYS -exec rm -v {} \;
-
-echo "🏁 日誌旋轉完成"
-echo "-----------------------------------"
+echo "[log-rotate] 完成"
