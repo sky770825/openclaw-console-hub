@@ -37,6 +37,7 @@ const FETCH_TIMEOUT_MS = 30000;
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
 let xiaocaiMainModel = 'claude-sonnet-cli';
 const TELEGRAM_STATE_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-control.json');
+const TELEGRAM_PID_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-polling.pid');
 const XIAOCAI_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
 
 // ── 輪詢狀態 ──
@@ -62,6 +63,8 @@ const xiaocaiHistory = new Map<number, Array<{ role: string; text: string }>>();
 let lastUserActivityAt = 0; // 主人最後一次發訊息的時間
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let heartbeatBusy = false; // 心跳是否正在執行中
+let heartbeatBusySince = 0; // 心跳開始執行的時間（用於 timeout 保護）
+const HEARTBEAT_TIMEOUT_MS = 30 * 60 * 1000; // 心跳卡住 30 分鐘自動 reset
 const HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000; // 15 分鐘（不再 5 分鐘搶資源）
 const HEARTBEAT_IDLE_THRESHOLD_MS = 10 * 60 * 1000; // 主人 10 分鐘沒說話才觸發
 // 心跳用獨立的虛擬 chatId 維護對話歷史（不與真實對話混淆）
@@ -166,6 +169,13 @@ function loadTelegramState(): void {
     const dobj = asObj(data);
     const mm = String(dobj.xiaocaiMainModel ?? '').trim();
     if (mm) xiaocaiMainModel = mm;
+    // 恢復 offset（重啟後不再重拉全部歷史）
+    if (typeof dobj.offset === 'number' && dobj.offset > 0) offset = dobj.offset;
+    if (typeof dobj.xiaocaiOffset === 'number' && dobj.xiaocaiOffset > 0) xiaocaiOffset = dobj.xiaocaiOffset;
+    if (typeof dobj.groupOffset === 'number' && dobj.groupOffset > 0) groupOffset = dobj.groupOffset;
+    if (offset || xiaocaiOffset || groupOffset) {
+      log.info(`[TelegramState] 恢復 offset: control=${offset} xiaocai=${xiaocaiOffset} group=${groupOffset}`);
+    }
   } catch {
     // ignore
   }
@@ -175,7 +185,13 @@ function saveTelegramState(): void {
   try {
     const dir = path.dirname(TELEGRAM_STATE_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({ xiaocaiMainModel, savedAt: new Date().toISOString() }, null, 2) + '\n', 'utf8');
+    fs.writeFileSync(TELEGRAM_STATE_PATH, JSON.stringify({
+      xiaocaiMainModel,
+      offset,
+      xiaocaiOffset,
+      groupOffset,
+      savedAt: new Date().toISOString(),
+    }, null, 2) + '\n', 'utf8');
   } catch (e) {
     log.warn('[TelegramState] 儲存失敗:', e instanceof Error ? e.message : String(e));
   }
@@ -2109,8 +2125,21 @@ async function heartbeatTick(): Promise<void> {
     return;
   }
 
+  // 心跳 timeout 保護 — 卡住超過 30 分鐘自動 reset
+  if (heartbeatBusy) {
+    if (heartbeatBusySince > 0 && (Date.now() - heartbeatBusySince) > HEARTBEAT_TIMEOUT_MS) {
+      log.warn(`[Heartbeat] 上次心跳卡住超過 ${HEARTBEAT_TIMEOUT_MS / 60000} 分鐘，強制 reset`);
+      heartbeatBusy = false;
+      heartbeatBusySince = 0;
+    } else {
+      log.info('[Heartbeat] 上次心跳仍在執行，跳過');
+      return;
+    }
+  }
+
   log.info('[Heartbeat] 🫀 心跳觸發 — 開始自主思考');
   heartbeatBusy = true;
+  heartbeatBusySince = Date.now();
 
   const heartbeatInput = `[心跳醒來] 主人目前不在線。你自己醒來了。\n讀完以下指南後，按照裡面的步驟自主行動：\n\n${heartbeatContent}`;
 
@@ -2227,6 +2256,7 @@ async function heartbeatTick(): Promise<void> {
     log.error({ err: e }, '[Heartbeat] 心跳異常');
   } finally {
     heartbeatBusy = false;
+    heartbeatBusySince = 0;
   }
 }
 
@@ -2237,6 +2267,28 @@ async function heartbeatTick(): Promise<void> {
 export function startTelegramStopPoll(): void {
   if (!TOKEN) return;
   if (running) return;
+
+  // PID lock — 防止多個 server 實例同時 polling（409 根因）
+  try {
+    const pidDir = path.dirname(TELEGRAM_PID_PATH);
+    if (!fs.existsSync(pidDir)) fs.mkdirSync(pidDir, { recursive: true });
+    if (fs.existsSync(TELEGRAM_PID_PATH)) {
+      const oldPid = parseInt(fs.readFileSync(TELEGRAM_PID_PATH, 'utf8').trim(), 10);
+      if (oldPid && oldPid !== process.pid) {
+        try { process.kill(oldPid, 0); /* 檢查進程是否存在 */
+          log.warn(`[TelegramControl] 偵測到另一個 polling 進程 PID=${oldPid}，嘗試終止...`);
+          process.kill(oldPid, 'SIGTERM');
+          // 等 2 秒讓舊進程退出
+          const waitUntil = Date.now() + 2000;
+          while (Date.now() < waitUntil) { try { process.kill(oldPid, 0); } catch { break; } }
+        } catch { /* 舊進程已不存在，正常 */ }
+      }
+    }
+    fs.writeFileSync(TELEGRAM_PID_PATH, String(process.pid), 'utf8');
+  } catch (e) {
+    log.warn('[TelegramControl] PID lock 寫入失敗:', e instanceof Error ? e.message : String(e));
+  }
+
   running = true;
 
   loadTelegramState();
@@ -2289,6 +2341,8 @@ export function stopTelegramStopPoll(): void {
   xiaocaiRunning = false;
   if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
   stopCrewBots();
+  // 清理 PID lock
+  try { if (fs.existsSync(TELEGRAM_PID_PATH)) fs.unlinkSync(TELEGRAM_PID_PATH); } catch { /* ignore */ }
 }
 
 /** 手動觸發心跳（繞過活躍檢查） */
