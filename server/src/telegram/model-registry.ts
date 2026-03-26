@@ -31,6 +31,14 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   { id: 'claude-opus-4-6', label: '🚨 Claude Opus 4.6 (1M)', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'claude-sonnet-4-6', label: '💎 Claude Sonnet 4.6 (1M)', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 16384, role: 'commander' },
   { id: 'claude-haiku-4-5-20251001', label: '⚡ Claude Haiku 4.5', provider: 'Anthropic', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  // ── MiniMax（OpenAI 相容，api.minimax.io/v1）──
+  { id: 'MiniMax-M2.7', label: '🎯 MiniMax M2.7', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'MiniMax-M2.7-highspeed', label: '⚡ MiniMax M2.7 HS', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'MiniMax-M2.5', label: '🎯 MiniMax M2.5', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'MiniMax-M2.5-highspeed', label: '⚡ MiniMax M2.5 HS', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'MiniMax-M2.1', label: '🎯 MiniMax M2.1', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'MiniMax-M2.1-highspeed', label: '⚡ MiniMax M2.1 HS', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
+  { id: 'MiniMax-M2', label: '🎯 MiniMax M2', provider: 'MiniMax', temperature: 0.85, maxOutputTokens: 8192, role: 'commander' },
   // ══════════════════════════════════════════
   // 子代理級（ask_ai 可派遣，全部免費/訂閱制）
   // 訂閱制 CLI：Claude Code、Codex、Cursor（不花 API 錢）
@@ -112,7 +120,7 @@ export function getProviderKey(provider: string): string {
 }
 
 /** 根據模型 ID 判斷 provider */
-export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'claude-cli' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' {
+export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'claude-cli' | 'kimi' | 'xai' | 'deepseek' | 'openrouter' | 'minimax' {
   // 先查 registry（最準確）
   const reg = MODEL_REGISTRY.find(m => m.id === modelId);
   if (reg) {
@@ -124,6 +132,7 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'cla
     if (p === 'kimi') return 'kimi';
     if (p === 'xai') return 'xai';
     if (p === 'openrouter') return 'openrouter';
+    if (p === 'minimax') return 'minimax';
   }
   // fallback: 按 id prefix 判斷
   if (modelId.endsWith('-cli')) return 'claude-cli';
@@ -132,6 +141,7 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'cla
   if (modelId.startsWith('grok')) return 'xai';
   if (modelId.startsWith('deepseek') && !modelId.includes('/')) return 'deepseek';
   if (modelId.includes('/') && modelId.includes(':free')) return 'openrouter';
+  if (modelId.startsWith('MiniMax-')) return 'minimax';
   return 'google';
 }
 
@@ -171,7 +181,7 @@ export async function callAnthropic(
   return content.filter(c => c.type === 'text').map(c => String(c.text || '')).join('').trim();
 }
 
-/** 呼叫 OpenAI 相容 API（Kimi / xAI） */
+/** 呼叫 OpenAI 相容 API（Kimi / xAI / MiniMax） */
 export async function callOpenAICompatible(
   baseUrl: string,
   apiKey: string,
@@ -209,4 +219,66 @@ export async function callOpenAICompatible(
   const asObj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? (v as Record<string, unknown>) : {});
   const msg = asObj(choices[0]?.message);
   return String(msg.content ?? '').trim();
+}
+
+/** 串流呼叫 OpenAI 相容 API — 回傳 async generator，每次 yield 一段增量文字 */
+export async function* callOpenAICompatibleStream(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  messages: Array<{ role: string; content: string }>,
+  maxTokens: number,
+  timeoutMs: number,
+): AsyncGenerator<string, void, unknown> {
+  const cfg = getModelConfig(model);
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ],
+    max_tokens: maxTokens,
+    temperature: cfg.temperature,
+    stream: true,
+  };
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`HTTP ${resp.status}: ${errText.slice(0, 300)}`);
+  }
+  if (!resp.body) throw new Error('No response body for streaming');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const reader = resp.body.getReader();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith('data: ')) continue;
+      const payload = trimmed.slice(6);
+      if (payload === '[DONE]') return;
+      try {
+        const chunk = JSON.parse(payload) as Record<string, unknown>;
+        const choices = (chunk.choices || []) as Array<Record<string, unknown>>;
+        const delta = (choices[0]?.delta || {}) as Record<string, unknown>;
+        const content = String(delta.content || '');
+        if (content) yield content;
+      } catch { /* skip malformed SSE lines */ }
+    }
+  }
 }

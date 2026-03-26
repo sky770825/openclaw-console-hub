@@ -176,6 +176,20 @@ export async function sendTelegramMessageToChat(
       if (!res.ok) {
         const detail = await res.text().catch(() => '');
         log.error({ status: res.status, detail: detail.slice(0, 400) }, '[TelegramControl] send failed');
+        // HTML 格式錯誤時 fallback 到純文字重發
+        if (options.parseMode && (detail.includes("can't parse") || detail.includes('Bad Request'))) {
+          log.info('[TelegramControl] HTML parse 失敗，fallback 純文字重發');
+          const fallbackRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: chunk.replace(/<[^>]+>/g, ''),  // 移除所有 HTML 標籤
+              disable_notification: options.silent ?? false,
+            }),
+          });
+          if (fallbackRes.ok) logBotMessage(chatId, chunks[i], token);
+        }
       } else {
         logBotMessage(chatId, chunks[i], token);
       }
@@ -187,6 +201,77 @@ export async function sendTelegramMessageToChat(
     if (i < chunks.length - 1) {
       await new Promise(r => setTimeout(r, 300));
     }
+  }
+}
+
+/**
+ * 發送訊息並回傳 message_id（用於後續 editMessageText 串流更新）
+ */
+export async function sendTelegramMessageAndGetId(
+  chatId: number | string,
+  text: string,
+  options: {
+    token?: string;
+    silent?: boolean;
+    parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
+  } = {}
+): Promise<number | null> {
+  const token = options.token?.trim() || process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() || TELEGRAM_BOT_TOKEN;
+  if (!token) return null;
+
+  try {
+    const safeText = sanitizeUtf8(text);
+    const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: safeText,
+        disable_notification: options.silent ?? false,
+        ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as Record<string, unknown>;
+    const result = data.result as Record<string, unknown> | undefined;
+    return (result?.message_id as number) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 編輯已發送的訊息（用於串流更新）
+ */
+export async function editTelegramMessage(
+  chatId: number | string,
+  messageId: number,
+  text: string,
+  options: {
+    token?: string;
+    parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
+  } = {}
+): Promise<boolean> {
+  const token = options.token?.trim() || process.env.TELEGRAM_CONTROL_BOT_TOKEN?.trim() || TELEGRAM_BOT_TOKEN;
+  if (!token) return false;
+
+  try {
+    const safeText = sanitizeUtf8(text);
+    const endpoint = `https://api.telegram.org/bot${token}/editMessageText`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        text: safeText,
+        ...(options.parseMode ? { parse_mode: options.parseMode } : {}),
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 

@@ -7,7 +7,7 @@
  * Telegram 的 webhook 無法指向 localhost，因此本專案採用 getUpdates 長輪詢。
  */
 import { createLogger } from '../logger.js';
-import { sendTelegramMessageToChat } from '../utils/telegram.js';
+import { sendTelegramMessageToChat, sendTelegramMessageAndGetId, editTelegramMessage } from '../utils/telegram.js';
 import { handleStopCommand } from '../emergency-stop.js';
 import { sanitize } from '../utils/key-vault.js';
 import { spawn, execSync } from 'node:child_process';
@@ -35,7 +35,7 @@ const POLL_INTERVAL_MS = 1500;
 const GET_UPDATES_TIMEOUT_SEC = 20;
 const FETCH_TIMEOUT_MS = 30000;
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
-let xiaocaiMainModel = 'claude-sonnet-cli';
+let xiaocaiMainModel = process.env.XIAOCAI_MODEL?.trim() || 'claude-sonnet-cli';
 const TELEGRAM_STATE_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-control.json');
 const TELEGRAM_PID_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-polling.pid');
 const XIAOCAI_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
@@ -168,7 +168,9 @@ function loadTelegramState(): void {
     const data: unknown = JSON.parse(raw);
     const dobj = asObj(data);
     const mm = String(dobj.xiaocaiMainModel ?? '').trim();
-    if (mm) xiaocaiMainModel = mm;
+    const envModel = process.env.XIAOCAI_MODEL?.trim();
+    if (envModel) xiaocaiMainModel = envModel;
+    else if (mm) xiaocaiMainModel = mm;
     // 恢復 offset（重啟後不再重拉全部歷史）
     if (typeof dobj.offset === 'number' && dobj.offset > 0) offset = dobj.offset;
     if (typeof dobj.xiaocaiOffset === 'number' && dobj.xiaocaiOffset > 0) xiaocaiOffset = dobj.xiaocaiOffset;
@@ -333,7 +335,7 @@ async function replyTasks(chatId: number, useToken = TOKEN): Promise<void> {
   await sendTelegramMessageToChat(chatId, text, { token: useToken, parseMode: 'HTML' });
 }
 
-const providerIcons: Record<string, string> = { 'Claude-CLI': '🔑', Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓' };
+const providerIcons: Record<string, string> = { 'Claude-CLI': '🔑', Google: '🔵', Anthropic: '💎', DeepSeek: '🐋', Kimi: '🌙', xAI: '🤖', OpenRouter: '🆓', MiniMax: '🎭' };
 
 async function replyModels(chatId: number): Promise<void> {
   const commanders = getCommanderModels();
@@ -1203,7 +1205,12 @@ async function poll(): Promise<void> {
         if (!issueText) { await promptCodexTriage(chatId); } else { await startCodexTriage(chatId, issueText); }
         continue;
       }
-      if (cmd === '/handoff' || cmd === '/new') { await replyHandoff(chatId); continue; }
+      if (cmd === '/handoff') { await replyHandoff(chatId); continue; }
+      if (cmd === '/new') {
+        xiaocaiHistory.delete(chatId);
+        await sendTelegramMessageToChat(chatId, '🔄 <b>新對話已開啟</b>\n\n歷史已清除，全新 session 啟動。', { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        continue;
+      }
 
       await replyMenu(chatId, `⚠️ 不支援的指令：<code>${cmd}</code>`);
     }
@@ -1553,8 +1560,81 @@ async function xiaocaiPoll(): Promise<void> {
         }
       }
 
-      const text = ((msg.text as string) ?? caption).trim();
+      // ── 語音訊息處理：下載 OGG → Whisper STT 轉文字 ──
+      const voiceMsg = msg.voice as Record<string, unknown> | undefined;
+      const audioMsg = msg.audio as Record<string, unknown> | undefined;
+      const voiceOrAudio = voiceMsg || audioMsg;
+      let voiceTranscript = '';
+
+      if (voiceOrAudio) {
+        const fileId = voiceOrAudio.file_id as string;
+        const duration = (voiceOrAudio.duration as number) || 0;
+        try {
+          // 1. 下載語音檔
+          const fileResp = await fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/getFile?file_id=${fileId}`, { signal: AbortSignal.timeout(10000) });
+          const fileData = await fileResp.json() as Record<string, unknown>;
+          const result = fileData.result as Record<string, unknown> | undefined;
+          const filePath = result?.file_path as string | undefined;
+          if (filePath) {
+            const dlResp = await fetch(`https://api.telegram.org/file/bot${XIAOCAI_TOKEN}/${filePath}`, { signal: AbortSignal.timeout(30000) });
+            const audioBuf = Buffer.from(await dlResp.arrayBuffer());
+            log.info(`[XiaocaiBot] 收到語音 duration=${duration}s size=${audioBuf.length}`);
+
+            // 2. 用 Google Gemini STT（免費）或 OpenAI Whisper 轉錄
+            const googleKey = process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
+            if (googleKey) {
+              // Google Gemini multimodal — 直接用 audio base64
+              const audioBase64 = audioBuf.toString('base64');
+              const mimeType = filePath.endsWith('.mp3') ? 'audio/mp3' : filePath.endsWith('.m4a') ? 'audio/mp4' : 'audio/ogg';
+              const geminiResp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    contents: [{
+                      parts: [
+                        { inlineData: { mimeType, data: audioBase64 } },
+                        { text: '請將這段語音完整轉錄為文字，只輸出轉錄結果，不要加任何說明或標點符號修改。如果是中文就用繁體中文。' },
+                      ],
+                    }],
+                  }),
+                  signal: AbortSignal.timeout(30000),
+                }
+              );
+              if (geminiResp.ok) {
+                const geminiData = await geminiResp.json() as Record<string, unknown>;
+                const candidates = (geminiData.candidates || []) as Array<Record<string, unknown>>;
+                const content = candidates[0]?.content as Record<string, unknown> | undefined;
+                const parts = (content?.parts || []) as Array<Record<string, unknown>>;
+                voiceTranscript = String(parts[0]?.text || '').trim();
+                log.info(`[XiaocaiBot] 語音轉錄成功: ${voiceTranscript.slice(0, 80)}...`);
+              } else {
+                const errText = await geminiResp.text().catch(() => '');
+                log.warn(`[XiaocaiBot] Gemini STT 失敗: ${geminiResp.status} ${errText.slice(0, 200)}`);
+              }
+            }
+
+            // 轉錄失敗提示
+            if (!voiceTranscript) {
+              await sendTelegramMessageToChat(chatId, '⚠️ 語音轉錄失敗，請用文字重新傳送', { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+              continue;
+            }
+          }
+        } catch (e) {
+          log.warn({ err: e }, '[XiaocaiBot] 語音處理失敗');
+          await sendTelegramMessageToChat(chatId, '⚠️ 語音處理失敗，請用文字重新傳送', { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+          continue;
+        }
+      }
+
+      const text = ((msg.text as string) ?? (caption || voiceTranscript)).trim();
       if (!text && !imageBase64) continue;
+
+      // 如果是語音轉錄，先告知主人轉錄結果
+      if (voiceTranscript && voiceTranscript === text) {
+        await sendTelegramMessageToChat(chatId, `🎙️ <i>語音轉錄：</i>\n${voiceTranscript}`, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+      }
 
       log.info(`[XiaocaiBot] recv chatId=${chatId} text=${text.slice(0, 60)}${imageBase64 ? ' +image' : ''}`);
       lastUserActivityAt = Date.now(); // 追蹤主人最後活動時間（心跳用）
@@ -1777,6 +1857,7 @@ async function xiaocaiPoll(): Promise<void> {
       const MAX_CHAIN_STEPS = 6;  // 對話 chain 最多 6 步，讓達爾能完成查+分析+執行+驗證
       let currentInput = text;
       let finalReply = '';
+      let streamMsgId: number | null = null; // 串流回覆用的 message_id
       const allActionResults: string[] = [];
       const breaker = new ActionCircuitBreaker(2);
       const rateLimiter = getGlobalRateLimiter();
@@ -1824,7 +1905,40 @@ async function xiaocaiPoll(): Promise<void> {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
         }).catch(() => {});
-        let reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory, thinkImage);
+
+        // ── 串流回覆：第一輪用串流模式即時更新 Telegram 訊息 ──
+        let lastStreamUpdate = 0;
+        const STREAM_UPDATE_INTERVAL = 800; // 每 800ms 更新一次，避免 Telegram 限速
+
+        const onChunk = !isFollowUp ? (accumulated: string) => {
+          const now = Date.now();
+          if (now - lastStreamUpdate < STREAM_UPDATE_INTERVAL) return;
+          lastStreamUpdate = now;
+          // 截取前 3800 字（Telegram 上限）
+          const preview = accumulated.slice(0, 3800);
+          if (!preview.trim()) return;
+
+          if (!streamMsgId) {
+            // 首次：發送新訊息
+            sendTelegramMessageAndGetId(chatId, preview + '\n\n⏳', { token: XIAOCAI_TOKEN }).then(id => {
+              if (id) streamMsgId = id;
+            });
+          } else {
+            // 後續：編輯更新
+            editTelegramMessage(chatId, streamMsgId, preview + '\n\n⏳', { token: XIAOCAI_TOKEN });
+          }
+        } : undefined;
+
+        let reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory, thinkImage, onChunk);
+
+        // 串流完成後：刪除串流訊息（最終會由正式回覆取代）
+        if (streamMsgId) {
+          // 用 editMessageText 更新為最終完整版（去掉 ⏳）
+          const finalStreamText = stripActionJson(reply).trim().slice(0, 3900);
+          if (finalStreamText) {
+            await editTelegramMessage(chatId, streamMsgId, finalStreamText, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+          }
+        }
 
         const actionMatches = extractActionJsons(reply);
         if (!actionMatches || actionMatches.length === 0) {
@@ -1972,12 +2086,12 @@ async function xiaocaiPoll(): Promise<void> {
       if (SELF_DRIVE_ENABLED && allActionResults.length > 0 && finalReply) {
         const TG_LIMIT_PRE = 4000;
         if (finalReply.length <= TG_LIMIT_PRE) {
-          await sendTelegramMessageToChat(chatId, finalReply, { token: XIAOCAI_TOKEN });
+          await sendTelegramMessageToChat(chatId, finalReply, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
         } else {
           let rem = finalReply;
           while (rem.length > 0) {
             const cut = rem.length <= TG_LIMIT_PRE ? rem.length : Math.max(rem.lastIndexOf('\n', TG_LIMIT_PRE), TG_LIMIT_PRE * 0.5);
-            await sendTelegramMessageToChat(chatId, rem.slice(0, cut), { token: XIAOCAI_TOKEN });
+            await sendTelegramMessageToChat(chatId, rem.slice(0, cut), { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
             rem = rem.slice(cut);
           }
         }
@@ -2002,7 +2116,7 @@ async function xiaocaiPoll(): Promise<void> {
             const isDone = /^done$/i.test(cleanDrive);
             const isDuplicate = cleanDrive.length > 5 && finalReply && cleanDrive.slice(0, 60) === finalReply.slice(0, 60);
             if (cleanDrive && cleanDrive.length > 5 && !isDone && !isDuplicate) {
-              await sendTelegramMessageToChat(chatId, cleanDrive, { token: XIAOCAI_TOKEN });
+              await sendTelegramMessageToChat(chatId, cleanDrive, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
             }
             log.info(`[XiaocaiSelfDrive] round=${selfDrive} 沒有更多 action，停止`);
             break;
@@ -2066,25 +2180,39 @@ async function xiaocaiPoll(): Promise<void> {
 
       // 發送回覆 — 最終保險：清除所有殘留 JSON
       finalReply = stripActionJson(finalReply || '') || '🤔';
-      const TG_LIMIT = 4000;
-      if (finalReply.length <= TG_LIMIT) {
-        await sendTelegramMessageToChat(chatId, finalReply, { token: XIAOCAI_TOKEN });
+      // 如果串流模式已經把最終訊息 edit 上去了，不重複發送
+      if (streamMsgId && finalReply.length <= 3900) {
+        // 串流訊息已更新為最終版，不需要再發
+        log.info(`[XiaocaiBot] 串流回覆已就位 msgId=${streamMsgId}`);
       } else {
-        let remaining = finalReply;
-        while (remaining.length > 0) {
-          let chunk: string;
-          if (remaining.length <= TG_LIMIT) {
-            chunk = remaining;
-            remaining = '';
-          } else {
-            let cut = remaining.lastIndexOf('\n', TG_LIMIT);
-            if (cut < TG_LIMIT * 0.5) cut = remaining.lastIndexOf('。', TG_LIMIT);
-            if (cut < TG_LIMIT * 0.5) cut = remaining.lastIndexOf('，', TG_LIMIT);
-            if (cut < TG_LIMIT * 0.5) cut = TG_LIMIT;
-            chunk = remaining.slice(0, cut + 1);
-            remaining = remaining.slice(cut + 1);
+        // 串流沒用到，或回覆超長需要分段 → 正常發送
+        if (streamMsgId) {
+          // 刪掉串流的預覽訊息，改用正式分段發送
+          fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/deleteMessage`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, message_id: streamMsgId }),
+          }).catch(() => {});
+        }
+        const TG_LIMIT = 4000;
+        if (finalReply.length <= TG_LIMIT) {
+          await sendTelegramMessageToChat(chatId, finalReply, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+        } else {
+          let remaining = finalReply;
+          while (remaining.length > 0) {
+            let chunk: string;
+            if (remaining.length <= TG_LIMIT) {
+              chunk = remaining;
+              remaining = '';
+            } else {
+              let cut = remaining.lastIndexOf('\n', TG_LIMIT);
+              if (cut < TG_LIMIT * 0.5) cut = remaining.lastIndexOf('。', TG_LIMIT);
+              if (cut < TG_LIMIT * 0.5) cut = remaining.lastIndexOf('，', TG_LIMIT);
+              if (cut < TG_LIMIT * 0.5) cut = TG_LIMIT;
+              chunk = remaining.slice(0, cut + 1);
+              remaining = remaining.slice(cut + 1);
+            }
+            await sendTelegramMessageToChat(chatId, chunk, { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
           }
-          await sendTelegramMessageToChat(chatId, chunk, { token: XIAOCAI_TOKEN });
         }
       }
     }
