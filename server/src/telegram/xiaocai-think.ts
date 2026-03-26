@@ -622,6 +622,22 @@ export function formatReplyForTelegram(raw: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+  // Markdown 表格 → 條列格式（Telegram 不支援表格渲染）
+  // 先提取表頭
+  const tableBlocks = text.match(/^\|.+\|[\s\S]*?(?=\n[^|]|\n*$)/gm);
+  if (tableBlocks) {
+    for (const block of tableBlocks) {
+      const rows = block.split('\n').filter(r => r.trim().startsWith('|'));
+      const dataRows = rows.filter(r => !/^[\s|:-]+$/.test(r.replace(/\|/g, '').trim()));
+      if (dataRows.length < 2) continue; // 表頭+至少一行資料
+      const headers = dataRows[0].split('|').map(c => c.trim()).filter(Boolean);
+      const converted = dataRows.slice(1).map(row => {
+        const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+        return cells.map((cell, i) => `  <b>${headers[i] || ''}</b>: ${cell}`).join('\n');
+      }).join('\n─\n');
+      text = text.replace(block, converted);
+    }
+  }
   // Markdown → Telegram HTML
   text = text
     .replace(/^#{1,6}\s+(.+)$/gm, '\n<b>$1</b>\n')    // ### 標題 → 粗體
