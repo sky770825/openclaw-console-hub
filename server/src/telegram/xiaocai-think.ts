@@ -404,6 +404,7 @@ ${soulCore}
 | 報告 | ${_workspace}/reports |
 | WAKE_STATUS | ${_workspace}/WAKE_STATUS.md |
 | HEARTBEAT.md | ${_workspace}/HEARTBEAT.md |
+| HEARTBEAT_SOP_V2 | ${_workspace}/HEARTBEAT_SOP_V2.md |
 | AGENTS.md | ${_workspace}/AGENTS.md |
 | GROWTH.md | ${_workspace}/GROWTH.md |
 | SOUL.md | ${_workspace}/SOUL.md |
