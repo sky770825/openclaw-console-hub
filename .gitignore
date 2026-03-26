@@ -59,3 +59,6 @@ ollama-main*/
 # Beauty industry website (separate project)
 beauty-industry-website/
 *.pyc
+
+.git_backup/
+client/
