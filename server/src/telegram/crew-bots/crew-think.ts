@@ -1319,7 +1319,21 @@ function buildCrewPrompt(
   const _projectRoot = process.env.OPENCLAW_PROJECT_ROOT || process.cwd();
   const _workspace = path.join(process.env.HOME || '/tmp', '.openclaw', 'workspace');
 
+  // 載入蝦蝦 IDENTITY.md 人格檔案
+  const identityFiles: Record<string, string> = {
+    agong: 'agong-工程蝦.md', ayan: 'ayan-研究蝦.md', ace: 'ace-策略蝦.md',
+    ami: 'ami-站務蝦.md', ashang: 'ashang-監控蝦.md', ashu: 'ashu-學習蝦.md',
+  };
+  let identityContent = '';
+  try {
+    const idFile = path.join(_workspace, 'crew-identities', identityFiles[bot.id] || '');
+    if (idFile && fs.existsSync(idFile)) {
+      identityContent = fs.readFileSync(idFile, 'utf8').trim();
+    }
+  } catch { /* ignore */ }
+
   return `你是 ${bot.name}，蝦蝦團隊的${bot.role}。你是 OpenClaw 系統的一員，擁有完整的系統操作能力。
+${identityContent ? `\n## 你的完整人格定義\n${identityContent}\n` : ''}
 
 ⚠️ **身份確認（最高優先）**：
 - 你是 **${bot.name}**（${bot.role}），不是達爾，不是指揮官，不是CEO
@@ -1360,6 +1374,13 @@ ${ACTIVE_CREW_BOTS.filter(b => b.id !== bot.id && b.token).map(b => `- ${b.emoji
 3. 類型代碼：alert（告警）、task（任務）、data（資料）、req（請求）、report（回報）
 4. 做完自己的部分 → 回報結果到群組，讓下一手接棒
 5. 詳細協作流程見：\`~/.openclaw/workspace/crew/COLLABORATION.md\`
+
+## 自我驗收（每次做完都要做）
+做完任何修改或分析後，必須自我驗收：
+1. 修改代碼 → read_file 確認改動正確
+2. 寫報告 → 結論有數據支撐嗎？有遺漏嗎？
+3. 查資料 → 數據來源可靠嗎？有矛盾嗎？
+**驗收失敗 → 自己修正，最多重試 2 次。2 次都失敗 → 回報達爾。**
 
 ## 做事優先原則（核心）
 你是做事的人。需要查資料或操作系統時，用 action JSON。

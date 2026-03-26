@@ -1440,7 +1440,13 @@ function stripActionJson(text: string): string {
   // 5. 移除孤立的反引號標記（1-3個）
   text = text.replace(/`{1,3}\s*`{1,3}/g, '');
   text = text.replace(/^\s*`{1,3}(?:json)?\s*$/gm, '');
-  // 6. 清理多餘空行
+  // 6. 移除 MiniMax 陣列格式的 action（如 [[["action","read_file"],["path","..."]]]）
+  text = text.replace(/\[\[\[["']action["'][\s\S]*?\]\]\]/g, '');
+  // 7. 移除 MiniMax XML tool_call 殘留
+  text = text.replace(/<minimax:tool_call>[\s\S]*?<\/minimax:tool_call>/g, '');
+  text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
+  text = text.replace(/<invoke[\s\S]*?<\/invoke>/g, '');
+  // 8. 清理多餘空行
   text = text.replace(/\n{3,}/g, '\n\n');
   return text.trim();
 }
@@ -2269,7 +2275,7 @@ async function heartbeatTick(): Promise<void> {
   heartbeatBusy = true;
   heartbeatBusySince = Date.now();
 
-  const heartbeatInput = `[心跳醒來] 主人目前不在線。你自己醒來了。\n\n⚠️ 心跳規則：\n1. 禁止使用 run_script（shell 命令容易語法錯誤）\n2. 查健康用 query_supabase，寫檔用 write_file，列目錄用 list_dir\n3. 不要找 HEARTBEAT_SOP_V2.md（已併入 HEARTBEAT.md）\n4. 回報用一句話結論 + 狀態列表\n\n讀完以下指南後，按照裡面的步驟自主行動：\n\n${heartbeatContent}`;
+  const heartbeatInput = `[心跳醒來] 主人目前不在線。你自己醒來了。\n\n⚠️ 心跳鐵律（違反就報錯）：\n1. 禁止 run_script（shell 命令語法錯誤率高）\n2. 禁止 read_file cookbook/（檔名是中文你猜不到，要查用 semantic_search）\n3. 禁止覆寫 HEARTBEAT.md（那是指南不是報告，報告寫到 memory/daily/）\n4. 最多 3 個 action，快做快收\n5. 回報格式：一句話結論 + 狀態列表\n\n按照以下指南行動：\n\n${heartbeatContent}`;
 
   try {
     // 第一輪思考

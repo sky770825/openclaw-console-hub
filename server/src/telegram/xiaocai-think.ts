@@ -627,6 +627,20 @@ export function formatReplyForTelegram(raw: string): string {
   text = text.replace(/__INLINE_CODE_(\d+)__/g, (_, i) => `<code>${inlineCodes[Number(i)]}</code>`);
   // 還原 JSON action 塊
   text = text.replace(/__JSON_ACTION_(\d+)__/g, (_, i) => jsonPlaceholders[Number(i)]);
+
+  // 修復未關閉的 HTML 標籤（MiniMax 偶爾會生成破損標籤）
+  const tagPairs: Array<[string, string]> = [['<b>', '</b>'], ['<i>', '</i>'], ['<code>', '</code>'], ['<pre>', '</pre>']];
+  for (const [open, close] of tagPairs) {
+    const openCount = (text.match(new RegExp(open.replace(/[<>/]/g, '\\$&'), 'g')) || []).length;
+    const closeCount = (text.match(new RegExp(close.replace(/[<>/]/g, '\\$&'), 'g')) || []).length;
+    if (openCount > closeCount) {
+      for (let i = 0; i < openCount - closeCount; i++) text += close;
+    } else if (closeCount > openCount) {
+      // 多餘的 close tag 直接移除（從前面開始移）
+      for (let i = 0; i < closeCount - openCount; i++) text = text.replace(close, '');
+    }
+  }
+
   return text;
 }
 
