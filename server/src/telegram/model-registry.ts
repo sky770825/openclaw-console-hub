@@ -145,6 +145,34 @@ export function getModelProvider(modelId: string): 'google' | 'anthropic' | 'cla
   return 'google';
 }
 
+/** Reasoning effort 等級 — 對應 Anthropic thinking 參數 */
+export type ReasoningEffort = 'adaptive' | 'low' | 'medium' | 'high';
+
+/**
+ * 判斷模型是否支援 extended thinking
+ * 目前支援：claude-sonnet-4-5+（含 4.6）、claude-opus-4+（含 4.6）
+ * 不支援：haiku、較舊版本
+ */
+function supportsThinking(modelId: string): boolean {
+  const id = modelId.toLowerCase();
+  if (id.includes('haiku')) return false;
+  // claude-sonnet-4-5 / 4-6 / 4-7 / claude-opus-4 / 4-5 / 4-6 等
+  if (/claude-(sonnet|opus)-4-[5-9]/.test(id)) return true;
+  if (/claude-(sonnet|opus)-[5-9]/.test(id)) return true;
+  return false;
+}
+
+/** 把 reasoningEffort 轉換成 Anthropic thinking 參數 */
+function buildThinkingParam(effort: ReasoningEffort): Record<string, unknown> {
+  if (effort === 'adaptive') return { type: 'adaptive' };
+  const budgets: Record<Exclude<ReasoningEffort, 'adaptive'>, number> = {
+    low: 1024,
+    medium: 4096,
+    high: 8192,
+  };
+  return { type: 'enabled', budget_tokens: budgets[effort] };
+}
+
 /** 呼叫 Anthropic API（Claude 系列） */
 export async function callAnthropic(
   apiKey: string,
@@ -153,31 +181,67 @@ export async function callAnthropic(
   messages: Array<{ role: string; content: string }>,
   maxTokens: number,
   timeoutMs: number,
+  reasoningEffort?: ReasoningEffort,
 ): Promise<string> {
   const cfg = getModelConfig(model);
-  const body = {
-    model,
-    max_tokens: maxTokens,
-    temperature: cfg.temperature,
-    system: systemPrompt,
-    messages: messages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.content })),
+
+  // 判斷是否可加 thinking 參數：需要指定 effort + 模型支援
+  const wantThinking = reasoningEffort && supportsThinking(model);
+  let effectiveMaxTokens = maxTokens;
+  let thinking: Record<string, unknown> | undefined;
+
+  if (wantThinking) {
+    thinking = buildThinkingParam(reasoningEffort!);
+    // budget_tokens 必須 < max_tokens；若 enabled 模式且不夠，動態放大 max_tokens
+    if (thinking.type === 'enabled') {
+      const budget = Number(thinking.budget_tokens || 0);
+      // 預留至少 1024 token 給正式回覆
+      const needed = budget + 1024;
+      if (effectiveMaxTokens <= budget) {
+        effectiveMaxTokens = Math.max(needed, effectiveMaxTokens);
+      }
+    }
+  }
+
+  const buildBody = (withThinking: boolean): Record<string, unknown> => {
+    const body: Record<string, unknown> = {
+      model,
+      max_tokens: effectiveMaxTokens,
+      // 使用 thinking 時 temperature 必須是 1.0（Anthropic 要求）
+      temperature: withThinking ? 1 : cfg.temperature,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.content })),
+    };
+    if (withThinking && thinking) body.thinking = thinking;
+    return body;
   };
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
+
+  const doFetch = async (withThinking: boolean): Promise<Response> => {
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(buildBody(withThinking)),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  };
+
+  let resp = await doFetch(Boolean(wantThinking));
+  // Gracefully 降級：若帶 thinking 被 4xx 拒絕（模型不支援/參數錯誤），去掉 thinking 重試一次
+  if (!resp.ok && wantThinking && resp.status >= 400 && resp.status < 500) {
+    effectiveMaxTokens = maxTokens; // 還原成原始 max_tokens
+    resp = await doFetch(false);
+  }
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
     throw new Error(`Anthropic HTTP ${resp.status}: ${errText.slice(0, 300)}`);
   }
   const data = await resp.json() as Record<string, unknown>;
   const content = (data.content || []) as Array<Record<string, unknown>>;
+  // 只取 text 區塊（忽略 thinking 區塊）
   return content.filter(c => c.type === 'text').map(c => String(c.text || '')).join('').trim();
 }
 
