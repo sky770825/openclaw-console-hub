@@ -3,9 +3,9 @@
 # 掃描 server log，發現異常自動透過 Telegram 通知小蔡修正
 # v2: 新增殭屍任務自動清除（running 超過 10 分鐘）
 
-LOG="/Users/sky770825/.openclaw/automation/logs/taskboard.log"
-ALERT_LOG="/Users/sky770825/.openclaw/automation/logs/patrol-alerts.log"
-ENV_FILE="/Users/sky770825/openclaw任務面版設計/.env"
+LOG="/Users/caijunchang/.openclaw/automation/logs/taskboard.log"
+ALERT_LOG="/Users/caijunchang/.openclaw/automation/logs/patrol-alerts.log"
+ENV_FILE="/Users/caijunchang/openclaw任務面版設計/.env"
 CHAT_ID=5819565005
 API_KEY="oc-oAw9leGU04IAbcS4WN3FC1SH3vq5OdPxrVJCR16iIUMPsep1"
 SERVER="http://localhost:3011"
@@ -92,7 +92,7 @@ fi
 
 # ─── delivery-queue 清理 ───
 # 清除 7 天前的 failed 訊息，防止無限堆積
-QUEUE_DIR="/Users/sky770825/.openclaw/delivery-queue/failed"
+QUEUE_DIR="/Users/caijunchang/.openclaw/delivery-queue/failed"
 QUEUE_CLEANED=""
 if [ -d "$QUEUE_DIR" ]; then
   OLD_COUNT=$(find "$QUEUE_DIR" -name "*.json" -mtime +7 2>/dev/null | wc -l | tr -d ' ')

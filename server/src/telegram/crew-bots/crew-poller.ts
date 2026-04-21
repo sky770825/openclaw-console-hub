@@ -140,12 +140,13 @@ export async function spawnStandbyBot(botId: string, task: StructuredTask): Prom
   try {
     const result = await Promise.race([
       crewThink(bot, prompt, 'orchestrator', 'full'),
-      sleep(timeout).then(() => ({ reply: '[timeout]', actionResults: [] as string[] })),
+      sleep(timeout).then(() => ({ reply: '[timeout]', rawReply: '[timeout]', actionResults: [] as string[] })),
     ]);
 
     const reply = result.reply || '[no reply]';
+    const rawReply = result.rawReply || reply;
 
-    // If we have a group chat, send the result there
+    // If we have a group chat, send the result there (HTML version)
     if (CREW_GROUP_CHAT_ID && reply !== '[timeout]' && reply !== '[no reply]') {
       const chatId = Number(CREW_GROUP_CHAT_ID);
       const htmlMsg = formatBotReplyHTML(bot, `[Task ${task.id}]\n${reply}`);
@@ -157,7 +158,7 @@ export async function spawnStandbyBot(botId: string, task: StructuredTask): Prom
     }
 
     log.info(`[SpawnStandby] ${bot.emoji} ${bot.name} completed task ${task.id} (len=${reply.length})`);
-    return reply;
+    return rawReply;  // 回傳原始文字，避免呼叫方再次格式化造成雙重跳脫
 
   } catch (err) {
     log.error({ err }, `[SpawnStandby] ${bot.name} task ${task.id} failed`);
@@ -190,16 +191,17 @@ export async function handoffToBot(botId: string, message: string, context?: str
   try {
     const result = await Promise.race([
       crewThink(bot, prompt, 'orchestrator'),
-      sleep(HANDOFF_TIMEOUT_MS).then(() => ({ reply: '[timeout]', actionResults: [] as string[] })),
+      sleep(HANDOFF_TIMEOUT_MS).then(() => ({ reply: '[timeout]', rawReply: '[timeout]', actionResults: [] as string[] })),
     ]);
 
     const reply = result.reply || '[no reply]';
+    const rawReply = result.rawReply || reply; // 原始 markdown，防 HTML 污染 history
 
-    // Record to history
-    pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
+    // Record to history（用原始文字，避免 HTML 標籤污染 AI 上下文）
+    pushHistory({ role: 'model', text: rawReply, fromName: bot.name, timestamp: Date.now() });
 
     log.info(`[Handoff] ${bot.emoji} ${bot.name} replied (len=${reply.length})`);
-    return reply;
+    return rawReply;
 
   } catch (err) {
     log.error({ err }, `[Handoff] ${bot.name} failed`);
@@ -332,15 +334,16 @@ async function executeRound(
   const thinkPromises = activeBots.map(async (bot) => {
     try {
       const result = await crewThink(bot, text, senderName);
-      const reply = result.reply;
+      const reply = result.reply;           // HTML 格式，僅供直接發 Telegram
+      const rawReply = result.rawReply ?? result.reply ?? ''; // 原始 markdown，供 history + xiaocai
       if (reply && !reply.includes('no comment') && !reply.includes('没有补充')) {
         if (sendCount > 0) await sleep(BOT_STAGGER_MS + Math.random() * 1500);
         sendCount++;
         const htmlMsg = formatBotReplyHTML(bot, reply);
         await sendTelegramMessageToChat(chatId, htmlMsg, { token: bot.token, silent: true, parseMode: 'HTML' });
-        bridgeToDiscord(bot.id, reply).catch(() => {});
-        pushHistory({ role: 'model', text: reply, fromName: bot.name, timestamp: Date.now() });
-        replies.push({ botId: bot.id, botName: bot.name, reply });
+        bridgeToDiscord(bot.id, rawReply).catch(() => {});
+        pushHistory({ role: 'model', text: rawReply, fromName: bot.name, timestamp: Date.now() });
+        replies.push({ botId: bot.id, botName: bot.name, reply: rawReply });
         log.info(`[CrewDispatch] R${round} ${bot.emoji} ${bot.name} replied (len=${reply.length}, actions=${result.actionResults.length})`);
 
         // Auto-handoff detection
@@ -424,6 +427,7 @@ async function detectAndHandoff(
     const handoffPrompt = `[${originalBot.name} handoff] ${reply}`;
     const result = await crewThink(mentionedBot, handoffPrompt, originalBot.name);
     const handoffReply = result.reply;
+    const handoffRaw = result.rawReply ?? handoffReply ?? '';
 
     if (handoffReply) {
       const htmlMsg = formatBotReplyHTML(mentionedBot, handoffReply);
@@ -434,7 +438,7 @@ async function detectAndHandoff(
       });
       pushHistory({
         role: 'model',
-        text: handoffReply,
+        text: handoffRaw,
         fromName: mentionedBot.name,
         timestamp: Date.now(),
       });
@@ -563,7 +567,8 @@ async function processInbox(bot: CrewBotConfig): Promise<void> {
         ].join('\n');
 
         const result = await crewThink(bot, inboxPrompt, item.fromBot, 'full');
-        const { reply, actionResults } = result;
+        const { reply, rawReply: rawR, actionResults } = result;
+        const rawReply = rawR ?? reply ?? '';  // 原始文字，防 HTML 污染 history
 
         if (reply && reply.length > 5) {
           const msgLines = [
@@ -591,7 +596,7 @@ async function processInbox(bot: CrewBotConfig): Promise<void> {
 
           pushHistory({
             role: 'model',
-            text: `[inbox<-${item.fromBot}] ${reply}`,
+            text: `[inbox<-${item.fromBot}] ${rawReply}`,
             fromName: bot.name,
             timestamp: Date.now(),
           });
@@ -739,6 +744,7 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
         try {
           const result = await crewThink(bot, text, senderName);
           const reply = result.reply;
+          const rawReply = result.rawReply ?? reply ?? '';
           if (reply) {
             const htmlMsg = formatBotReplyHTML(bot, reply);
             await sendTelegramMessageToChat(chatId, htmlMsg, {
@@ -746,17 +752,17 @@ async function pollBot(bot: CrewBotConfig, state: BotState): Promise<void> {
               silent: true,
               parseMode: 'HTML',
             });
-            bridgeToDiscord(bot.id, reply).catch(() => {});
+            bridgeToDiscord(bot.id, rawReply).catch(() => {});
             pushHistory({
               role: 'model',
-              text: reply,
+              text: rawReply,
               fromName: bot.name,
               timestamp: Date.now(),
             });
             log.info(`[CrewPoller] ${bot.emoji} ${bot.name} replied (msg=${messageId}, actions=${result.actionResults.length})`);
 
-            // 閉環回傳：收集回覆
-            collectReplyForOwner(messageId, bot.name, reply);
+            // 閉環回傳：收集回覆（用原始文字，避免 xiaocai 再次格式化時雙重跳脫）
+            collectReplyForOwner(messageId, bot.name, rawReply);
 
             detectAndHandoff(reply, bot, chatId).catch(() => {});
           }

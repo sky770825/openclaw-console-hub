@@ -9,7 +9,7 @@
 set -euo pipefail
 
 WS="${OPENCLAW_WORKSPACE:-$HOME/.openclaw/workspace}"
-SYNC_SCRIPT="/Users/sky770825/openclaw任務面版設計/scripts/archived/nightly-memory-sync.sh"
+SYNC_SCRIPT="/Users/caijunchang/openclaw任務面版設計/scripts/archived/nightly-memory-sync.sh"
 
 STATUS_OUT="$(openclaw status 2>/dev/null || true)"
 

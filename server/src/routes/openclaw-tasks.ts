@@ -353,7 +353,7 @@ openclawTasksRouter.get('/', async (req, res) => {
         id: t.id,
         name: t.name,
         title: t.name,
-        cat: (t.tags?.[0] as string) ?? 'feature',
+        cat: (['feature', 'bugfix', 'learn', 'improve'].includes(t.tags?.[0] as string) ? t.tags![0] : 'feature') as string,
         status: t.status === 'done' ? 'done' : t.status === 'running' ? 'in_progress' : 'queued',
         progress: t.status === 'done' ? 100 : 0,
         auto: false,

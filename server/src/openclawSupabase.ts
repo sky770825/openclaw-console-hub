@@ -91,17 +91,27 @@ export async function fetchOpenClawTaskById(id: string): Promise<OpenClawTask | 
   const { data } = await supabaseServiceRole.from(TABLE_TASKS).select('*').eq('id', id).single();
   return (data ?? null) as OpenClawTask | null;
 }
+const VALID_OPENCLAW_CATS = new Set(['feature', 'bugfix', 'learn', 'improve']);
+
+function safeCat(raw?: string): string {
+  return VALID_OPENCLAW_CATS.has(raw ?? '') ? raw! : 'feature';
+}
+
 export async function upsertOpenClawTask(task: Partial<OpenClawTask>): Promise<OpenClawTask | null> {
   // 如果有 id 且只更新部分欄位，用 update 而不是 upsert（避免覆蓋其他欄位為 null）
   if (task.id && Object.keys(task).length < 5) {
     const { id, ...updates } = task;
+    // 只在明確傳入 cat 時才正規化，不強制補欄位
+    if (updates.cat !== undefined) updates.cat = safeCat(updates.cat);
     const { data, error } = await supabaseServiceRole.from(TABLE_TASKS).update(updates as Record<string, unknown>).eq('id', id).select().single();
     if (error) {
       console.error(`[upsertOpenClawTask] update failed for ${id}:`, error.message);
     }
     return (data ?? null) as OpenClawTask | null;
   }
-  const { data, error } = await supabaseServiceRole.from(TABLE_TASKS).upsert(task as Record<string, unknown>).select().single();
+  // Full upsert（含 INSERT）：確保 cat 永遠合法，防止 cat_check 約束違規
+  const safeTask = { ...task, cat: safeCat(task.cat) };
+  const { data, error } = await supabaseServiceRole.from(TABLE_TASKS).upsert(safeTask as Record<string, unknown>).select().single();
   if (error) {
     console.error(`[upsertOpenClawTask] upsert failed:`, error.message);
   }

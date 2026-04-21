@@ -18,6 +18,7 @@ import { ACTIVE_CREW_BOTS } from './crew-config.js';
 import { wsManager } from '../../websocket.js';
 import { recordSuccess, recordFailure, markThinkStart, markThinkEnd, isCoolingDown } from './crew-doctor.js';
 import { getInboxContext } from './crew-inbox.js';
+import { extractActionJsons, stripActionJson } from '../shared/action-json.js';
 
 const log = createLogger('crew-think');
 
@@ -137,7 +138,8 @@ export function pushHistory(entry: CrewHistoryEntry): void {
 
 /** crewThink 回傳結構 */
 export interface CrewThinkResult {
-  reply: string | null;
+  reply: string | null;       // HTML 格式（供直接發 Telegram 用）
+  rawReply: string | null;    // 原始 markdown（供 history 儲存 + xiaocai 整合，防 HTML 二次跳脫）
   actionResults: string[];
 }
 
@@ -154,7 +156,7 @@ export async function crewThink(
   // 冷卻中 → 跳過
   if (isCoolingDown(bot.id)) {
     log.info(`[CrewThink] ${bot.emoji} ${bot.name} 冷卻中，跳過`);
-    return { reply: null, actionResults: [] };
+    return { reply: null, rawReply: null, actionResults: [] };
   }
 
   // Agent Flow 即時推播：開始思考
@@ -234,7 +236,7 @@ export async function crewThink(
         recordFailure(bot.id, 'empty_reply');
         markThinkEnd(bot.id);
         wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
-        return { reply: null, actionResults: [] };
+        return { reply: null, rawReply: null, actionResults: [] };
       }
       break;
     }
@@ -346,10 +348,15 @@ export async function crewThink(
   if (!finalReply) {
     markThinkEnd(bot.id);
     wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
-    return { reply: null, actionResults: allActionResults };
+    return { reply: null, rawReply: null, actionResults: allActionResults };
   }
 
-  // Telegram HTML 友好格式
+  // 保留原始文字（供 history 存儲 + xiaocai 整合用，避免 HTML 污染）
+  const rawReply = finalReply
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  // Telegram HTML 友好格式（僅供直接發送到 Telegram 群組用）
   // 先跳脫 HTML 特殊字元，再轉換 markdown → HTML 標籤
   const escaped = finalReply
     .replace(/&/g, '&amp;')                          // & → &amp;（必須最先處理）
@@ -376,14 +383,14 @@ export async function crewThink(
     truncated = summary || smartTruncate(clean, 3500);
   }
 
-  // 自動追加工作紀錄到 bot 的 MEMORY.md
-  appendWorkLog(bot.id, userMessage, allActionResults, truncated);
+  // 自動追加工作紀錄到 bot 的 MEMORY.md（用原始文字，避免存入 HTML 標籤）
+  appendWorkLog(bot.id, userMessage, allActionResults, rawReply);
 
   // 品質評分（追蹤用）
-  scoreReply(bot, userMessage, truncated, allActionResults);
+  scoreReply(bot, userMessage, rawReply, allActionResults);
 
   // 任務自動回報已停用 — crew bot 不應自動建任務，避免垃圾任務堆積
-  // autoReportTask(bot, userMessage, allActionResults, truncated);
+  // autoReportTask(bot, userMessage, allActionResults, rawReply);
 
   // 低頻觸發 workspace 自動清理（5% 機率 + 24h 節流，非同步不阻塞）
   maybeCleanupWorkspace(bot.id);
@@ -395,7 +402,9 @@ export async function crewThink(
   // Agent Flow 即時推播：思考完成
   wsManager.broadcastAgentUpdate({ agentId: bot.id, status: 'idle' });
 
-  return { reply: truncated || null, actionResults: allActionResults };
+  // reply = HTML 格式（供直接發 Telegram 用）
+  // rawReply = 原始 markdown（供 history 儲存 + xiaocai 整合，防 HTML 二次跳脫）
+  return { reply: truncated || null, rawReply: rawReply || null, actionResults: allActionResults };
 }
 
 // ── 任務自動回報 ──
@@ -1089,67 +1098,7 @@ function shouldUseFullModel(bot: CrewBotConfig, message: string, senderName: str
   return false;
 }
 
-// ── Action JSON 解析 ──
-
-function extractActionJsons(text: string): string[] | null {
-  const stripped = text
-    .replace(/`{1,3}json\s*\n?/g, '')
-    .replace(/\n?\s*`{1,3}(?=\s*$|\s*\n)/gm, '');
-
-  const results: string[] = [];
-  let searchFrom = 0;
-
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const match = stripped.slice(searchFrom).match(/\{[\s\n]*"action"/);
-    if (!match || match.index === undefined) break;
-
-    const idx = searchFrom + match.index;
-    let depth = 0;
-    let inString = false;
-    let escape = false;
-    let end = -1;
-
-    for (let i = idx; i < stripped.length; i++) {
-      const ch = stripped[i];
-      if (escape) { escape = false; continue; }
-      if (ch === '\\' && inString) { escape = true; continue; }
-      if (ch === '"') { inString = !inString; continue; }
-      if (inString) continue;
-      if (ch === '{') depth++;
-      if (ch === '}') {
-        depth--;
-        if (depth === 0) { end = i; break; }
-      }
-    }
-
-    if (end === -1) break;
-    const candidate = stripped.slice(idx, end + 1);
-    try {
-      JSON.parse(candidate);
-      results.push(candidate);
-    } catch { /* skip */ }
-    searchFrom = end + 1;
-  }
-
-  return results.length > 0 ? results : null;
-}
-
-function stripActionJson(text: string): string {
-  return text
-    // 移除完整 ```language...``` 代碼區塊（任何語言）
-    .replace(/```\w*\n?[\s\S]*?```/g, '')
-    // 移除沒有結尾 ``` 的代碼區塊（只有開頭 ```language 但沒關閉）
-    .replace(/```\w*\n[\s\S]*$/g, '')
-    // 移除帶大量 content 的 action JSON（例如 write_file 帶內容）
-    .replace(/\{[\s\n]*"action"\s*:\s*"[^"]*"[\s\S]*?"content"\s*:\s*"[\s\S]*?"\s*\}/g, '')
-    // 移除一般 action JSON
-    .replace(/\{[\s\n]*"action"[\s\S]*?\n\}/g, '')
-    // 移除獨立成段的 shell 命令（curl、bash、npm、node、git 開頭的整行）
-    .replace(/^(curl|bash|npm|node|git|python|pip|docker|kubectl|wget|ssh|scp)\s+.+$/gm, '')
-    // 連續空行壓縮
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
+// Action JSON 解析 / 清理已抽到 shared/action-json.ts
 
 // ── System Prompt ──
 

@@ -22,6 +22,7 @@ import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './a
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
 import { getGlobalRateLimiter } from './action-rate-limiter.js';
 import { startCrewBots, stopCrewBots, CREW_BOTS, ACTIVE_CREW_BOTS } from './crew-bots/index.js';
+import { extractActionJsons, stripActionJson } from './shared/action-json.js';
 
 const log = createLogger('telegram');
 
@@ -1421,75 +1422,7 @@ function isXiaocaiChitChat(message: string): boolean {
   return false;
 }
 
-/** 清除殘留的 JSON action blocks — 發送到 Telegram 前必經 */
-function stripActionJson(text: string): string {
-  if (!text) return text;
-  // 1. 用 extractActionJsons 找到完整 JSON 並移除
-  const found = extractActionJsons(text);
-  if (found) {
-    for (const j of found) text = text.replace(j, '');
-  }
-  // 2. 移除 code blocks（三反引號和單反引號，含多行內容）
-  text = text.replace(/`{1,3}json[\s\S]*?`{1,3}/g, '');
-  text = text.replace(/`{1,3}\s*\{[\s\S]*?\}\s*`{1,3}/g, '');
-  // 3. 移除殘留的 {"action"...} 片段（含多行）
-  text = text.replace(/\{\s*"action"\s*:[\s\S]*?\n\s*\}/g, '');
-  text = text.replace(/\{"action"[^}]*\}/g, '');
-  // 4. 移除所有看起來像 JSON object 的獨立行塊
-  text = text.replace(/^\s*\{[\s\S]*?"action"[\s\S]*?\}\s*$/gm, '');
-  // 5. 移除孤立的反引號標記（1-3個）
-  text = text.replace(/`{1,3}\s*`{1,3}/g, '');
-  text = text.replace(/^\s*`{1,3}(?:json)?\s*$/gm, '');
-  // 6. 移除 MiniMax 陣列格式的 action（如 [[["action","read_file"],["path","..."]]]）
-  text = text.replace(/\[\[\[["']action["'][\s\S]*?\]\]\]/g, '');
-  // 7. 移除 MiniMax XML tool_call 殘留
-  text = text.replace(/<minimax:tool_call>[\s\S]*?<\/minimax:tool_call>/g, '');
-  text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
-  text = text.replace(/<invoke[\s\S]*?<\/invoke>/g, '');
-  // 8. 清理多餘空行
-  text = text.replace(/\n{3,}/g, '\n\n');
-  return text.trim();
-}
-
-/** JSON action 解析器（支援 content 內含花括號）*/
-function extractActionJsons(text: string): string[] | null {
-  const results: string[] = [];
-  let searchFrom = 0;
-  // 先去除 JSON 前後的 code fence（三反引號和單反引號）
-  const stripped = text
-    .replace(/`{1,3}json\s*\n?/g, '')   // 開頭 ```json 或 `json
-    .replace(/\n?\s*`{1,3}(?=\s*$|\s*\n)/gm, '');  // 結尾的 ``` 或 `（只在行尾）
-  while (true) {
-    // 搜尋 {"action" 或 { "action" 或 {\n "action"（Gemini 3 Pro 格式）
-    const match = stripped.slice(searchFrom).match(/\{[\s\n]*"action"/);
-    if (!match || match.index === undefined) break;
-    const idx = searchFrom + match.index;
-    let depth = 0;
-    let inString = false;
-    let escape = false;
-    let end = -1;
-    for (let i = idx; i < stripped.length; i++) {
-      const ch = stripped[i];
-      if (escape) { escape = false; continue; }
-      if (ch === '\\' && inString) { escape = true; continue; }
-      if (ch === '"' && !escape) { inString = !inString; continue; }
-      if (inString) continue;
-      if (ch === '{') depth++;
-      if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
-    }
-    if (end > idx) {
-      const candidate = stripped.slice(idx, end + 1);
-      try {
-        JSON.parse(candidate);
-        results.push(candidate);
-      } catch { /* skip */ }
-      searchFrom = end + 1;
-    } else {
-      searchFrom = idx + 1;
-    }
-  }
-  return results.length > 0 ? results : null;
-}
+// stripActionJson + extractActionJsons 已抽到 shared/action-json.ts
 
 async function xiaocaiPoll(): Promise<void> {
   if (!XIAOCAI_TOKEN) return;
@@ -1838,7 +1771,7 @@ async function xiaocaiPoll(): Promise<void> {
               status: 'ready',
               priority: 1,
               owner: '達爾',
-              cat: 'development',
+              cat: 'feature',
               riskLevel: 'low',  // 主人已授權，不需要再審核
             }),
           });

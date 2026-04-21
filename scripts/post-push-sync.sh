@@ -3,8 +3,8 @@
 # 老蔡這邊每次 git push 後自動觸發，讓小蔡本地目錄即時同步。
 # 由 Claude Code PostToolUse hook 呼叫。
 
-MAIN_DIR="/Users/sky770825/openclaw任務面版設計"
-XIAOJI_DIR="/Users/sky770825/openclaw任務面版設計"
+MAIN_DIR="/Users/caijunchang/openclaw任務面版設計"
+XIAOJI_DIR="/Users/caijunchang/openclaw任務面版設計"
 LOG="/tmp/openclaw-sync.log"
 
 # 只有 git push 成功時才觸發（hook 從 stdin 讀取 tool result）

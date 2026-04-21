@@ -1,7 +1,7 @@
 #!/bin/bash
 # 後台批次修復腳本 - 每 5 秒修復一個
 
-cd /Users/sky770825/.openclaw/workspace
+cd /Users/caijunchang/.openclaw/workspace
 LOG="logs/fix-batch-$(date +%H%M%S).log"
 mkdir -p logs
 

@@ -2,7 +2,7 @@
 # 🏖️ 強化版許願池監控腳本 (mailbox-monitor.sh)
 # 使用 jq 確保 JSON 格式正確，避免控制字元導致 422 錯誤
 
-MAILBOX_DIR="/Users/sky770825/.openclaw/workspace/projects/openclaw/modules/knowledge/agent-forum/mailbox"
+MAILBOX_DIR="/Users/caijunchang/.openclaw/workspace/projects/openclaw/modules/knowledge/agent-forum/mailbox"
 WEBHOOK_URL="https://cursor-min-lock-intro.trycloudflare.com/webhook/idea-pool"
 
 mkdir -p "$MAILBOX_DIR"

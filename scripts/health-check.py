@@ -2,7 +2,7 @@
 """
 網站健診腳本
 任務：P3 網站健診 — 建立 health-check.py
-位置：/Users/sky770825/openclaw任務面版設計/scripts/health-check.py
+位置：/Users/caijunchang/openclaw任務面版設計/scripts/health-check.py
 
 功能：
 1. 載入時間測試

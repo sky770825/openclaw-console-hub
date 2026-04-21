@@ -8,7 +8,7 @@
 
 ```bash
 # 進入工作目錄
-cd /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project
+cd /Users/caijunchang/openclaw任務面版設計
 
 # 同步最新代碼
 git pull origin main
@@ -24,7 +24,7 @@ grep '"version"' package.json
 ## 📌 身份與角色
 
 - **我是達爾**（CEO 指揮官），主人的 AI 夥伴
-- **工作目錄**：`/Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project`
+- **工作目錄**：`/Users/caijunchang/openclaw任務面版設計`
 - GitHub repo：`sky770825/openclaw-console-hub`
 - 我的任務推到 `xiaoji` remote：`andy825lay-tech/openclaw-workspace`
 
@@ -83,14 +83,14 @@ grep '"version"' package.json
 每次完成任務、push 後，**必須呼叫通知腳本**：
 
 ```bash
-bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/scripts/notify-laocai.sh "任務名稱" "done" "備註說明"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註說明"
 ```
 
 例如：
 ```bash
-bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/scripts/notify-laocai.sh "修復登入 Bug" "done" "已推到 main，需主人測試"
-bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/scripts/notify-laocai.sh "FADP 資料表建立" "done" "已完成，等主人確認"
-bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/scripts/notify-laocai.sh "部署失敗" "error" "Railway build error，需主人處理"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "修復登入 Bug" "done" "已推到 main，需主人測試"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "FADP 資料表建立" "done" "已完成，等主人確認"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "部署失敗" "error" "Railway build error，需主人處理"
 ```
 
 主人會在 Telegram 收到通知，不需要等他主動來問。
@@ -120,10 +120,10 @@ cd server && npm run build
 launchctl stop com.openclaw.taskboard && sleep 2 && launchctl start com.openclaw.taskboard
 
 # 7. 通知主人（必做！）
-bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/scripts/notify-laocai.sh "任務名稱" "done" "備註"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 ```
 
-> ⚠️ **統一目錄**：所有工作都在 `/Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project` 進行。
+> ⚠️ **統一目錄**：所有工作都在 `/Users/caijunchang/openclaw任務面版設計` 進行。
 
 ---
 
@@ -133,7 +133,7 @@ bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migrat
 
 ```bash
 # 基本用法（API Key 已在 .env）
-source ~/.env 2>/dev/null || export GEMINI_API_KEY=$(grep GEMINI_API_KEY /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/server/.env | cut -d= -f2)
+source ~/.env 2>/dev/null || export GEMINI_API_KEY=$(grep GEMINI_API_KEY /Users/caijunchang/openclaw任務面版設計/server/.env | cut -d= -f2)
 
 # 單次問答
 GEMINI_API_KEY="$GEMINI_API_KEY" gemini "你的問題或任務" -m gemini-2.5-flash
@@ -181,7 +181,7 @@ curl -X POST https://sky770825.zeabur.app/api/n8n/webhook/task-done \
 
 ### 達爾完成任務的完整流程（一行搞定）
 ```bash
-bash /Users/sky770825/Desktop/_Organized_20260313_060718/Folders/openclaw-migration/project/scripts/notify-laocai.sh "任務名稱" "done" "備註"
+bash /Users/caijunchang/openclaw任務面版設計/scripts/notify-laocai.sh "任務名稱" "done" "備註"
 # 上面這行會同時：推 Telegram 給主人 + 觸發 n8n 後續流程
 ```
 
@@ -213,7 +213,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v9.3.0**
+- 目前版本：**v9.3.1**
 - 每次重大功能更新，版本號 patch +1（如 v2.6.1、v2.6.2）
 - **版本號必須同步更新 6 處**（閉環 SOP，不可遺漏）：
   1. `package.json`
@@ -257,7 +257,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 ## 📡 目前系統狀態（2026-03-19 更新）
 
 - 蝦蝦團隊 4 人（達爾+行銷蝦+設計蝦+工程蝦）
-- Server：v9.3.0，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + Discord 整合 + MiniMax M2.7 + 語音轉錄 + 串流回覆 + 反思系統
+- Server：v9.3.1，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + Discord 整合 + MiniMax M2.7 + 語音轉錄 + 串流回覆 + 反思系統 + 重構（shared/ + actions/site-generator）
 - 達爾：5 個 Notion actions + 蝦蝦精準派工
 - 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
 - Owner 密碼：sky36990

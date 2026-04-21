@@ -3,7 +3,7 @@
 # 解決 launchd 服務無法讀取使用者 shell 環境變數 PATH 的問題
 
 # 將必要的路徑加入 PATH
-export PATH="/Users/sky770825/.local/bin:$PATH"
+export PATH="/Users/caijunchang/.local/bin:$PATH"
 
 # 導航到專案根目錄 (請確保此腳本是從專案根目錄執行的)
 # cd "$(dirname "$0")/.."

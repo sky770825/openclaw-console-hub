@@ -2,7 +2,7 @@
 # session-sync.sh — 小蔡每次對話開始自動執行
 # 同步老蔡最新代碼，確保小蔡工作在最新版本上
 
-XIAOJI_DIR="/Users/sky770825/openclaw任務面版設計"
+XIAOJI_DIR="/Users/caijunchang/openclaw任務面版設計"
 SYNC_FLAG="$XIAOJI_DIR/.claude/.sync-done-$(date +%Y%m%d)"
 
 # 每天只同步一次（避免每個 tool call 都觸發）

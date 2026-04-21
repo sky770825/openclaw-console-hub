@@ -409,8 +409,13 @@ ${soulCore}
 | AGENTS.md | ${_workspace}/AGENTS.md |
 | GROWTH.md | ${_workspace}/GROWTH.md |
 | SOUL.md | ${_workspace}/SOUL.md |
+| 蝦蝦人格檔 | ${_workspace}/crew-identities/ |
+| 任務板網頁 | http://localhost:3011 |
+| 任務板 API | http://localhost:3011/api/openclaw/tasks |
+| 健康檢查 | http://localhost:3011/api/health |
 
 路徑搞錯 → list_dir 確認目錄存在，再 read_file。
+老蔡問「打開任務板」→ 告訴他瀏覽器開 http://localhost:3011。
 路徑不確定時，用 run_script 執行 ls 確認，不要猜。
 ⚠️ 最新記憶在 memory/daily/（按日期命名，如 2026-03-06.md），memory/ 根目錄的是舊的。要查記憶先看 daily/。
 
@@ -861,26 +866,23 @@ ${crewResults}
     }
   }
 
-  const startModel = isComplex ? 'claude-opus-cli' : xiaocaiMainModel;
-  if (isComplex) log.info(`[XiaocaiAI] 🏆 偵測到複雜任務，升級到 Opus`);
+  if (isComplex) log.info(`[XiaocaiAI] 🏆 偵測到複雜任務，升級到 Gemini Pro`);
 
   // ── 階梯式升級鏈 ──
-  // 簡單對話：Gemini 優先（秒回）→ Claude CLI 兜底
-  // 複雜任務：Claude CLI 優先（品質）→ Gemini 兜底
+  // 原則：Gemini API 優先（穩定秒回）→ Claude CLI 最後兜底（背景執行慢，90s timeout）
+  // Claude CLI 排在最後避免卡住整個回覆流程
   const ESCALATION_CHAIN = isComplex
     ? [
-        startModel,                              // 第 0 層：Opus CLI
-        'claude-sonnet-cli',                     // 第 1 層：Sonnet CLI
-        'gemini-2.5-pro',                        // 第 2 層：Gemini Pro（免費）
-        'gemini-2.5-flash',                      // 第 3 層：Gemini Flash（免費）
-        'claude-sonnet-4-6',                     // 第 4 層：API 付費兜底
+        'gemini-2.5-pro',                        // 第 0 層：Gemini Pro（複雜任務首選）
+        'gemini-2.5-flash',                      // 第 1 層：Gemini Flash（快速兜底）
+        'claude-sonnet-4-6',                     // 第 2 層：Anthropic API 付費兜底
+        'claude-sonnet-cli',                     // 第 3 層：Sonnet CLI（最後手段，慢）
       ]
     : [
-        'MiniMax-M2.7-highspeed',                // 第 0 層：MiniMax M2.7 HS（快速首選）
-        'gemini-2.5-flash',                      // 第 1 層：Gemini Flash（免費秒回）
-        'claude-haiku-cli',                      // 第 2 層：Haiku CLI（快速）
-        'gemini-2.5-pro',                        // 第 3 層：Gemini Pro（免費）
-        'claude-sonnet-cli',                     // 第 4 層：Sonnet CLI（兜底）
+        'gemini-2.5-flash',                      // 第 0 層：Gemini Flash（日常首選）
+        'gemini-2.5-pro',                        // 第 1 層：Gemini Pro（品質兜底）
+        'claude-haiku-cli',                      // 第 2 層：Haiku CLI（最後手段，慢）
+        // 'MiniMax-M2.7-highspeed',             // ⚠️ 暫停：API key 401，待修復後重新啟用
       ];
   // 去重（如果主模型已經是某層就不重複）
   const chain = [...new Set(ESCALATION_CHAIN)];
@@ -926,12 +928,12 @@ ${crewResults}
           const child = spawn(claudeBin, ['-p', '--model', claudeModel, cliPrompt], {
             env: (() => { const e: Record<string, string | undefined> = { ...process.env, HOME: process.env.HOME, PATH: `${path.join(process.env.HOME || '/tmp', '.local', 'bin')}:${process.env.PATH || '/usr/bin:/bin'}` }; delete e.CLAUDECODE; delete e.CLAUDE_CODE; delete e.CLAUDE_SKIP_ANALYTICS; delete e.ANTHROPIC_API_KEY; return e; })(),
             cwd: process.env.HOME || '/tmp',
-            timeout: 90000,
+            timeout: 45000,   // 45s（原 90s，縮短避免卡住整個回覆流程）
             stdio: ['ignore', 'pipe', 'pipe'],
           });
           child.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
           child.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
-          const timer = setTimeout(() => { child.kill('SIGTERM'); resolve(null); }, 90000);
+          const timer = setTimeout(() => { child.kill('SIGTERM'); resolve(null); }, 45000);
           child.on('close', (code) => {
             clearTimeout(timer);
             const reply = stdout.trim();
@@ -1085,9 +1087,9 @@ ${crewResults}
 
   const clean = formatReplyForTelegram(reply);
 
-  // 更新對話歷史
+  // 更新對話歷史：存原始文字（不存 HTML），避免 AI 收到 HTML 標籤後學著輸出 HTML 造成多重 escape
   history.push({ role: 'user', text: userMessage });
-  history.push({ role: 'model', text: clean });
+  history.push({ role: 'model', text: reply });
   if (history.length > 20) history.splice(0, history.length - 20);
   xiaocaiHistory.set(chatId, history);
 

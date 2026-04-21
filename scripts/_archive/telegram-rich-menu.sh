@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-WORKSPACE="/Users/sky770825/.openclaw/workspace"
+WORKSPACE="/Users/caijunchang/.openclaw/workspace"
 CONFIG_FILE="${WORKSPACE}/config/telegram-menu.json"
 BOT_TOKEN_FILE="${HOME}/.openclaw/secure/telegram-bot-token"
 
