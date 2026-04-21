@@ -285,6 +285,211 @@ export async function callOpenAICompatible(
   return String(msg.content ?? '').trim();
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// 🆕 統一模型註冊表：MODEL_ALIASES + resolveModel + listModels + hasApiKey
+// （純新增，不影響上方現有 export）
+// 參考：hermes_cli/model_switch.py 的 MODEL_ALIASES + resolve_provider_full
+// ══════════════════════════════════════════════════════════════════════════
+
+/** 規範化後的 provider 標籤（給 ModelIdentity 使用） */
+export type ResolvedProvider = 'google' | 'anthropic' | 'minimax' | 'kimi' | 'xai' | 'openrouter' | 'deepseek' | 'claude-cli' | 'openai-cli';
+
+/** 統一模型身份 — 取代散落各處的 startsWith 判斷 */
+export interface ModelIdentity {
+  id: string;              // 規範化 model id
+  provider: ResolvedProvider;
+  vendor: string;          // 顯示名（對應 MODEL_REGISTRY.provider，如 'Google' / 'MiniMax'）
+  family: string;          // e.g. 'gemini-flash' | 'gemini-pro' | 'claude-sonnet' | 'minimax-m27'
+  baseUrl: string;         // OpenAI 相容端點；anthropic/google/cli 回 ''
+  apiKeyEnv: string;       // e.g. 'MINIMAX_API_KEY'（provider key env 名稱）
+  supportsThinking: boolean;
+  supportsStreaming: boolean;
+}
+
+/** 短名 → 規範 model id（靈感來自 hermes_cli/model_switch.py） */
+export const MODEL_ALIASES: Record<string, string> = {
+  // Gemini
+  'flash': 'gemini-2.5-flash',
+  'gemini': 'gemini-2.5-flash',
+  'gemini-flash': 'gemini-2.5-flash',
+  'gemini-2.5-flash': 'gemini-2.5-flash',
+  'pro': 'gemini-2.5-pro',
+  'gemini-pro': 'gemini-2.5-pro',
+  'gemini-2.5-pro': 'gemini-2.5-pro',
+  'gemini-3-flash': 'gemini-3-flash-preview',
+  'gemini-3-pro': 'gemini-3.1-pro-preview',
+  'flash-lite': 'gemini-2.5-flash-lite',
+
+  // Claude（Anthropic API）
+  'sonnet': 'claude-sonnet-4-6',
+  'claude-sonnet': 'claude-sonnet-4-6',
+  'haiku': 'claude-haiku-4-5-20251001',
+  'claude-haiku': 'claude-haiku-4-5-20251001',
+  'opus': 'claude-opus-4-7',
+  'claude-opus': 'claude-opus-4-7',
+
+  // Claude CLI
+  'sonnet-cli': 'claude-sonnet-cli',
+  'haiku-cli': 'claude-haiku-cli',
+  'opus-cli': 'claude-opus-cli',
+
+  // MiniMax
+  'mm': 'MiniMax-M2.7-highspeed',
+  'minimax': 'MiniMax-M2.7-highspeed',
+  'minimax-hs': 'MiniMax-M2.7-highspeed',
+  'MiniMax-M2.7-highspeed': 'MiniMax-M2.7-highspeed',
+  'MiniMax-M2.7': 'MiniMax-M2.7',
+
+  // Kimi / DeepSeek / xAI
+  'kimi': 'kimi-k2.5',
+  'deepseek': 'deepseek-chat',
+  'deepseek-r1': 'deepseek-reasoner',
+  'grok': 'grok-4-1-fast',
+  'grok-reasoning': 'grok-4-1-fast-reasoning',
+};
+
+/** 依 registry provider 標籤判斷規範 provider */
+function toResolvedProvider(registryProvider: string, modelId: string): ResolvedProvider {
+  const p = registryProvider.toLowerCase();
+  if (p === 'google') return 'google';
+  if (p === 'anthropic') return 'anthropic';
+  if (p === 'minimax') return 'minimax';
+  if (p === 'kimi') return 'kimi';
+  if (p === 'xai') return 'xai';
+  if (p === 'deepseek') return 'deepseek';
+  if (p === 'openrouter') return 'openrouter';
+  if (p === 'claude-cli') return 'claude-cli';
+  if (p === 'openai-cli') return 'openai-cli';
+  // fallback：套舊的 getModelProvider 邏輯
+  const legacy = getModelProvider(modelId);
+  return legacy as ResolvedProvider;
+}
+
+/** 由 provider + id 推導 family tag */
+function inferFamily(provider: ResolvedProvider, modelId: string): string {
+  const id = modelId.toLowerCase();
+  if (provider === 'google') {
+    if (id.includes('flash-lite')) return 'gemini-flash-lite';
+    if (id.includes('flash')) return 'gemini-flash';
+    if (id.includes('pro')) return 'gemini-pro';
+    return 'gemini';
+  }
+  if (provider === 'anthropic' || provider === 'claude-cli') {
+    if (id.includes('opus')) return 'claude-opus';
+    if (id.includes('sonnet')) return 'claude-sonnet';
+    if (id.includes('haiku')) return 'claude-haiku';
+    return 'claude';
+  }
+  if (provider === 'minimax') {
+    if (id.includes('m2.7')) return 'minimax-m27';
+    if (id.includes('m2.5')) return 'minimax-m25';
+    if (id.includes('m2.1')) return 'minimax-m21';
+    return 'minimax';
+  }
+  if (provider === 'kimi') return 'kimi-k2';
+  if (provider === 'deepseek') return id.includes('reasoner') ? 'deepseek-r1' : 'deepseek-v3';
+  if (provider === 'xai') {
+    if (id.includes('code')) return 'grok-code';
+    if (id.includes('reasoning')) return 'grok-reasoning';
+    return 'grok';
+  }
+  if (provider === 'openrouter') return 'openrouter-free';
+  if (provider === 'openai-cli') return 'codex';
+  return 'unknown';
+}
+
+/** provider → base url（OpenAI 相容端點） */
+function providerBaseUrl(provider: ResolvedProvider): string {
+  switch (provider) {
+    case 'minimax': return (process.env.MINIMAX_BASE_URL?.trim() || 'https://api.minimax.io/v1').replace(/\/+$/, '');
+    case 'kimi': return 'https://api.moonshot.ai/v1';
+    case 'deepseek': return 'https://api.deepseek.com/v1';
+    case 'xai': return 'https://api.x.ai/v1';
+    case 'openrouter': return 'https://openrouter.ai/api/v1';
+    default: return '';
+  }
+}
+
+/** provider → 對應 env 變數名 */
+function providerApiKeyEnv(provider: ResolvedProvider): string {
+  switch (provider) {
+    case 'google': return 'GOOGLE_API_KEY';
+    case 'anthropic': return 'ANTHROPIC_API_KEY';
+    case 'minimax': return 'MINIMAX_API_KEY';
+    case 'kimi': return 'KIMI_API_KEY';
+    case 'deepseek': return 'DEEPSEEK_API_KEY';
+    case 'xai': return 'XAI_API_KEY';
+    case 'openrouter': return 'OPENROUTER_API_KEY';
+    case 'claude-cli':
+    case 'openai-cli': return ''; // 訂閱制 CLI，不需 env key
+    default: return '';
+  }
+}
+
+/** 判斷模型是否支援串流 */
+function supportsStreamingForProvider(provider: ResolvedProvider): boolean {
+  // OpenAI 相容 + Anthropic / Google 都支援串流；CLI 不支援
+  return provider !== 'claude-cli' && provider !== 'openai-cli';
+}
+
+/**
+ * 將 alias 或完整 model id 解析成 ModelIdentity。
+ * 找不到回 null（保持 caller 可降級處理）。
+ */
+export function resolveModel(aliasOrId: string): ModelIdentity | null {
+  if (!aliasOrId || typeof aliasOrId !== 'string') return null;
+  const key = aliasOrId.trim();
+  if (!key) return null;
+
+  // 1. 先查 alias 表（大小寫敏感優先，再試 lowercase）
+  const canonical = MODEL_ALIASES[key] ?? MODEL_ALIASES[key.toLowerCase()] ?? key;
+
+  // 2. 在 MODEL_REGISTRY 找出對應條目
+  const reg = MODEL_REGISTRY.find(m => m.id === canonical);
+  const resolvedId = reg?.id ?? canonical;
+  const vendor = reg?.provider ?? 'Unknown';
+  const provider = toResolvedProvider(reg?.provider ?? '', resolvedId);
+
+  return {
+    id: resolvedId,
+    provider,
+    vendor,
+    family: inferFamily(provider, resolvedId),
+    baseUrl: providerBaseUrl(provider),
+    apiKeyEnv: providerApiKeyEnv(provider),
+    supportsThinking: supportsThinking(resolvedId),
+    supportsStreaming: supportsStreamingForProvider(provider),
+  };
+}
+
+/** 依條件過濾可用模型 — 便於 discovery / 選單生成 */
+export function listModels(
+  filter?: { provider?: ResolvedProvider; family?: string; role?: ModelRole },
+): ModelIdentity[] {
+  const out: ModelIdentity[] = [];
+  for (const m of MODEL_REGISTRY) {
+    if (filter?.role && m.role !== filter.role) continue;
+    const ident = resolveModel(m.id);
+    if (!ident) continue;
+    if (filter?.provider && ident.provider !== filter.provider) continue;
+    if (filter?.family && ident.family !== filter.family) continue;
+    out.push(ident);
+  }
+  return out;
+}
+
+/**
+ * 檢查 ModelIdentity 對應 provider 是否有可用的 API key
+ * （先查 process.env[apiKeyEnv]，再 fallback 到 openclaw.json）
+ */
+export function hasApiKey(model: ModelIdentity): boolean {
+  if (model.provider === 'claude-cli' || model.provider === 'openai-cli') return true; // 訂閱制 CLI
+  const envKey = model.apiKeyEnv ? process.env[model.apiKeyEnv]?.trim() : '';
+  if (envKey) return true;
+  const jsonKey = getProviderKey(model.provider).trim();
+  return Boolean(jsonKey);
+}
+
 /** 串流呼叫 OpenAI 相容 API — 回傳 async generator，每次 yield 一段增量文字 */
 export async function* callOpenAICompatibleStream(
   baseUrl: string,
