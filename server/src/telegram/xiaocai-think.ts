@@ -879,13 +879,13 @@ ${crewResults}
         'claude-sonnet-cli',                     // 第 3 層：Sonnet CLI（最後手段，慢）
       ]
     : [
-        'gemini-2.5-flash',                      // 第 0 層：Gemini Flash（日常首選）
-        'gemini-2.5-pro',                        // 第 1 層：Gemini Pro（品質兜底）
-        'claude-haiku-cli',                      // 第 2 層：Haiku CLI（最後手段，慢）
-        // 'MiniMax-M2.7-highspeed',             // ⚠️ 暫停：API key 401，待修復後重新啟用
+        'MiniMax-M2.7-highspeed',                // 第 0 層：MiniMax HS（日常首選，MiniMax 官方推薦高流量用 HS）
+        'gemini-2.5-flash',                      // 第 1 層：Gemini Flash（MiniMax 掛掉時接棒）
+        'gemini-2.5-pro',                        // 第 2 層：Gemini Pro（品質兜底）
+        'claude-haiku-cli',                      // 第 3 層：Haiku CLI（最後手段，慢）
       ];
-  // 去重（如果主模型已經是某層就不重複）
-  const chain = [...new Set(ESCALATION_CHAIN)];
+  // 把主模型插在升級鏈最前面（尊重用戶設定），去重避免重複呼叫
+  const chain = [...new Set([xiaocaiMainModel, ...ESCALATION_CHAIN])];
 
   /** 嘗試用指定模型生成回覆 */
   async function tryModel(modelId: string): Promise<string | null> {
@@ -1082,7 +1082,7 @@ ${crewResults}
   }
 
   if (usedModel !== xiaocaiMainModel) {
-    log.info(`[XiaocaiAI-Escalate] ✅ ${usedModel} 接棒成功（原模型 ${xiaocaiMainModel}），自動切回不改設定`);
+    log.warn(`[XiaocaiAI-Escalate] ⚠️ 主模型 ${xiaocaiMainModel} 失敗，由 ${usedModel} 接棒`);
   }
 
   const clean = formatReplyForTelegram(reply);
