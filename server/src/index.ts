@@ -4069,23 +4069,38 @@ app.get('/api/health', async (_req, res) => {
   const mem = process.memoryUsage();
 
   // Supabase ping check
+  // 注意：supabase-js .from().select() 不會 throw，錯誤在回傳的 error 欄位
+  // 所以必須檢查 error 才能判斷真的通、表存在、可查
   let supabasePing: 'ok' | 'fail' | 'not_configured' = 'not_configured';
+  let supabasePingError: string | undefined;
   if (hasSupabase() && supabase) {
     try {
       const start = Date.now();
-      await supabase.from('openclaw_tasks').select('id', { count: 'exact', head: true });
-      supabasePing = Date.now() - start < 5000 ? 'ok' : 'fail';
-    } catch { supabasePing = 'fail'; }
+      const { error } = await supabase.from('openclaw_tasks').select('id', { count: 'exact', head: true });
+      const elapsed = Date.now() - start;
+      if (error) {
+        supabasePing = 'fail';
+        supabasePingError = `${error.code || ''} ${error.message || ''}`.trim();
+      } else if (elapsed >= 5000) {
+        supabasePing = 'fail';
+        supabasePingError = `slow: ${elapsed}ms`;
+      } else {
+        supabasePing = 'ok';
+      }
+    } catch (e) {
+      supabasePing = 'fail';
+      supabasePingError = e instanceof Error ? e.message : String(e);
+    }
   }
 
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '9.3.3',
+    version: '9.3.4',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
-      supabase: { configured: hasSupabase(), ping: supabasePing },
+      supabase: { configured: hasSupabase(), ping: supabasePing, ...(supabasePingError ? { error: supabasePingError } : {}) },
       telegram: { configured: isTelegramConfigured() },
       n8n: { configured: hasN8n() },
       websocket: ws,
@@ -4115,6 +4130,42 @@ app.post('/api/neuxa/heartbeat', async (_req, res) => {
     res.json({ ok: true, message: result });
   } catch (e: unknown) {
     res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// ── 2026-04-24 新增：模擬用戶訊息呼叫達爾（測試用，繞過 Telegram polling）──
+// 用法：curl -X POST http://localhost:3011/api/neuxa/simulate-message \
+//        -H "Content-Type: application/json" \
+//        -d '{"text":"測試問題","chatId":"test-harness"}'
+// 回傳：{ ok, model, reply, durationMs, modelFailovers, actionsRun }
+app.post('/api/neuxa/simulate-message', async (req, res) => {
+  const text = typeof req.body?.text === 'string' ? req.body.text : '';
+  // chatId 須為 number（xiaocaiThink signature 要求）；用 -1 代表測試治具
+  const chatId: number = Number.isFinite(Number(req.body?.chatId)) ? Number(req.body.chatId) : -1;
+  if (!text.trim()) {
+    return res.status(400).json({ ok: false, error: 'text 必填' });
+  }
+  const startedAt = Date.now();
+  // 用獨立歷史 map 避免污染真實 Telegram 對話
+  const isolatedHistory = new Map<number, Array<{ role: string; text: string }>>();
+  const mainModel = process.env.NEUXA_MAIN_MODEL?.trim() || 'MiniMax-M2.7-highspeed';
+  try {
+    const reply = await xiaocaiThink(chatId, text, mainModel, isolatedHistory);
+    res.json({
+      ok: true,
+      chatId,
+      text,
+      mainModel,
+      reply,
+      replyLength: reply.length,
+      durationMs: Date.now() - startedAt,
+    });
+  } catch (e: unknown) {
+    res.status(500).json({
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+      durationMs: Date.now() - startedAt,
+    });
   }
 });
 
