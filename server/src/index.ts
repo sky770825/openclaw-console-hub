@@ -4096,7 +4096,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '9.3.5',
+    version: '9.3.6',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
@@ -4149,8 +4149,9 @@ app.post('/api/neuxa/simulate-message', async (req, res) => {
   // 用獨立歷史 map 避免污染真實 Telegram 對話
   const isolatedHistory = new Map<number, Array<{ role: string; text: string }>>();
   // 2026-04-25 支援 body.model 覆寫（benchmark 用）
+  // 2026-04-26 主模型預設改為 kimi-k2.6（quality benchmark 8.44/10，速度+品質雙贏）
   const overrideModel = typeof req.body?.model === 'string' && req.body.model.trim() ? req.body.model.trim() : null;
-  const mainModel = overrideModel || process.env.NEUXA_MAIN_MODEL?.trim() || 'MiniMax-M2.7-highspeed';
+  const mainModel = overrideModel || process.env.NEUXA_MAIN_MODEL?.trim() || 'kimi-k2.6';
   try {
     const reply = await xiaocaiThink(chatId, text, mainModel, isolatedHistory);
     res.json({
