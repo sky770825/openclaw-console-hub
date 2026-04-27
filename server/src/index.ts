@@ -128,6 +128,7 @@ import autoExecutorRouter, {
 import propertyApiRouter from './routes/property-api.js';
 import { proxyRouter } from './routes/proxy.js';
 import { ollamaProxyRouter } from './routes/ollama-proxy.js';
+import agentBridgeRouter from './routes/agent-bridge.js';
 import {
   hasN8n,
   listWorkflows,
@@ -576,6 +577,7 @@ app.use('/api/proxy', proxyRouter);
 app.use('/api/federation', federationRouter);
 // Ollama 統一代理（本地模型走 Server 代理，方便監控管理）
 app.use('/api/ollama', ollamaProxyRouter);
+app.use('/api/agent-bridge', agentBridgeRouter);
 
 // Canonical local port for the taskboard API/server. Override via PORT env var.
 const PORT = Number(process.env.PORT) || 3011;
@@ -4096,7 +4098,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '9.3.6',
+    version: '9.3.8',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
