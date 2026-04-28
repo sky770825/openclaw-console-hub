@@ -3266,6 +3266,44 @@ app.get('/api/openclaw/morning-brief', async (req, res) => {
       lines.push('');
     }
 
+    // GitHub 工作流（多 repo 狀態 + 今日 commit）
+    let githubBlock: string[] = [];
+    try {
+      const { execSync } = await import('node:child_process');
+      const reposJson = execSync('/Users/caijunchang/.local/bin/oc-repos --json', {
+        encoding: 'utf-8',
+        timeout: 10_000,
+      });
+      const repos = JSON.parse(reposJson) as Array<{
+        status: string; name: string; uncommitted: number; ahead: number; behind: number; lastCommit: string;
+      }>;
+      const dirty = repos.filter(r => r.status === 'dirty');
+      const behind = repos.filter(r => r.status === 'behind');
+      const ahead = repos.filter(r => r.status === 'ahead');
+
+      // 今日有改動的 repo（最近 24h commit）
+      const recentToday = repos.filter(r =>
+        r.lastCommit.includes('hour') ||
+        r.lastCommit.includes('minute') ||
+        (r.lastCommit.includes('day') && parseInt(r.lastCommit) <= 1)
+      );
+
+      githubBlock.push(`<b>🐙 GitHub 工作流</b>`);
+      githubBlock.push(`  • 監控 ${repos.length} 個 repo · ✅ ${repos.filter(r => r.status === 'clean').length} 乾淨 · 🔴 ${dirty.length} dirty · ⚠️ ${behind.length} behind · 📤 ${ahead.length} ahead`);
+      if (dirty.length > 0) {
+        const top3 = dirty.slice(0, 3).map(r => `${r.name}(${r.uncommitted})`).join('、');
+        githubBlock.push(`  • <b>未 commit 的</b>：${top3}${dirty.length > 3 ? ` 等 ${dirty.length} 個` : ''}`);
+      }
+      if (recentToday.length > 0) {
+        githubBlock.push(`  • 過去 24h 動過的：${recentToday.slice(0, 3).map(r => r.name).join('、')}`);
+      }
+      githubBlock.push('');
+    } catch (e) {
+      log.debug?.(`[MorningBrief] GitHub block 失敗: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    if (githubBlock.length > 0) lines.push(...githubBlock);
+
     // 今日進度
     lines.push(`<b>📊 今日進度</b>`);
     lines.push(`  • 任務板總計 ${allTasks.length} 個 | 今日新增 ${createdToday} | 今日完成 ${completedToday}`);
@@ -4295,7 +4333,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     service: 'openclaw-server',
-    version: '9.3.8',
+    version: '9.3.9',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     services: {
