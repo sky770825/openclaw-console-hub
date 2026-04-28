@@ -3188,6 +3188,203 @@ app.get('/api/openclaw/daily-report', async (req, res) => {
   }
 });
 
+// ── 達爾晨報 — 主動推送，達爾語氣 + actionable insights ──
+app.get('/api/openclaw/morning-brief', async (req, res) => {
+  try {
+    const sendTg = req.query.notify === '1';
+    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const greeting = now.getHours() < 11 ? '老蔡早安' : now.getHours() < 18 ? '老蔡午安' : '老蔡晚安';
+
+    // 健康
+    const uptimeS = Math.floor(process.uptime());
+    const uptimeH = Math.floor(uptimeS / 3600);
+
+    // 任務統計
+    const allTasks = hasSupabase() ? await fetchOpenClawTasks().catch(() => []) : [];
+    const tasksByStatus: Record<string, number> = {};
+    let createdToday = 0;
+    let completedToday = 0;
+    for (const t of allTasks) {
+      const s = t.status || 'unknown';
+      tasksByStatus[s] = (tasksByStatus[s] || 0) + 1;
+      const tAny = t as unknown as Record<string, unknown>;
+      if (tAny.updated_at && String(tAny.updated_at).startsWith(today) && t.status === 'done') completedToday++;
+      if (tAny.created_at && String(tAny.created_at).startsWith(today)) createdToday++;
+    }
+    const failedCount = tasksByStatus['failed'] || 0;
+    const queuedCount = tasksByStatus['queued'] || 0;
+    const runningCount = tasksByStatus['in_progress'] || tasksByStatus['running'] || 0;
+
+    // 過去 24 小時 log error 計數
+    let errorCount24h = 0;
+    try {
+      const fsp = await import('node:fs/promises');
+      const logPath = path.join(process.env.HOME || '', '.openclaw/automation/logs/taskboard.log');
+      const stat = await fsp.stat(logPath).catch(() => null);
+      if (stat && stat.size > 0) {
+        const fd = await fsp.open(logPath, 'r');
+        const readSize = Math.min(stat.size, 5_000_000);
+        const buf = Buffer.alloc(readSize);
+        await fd.read(buf, 0, readSize, stat.size - readSize);
+        await fd.close();
+        // 只匹配 log level=ERROR 的行頭（pino-pretty 格式 `[HH:MM:SS] ERROR:` 或 `level":50`）
+        const text = buf.toString('utf-8');
+        errorCount24h = (text.match(/\] ERROR:/g) || []).length
+                      + (text.match(/"level":50/g) || []).length;
+      }
+    } catch { /* ignore */ }
+
+    // 甦醒事件未解決
+    const unresolvedWakes = wakeReports.filter(w => !w.resolved).length;
+
+    // 組訊息（達爾語氣）
+    const lines: string[] = [];
+    lines.push(`🌅 <b>${greeting}！</b>今天 ${today}`);
+    lines.push('');
+
+    // 健康區塊
+    lines.push(`<b>✅ 系統狀態</b>`);
+    lines.push(`  • Server v9.3.8 運行 ${uptimeH}h`);
+    lines.push(`  • 過去 24 小時 log error: ${errorCount24h} 個${errorCount24h === 0 ? ' 👍' : errorCount24h > 50 ? ' ⚠️' : ''}`);
+    lines.push('');
+
+    // 需要注意（actionable）
+    const attentionLines: string[] = [];
+    if (failedCount > 0) attentionLines.push(`  • 任務板有 ${failedCount} 個 failed 任務待處理`);
+    if (queuedCount > 0) attentionLines.push(`  • ${queuedCount} 個任務在排隊（autoExecutor ${autoExecutorState.dispatchMode ? '會自動跑' : '已停派工'}）`);
+    if (unresolvedWakes > 0) attentionLines.push(`  • ${unresolvedWakes} 個甦醒事件未解決`);
+    if (createdToday === 0 && new Date().getHours() >= 9) attentionLines.push(`  • 今日還沒派任何新任務（要派工嗎？）`);
+
+    if (attentionLines.length > 0) {
+      lines.push(`<b>⚠️ 需要你注意</b>`);
+      lines.push(...attentionLines);
+      lines.push('');
+    } else {
+      lines.push(`<b>🎯 一切都在掌控中</b>`);
+      lines.push(`  沒有需要立刻處理的事`);
+      lines.push('');
+    }
+
+    // 今日進度
+    lines.push(`<b>📊 今日進度</b>`);
+    lines.push(`  • 任務板總計 ${allTasks.length} 個 | 今日新增 ${createdToday} | 今日完成 ${completedToday}`);
+    lines.push(`  • 進行中 ${runningCount} · 排隊 ${queuedCount} · failed ${failedCount}`);
+    lines.push(`  • 自動執行今日 ${autoExecutorState.totalExecutedToday || 0} 次`);
+    lines.push('');
+
+    // 系統自動化
+    lines.push(`<i>🤖 後台自動進行中：每天 03:00 backup · 09:00 系統日報 · 23:55 戰報</i>`);
+
+    const message = lines.join('\n');
+
+    if (sendTg) {
+      const targetChat = (req.query.chat_id as string) || process.env.TELEGRAM_CHAT_ID?.trim();
+      const xiaocaiToken = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim();
+      if (targetChat && xiaocaiToken) {
+        await sendTelegramMessageToChat(Number(targetChat), message, { token: xiaocaiToken, parseMode: 'HTML' });
+        log.info(`[MorningBrief] 已推送到 chat ${targetChat}`);
+      } else {
+        log.warn('[MorningBrief] 缺 TELEGRAM_CHAT_ID 或 TELEGRAM_XIAOCAI_BOT_TOKEN');
+      }
+    }
+
+    res.json({
+      ok: true,
+      message,
+      stats: {
+        uptimeHours: uptimeH,
+        errorCount24h,
+        tasksTotal: allTasks.length,
+        failedCount,
+        queuedCount,
+        runningCount,
+        createdToday,
+        completedToday,
+        unresolvedWakes,
+      },
+    });
+  } catch (e) {
+    log.error('[OpenClaw] morning-brief error:', e);
+    res.status(500).json({ ok: false, message: 'Failed to generate morning brief' });
+  }
+});
+
+// ── 網站抓取 + 行銷分析 — 給達爾用 ──
+app.post('/api/openclaw/scrape', async (req, res) => {
+  try {
+    const { url, maxImages, ignoreRobots, outputDir, notify, chatId, analyze } = req.body || {};
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ ok: false, message: 'url required' });
+    }
+
+    const { scrapeWebsite } = await import('./services/ScrapeService.js');
+    const result = await scrapeWebsite({
+      url,
+      maxImages: typeof maxImages === 'number' ? maxImages : undefined,
+      ignoreRobots: !!ignoreRobots,
+      outputDir: typeof outputDir === 'string' ? outputDir : undefined,
+    });
+
+    // 行銷分析（預設開）
+    let analysis: { reportPath: string; briefPath: string; highlightsCount: number; costEstimateUsd: number; durationMs: number } | null = null;
+    const shouldAnalyze = analyze !== false;
+    if (shouldAnalyze && result.contentMd && result.downloadedImages) {
+      try {
+        const { analyzeForMarketing } = await import('./services/MarketingAnalyzer.js');
+        const a = await analyzeForMarketing({
+          outputDir: result.outputPath,
+          url: result.url,
+          title: result.title,
+          contentMd: result.contentMd,
+          metadata: result.metadata,
+          jsonld: result.jsonld || [],
+          images: result.downloadedImages,
+        });
+        analysis = {
+          reportPath: a.reportPath,
+          briefPath: a.briefPath,
+          highlightsCount: a.highlightsCount,
+          costEstimateUsd: a.costEstimateUsd,
+          durationMs: a.durationMs,
+        };
+      } catch (e) {
+        log.warn(`[scrape] analyze 失敗（不致命）：${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
+    // Telegram 通知
+    if (notify) {
+      const targetChat = chatId || process.env.TELEGRAM_CHAT_ID?.trim();
+      const xiaocaiToken = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim();
+      if (targetChat && xiaocaiToken) {
+        const lines = [
+          `✅ <b>抓取${analysis ? ' + 行銷分析' : ''}完成</b>`,
+          ``,
+          `🔗 ${result.url}`,
+          `📄 ${result.title.slice(0, 80)}`,
+          ``,
+          `📊 內容 ${(result.contentLength / 1024).toFixed(1)} KB · 頁型 <b>${result.pageType}</b>`,
+          `🖼️ ${result.imageCount} 張候選圖 → 去重後 ${result.imageDeduplicated} 張`,
+          `⚡ 抓取 ${(result.durationMs / 1000).toFixed(1)}s (${result.fetchMethod})${analysis ? ` · 分析 ${(analysis.durationMs / 1000).toFixed(1)}s` : ''}`,
+          ``,
+          analysis ? `📋 <b>行銷報告</b>：report.md（含提案機會點 + LINE 開場話術）` : '',
+          analysis ? `🎁 <b>素材包</b>：brief-package.zip（${analysis.highlightsCount} 張重點圖 + 完整分析）` : '',
+          analysis ? `🤖 <b>下游 prompt</b>：Midjourney / ChatGPT / Canva 都備好` : '',
+          `📁 <code>${result.outputPath}</code>`,
+          analysis ? `\n💡 直接拖 brief-package.zip 到 ChatGPT/Claude` : '',
+        ].filter(Boolean).join('\n');
+        await sendTelegramMessageToChat(Number(targetChat), lines, { token: xiaocaiToken, parseMode: 'HTML' });
+      }
+    }
+
+    res.json({ ...result, analysis });
+  } catch (e) {
+    log.error('[OpenClaw] scrape error:', e);
+    res.status(500).json({ ok: false, message: e instanceof Error ? e.message : 'Scrape failed' });
+  }
+});
+
 // ---- Deputy Mode (暫代模式) ----
 
 const DEPUTY_STATE_FILE = path.join(import.meta.dirname ? path.resolve(import.meta.dirname, '../..') : process.cwd(), '.openclaw-deputy-mode.json');

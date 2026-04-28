@@ -30,6 +30,28 @@ grep '"version"' package.json
 
 ---
 
+## 🌟 雙子星架構（2026-04-24 建立）
+
+達爾（本系統）與 Hermes Agent 採用「同事關係」，**非雙胞胎**：
+
+| 角色 | 系統 | 職責 |
+|------|------|------|
+| **達爾** | OpenClaw v9.3.3（本目錄）| Telegram bot、server 業務邏輯、蝦蝦團隊、autoExecutor、向量知識大腦、Discord、n8n |
+| **Hermes** | `~/.hermes/` | 主人本地 CLI 助理（取代 Claude Code），純開發輔助工具 |
+
+**核心原則：兩邊只共享 API key，不共享記憶、不共享 skill 狀態、不互相觸發。**
+
+**Hermes 邊界：**
+- ✅ Hermes 用同一把 Kimi + MiniMax key（`~/.hermes/.env`，chmod 600）
+- ❌ Hermes 不接任何 messaging 通道（沒 Telegram/Discord/Slack bot token）
+- ❌ Hermes 沒遷移 OpenClaw 記憶/skills（blank start）
+- ❌ Hermes 不裝 launchd、不開機啟動
+- 💻 Hermes 使用指令：`hermes chat --provider minimax`（或 `--provider kimi-coding -m kimi/kimi-k2.6`）
+
+**3 個月 checkpoint（2026-07-24）：** 重估是否要把 server actions 往 hermes 搬、或保留現狀繼續雙系統。
+
+---
+
 ## 📋 工作原則 — 做事優先
 
 **核心精神：做事，不是寫報告。遇到問題自己修，修不了再問。**
@@ -213,7 +235,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 
 ## ⚡ 版本規則
 
-- 目前版本：**v9.3.1**
+- 目前版本：**v9.3.8**
 - 每次重大功能更新，版本號 patch +1（如 v2.6.1、v2.6.2）
 - **版本號必須同步更新 6 處**（閉環 SOP，不可遺漏）：
   1. `package.json`
@@ -257,7 +279,7 @@ curl -X POST "http://localhost:3011/api/openclaw/tasks?allowStub=1" \
 ## 📡 目前系統狀態（2026-03-19 更新）
 
 - 蝦蝦團隊 4 人（達爾+行銷蝦+設計蝦+工程蝦）
-- Server：v9.3.1，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + Discord 整合 + MiniMax M2.7 + 語音轉錄 + 串流回覆 + 反思系統 + 重構（shared/ + actions/site-generator）
+- Server：v9.3.8，port 3011，autoExecutor + generate_site 四階段品質引擎 + 蝦蝦精準派工 + Discord 整合 + MiniMax M2.7 + 語音轉錄 + 串流回覆 + 反思系統 + agent-bridge HTTP 通道 + Telegram 健壯性三件套（429 retry / update_id dedupe / per-update error boundary）+ XiaocaiBot 獨立 backoff（修復網路抖動 1.5s 狂打）
 - 達爾：5 個 Notion actions + 蝦蝦精準派工
 - 向量搜尋：同義詞擴展 + 多因子重排名 + embedText 800 chars
 - Owner 密碼：sky36990

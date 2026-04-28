@@ -77,6 +77,60 @@ function sanitizeUtf8(text: string): string {
     .replace(/[^\x09\x0A\x0D\x20-\x7E\u0080-\uFFFF]/g, '');     // 非法控制字元
 }
 
+/**
+ * 包一層 fetch，遇到 Telegram 429 自動讀 retry_after 等待後重送。
+ *
+ * 為什麼必要：手刻的 polling/sender 沒處理 429，遇到 flood 就直接失敗，
+ * 是「Telegram 回覆不順」的主因之一。grammY auto-retry plugin 的等價實作。
+ */
+async function fetchTelegramWithRetry(
+  url: string,
+  init: RequestInit,
+  opts: { maxRetries?: number; baseBackoffMs?: number } = {},
+): Promise<Response> {
+  const maxRetries = opts.maxRetries ?? 3;
+  const baseBackoff = opts.baseBackoffMs ?? 500;
+
+  let lastRes: Response | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const res = await fetch(url, init);
+    lastRes = res;
+
+    if (res.status === 429) {
+      // 讀 Telegram 告知的 retry_after（秒）
+      let retryAfterSec = 1;
+      try {
+        const cloned = res.clone();
+        const body = await cloned.json() as { parameters?: { retry_after?: number } };
+        if (typeof body?.parameters?.retry_after === 'number') {
+          retryAfterSec = body.parameters.retry_after;
+        }
+      } catch { /* 無法解析就用預設 1 秒 */ }
+
+      if (attempt >= maxRetries) {
+        log.warn(`[Telegram] 429 max retries reached, giving up`);
+        return res;
+      }
+      const waitMs = Math.min(retryAfterSec * 1000 + 100, 30_000);
+      log.info(`[Telegram] 429 too many requests, retry_after=${retryAfterSec}s (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise(r => setTimeout(r, waitMs));
+      continue;
+    }
+
+    // 5xx 也重試一次（網路抖動 / Telegram 暫時性故障）
+    if (res.status >= 500 && res.status < 600 && attempt < maxRetries) {
+      const waitMs = baseBackoff * Math.pow(2, attempt);
+      log.info(`[Telegram] ${res.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise(r => setTimeout(r, waitMs));
+      continue;
+    }
+
+    return res;
+  }
+
+  return lastRes!;
+}
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim();
 const TELEGRAM_GROUP_CHAT_ID = process.env.TELEGRAM_GROUP_CHAT_ID?.trim();
@@ -113,7 +167,7 @@ export async function sendTelegramMessage(
   try {
     const safeText = sanitizeUtf8(text);
     const endpoint = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    const res = await fetch(endpoint, {
+    const res = await fetchTelegramWithRetry(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -161,7 +215,7 @@ export async function sendTelegramMessageToChat(
 
     try {
       const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
-      const res = await fetch(endpoint, {
+      const res = await fetchTelegramWithRetry(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -179,7 +233,7 @@ export async function sendTelegramMessageToChat(
         // HTML 格式錯誤時 fallback 到純文字重發
         if (options.parseMode && (detail.includes("can't parse") || detail.includes('Bad Request'))) {
           log.info('[TelegramControl] HTML parse 失敗，fallback 純文字重發');
-          const fallbackRes = await fetch(endpoint, {
+          const fallbackRes = await fetchTelegramWithRetry(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -222,7 +276,7 @@ export async function sendTelegramMessageAndGetId(
   try {
     const safeText = sanitizeUtf8(text);
     const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
-    const res = await fetch(endpoint, {
+    const res = await fetchTelegramWithRetry(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -259,7 +313,7 @@ export async function editTelegramMessage(
   try {
     const safeText = sanitizeUtf8(text);
     const endpoint = `https://api.telegram.org/bot${token}/editMessageText`;
-    const res = await fetch(endpoint, {
+    const res = await fetchTelegramWithRetry(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -20,9 +20,10 @@ import { getModelConfig, getAvailableModels, getModelsGrouped, getCommanderModel
 import { NEUXA_WORKSPACE } from './security.js';
 import { executeNEUXAAction, appendInteractionLog, type ActionResult } from './action-handlers.js';
 import { xiaocaiThink, loadSoulCoreOnce, loadAwakeningContext, getTaskSnapshot, getSystemStatus } from './xiaocai-think.js';
-import { getGlobalRateLimiter } from './action-rate-limiter.js';
+import { getGlobalRateLimiter, classifyRunScriptCost } from './action-rate-limiter.js';
 import { startCrewBots, stopCrewBots, CREW_BOTS, ACTIVE_CREW_BOTS } from './crew-bots/index.js';
 import { extractActionJsons, stripActionJson } from './shared/action-json.js';
+import { isDuplicateUpdate } from './shared/update-guard.js';
 
 const log = createLogger('telegram');
 
@@ -36,7 +37,7 @@ const POLL_INTERVAL_MS = 1500;
 const GET_UPDATES_TIMEOUT_SEC = 20;
 const FETCH_TIMEOUT_MS = 30000;
 const TASKBOARD_BASE_URL = (process.env.TASKBOARD_URL?.trim() || 'http://localhost:3011').replace(/\/+$/, '');
-let xiaocaiMainModel = process.env.XIAOCAI_MODEL?.trim() || 'claude-sonnet-cli';
+let xiaocaiMainModel = process.env.XIAOCAI_MODEL?.trim() || 'kimi-k2.6';  // 2026-04-26 依 quality benchmark 切到 kimi-k2.6
 const TELEGRAM_STATE_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-control.json');
 const TELEGRAM_PID_PATH = path.join(process.cwd(), 'runtime-checkpoints', 'telegram-polling.pid');
 const XIAOCAI_TOKEN = process.env.TELEGRAM_XIAOCAI_BOT_TOKEN?.trim() ?? '';
@@ -58,6 +59,8 @@ let lastUnauthorizedChatNotifyAt = 0;
 // 達爾 bot 狀態
 let xiaocaiOffset = 0;
 let xiaocaiRunning = false;
+let xiaocaiConsecutiveFailures = 0;
+let xiaocaiNextPollDelayMs = POLL_INTERVAL_MS;
 const xiaocaiHistory = new Map<number, Array<{ role: string; text: string }>>();
 
 // 心跳狀態
@@ -952,7 +955,12 @@ async function poll(): Promise<void> {
     nextPollDelayMs = POLL_INTERVAL_MS;
 
     for (const u of data.result) {
-      offset = u.update_id + 1;
+      const updateId = u.update_id;
+      offset = updateId + 1;
+
+      if (isDuplicateUpdate(updateId)) continue;
+
+      try {
       const text = String(u.callback_query?.data ?? u.message?.text ?? '').trim();
       const chatId = u.callback_query?.message?.chat?.id ?? u.message?.chat?.id;
       if (!chatId) continue;
@@ -1214,6 +1222,10 @@ async function poll(): Promise<void> {
       }
 
       await replyMenu(chatId, `⚠️ 不支援的指令：<code>${cmd}</code>`);
+      } catch (handlerErr: unknown) {
+        const errMsg = handlerErr instanceof Error ? handlerErr.message : String(handlerErr);
+        log.error({ err: handlerErr, updateId }, `[TelegramControl] update handler 錯誤 update_id=${updateId} err=${errMsg.slice(0, 200)}`);
+      }
     }
   } catch (e) {
     consecutivePollFailures = Math.min(consecutivePollFailures + 1, 1000);
@@ -1273,6 +1285,9 @@ async function groupPoll(): Promise<void> {
       const uid = uu.update_id as number;
       if (uid >= groupOffset) groupOffset = uid + 1;
 
+      if (isDuplicateUpdate(uid)) continue;
+
+      try {
       log.info(`[GroupBot] update keys=${Object.keys(uu).join(',')} update_id=${uid}`);
 
       const msg = (uu.message ?? uu.callback_query?.message) as Record<string, unknown> | undefined;
@@ -1380,6 +1395,10 @@ async function groupPoll(): Promise<void> {
           }
         } catch { /* ignore */ }
       }
+      } catch (handlerErr: unknown) {
+        const errMsg = handlerErr instanceof Error ? handlerErr.message : String(handlerErr);
+        log.error({ err: handlerErr, uid }, `[GroupBot] update handler 錯誤 update_id=${uid} err=${errMsg.slice(0, 200)}`);
+      }
     }
   } catch (e: unknown) {
     log.error({ err: e }, '[GroupBot] poll error');
@@ -1432,12 +1451,24 @@ async function xiaocaiPoll(): Promise<void> {
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     const res = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
     if (!res.ok) { log.warn(`[XiaocaiBot] poll HTTP ${res.status}`); return; }
+    // Bug #2 修復：成功 fetch 就重置 backoff
+    xiaocaiConsecutiveFailures = 0;
+    xiaocaiNextPollDelayMs = POLL_INTERVAL_MS;
     const data = (await res.json()) as { ok: boolean; result?: Array<Record<string, unknown>> };
     if (!data.ok || !data.result?.length) return;
 
     for (const update of data.result) {
-      xiaocaiOffset = Math.max(xiaocaiOffset, (update.update_id as number) + 1);
+      const updateId = update.update_id as number;
+      xiaocaiOffset = Math.max(xiaocaiOffset, updateId + 1);
 
+      // 防止 Telegram 重送同一 update 重觸發 action（30 分鐘 TTL）
+      if (isDuplicateUpdate(updateId)) {
+        log.debug?.(`[XiaocaiBot] dedupe skip update_id=${updateId}`);
+        continue;
+      }
+
+      // Per-update error boundary：單一訊息處理炸掉不影響 batch 後續訊息
+      try {
       // callback_query（模型切換按鈕）
       const cbQuery = update.callback_query as Record<string, unknown> | undefined;
       if (cbQuery) {
@@ -1459,6 +1490,41 @@ async function xiaocaiPoll(): Promise<void> {
             }
           } else if (cbData === 'models:refresh' || cbData === '/models') {
             await replyModelsXiaocai(cbChatId);
+          } else if (cbData.startsWith('approve:') || cbData.startsWith('reject:') || cbData.startsWith('detail:')) {
+            // 2026-04-26 request_approval callback 處理
+            const [kind, tid] = cbData.split(':');
+            const cbMsgId = (cbMsg?.message_id as number) || 0;
+            // answerCallbackQuery 讓 Telegram 移除 loading
+            try {
+              await fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/answerCallbackQuery`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ callback_query_id: cbQuery.id, text: kind === 'approve' ? '✅ 已同意' : kind === 'reject' ? '❌ 已拒絕' : '🔍 取出詳情中...' }),
+              });
+            } catch {/* 略過 */}
+
+            const status = kind === 'approve' ? 'approved' : kind === 'reject' ? 'rejected' : 'detail';
+            const icon = kind === 'approve' ? '✅' : kind === 'reject' ? '❌' : '🔍';
+            // 把任務板對應的 task 更新狀態
+            if (tid && (kind === 'approve' || kind === 'reject')) {
+              try {
+                await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks/${encodeURIComponent(tid)}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENCLAW_API_KEY || ''}` },
+                  body: JSON.stringify({ status: status === 'approved' ? 'ready' : 'cancelled', thought: `主人 Telegram 點 ${icon}${status}` }),
+                });
+              } catch {/* 略過 */}
+            }
+            // edit 原訊息標示已處理
+            if (cbMsgId) {
+              try {
+                await fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/editMessageReplyMarkup`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ chat_id: cbChatId, message_id: cbMsgId, reply_markup: { inline_keyboard: [] } }),
+                });
+              } catch {/* 略過 */}
+            }
+            await sendTelegramMessageToChat(cbChatId, `${icon} 已處理 (taskId=${tid})`, { token: XIAOCAI_TOKEN });
+            log.info(`[XiaocaiBot] approval ${kind} taskId=${tid}`);
           }
         }
         continue;
@@ -1592,8 +1658,10 @@ async function xiaocaiPoll(): Promise<void> {
           xiaocaiHistory.set(chatId, groupHist);
 
           const lowerText = text.toLowerCase();
-          const mentionsXiaocai = lowerText.includes('達爾') || lowerText.includes('@xiaoji_cai_bot');
-          if (!mentionsXiaocai) continue; // 沒提到達爾 → 不回覆，但 history 已記錄
+          const mentionsXiaocai = lowerText.includes('達爾') || lowerText.includes('@xiaoji_cai_bot') || lowerText.includes('m5');
+          // M3↔M5 對話群：每句都回（AI agent 對話不會每輪喊名字）
+          const isAgentChatGroup = String(chatId) === (process.env.TELEGRAM_GROUP_CHAT_ID?.trim() || '');
+          if (!mentionsXiaocai && !isAgentChatGroup) continue; // 沒提到達爾 → 不回覆，但 history 已記錄
           // 提到達爾 → 達爾本人回覆（走 xiaocaiThink，帶群組 history 上下文）
           log.info(`[XiaocaiBot] 群組提到達爾，回覆 chatId=${chatId}`);
           const groupReply = await xiaocaiThink(chatId, text, xiaocaiMainModel, xiaocaiHistory, imageBase64 ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined);
@@ -1619,6 +1687,34 @@ async function xiaocaiPoll(): Promise<void> {
 
       // 指令路由
       const xcCmd = text.split(/\s+/)[0]?.split('@')[0]?.toLowerCase() ?? '';
+
+      // ── /scrape <url> — 達爾抓網站整理到桌面 ──
+      // 也支援自然語言：「抓 https://...」「scrape https://...」
+      const scrapeMatch = text.match(/^(?:\/scrape\s+|抓\s+|scrape\s+|拓\s+)(https?:\/\/\S+)/i)
+        || text.match(/^(https?:\/\/\S+)\s*$/);
+      if (xcCmd === '/scrape' || (scrapeMatch && (xcCmd === '/scrape' || /^(?:抓|scrape|\/scrape)/i.test(text)))) {
+        const url = scrapeMatch?.[1] || text.replace(/^\/scrape\s*/i, '').trim();
+        if (!url || !/^https?:\/\//i.test(url)) {
+          await sendTelegramMessageToChat(chatId, '用法：<code>/scrape https://example.com</code>\n或直接：「抓 https://example.com」', { token: XIAOCAI_TOKEN, parseMode: 'HTML' });
+          continue;
+        }
+        await sendTelegramMessageToChat(chatId, `🕷️ 開始抓取：${url}\n（HTTP fetch + 圖片下載 + Readability 萃取，30 秒內回報）`, { token: XIAOCAI_TOKEN });
+        // 非阻塞呼叫
+        const apiBase = process.env.TASKBOARD_BASE_URL || 'http://localhost:3011';
+        const apiKey = process.env.OPENCLAW_API_KEY?.trim();
+        fetch(`${apiBase}/api/openclaw/scrape`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
+          },
+          body: JSON.stringify({ url, notify: true, chatId, maxImages: 50 }),
+        }).catch(err => {
+          log.error({ err }, '[XiaocaiBot] scrape fetch failed');
+          sendTelegramMessageToChat(chatId, `❌ 抓取失敗：${err instanceof Error ? err.message : String(err)}`, { token: XIAOCAI_TOKEN }).catch(() => {});
+        });
+        continue;
+      }
 
       // ── /say — 主人下令，達爾去群組發訊息 ──
       if (xcCmd === '/say' || xcCmd === '/broadcast') {
@@ -1729,37 +1825,72 @@ async function xiaocaiPoll(): Promise<void> {
         continue;
       }
 
-      // ── 授權切換 Claude Code：主人說「同意/授權/可以/批准」→ 把最近任務派給 Claude Code agent ──
-      const authLower = text.trim().toLowerCase();
-      const isAuthApproval = [
-        // 明確授權
-        '同意', '授權', '批准', '可以', '允許', '核准', '准了', '通過',
-        // 催促執行
-        '開始', '去做', '去執行', '快去', '動手', '執行吧', '做吧', '改吧',
-        '開始吧', '好的', '好啊', '沒問題', 'ok', 'yes', '對',
-        // 給權限
-        '授權給你', '給你權限', '直接改', '直接做', '直接寫', '放手做',
-        '你來改', '你來做', '你處理', '你改', '你做', '你寫',
-        // 確認
-        '確認', '確定', '是的', '嗯', '好', '行',
-      ].some(kw => authLower === kw || authLower.includes(kw));
-
-      // 從歷史找達爾最近是否在要求授權（寫入/修改/部署等）
+      // ── 切換 Claude Code（2026-04-25 重構）──
+      //
+      // 【舊邏輯（已廢棄，造成 12 次誤觸發死循環）】
+      //   只要主人訊息含「好/可以/開始/對」等常見字 + 達爾上一則含「我可以/能不能」
+      //   → 就觸發 Claude Code。結果日常對話 80% 被誤當授權派 Claude Code，
+      //     Claude Code 收到不明任務 → 寫腳本改 server → 被保護區擋 → 死循環 retry。
+      //
+      // 【新邏輯】明確指令制：
+      //   只接受用戶打「/cc 任務」「/claude 任務」「/codex 任務」這類明確斜線指令
+      //   其他任何「好/可以/開始」等一律不觸發（改為一般對話處理）
+      //
+      // 【恢復舊行為】若真的想開回模糊授權，設 env ENABLE_IMPLICIT_CC_AUTH=true
       const hist = xiaocaiHistory.get(chatId) || [];
-      const recentBotMsg = [...hist].reverse().find(h => h.role === 'model')?.text || '';
-      const wasAskingPermission = /授權|權限|允許.*寫入|允許.*修改|可以.*改|需要.*批准|你同意|需要你|是否同意|要我.*修|要我.*改|要我.*寫|要我.*建|要我.*做|要我.*執行|我可以|可否|能不能|請問.*可以|主人.*確認|確認.*再/i.test(recentBotMsg);
+      const ENABLE_IMPLICIT_AUTH = process.env.ENABLE_IMPLICIT_CC_AUTH === 'true';
 
-      if (isAuthApproval && wasAskingPermission && hist.length >= 2) {
+      // 明確斜線指令偵測
+      const ccCommandMatch = text.trim().match(/^\/(cc|claude|claude-code|codex)\s+([\s\S]+)$/i);
+      const isExplicitCcCommand = !!ccCommandMatch;
+
+      // 模糊授權（預設關閉，避免誤觸發）
+      let isImplicitAuth = false;
+      if (ENABLE_IMPLICIT_AUTH && !isExplicitCcCommand) {
+        const authLower = text.trim().toLowerCase();
+        // 極嚴格版：整句必須「只有」授權詞 + 長度 ≤4
+        const strictAuthExact = /^(同意|授權|批准|核准|yes|ok)(\s*[。！!.]?)?$/i;
+        const isAuthApproval = authLower.length <= 4 && strictAuthExact.test(authLower);
+
+        // 達爾必須最近明確問「要不要我改 server/.ts 檔案」這類才算
+        const recentBotMsg = [...hist].reverse().find(h => h.role === 'model')?.text || '';
+        const wasAskingPermission = /需要.*授權.*改|需要.*授權.*寫入|要改.*\.ts|要動.*server\/src|需要.*批准.*修改|要我.*修改.*server|動.*核心/i.test(recentBotMsg);
+
+        isImplicitAuth = isAuthApproval && wasAskingPermission && hist.length >= 2;
+      }
+
+      const shouldSwitchToCC = isExplicitCcCommand || isImplicitAuth;
+
+      if (shouldSwitchToCC) {
         log.info(`[XiaocaiBot] 🔧 主人授權，切換 Claude Code agent 執行`);
         fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
         }).catch(() => {});
 
-        // 從歷史中還原任務上下文（只取主人的訊息，過濾掉系統回饋/action結果）
-        const recentUserMsgs = hist.filter(h => h.role === 'user' && !h.text.startsWith('[系統') && !h.text.startsWith('[執行結果')).slice(-5).map(h => h.text);
-        const taskContext = recentUserMsgs.slice(-3).join('\n').slice(0, 500);
-        const taskTitle = recentUserMsgs.find(m => m.length > 3 && m.length < 100)?.slice(0, 50) || '主人授權任務';
+        // 2026-04-25 重構 taskTitle 取法：
+        //   - 斜線指令（/cc xxx）→ 直接用斜線後面的內容當 title，不需猜
+        //   - 模糊授權 → 仍用歷史回推（但已極嚴格，幾乎不會觸發）
+        let taskTitle: string;
+        let taskContext: string;
+        if (isExplicitCcCommand && ccCommandMatch) {
+          taskTitle = ccCommandMatch[2].trim().slice(0, 80);
+          taskContext = `主人明確指令：${ccCommandMatch[0]}`;
+        } else {
+          // 模糊授權 fallback（很少走到這）
+          const recentUserMsgs = hist.filter(h => h.role === 'user' && !h.text.startsWith('[系統') && !h.text.startsWith('[執行結果')).slice(-5).map(h => h.text);
+          taskContext = recentUserMsgs.slice(-3).join('\n').slice(0, 500);
+          const AUTH_ONLY_EXACT = /^(好|好的|好喔|ok|okay|k|是|對|可以|繼續|確認|同意|授權|請|嗯|嗯嗯|ya|yea|yes|sure|go|yep|nope|no|yep yep)(\s*[。！!.]?)?$/i;
+          const isAuthOnlyMsg = (m: string): boolean => {
+            const t = m.trim();
+            return t.length <= 6 && AUTH_ONLY_EXACT.test(t);
+          };
+          taskTitle = (
+            (!isAuthOnlyMsg(text) && text.length > 3 && text.length < 100 ? text : null) ||
+            [...recentUserMsgs].reverse().find(m => !isAuthOnlyMsg(m) && m.length > 3 && m.length < 100) ||
+            '主人授權任務'
+          ).slice(0, 80);
+        }
 
         try {
           const taskRes = await fetch(`${TASKBOARD_BASE_URL}/api/openclaw/tasks?allowStub=1`, {
@@ -1785,7 +1916,7 @@ async function xiaocaiPoll(): Promise<void> {
           hist.push({ role: 'user', text });
           hist.push({ role: 'model', text: `已切換 Claude Code agent 執行，任務 ID: ${taskId}` });
           xiaocaiHistory.set(chatId, hist.slice(-20));
-          appendInteractionLog(text, [`✅ 切換 Claude Code: ${recentUserMsgs[0]?.slice(0, 40)}`], `主人授權，已派 Claude Code`);
+          appendInteractionLog(text, [`✅ 切換 Claude Code: ${taskTitle.slice(0, 40)}`], `主人授權，已派 Claude Code`);
           continue;
         } catch (e) {
           log.warn({ err: e }, '[XiaocaiBot] 建 Claude Code 任務失敗，fallback');
@@ -1839,11 +1970,17 @@ async function xiaocaiPoll(): Promise<void> {
 
         // 第一輪帶圖片，後續 follow-up 不帶
         const thinkImage = (!isFollowUp && imageBase64) ? { base64: imageBase64, mimeType: imageMime || 'image/jpeg' } : undefined;
-        // 發送 typing indicator 讓主人知道達爾在思考
-        fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
-        }).catch(() => {});
+
+        // ── Typing indicator keepAlive（每 4 秒 refresh，避免 Telegram 5s 超時消失）──
+        // 蝦蝦團隊多步 action 可能跑 30s+，單次 sendChatAction 撐不住
+        const sendTyping = () => {
+          fetch(`https://api.telegram.org/bot${XIAOCAI_TOKEN}/sendChatAction`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
+          }).catch(() => {});
+        };
+        sendTyping();
+        const typingKeepAlive = setInterval(sendTyping, 4000);
 
         // ── 串流回覆：第一輪用串流模式即時更新 Telegram 訊息 ──
         let lastStreamUpdate = 0;
@@ -1868,7 +2005,13 @@ async function xiaocaiPoll(): Promise<void> {
           }
         } : undefined;
 
-        let reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory, thinkImage, onChunk);
+        let reply: string;
+        try {
+          reply = await xiaocaiThink(chatId, thinkInput, xiaocaiMainModel, xiaocaiHistory, thinkImage, onChunk);
+        } finally {
+          // 一定要停掉 typing keepAlive（無論成功/例外）
+          clearInterval(typingKeepAlive);
+        }
 
         // 串流完成後：刪除串流訊息（最終會由正式回覆取代）
         if (streamMsgId) {
@@ -1914,9 +2057,13 @@ async function xiaocaiPoll(): Promise<void> {
               return `🔒 ${action.action}: 連續失敗 2 次，已跳過`;
             }
             // 滑動窗口限速檢查（CircuitBreaker 之後、執行之前）
-            if (!rateLimiter.isAllowed(action.action)) {
+            // 2026-04-26 智慧 cost：run_script 依指令分流（本地操作 cost 1、網路操作 cost 3）
+            const dynCost1 = action.action === 'run_script' || action.action === 'run_script_bg' || action.action === 'run_script_stream'
+              ? classifyRunScriptCost(action.command || action.cmd || '')
+              : undefined;
+            if (!rateLimiter.isAllowed(action.action, dynCost1)) {
               const msg = rateLimiter.formatBlockMessage(action.action);
-              log.warn(`[Xiaocai-Chain] ⏱️ 限速阻擋: ${msg}`);
+              log.warn(`[Xiaocai-Chain] ⏱️ 限速阻擋: ${msg}${dynCost1 !== undefined ? ` dynCost=${dynCost1}` : ''}`);
               return `⏱️ ${msg}`;
             }
             // 靈魂檔案保護：禁止寫入 SOUL.md / AGENTS.md / IDENTITY.md / BOOTSTRAP.md
@@ -1927,7 +2074,7 @@ async function xiaocaiPoll(): Promise<void> {
               return `🔒 ${action.action}: 靈魂檔案 ${action.path} 禁止修改`;
             }
             const result = await executeNEUXAAction(action);
-            rateLimiter.record(action.action); // 記錄呼叫（不管成功失敗都計數）
+            rateLimiter.record(action.action, dynCost1); // 記錄呼叫（不管成功失敗都計數）
             if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
             const icon = result.ok ? '✅' : '🚫';
             const label = action.action === 'create_task' ? `任務「${action.name}」` : action.action;
@@ -2071,11 +2218,14 @@ async function xiaocaiPoll(): Promise<void> {
                 driveText = driveText.replace(jsonStr, '').trim();
                 continue;
               }
-              // 滑動窗口限速檢查
-              if (!rateLimiter.isAllowed(action.action)) {
+              // 滑動窗口限速檢查（2026-04-26 智慧 cost）
+              const dynCost2 = action.action === 'run_script' || action.action === 'run_script_bg' || action.action === 'run_script_stream'
+                ? classifyRunScriptCost(action.command || action.cmd || '')
+                : undefined;
+              if (!rateLimiter.isAllowed(action.action, dynCost2)) {
                 const rlMsg = rateLimiter.formatBlockMessage(action.action);
                 driveResults.push(`⏱️ ${rlMsg}`);
-                log.warn(`[XiaocaiSelfDrive] ⏱️ 限速阻擋: ${rlMsg}`);
+                log.warn(`[XiaocaiSelfDrive] ⏱️ 限速阻擋: ${rlMsg}${dynCost2 !== undefined ? ` dynCost=${dynCost2}` : ''}`);
                 driveText = driveText.replace(jsonStr, '').trim();
                 continue;
               }
@@ -2089,7 +2239,7 @@ async function xiaocaiPoll(): Promise<void> {
                 continue;
               }
               const result = await executeNEUXAAction(action);
-              rateLimiter.record(action.action); // 記錄呼叫
+              rateLimiter.record(action.action, dynCost2); // 記錄呼叫（智慧 cost）
               if (result.ok) breaker.recordSuccess(action); else breaker.recordFailure(action);
               const icon = result.ok ? '✅' : '🚫';
               const driveMax = (action.action === 'read_file' || action.action === 'ask_ai') ? 2000 : 800;
@@ -2154,17 +2304,35 @@ async function xiaocaiPoll(): Promise<void> {
           }
         }
       }
+      } catch (handlerErr: unknown) {
+        // Per-update error boundary：吞單一訊息處理錯誤，不讓整個 batch 中斷
+        const errMsg = handlerErr instanceof Error ? handlerErr.message : String(handlerErr);
+        log.error({ err: handlerErr, updateId }, `[XiaocaiBot] update handler 錯誤 update_id=${updateId} err=${errMsg.slice(0, 200)}`);
+        // 嘗試從 update 撈 chatId 通知主人「我這邊出狀況了」（best-effort，失敗也吞）
+        try {
+          const errMsgObj = update.message as Record<string, unknown> | undefined;
+          const errChat = errMsgObj?.chat as Record<string, unknown> | undefined;
+          const errChatId = errChat?.id as number | undefined;
+          if (errChatId) {
+            await sendTelegramMessageToChat(errChatId, `⚠️ 達爾這邊處理時出了狀況：${errMsg.slice(0, 300)}`, { token: XIAOCAI_TOKEN });
+          }
+        } catch { /* fallback 通知失敗也不再追究 */ }
+      }
     }
   } catch (e: unknown) {
     if (e instanceof DOMException && e.name === 'AbortError') return;
-    log.error({ err: e }, '[XiaocaiBot] poll error');
+    // Bug #2 修復：網路抖動 / TLS / DNS 失敗時做 backoff，避免 1.5s 狂打
+    xiaocaiConsecutiveFailures = Math.min(xiaocaiConsecutiveFailures + 1, 1000);
+    xiaocaiNextPollDelayMs = Math.min(15000, POLL_INTERVAL_MS + xiaocaiConsecutiveFailures * 500);
+    log.error({ err: e, consecutiveFailures: xiaocaiConsecutiveFailures, nextDelayMs: xiaocaiNextPollDelayMs }, '[XiaocaiBot] poll error');
   }
 }
 
 function xiaocaiLoop(): void {
   if (!xiaocaiRunning) return;
   xiaocaiPoll().finally(() => {
-    if (xiaocaiRunning) setTimeout(xiaocaiLoop, POLL_INTERVAL_MS);
+    // Bug #2 修復：用獨立 delay（網路抖動時 backoff），不再寫死 POLL_INTERVAL_MS
+    if (xiaocaiRunning) setTimeout(xiaocaiLoop, xiaocaiNextPollDelayMs);
   });
 }
 
@@ -2379,10 +2547,15 @@ export function startTelegramStopPoll(): void {
       .finally(() => xiaocaiLoop());
 
     // 啟動心跳 — 每 15 分鐘自主思考
-    heartbeatTimer = setInterval(() => {
-      heartbeatTick().catch(e => log.error({ err: e }, '[Heartbeat] tick error'));
-    }, HEARTBEAT_INTERVAL_MS);
-    log.info(`[Heartbeat] 🫀 心跳已啟動，每 ${HEARTBEAT_INTERVAL_MS / 60000} 分鐘一次`);
+    // 止血開關：HEARTBEAT_DISABLED=true 可暫停心跳（Supabase 不通等場景用）
+    if (process.env.HEARTBEAT_DISABLED === 'true' || process.env.HEARTBEAT_DISABLED === '1') {
+      log.warn('[Heartbeat] ⏸️ 心跳已暫停（HEARTBEAT_DISABLED=true）');
+    } else {
+      heartbeatTimer = setInterval(() => {
+        heartbeatTick().catch(e => log.error({ err: e }, '[Heartbeat] tick error'));
+      }, HEARTBEAT_INTERVAL_MS);
+      log.info(`[Heartbeat] 🫀 心跳已啟動，每 ${HEARTBEAT_INTERVAL_MS / 60000} 分鐘一次`);
+    }
   }
 
   // Crew bots 啟用時跳過舊 groupPoll（避免同 token 做兩個 getUpdates 導致 409）
