@@ -1,7 +1,7 @@
 {
   "name": "openclaw-starship-ui",
   "private": true,
-  "version": "9.3.12",
+  "version": "9.3.13",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
